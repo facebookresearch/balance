@@ -38,6 +38,7 @@ _ALLOWED_CALLERS: frozenset[str] = frozenset(
 )
 
 
+# pyrefly: ignore [inconsistent-inheritance]
 class Sample(BalanceFrame, SampleFrame):
     """
     A class used to represent a sample.

@@ -427,6 +427,7 @@ def rm_mutual_nas(*args: Any) -> List[Any]:
     r = [(t(x) if x is not None else x) for t, x in zip(original_types, r)]
     if len(args) == 1:
         r = r[0]
+    # pyrefly: ignore [bad-return]
     return r
 
 

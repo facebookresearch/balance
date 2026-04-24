@@ -227,6 +227,7 @@ def _process_series_for_missing_mask(series: pd.Series) -> pd.Series:
     """
     # Use _safe_replace_and_infer to avoid downcasting warnings
     replaced_series = _safe_replace_and_infer(series, [np.inf, -np.inf], np.nan)
+    # pyrefly: ignore [bad-return]
     return replaced_series.isna()
 
 
@@ -263,6 +264,7 @@ def _safe_replace_and_infer(
             result = result.astype("object")
         return result
 
+    # pyrefly: ignore [missing-attribute]
     object_cols = [col for col, dtype in original_dtypes.items() if dtype == "object"]
     if object_cols:
         result = result.astype(dict.fromkeys(object_cols, "object"))
@@ -299,6 +301,7 @@ def _safe_fillna_and_infer(
             result = result.astype("object")
         return result
 
+    # pyrefly: ignore [missing-attribute]
     object_cols = [col for col, dtype in original_dtypes.items() if dtype == "object"]
     if object_cols:
         result = result.astype(dict.fromkeys(object_cols, "object"))
@@ -325,12 +328,14 @@ def _safe_groupby_apply(
     # Use include_groups=False to avoid FutureWarning about operating on grouping columns
     # Fall back to old behavior if include_groups parameter is not supported
     try:
+        # pyrefly: ignore [bad-return, unexpected-keyword]
         return data.groupby(groupby_cols, include_groups=False).apply(apply_func)
     except TypeError:
         # Suppress pandas FutureWarnings about downcasting during fillna operations
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", FutureWarning)
             # Fallback for older pandas versions that don't support include_groups parameter
+            # pyrefly: ignore [bad-return]
             return data.groupby(groupby_cols).apply(apply_func)
 
 

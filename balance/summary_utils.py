@@ -91,9 +91,11 @@ def _concat_metric_val_var(
     if diagnostics.empty:
         if diagnostics.columns.empty:
             return rows.reset_index(drop=True)
+        # pyrefly: ignore [bad-argument-type]
         rows = rows.reindex(columns=diagnostics.columns, fill_value=pd.NA)
         return rows.reset_index(drop=True)
 
+    # pyrefly: ignore [bad-argument-type]
     rows = rows.reindex(columns=diagnostics.columns, fill_value=pd.NA)
     return pd.concat((diagnostics, rows), ignore_index=True)
 
@@ -166,11 +168,13 @@ def _build_summary(
 
     if (is_adjusted or has_target) and covars_asmd is not None:
         n_asmd_covars = len(
+            # pyrefly: ignore [bad-index]
             covars_asmd.columns.values[covars_asmd.columns.values != "mean(asmd)"]
         )
 
     if (is_adjusted or has_target) and covars_kld is not None:
         n_kld_covars = len(
+            # pyrefly: ignore [bad-index]
             covars_kld.columns.values[covars_kld.columns.values != "mean(kld)"]
         )
 

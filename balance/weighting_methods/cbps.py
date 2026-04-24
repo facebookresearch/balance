@@ -540,6 +540,7 @@ def cbps(  # noqa
     """
 
     logger.info("Starting cbps function")
+    # pyrefly: ignore [bad-argument-type]
     np.random.seed(random_seed)  # setting random seed for cases of variations in glmnet
 
     balance_util._check_weighting_methods_input(sample_df, sample_weights, "sample")

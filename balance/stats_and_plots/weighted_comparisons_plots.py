@@ -486,8 +486,11 @@ def plot_qq(
             label=names[ii],
             ax=axis,
         )
+    # pyrefly: ignore [bad-argument-type]
     set_xy_axes_to_use_the_same_lim(axis)
+    # pyrefly: ignore [missing-attribute]
     axis.plot(axis.get_xlim(), axis.get_ylim(), "--")
+    # pyrefly: ignore [missing-attribute]
     axis.set_title(f"quantile-quantile plot of covar '{column}' in target vs sample")
     _safe_show_legend(axis)
 
@@ -581,9 +584,13 @@ def plot_qq_categorical(
                 # Using index access for namedtuple since attribute access causes pyre errors
                 axis.text(x=r.prop_sample, y=r.prop_target, s=r[1])  # type: ignore[attr-defined]
 
+    # pyrefly: ignore [missing-attribute]
     axis.set_ylim(-0.1, 1.1)
+    # pyrefly: ignore [missing-attribute]
     axis.set_xlim(-0.1, 1.1)
+    # pyrefly: ignore [missing-attribute]
     axis.plot(axis.get_xlim(), axis.get_ylim(), "--")
+    # pyrefly: ignore [missing-attribute]
     axis.set_title(
         f"proportion-proportion plot of covar '{column}' in target vs sample"
     )

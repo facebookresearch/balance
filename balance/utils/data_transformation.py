@@ -290,6 +290,7 @@ def auto_spread(
         # Use include_groups=False to avoid FutureWarning about operating on grouping columns
         # Fall back to old behavior if include_groups parameter is not supported
         try:
+            # pyrefly: ignore [unexpected-keyword]
             unique_userids = data.groupby(c, include_groups=False)[id_].apply(
                 lambda x: len(set(x)) == len(x)
             )

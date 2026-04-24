@@ -193,6 +193,7 @@ class TestUtil(
         self.assertEqual(len(set(r.values)), 7)
 
         # Test on numpy array input
+        # pyrefly: ignore [bad-argument-type]
         r = quantize(np.random.uniform(0, 1, 100), 7)
         self.assertEqual(len(set(r.values)), 7)
 
@@ -455,6 +456,7 @@ class TestUtil(
             tuple: (wine_survey, wine_survey_copy) for categorical and string testing
         """
         # Create synthetic wine data with similar structure to sklearn wine dataset
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(42)  # For reproducible results
         n_samples = 178
 

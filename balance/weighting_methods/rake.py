@@ -244,7 +244,9 @@ def rake(
     elif na_action == "add_indicator":
         from balance.util import _safe_fillna_and_infer
 
+        # pyrefly: ignore [bad-assignment]
         target_df = _safe_fillna_and_infer(target_df, "__NaN__")
+        # pyrefly: ignore [bad-assignment]
         sample_df = _safe_fillna_and_infer(sample_df, "__NaN__")
     else:
         raise ValueError("`na_action` must be 'add_indicator' or 'drop'")

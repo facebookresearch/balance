@@ -554,6 +554,7 @@ class BalanceDF:
                 self._model_matrix = balance_util.model_matrix(
                     self.df, add_na=True, return_type="one"
                 )["model_matrix"]
+            # pyrefly: ignore [bad-return]
             return self._model_matrix
 
         return _assert_type(
@@ -3113,6 +3114,7 @@ class BalanceDFWeights(BalanceDF):
                 )
             target_propensity = np.full(
                 len(target_sample.weight_series),
+                # pyrefly: ignore [bad-argument-type]
                 float(target_propensity),
                 dtype=float,
             )

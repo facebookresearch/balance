@@ -87,6 +87,7 @@ class Testrake(
         - Mismatched lengths between DataFrames and weight Series
         """
         n_rows = 20
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(42)
         sample = pd.DataFrame(
             {
@@ -95,6 +96,7 @@ class Testrake(
                 "weight": [1.0] * n_rows,
             }
         )
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(43)
         target = pd.DataFrame(
             {
@@ -509,6 +511,7 @@ class Testrake(
         # correctness is validated by the smaller deterministic tests above)
         n_sample = 200
         n_target = 400
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(2021)
 
         # Create sample DataFrame with mixed data types
@@ -1574,6 +1577,7 @@ class TestRakeValidation(
             def __pos__(self) -> "BadReal":
                 return self
 
+            # pyrefly: ignore [bad-param-name-override]
             def __pow__(self, other: object) -> "BadReal":
                 return self
 
@@ -1589,9 +1593,11 @@ class TestRakeValidation(
             def __rmul__(self, other: object) -> "BadReal":
                 return self
 
+            # pyrefly: ignore [bad-override]
             def __round__(self, ndigits: int = 0) -> "BadReal":
                 return self
 
+            # pyrefly: ignore [bad-param-name-override]
             def __rpow__(self, other: object) -> "BadReal":
                 return self
 

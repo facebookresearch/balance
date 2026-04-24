@@ -50,6 +50,7 @@ class TestIPW(
     def test_calc_dev_returns_finite_mean_and_sd(self) -> None:
         """calc_dev should run 10-fold CV and return finite deviance summary."""
 
+        # pyrefly: ignore [bad-argument-type]
         rng = np.random.RandomState(42)
         X = rng.normal(size=(40, 2))
         y = np.array([0] * 20 + [1] * 20)
@@ -171,6 +172,7 @@ class TestIPW(
         sample = Sample.from_frame(
             df=pd.DataFrame(
                 {
+                    # pyrefly: ignore [missing-attribute]
                     "a": np.random.normal(0, 1, sample_size).reshape((sample_size,)),
                     "id": range(0, sample_size),
                 }
@@ -262,6 +264,7 @@ class TestIPW(
     def test_ipw_supports_custom_sklearn_model(self) -> None:
         """Custom sklearn models (e.g., RandomForest) can drive propensity scores."""
 
+        # pyrefly: ignore [bad-argument-type]
         rng = np.random.RandomState(1234)
         sample = pd.DataFrame(
             {
@@ -300,6 +303,7 @@ class TestIPW(
     def test_ipw_supports_custom_model_parameter(self) -> None:
         """The ``model`` parameter accepts sklearn classifiers directly."""
 
+        # pyrefly: ignore [bad-argument-type]
         rng = np.random.RandomState(11)
         sample = pd.DataFrame({"a": rng.normal(size=25), "b": rng.binomial(1, 0.3, 25)})
         target = pd.DataFrame({"a": rng.normal(size=40), "b": rng.binomial(1, 0.6, 40)})
@@ -601,6 +605,7 @@ class TestIPW(
     def test_ipw_supports_dense_only_estimators(self) -> None:
         """Estimators that require dense matrices (e.g., GaussianNB) are supported."""
 
+        # pyrefly: ignore [bad-argument-type]
         rng = np.random.RandomState(42)
         sample = pd.DataFrame({"a": rng.normal(size=40), "b": rng.normal(size=40)})
         target = pd.DataFrame({"a": rng.normal(size=60), "b": rng.normal(size=60)})
@@ -624,6 +629,7 @@ class TestIPW(
     def test_ipw_extreme_probabilities_yield_finite_weights(self) -> None:
         """Models producing 0/1 probabilities result in finite stabilized weights."""
 
+        # pyrefly: ignore [bad-argument-type]
         rng = np.random.RandomState(0)
         sample = pd.DataFrame({"a": rng.binomial(1, 0.5, 50)})
         target = pd.DataFrame({"a": rng.binomial(1, 0.5, 75)})
@@ -668,6 +674,7 @@ class TestIPW(
                 full = super().predict_proba(X)
                 return full[:, :1]
 
+        # pyrefly: ignore [bad-argument-type]
         rng = np.random.RandomState(1)
         sample = pd.DataFrame({"a": rng.normal(size=40)})
         target = pd.DataFrame({"a": rng.normal(size=55)})
@@ -693,6 +700,7 @@ class TestIPW(
                 super().fit(X, y + 2, sample_weight=sample_weight)
                 return self
 
+        # pyrefly: ignore [bad-argument-type]
         rng = np.random.RandomState(12)
         sample = pd.DataFrame({"a": rng.normal(size=30)})
         target = pd.DataFrame({"a": rng.normal(size=40)})
@@ -721,6 +729,7 @@ class TestIPW(
                 proba = super().predict_proba(X)
                 return proba[:, ::-1]
 
+        # pyrefly: ignore [bad-argument-type]
         rng = np.random.RandomState(19)
         sample = pd.DataFrame({"a": rng.normal(size=35)})
         target = pd.DataFrame({"a": rng.normal(size=40)})
@@ -771,6 +780,7 @@ class TestIPW(
 
     def test_ipw_stores_fit_time_model_matrices(self) -> None:
         """IPW model output persists fit-time sample/target matrices."""
+        # pyrefly: ignore [bad-argument-type]
         rng = np.random.RandomState(27)
         sample_df = pd.DataFrame({"a": rng.normal(size=50), "b": rng.normal(size=50)})
         target_df = pd.DataFrame({"a": rng.normal(size=70), "b": rng.normal(size=70)})
@@ -794,6 +804,7 @@ class TestIPW(
 
     def test_ipw_stores_resolved_formula_used_for_model_matrix(self) -> None:
         """Stored model formula reflects the effective resolved model_matrix formula."""
+        # pyrefly: ignore [bad-argument-type]
         rng = np.random.RandomState(44)
         sample_df = pd.DataFrame({"a": rng.normal(size=20), "b": rng.normal(size=20)})
         target_df = pd.DataFrame({"a": rng.normal(size=25), "b": rng.normal(size=25)})
@@ -819,6 +830,7 @@ class TestIPW(
 
     def test_ipw_stores_indices_with_fit_matrices_only(self) -> None:
         """Stored matrices include matching row indices even without fit metadata."""
+        # pyrefly: ignore [bad-argument-type]
         rng = np.random.RandomState(33)
         sample_df = pd.DataFrame({"a": rng.normal(size=12), "b": rng.normal(size=12)})
         target_df = pd.DataFrame({"a": rng.normal(size=15), "b": rng.normal(size=15)})
@@ -839,6 +851,7 @@ class TestIPW(
 
     def test_ipw_does_not_store_fit_matrices_by_default(self) -> None:
         """Fit matrices are omitted by default to avoid extra memory use."""
+        # pyrefly: ignore [bad-argument-type]
         rng = np.random.RandomState(31)
         sample_df = pd.DataFrame({"a": rng.normal(size=20), "b": rng.normal(size=20)})
         target_df = pd.DataFrame({"a": rng.normal(size=30), "b": rng.normal(size=30)})
@@ -854,6 +867,7 @@ class TestIPW(
 
     def test_ipw_does_not_store_fit_metadata_by_default(self) -> None:
         """Per-row fit metadata is omitted by default to preserve memory."""
+        # pyrefly: ignore [bad-argument-type]
         rng = np.random.RandomState(32)
         sample_df = pd.DataFrame({"a": rng.normal(size=20), "b": rng.normal(size=20)})
         target_df = pd.DataFrame({"a": rng.normal(size=30), "b": rng.normal(size=30)})
@@ -870,6 +884,7 @@ class TestIPW(
     def test_ipw_warns_when_penalty_factor_with_custom_model(self) -> None:
         """Providing penalty_factor with custom models emits a warning."""
 
+        # pyrefly: ignore [bad-argument-type]
         rng = np.random.RandomState(5)
         sample = pd.DataFrame({"a": rng.normal(size=30)})
         target = pd.DataFrame({"a": rng.normal(size=45)})
@@ -1148,6 +1163,7 @@ class TestIPW(
         A failure in this test may indicate issues in any of these components.
         """
         # Create consistent test datasets
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(2021)  # Fixed seed for reproducible results
         sample_size = 200
         target_size = 400
@@ -1441,6 +1457,7 @@ class TestIPWPenaltyFactor(balance.testutil.BalanceTestCase):
         the penalization of different covariates in the model.
         """
         # Setup: Create sample and target data
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(42)
         n = 100
         sample = pd.DataFrame(
@@ -1487,6 +1504,7 @@ class TestIPWPenaltyFactor(balance.testutil.BalanceTestCase):
         of 1/pf to avoid numerical issues with large penalties.
         """
         # Setup: Create sample and target data
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(123)
         n = 50
         sample = pd.DataFrame(
@@ -1531,6 +1549,7 @@ class TestIPWPenaltyFactor(balance.testutil.BalanceTestCase):
         different covariates based on their penalty_factor values.
         """
         # Setup: Create sample and target data
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(456)
         n = 50
         sample = pd.DataFrame(

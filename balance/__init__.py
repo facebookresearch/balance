@@ -21,6 +21,7 @@ from balance.sample_class import Sample  # noqa
 from balance.sample_frame import SampleFrame  # noqa
 from balance.util import TruncationFormatter  # noqa
 
+# pyrefly: ignore [unknown-name]
 global __version__
 __version__ = "0.19.0"
 

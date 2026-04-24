@@ -159,6 +159,7 @@ def weights_impact_on_outcome_ss(
         ci_lower, ci_upper = mean_diff, mean_diff
     else:
         t_stat, p_value = stats.ttest_rel(yw1, yw0, nan_policy="omit")
+        # pyrefly: ignore [missing-attribute]
         t_crit = stats.t.ppf((1 + conf_level) / 2, df=n_obs - 1)
         margin = t_crit * diff_std / np.sqrt(n_obs)
         ci_lower, ci_upper = mean_diff - margin, mean_diff + margin

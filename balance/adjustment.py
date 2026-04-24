@@ -347,6 +347,7 @@ def default_transformations(
         if (is_numeric_dtype(v)) and (not is_bool_dtype(v)):
             transformations[k] = balance_util.quantize
         else:
+            # pyrefly: ignore [unsupported-operation]
             transformations[k] = balance_util.fct_lump
     return transformations
 
@@ -457,6 +458,7 @@ def apply_transformations(
     else:
         transformed = None
 
+    # pyrefly: ignore [no-matching-overload]
     out = pd.concat((added, transformed), axis=1)
 
     dropped_columns = list(set(all_data.columns.values) - set(out.columns.values))

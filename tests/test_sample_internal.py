@@ -74,12 +74,16 @@ s4: Sample = Sample.from_frame(
 
 class TestSamplePrivateAPI(balance.testutil.BalanceTestCase):
     def test__links(self) -> None:
+        # pyrefly: ignore [missing-attribute]
         self.assertEqual(len(s1._links.keys()), 0)
 
+        # pyrefly: ignore [unsupported-operation]
         self.assertTrue(s3._links["target"] is s2)
         self.assertTrue(s3.has_target())
 
+        # pyrefly: ignore [unsupported-operation]
         self.assertTrue(s3_adjusted_null._links["target"] is s2)
+        # pyrefly: ignore [unsupported-operation]
         self.assertTrue(s3_adjusted_null._links["unadjusted"] is s3)
         self.assertTrue(s3_adjusted_null.has_target())
 
@@ -431,6 +435,7 @@ class TestSampleInternalSampleFrame(
         s_with_target = s.set_target(t)
         self.assertIsNotNone(s_with_target._sample_frame)
         # Target should also have its own SampleFrame
+        # pyrefly: ignore [unsupported-operation]
         target = s_with_target._links["target"]
         self.assertIsNotNone(target._sample_frame)
 

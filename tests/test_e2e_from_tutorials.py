@@ -572,6 +572,7 @@ Bar lengths are proportional to weighted frequency within each dataset.
     # 14. Outcomes
     # -----------------------------------------------------------------------
     def test_outcomes_summary(self) -> None:
+        # pyrefly: ignore [missing-attribute]
         summary = self.adjusted.outcomes().summary()
         _expected_str = """  # noqa: F841
 1 outcomes: ['happiness']
@@ -608,6 +609,7 @@ happiness  53.295  56.278      48.559  (52.096, 54.495)  (55.961, 56.595)  (47.6
         import matplotlib
 
         matplotlib.use("Agg")
+        # pyrefly: ignore [missing-attribute]
         self.adjusted.outcomes().plot()
 
     # -----------------------------------------------------------------------

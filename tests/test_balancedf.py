@@ -166,6 +166,7 @@ s3_null_madeup_weights: Sample = deepcopy(s3_null)
 s3_null_madeup_weights.set_weights(pd.Series([1, 2, 3, 1], index=s3_null.df.index))
 
 s4: Sample = TestDataFactory.create_sample_with_null_values()
+# pyrefly: ignore [bad-assignment]
 o: BalanceDFOutcomes = s1.outcomes()
 s_o: Sample = TestDataFactory.create_multi_outcome_sample()
 t_o: Sample = TestDataFactory.create_large_target_outcome_sample()
@@ -188,7 +189,9 @@ class TestBalanceDFOutcomes(BalanceTestCase):
         """
         self.assertTrue(isinstance(s4.outcomes(), BalanceDFOutcomes))
         self.assertEqual(
-            s4.outcomes().df, pd.DataFrame({"b": (0, None, 2), "c": ("a", "b", "c")})
+            # pyrefly: ignore [missing-attribute]
+            s4.outcomes().df,
+            pd.DataFrame({"b": (0, None, 2), "c": ("a", "b", "c")}),
         )
 
         # Test with multicharacter string name
@@ -196,6 +199,7 @@ class TestBalanceDFOutcomes(BalanceTestCase):
             pd.DataFrame({"aardvark": (0, None, 2), "id": (1, 2, 3)}),
             outcome_columns="aardvark",
         )
+        # pyrefly: ignore [missing-attribute]
         self.assertEqual(s.outcomes().df, pd.DataFrame({"aardvark": (0, None, 2)}))
 
         # Null outcomes
@@ -216,6 +220,7 @@ class TestBalanceDFOutcomes(BalanceTestCase):
         with self.assertRaisesRegex(TypeError, "'DataFrame' object is not callable"):
             o.df()  # pyre-ignore[29]: Testing property call error
         # Here is how we can call it as a function:
+        # pyrefly: ignore [not-callable]
         self.assertEqual(BalanceDFOutcomes.df.fget(o), o.df)
 
         # Check values are as expected:
@@ -306,6 +311,7 @@ class TestBalanceDFOutcomes(BalanceTestCase):
         - Error handling for mismatched column structures
         """
         self.assertEqual(
+            # pyrefly: ignore [missing-attribute]
             s_o.outcomes().relative_response_rates(),
             pd.DataFrame(
                 {"o1": [100.0, 4], "o2": [75.0, 3]}, index=pd.Index(["%", "n"])
@@ -313,10 +319,12 @@ class TestBalanceDFOutcomes(BalanceTestCase):
             lazy=True,
         )
 
+        # pyrefly: ignore [missing-attribute]
         self.assertEqual(s_o.outcomes().relative_response_rates(target=True), None)
 
         # compared with a larget target
         self.assertEqual(
+            # pyrefly: ignore [missing-attribute]
             s_o2.outcomes()
             .relative_response_rates(True, per_column=True)
             .round(3)
@@ -332,6 +340,7 @@ class TestBalanceDFOutcomes(BalanceTestCase):
         )
         # Relative to per column:
         self.assertEqual(
+            # pyrefly: ignore [missing-attribute]
             s_o2.outcomes()
             .relative_response_rates(target=df_target, per_column=True)
             .to_dict(),
@@ -343,16 +352,19 @@ class TestBalanceDFOutcomes(BalanceTestCase):
         with self.assertRaisesRegex(
             ValueError, "df and df_target must have the exact same columns*"
         ):
+            # pyrefly: ignore [missing-attribute]
             s_o2.outcomes().relative_response_rates(
                 df_target.iloc[:, 0:1], per_column=True
             )
 
         # Relative to all notnull rows in outcome
         self.assertEqual(
+            # pyrefly: ignore [missing-attribute]
             s_o2.outcomes().relative_response_rates(target=True).round(3).to_dict(),
             {"o1": {"n": 4.0, "%": 66.667}, "o2": {"n": 3.0, "%": 50.0}},
         )
         self.assertEqual(
+            # pyrefly: ignore [missing-attribute]
             s_o2.outcomes()
             .relative_response_rates(
                 target=df_target,
@@ -360,10 +372,12 @@ class TestBalanceDFOutcomes(BalanceTestCase):
             )
             .round(3)
             .to_dict(),
+            # pyrefly: ignore [missing-attribute]
             s_o2.outcomes().relative_response_rates(target=True).round(3).to_dict(),
         )
         # This will also work with different shape of columns (exactly what we need for .summary())
         self.assertEqual(
+            # pyrefly: ignore [missing-attribute]
             s_o.outcomes()
             .relative_response_rates(df_target.iloc[:, 0:1], per_column=False)
             .round(3)
@@ -374,6 +388,7 @@ class TestBalanceDFOutcomes(BalanceTestCase):
     def test_BalanceDFOutcomes_target_response_rates(self) -> None:
         """Test target_response_rates method for calculating target sample response rates."""
         self.assertEqual(
+            # pyrefly: ignore [missing-attribute]
             s_o2.outcomes().target_response_rates(),
             pd.DataFrame({"o1": {"n": 8.0, "%": 100.0}, "o2": {"n": 6.0, "%": 75.0}}),
             lazy=True,
@@ -414,6 +429,7 @@ class TestBalanceDFOutcomes(BalanceTestCase):
                 %  100.0  75.0
             """
         self.assertEqual(
+            # pyrefly: ignore [missing-attribute]
             _remove_whitespace_and_newlines(s_o.outcomes().summary()),
             _remove_whitespace_and_newlines(e_str),
         )
@@ -449,6 +465,7 @@ class TestBalanceDFOutcomes(BalanceTestCase):
                 %  100.0  75.0
             """
         self.assertEqual(
+            # pyrefly: ignore [missing-attribute]
             _remove_whitespace_and_newlines(s_o2.outcomes().summary()),
             _remove_whitespace_and_newlines(e_str),
         )
@@ -467,6 +484,7 @@ class TestBalanceDFOutcomes(BalanceTestCase):
             outcome_columns=("outcome",),
         )
 
+        # pyrefly: ignore [missing-attribute]
         impact = sample.outcomes().weights_impact_on_outcome_ss()
         self.assertIsNotNone(impact)
         self.assertIsInstance(impact, pd.DataFrame)
@@ -488,6 +506,7 @@ class TestBalanceDFOutcomes(BalanceTestCase):
         with patch.object(
             BalanceDFOutcomes, "_weights", new_callable=PropertyMock, return_value=None
         ):
+            # pyrefly: ignore [missing-attribute]
             impact = sample.outcomes().weights_impact_on_outcome_ss()
 
         self.assertIsNone(impact)
@@ -506,6 +525,7 @@ class TestBalanceDFOutcomes(BalanceTestCase):
             outcome_columns=("outcome",),
         )
 
+        # pyrefly: ignore [missing-attribute]
         impact = sample.outcomes().weights_impact_on_outcome_ss(
             w0=pd.Series([1.0, 1.0, 1.0, 1.0])
         )
@@ -525,6 +545,7 @@ class TestBalanceDFOutcomes(BalanceTestCase):
             outcome_columns=("outcome",),
         )
 
+        # pyrefly: ignore [missing-attribute]
         summary = sample.outcomes().summary()
         self.assertIn("Weights impact on outcomes (t_test)", summary)
 
@@ -543,6 +564,7 @@ class TestBalanceDFCovars(BalanceTestCase):
         """
         # Verify that the @property decorator works properly.
         self.assertTrue(isinstance(BalanceDFCovars.df, property))
+        # pyrefly: ignore [not-callable]
         self.assertEqual(BalanceDFOutcomes.df.fget(c), c.df)
         # We can no longer call .df() as if it was a function:
         with self.assertRaisesRegex(TypeError, "'DataFrame' object is not callable"):
@@ -781,6 +803,7 @@ class TestBalanceDFWeights(BalanceTestCase):
             sample.weights().r_indicator(target_propensity=[1.0])
 
     def test_BalanceDFWeights_trim(self) -> None:
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(112358)  # Fix seed for reproducibility
         s = Sample.from_frame(
             pd.DataFrame({"w": np.random.uniform(0, 1, 10000), "id": range(0, 10000)}),
@@ -875,13 +898,17 @@ class TestBalanceDF__balancedf_child_from_linked_samples(BalanceTestCase):
         )
 
         self.assertEqual(
-            list(s1.outcomes()._balancedf_child_from_linked_samples().keys()), ["self"]
+            # pyrefly: ignore [missing-attribute]
+            list(s1.outcomes()._balancedf_child_from_linked_samples().keys()),
+            ["self"],
         )
         self.assertEqual(
+            # pyrefly: ignore [missing-attribute]
             list(s3.outcomes()._balancedf_child_from_linked_samples().keys()),
             ["self", "target"],
         )
         self.assertEqual(
+            # pyrefly: ignore [missing-attribute]
             list(s3_null.outcomes()._balancedf_child_from_linked_samples().keys()),
             ["self", "target", "unadjusted"],
         )
@@ -918,6 +945,7 @@ class TestBalanceDF__balancedf_child_from_linked_samples(BalanceTestCase):
     def test__balancedf_child_from_linked_samples_outcomes_with_none(self) -> None:
         """Test that _balancedf_child_from_linked_samples handles None outcomes correctly."""
         # Notice that with something like outcomes, we might get a None in return!
+        # pyrefly: ignore [missing-attribute]
         the_dict = s3_null.outcomes()._balancedf_child_from_linked_samples()
         exp = [
             BalanceDFOutcomes,
@@ -953,6 +981,7 @@ class TestBalanceDF__balancedf_child_from_linked_samples(BalanceTestCase):
     def test__balancedf_child_from_linked_samples_outcomes_values(self) -> None:
         """Test that outcomes DataFrame values are correctly preserved, excluding None values."""
         # for outcomes
+        # pyrefly: ignore [missing-attribute]
         the_dict = s3_null.outcomes()._balancedf_child_from_linked_samples()
         exp = [{"o": {0: 7, 1: 8, 2: 9, 3: 10}}, {"o": {0: 7, 1: 8, 2: 9, 3: 10}}]
         # need to exclude None v:
@@ -1274,6 +1303,7 @@ class TestBalanceDF_ci(BalanceTestCase):
 
     def test_BalanceDF_mean_with_ci(self) -> None:
         self.assertEqual(
+            # pyrefly: ignore [missing-attribute]
             s_o2.outcomes().mean_with_ci().to_dict(),
             {
                 "self": {
@@ -1330,6 +1360,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
             s1.weights().asmd()
 
         with self.assertRaisesRegex(ValueError, "has no target set"):
+            # pyrefly: ignore [missing-attribute]
             s3_null.outcomes().asmd()
 
         self.assertEqual(
@@ -2108,6 +2139,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
         # TODO: bugfix - adjust fails with apply_transform when inputting a df with categorical column :(
 
         # Prepare dummy data
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(112358)
 
         d = pd.DataFrame(np.random.rand(1000, 3))
@@ -2345,6 +2377,7 @@ class TestBalanceDF__df_with_ids(BalanceTestCase):
         # Test it has an id column:
         self.assertTrue("id" in s1.weights()._df_with_ids().columns)
         self.assertTrue("id" in s1.covars()._df_with_ids().columns)
+        # pyrefly: ignore [missing-attribute]
         self.assertTrue("id" in s_o.outcomes()._df_with_ids().columns)
 
         # Test it has df columns:
@@ -2459,6 +2492,7 @@ class TestBalanceDF_summary(BalanceTestCase):
 
 class TestBalanceDF__str__(BalanceTestCase):
     def testBalanceDF__str__(self) -> None:
+        # pyrefly: ignore [missing-attribute]
         self.assertTrue(s1.outcomes().df.__str__() in s1.outcomes().__str__())
 
     def test_BalanceDFOutcomes___str__(self) -> None:
@@ -2604,9 +2638,11 @@ class TestBalanceDFCovars_from_frame(BalanceTestCase):
 
         # Assert
         self.assertIsInstance(result, BalanceDFCovars)
+        # pyrefly: ignore [missing-attribute]
         self.assertIsNotNone(result._sample.weights())
 
         # Verify actual weight values are correctly applied
+        # pyrefly: ignore [missing-attribute]
         weights_df = result._sample.weights().df
         self.assertEqual(weights_df["weight"].tolist(), [0.5, 1.0, 1.5])
 
@@ -2966,6 +3002,7 @@ class TestBalanceDFOutcomes_edge_cases(BalanceTestCase):
         sample = Sample.from_frame(df, id_column="id", outcome_columns="o")
 
         # Act
+        # pyrefly: ignore [missing-attribute]
         rrr = sample.outcomes().relative_response_rates()
 
         # Assert
@@ -2986,6 +3023,7 @@ class TestBalanceDFOutcomes_edge_cases(BalanceTestCase):
         outcomes = s1.outcomes()
 
         # Act
+        # pyrefly: ignore [missing-attribute]
         summary = outcomes.summary()
 
         # Assert
@@ -3358,12 +3396,14 @@ class TestBalanceDFOutcomesOutcomeSdProp(BalanceTestCase):
     def test_outcome_sd_prop_null_adjustment(self) -> None:
         """Test outcome_sd_prop returns 0 for null adjustment."""
         s3_adj = s3.adjust(method="null")
+        # pyrefly: ignore [missing-attribute]
         result = s3_adj.outcomes().outcome_sd_prop()
         self.assertEqual(result, pd.Series((0.0), index=["o"]))
 
     def test_outcome_sd_prop_no_unadjusted_raises(self) -> None:
         """Test outcome_sd_prop raises when no unadjusted link."""
         with self.assertRaises(ValueError):
+            # pyrefly: ignore [missing-attribute]
             s1.outcomes().outcome_sd_prop()
 
 
@@ -3373,12 +3413,14 @@ class TestBalanceDFOutcomesOutcomeVarianceRatio(BalanceTestCase):
     def test_outcome_variance_ratio_null_adjustment(self) -> None:
         """Test outcome_variance_ratio returns 1.0 for null adjustment."""
         s3_adj = s3.adjust(method="null")
+        # pyrefly: ignore [missing-attribute]
         result = s3_adj.outcomes().outcome_variance_ratio()
         self.assertEqual(result, pd.Series([1.0], index=["o"]))
 
     def test_outcome_variance_ratio_no_unadjusted_raises(self) -> None:
         """Test outcome_variance_ratio raises when no unadjusted link."""
         with self.assertRaises(ValueError):
+            # pyrefly: ignore [missing-attribute]
             s1.outcomes().outcome_variance_ratio()
 
 
@@ -3673,6 +3715,7 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
 
         # outcomes
         outcomes = s3_null.outcomes()
+        # pyrefly: ignore [missing-attribute]
         self.assertIsNotNone(outcomes.df)
 
 

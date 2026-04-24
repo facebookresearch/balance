@@ -95,6 +95,7 @@ class BalanceCLI:
         self._weight_trimming_mean_ratio: float | None = 20.0
         # TODO(talgalili): Support BalanceFrame as an alternative entry point to Sample
         self._sample_cls: Type[balance_sample_cls] = balance_sample_cls
+        # pyrefly: ignore [bad-assignment]
         self._sample_package_name: str = __package__
         self._sample_package_version: str = __version__
 
@@ -142,6 +143,7 @@ class BalanceCLI:
             if keep_cols is not None:
                 needed_columns.extend(keep_cols)
         if self.has_keep_row_column():
+            # pyrefly: ignore [bad-argument-type]
             needed_columns.append(self.keep_row_column())
         if self.has_outcome_columns():
             outcome_columns = self.outcome_columns()
@@ -634,6 +636,7 @@ class BalanceCLI:
         num_lambdas: int | None = 250,
         weight_trimming_mean_ratio: float | None = 20,
         sample_cls: Type[balance_sample_cls] = balance_sample_cls,
+        # pyrefly: ignore [bad-function-definition]
         sample_package_name: str = __package__,
     ) -> Dict[str, pd.DataFrame]:
         """Run adjustment for a batch of data and return outputs.
@@ -1040,6 +1043,7 @@ class BalanceCLI:
             self._num_lambdas,
             self._weight_trimming_mean_ratio,
             self._sample_cls,
+            # pyrefly: ignore [bad-assignment]
             self._sample_package_name,
             self._sample_package_version,
         ) = (

@@ -226,7 +226,9 @@ class Testpoststratify(
         # age>0.4 has 4 times as many people than age <0.4 in the target
         # Check that the weights come out as 0.2 and 0.8
         eps = 0.05
+        # pyrefly: ignore [missing-attribute]
         self.assertAlmostEqual(result[s.age < 0.4].sum() / size, 0.2, delta=eps)
+        # pyrefly: ignore [missing-attribute]
         self.assertAlmostEqual(result[s.age >= 0.4].sum() / size, 0.8, delta=eps)
 
         # for strings
@@ -248,8 +250,11 @@ class Testpoststratify(
         # since these are combined in default transformations (into '_lumped_other').
         # Hence their frequency would be as in sample
         eps = 0.05
+        # pyrefly: ignore [missing-attribute]
         self.assertAlmostEqual(result[s.x == "a"].sum() / size, 0.95, delta=eps)
+        # pyrefly: ignore [missing-attribute]
         self.assertAlmostEqual(result[s.x == "b"].sum() / size, 0.035, delta=eps)
+        # pyrefly: ignore [missing-attribute]
         self.assertAlmostEqual(result[s.x == "c"].sum() / size, 0.015, delta=eps)
 
     def test_poststratify_formula(self) -> None:

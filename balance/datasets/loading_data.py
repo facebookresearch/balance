@@ -64,6 +64,7 @@ def load_sim_data(
         return out
 
     if version == "01":
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(2022 - 11 - 8)  # for reproducibility
         n_target = 10000
         target_df = pd.DataFrame(
@@ -85,6 +86,7 @@ def load_sim_data(
         # We also have missing values in gender
         target_df.loc[3:900, "gender"] = np.nan
 
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(2023 - 5 - 14)  # for reproducibility
         n_sample = 1000
         sample_df = pd.DataFrame(

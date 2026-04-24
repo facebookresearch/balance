@@ -16,6 +16,8 @@ import pandas as pd
 from balance.stats_and_plots.weights_stats import _check_weights_are_valid
 from balance.util import model_matrix, rm_mutual_nas
 from balance.utils.input_validation import _assert_type
+
+# pyrefly: ignore [missing-module-attribute]
 from scipy.stats import norm
 from statsmodels.stats.weightstats import DescrStatsW
 
@@ -96,9 +98,11 @@ def _prepare_weighted_stat_args(
         # Since v is guaranteed to be DataFrame and w is guaranteed to be Series at this point,
         # we can safely cast the results
         v = _safe_replace_and_infer(v)
+        # pyrefly: ignore [bad-assignment]
         w = _safe_replace_and_infer(w)
 
     v = v.reset_index(drop=True)
+    # pyrefly: ignore [missing-attribute]
     w = w.reset_index(drop=True)
 
     _check_weights_are_valid(w)
@@ -673,6 +677,7 @@ def relative_frequency_table(
         elif isinstance(df, pd.Series):
             if df.name is None:
                 df.name = "group"
+            # pyrefly: ignore [bad-assignment]
             column = df.name
         else:
             raise TypeError("argument `df` must be a pandas DataFrame or Series")

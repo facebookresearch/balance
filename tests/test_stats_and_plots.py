@@ -1792,6 +1792,7 @@ class TestBalance_weighted_comparisons_stats(
         sample_p = np.array([0.1, 0.2, 0.3])
         target_p = np.array([0.2, 0.4])
 
+        # pyrefly: ignore [bad-argument-type]
         result = weighted_comparisons_stats.r_indicator(sample_p, target_p)
         combined = np.concatenate((sample_p, target_p))
         expected = np.float64(1 - 2 * np.sqrt(np.var(combined, ddof=1)))
@@ -1809,6 +1810,7 @@ class TestBalance_weighted_comparisons_stats(
         sample_p = np.array([[0.1], [0.2]])
         target_p = pd.DataFrame({"p": [0.3, 0.4]})
 
+        # pyrefly: ignore [bad-argument-type]
         result = weighted_comparisons_stats.r_indicator(sample_p, target_p)
         expected = np.float64(1 - 2 * np.sqrt(np.var([0.1, 0.2, 0.3, 0.4], ddof=1)))
         self.assertAlmostEqual(result, expected)
@@ -1818,6 +1820,7 @@ class TestBalance_weighted_comparisons_stats(
         sample_p = np.array([0.0, 0.0, 1.0])
         target_p = np.array([1.0, 1.0, 0.0])
 
+        # pyrefly: ignore [bad-argument-type]
         result = weighted_comparisons_stats.r_indicator(sample_p, target_p)
         combined = np.concatenate((sample_p, target_p))
         expected = np.float64(np.clip(1 - 2 * np.sqrt(np.var(combined, ddof=1)), 0, 1))
@@ -1875,6 +1878,7 @@ class TestBalance_weighted_comparisons_stats(
         ):
             weighted_comparisons_stats.r_indicator(
                 [0.1, 0.2],
+                # pyrefly: ignore [bad-argument-type]
                 np.array([[0.3, 0.4], [0.5, 0.6]]),
             )
 
@@ -1884,6 +1888,7 @@ class TestBalance_weighted_comparisons_stats(
         ):
             weighted_comparisons_stats.r_indicator(
                 [0.1, 0.2],
+                # pyrefly: ignore [bad-argument-type]
                 np.array([[0.3, 0.4]]),
             )
 
@@ -1907,6 +1912,7 @@ class TestBalance_weighted_comparisons_stats(
         )
 
         # Create reproducible test data
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(876324)
         test_data = pd.DataFrame(np.random.rand(1000, 11))
         test_data["id"] = range(0, test_data.shape[0])
@@ -2558,6 +2564,7 @@ class TestKLDivergence(balance.testutil.BalanceTestCase):
         """
         from balance.stats_and_plots import weighted_comparisons_stats
 
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(42)
         sample_df = pd.DataFrame(
             {

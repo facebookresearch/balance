@@ -186,7 +186,9 @@ class BalanceTestCase(unittest.TestCase):
             np.testing.assert_array_equal(np.array(first), np.array(second), **kwargs)
         elif isinstance(first, pd.DataFrame) or isinstance(second, pd.DataFrame):
             _assert_frame_equal_lazy(
+                # pyrefly: ignore [bad-argument-type]
                 first,
+                # pyrefly: ignore [bad-argument-type]
                 second,
                 lazy,
             )

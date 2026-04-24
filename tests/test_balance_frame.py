@@ -392,8 +392,11 @@ class TestBalanceFrameAdjust(BalanceTestCase):
         adj2 = adj1.adjust(method="null")
         adj3 = adj2.adjust(method="null")
         # The unadjusted link should always be the original (self.bf)
+        # pyrefly: ignore [unsupported-operation]
         self.assertIs(adj1._links["unadjusted"], self.bf)
+        # pyrefly: ignore [unsupported-operation]
         self.assertIs(adj2._links["unadjusted"], self.bf)
+        # pyrefly: ignore [unsupported-operation]
         self.assertIs(adj3._links["unadjusted"], self.bf)
         # _build_links_dict should also return the original pre-adjust
         links2 = adj2._build_links_dict()
@@ -593,6 +596,7 @@ class TestBalanceFrameSetTarget(BalanceTestCase):
         bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
         adjusted = bf.adjust(method="null")
         self.assertTrue(adjusted.is_adjusted)
+        # pyrefly: ignore [bad-argument-type]
         self.assertIn("unadjusted", adjusted._links)
         # Replace target on the adjusted frame — should reset adjustment state
         tgt2_df = pd.DataFrame(
@@ -609,6 +613,7 @@ class TestBalanceFrameSetTarget(BalanceTestCase):
         self.assertIs(retargeted, adjusted)
         self.assertFalse(retargeted.is_adjusted)
         self.assertIsNone(retargeted.model)
+        # pyrefly: ignore [bad-argument-type]
         self.assertNotIn("unadjusted", retargeted._links)
 
     def test_set_target_on_adjusted_logs_reset_warning(self) -> None:
@@ -1299,6 +1304,7 @@ class TestBalanceFrameDfExportFilter(BalanceTestCase):
         filtered = self.bf_adjusted.keep_only_some_rows_columns(rows_to_keep="x1 > 15")
         self.assertEqual(len(filtered.responders._df), 2)
         self.assertTrue(filtered.is_adjusted)
+        # pyrefly: ignore [missing-attribute]
         self.assertEqual(len(filtered.unadjusted._df), 2)
 
     def test_keep_rows_target_undefined_variable(self) -> None:
@@ -2062,6 +2068,7 @@ class TestBalanceFrameSetAsPreAdjust(BalanceTestCase):
         reset = adjusted.set_as_pre_adjust()
         self.assertIsNot(reset, adjusted)
         self.assertFalse(reset.is_adjusted)
+        # pyrefly: ignore [bad-argument-type]
         self.assertNotIn("unadjusted", reset._links)
         self.assertIsNone(reset.model)
         # Original object remains adjusted and keeps its model.
@@ -2073,6 +2080,7 @@ class TestBalanceFrameSetAsPreAdjust(BalanceTestCase):
         result = adjusted.set_as_pre_adjust(inplace=True)
         self.assertIs(result, adjusted)
         self.assertFalse(adjusted.is_adjusted)
+        # pyrefly: ignore [bad-argument-type]
         self.assertNotIn("unadjusted", adjusted._links)
         self.assertIsNone(adjusted.model)
 
@@ -2095,6 +2103,7 @@ class TestBalanceFrameSetAsPreAdjust(BalanceTestCase):
 
     def test_set_as_pre_adjust_copy_does_not_deepcopy_unadjusted_link(self) -> None:
         adjusted = self._make_adjusted()
+        # pyrefly: ignore [unsupported-operation]
         adjusted._links["unadjusted"] = self._NoDeepcopy()
         reset = adjusted.set_as_pre_adjust()
         self.assertFalse(reset.is_adjusted)
@@ -2448,8 +2457,10 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
 
     def test_fit_rejects_positional_forwarding(self) -> None:
         with self.assertRaises(TypeError):
+            # pyrefly: ignore [bad-argument-count]
             self.bf.fit("ipw")
         with self.assertRaises(TypeError):
+            # pyrefly: ignore [bad-argument-count]
             self.bf.fit(None, "ipw", "unexpected positional")
 
     def test_fit_callable_ipw_enables_store_fit_matrices(self) -> None:
@@ -2526,10 +2537,13 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
     def test_design_matrix_predict_proba_invalid_on_raises(self) -> None:
         adjusted = self.bf.fit(method="ipw")
         with self.assertRaises(ValueError):
+            # pyrefly: ignore [no-matching-overload]
             adjusted.design_matrix(on="bad")
         with self.assertRaises(ValueError):
+            # pyrefly: ignore [no-matching-overload]
             adjusted.predict_proba(on="bad")
         with self.assertRaises(ValueError):
+            # pyrefly: ignore [no-matching-overload]
             adjusted.predict_proba(output="bad")
 
     def test_predict_proba_design_matrix_raise_for_non_ipw(self) -> None:
@@ -4449,6 +4463,7 @@ class TestBalanceFrameKeepOnlyPreAdjustAndLinks(BalanceTestCase):
                 pd.DataFrame({"id": ["3"], "z": [99.0], "weight": [1.0]})
             )
         )
+        # pyrefly: ignore [unsupported-operation]
         bf._links["test_link"] = linked_bf
         # Filter using column "x" which doesn't exist in linked_bf -> raises
         with self.assertLogs("balance", level="WARNING"):

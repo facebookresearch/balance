@@ -169,11 +169,17 @@ class BalanceFrame:
         properties stay consistent with ``_sf_sample``.
         """
         if isinstance(self, SampleFrame):
+            # pyrefly: ignore [missing-attribute]
             self._df = responder._df
+            # pyrefly: ignore [missing-attribute]
             self._id_column_name = responder._id_column_name
+            # pyrefly: ignore [missing-attribute]
             self._column_roles = responder._column_roles
+            # pyrefly: ignore [missing-attribute]
             self._weight_column_name = responder._weight_column_name
+            # pyrefly: ignore [missing-attribute]
             self._weight_metadata = responder._weight_metadata
+            # pyrefly: ignore [missing-attribute]
             self._df_dtypes = responder._df_dtypes
 
     @property
@@ -183,6 +189,7 @@ class BalanceFrame:
 
     @_df_dtypes.setter
     def _df_dtypes(self, value: pd.Series | None) -> None:
+        # pyrefly: ignore [missing-attribute]
         self._sf_sample._df_dtypes = value
 
     @property
@@ -229,6 +236,7 @@ class BalanceFrame:
                 "Cannot set _df to None. A BalanceFrame must always have a "
                 "backing DataFrame."
             )
+        # pyrefly: ignore [missing-attribute]
         self._sf_sample._df = value
 
     @property
@@ -359,6 +367,7 @@ class BalanceFrame:
         instance._adjustment_model = None
         instance._links = collections.defaultdict(list)
         if target is not None:
+            # pyrefly: ignore [unsupported-operation]
             instance._links["target"] = target
 
         # When the instance is also a SampleFrame (e.g., Sample inherits
@@ -514,6 +523,7 @@ class BalanceFrame:
         if isinstance(target, BalanceFrame):
             # BalanceFrame / Sample path: return a deep copy (immutable)
             new_copy = deepcopy(self)
+            # pyrefly: ignore [unsupported-operation]
             new_copy._links["target"] = target
             BalanceFrame._validate_covariate_overlap(
                 new_copy._sf_sample, target._sf_sample
@@ -537,10 +547,12 @@ class BalanceFrame:
                         "instance."
                     )
                 self._sf_target = target
+                # pyrefly: ignore [unsupported-operation]
                 self._links["target"] = target
                 # Reset adjustment state — old adjustment is no longer valid.
                 self._sf_sample = self._sf_sample_pre_adjust
                 self._adjustment_model = None
+                # pyrefly: ignore [missing-attribute]
                 self._links.pop("unadjusted", None)
                 self._sync_sampleframe_state_from_responder(self._sf_sample)
                 return self
@@ -597,11 +609,14 @@ class BalanceFrame:
             bf = type(self)._create(sample=frozen, target=self._sf_target)
             # Preserve a richer target link (e.g., BalanceFrame/Sample object)
             # when present on the original.
+            # pyrefly: ignore [not-iterable]
             if "target" in self._links:
+                # pyrefly: ignore [unsupported-operation]
                 bf._links["target"] = self._links["target"]
         bf._sf_sample_pre_adjust = frozen
         bf._sf_sample = frozen
         bf._adjustment_model = None
+        # pyrefly: ignore [missing-attribute]
         bf._links.pop("unadjusted", None)
         bf._sync_sampleframe_state_from_responder(frozen)
         return bf
@@ -744,11 +759,16 @@ class BalanceFrame:
         # Always link back to the original unadjusted BalanceFrame so that
         # 3-way comparisons (adjusted vs original vs target) span the full
         # adjustment chain, not just the last step.
+        # pyrefly: ignore [not-iterable]
         if "unadjusted" in self._links:
+            # pyrefly: ignore [unsupported-operation]
             new_bf._links["unadjusted"] = self._links["unadjusted"]
         else:
+            # pyrefly: ignore [unsupported-operation]
             new_bf._links["unadjusted"] = self
+        # pyrefly: ignore [not-iterable]
         if "target" in self._links:
+            # pyrefly: ignore [unsupported-operation]
             new_bf._links["target"] = self._links["target"]
 
         raw_model = result.get("model")
@@ -1239,7 +1259,9 @@ class BalanceFrame:
                 sample=deepcopy(self._sf_sample),
                 target=deepcopy(self._sf_target),
             )
+            # pyrefly: ignore [not-iterable]
             if "target" in self._links:
+                # pyrefly: ignore [unsupported-operation]
                 bf._links["target"] = deepcopy(self._links["target"])
 
         # Separate _sf_sample from _sf_sample_pre_adjust BEFORE mutating weights,
@@ -1255,6 +1277,7 @@ class BalanceFrame:
 
         # Store the model and set adjustment state
         bf._adjustment_model = dict(model)
+        # pyrefly: ignore [unsupported-operation]
         bf._links["unadjusted"] = type(self)._create(
             sample=bf._sf_sample_pre_adjust,
             target=bf._sf_target,
@@ -2486,6 +2509,7 @@ class BalanceFrame:
             )
 
         responders_sf = SampleFrame.from_sample(sample)
+        # pyrefly: ignore [unsupported-operation]
         target_sf = SampleFrame.from_sample(sample._links["target"])
 
         bf = cls._create(sample=responders_sf, target=target_sf)
@@ -2493,6 +2517,7 @@ class BalanceFrame:
         if sample.is_adjusted():
             # Set unadjusted to a DIFFERENT SampleFrame so is_adjusted returns True
             bf._sf_sample_pre_adjust = SampleFrame.from_sample(
+                # pyrefly: ignore [unsupported-operation]
                 sample._links["unadjusted"]
             )
             bf._adjustment_model = sample.model
@@ -2564,6 +2589,7 @@ class BalanceFrame:
                 standardize_types=False,
             )
             result._sf_sample_pre_adjust = unadj_sf
+            # pyrefly: ignore [unsupported-operation]
             result._links["unadjusted"] = unadj_sf
             result._adjustment_model = self._adjustment_model
 
@@ -2822,6 +2848,7 @@ class BalanceFrame:
             de, ess, essp = self._design_effect_diagnostics(self._df.shape[0])
             outcome_means = None
             if self._outcome_columns is not None:
+                # pyrefly: ignore [missing-attribute]
                 outcome_means = self.outcomes().mean()
             return _build_summary(
                 is_adjusted=False,
@@ -2918,6 +2945,7 @@ class BalanceFrame:
         outcome_columns = self._sf_sample.df_outcomes
         outcome_impact = None
         if weights_impact_on_outcome_method is not None and outcome_columns is not None:
+            # pyrefly: ignore [missing-attribute]
             outcome_impact = self.outcomes().weights_impact_on_outcome_ss(
                 method=weights_impact_on_outcome_method,
                 conf_level=weights_impact_on_outcome_conf_level,
@@ -3001,6 +3029,7 @@ class BalanceFrame:
         covars = self.covars()
         outcomes = self.outcomes()
         ignored = self._sf_sample.df_ignored
+        # pyrefly: ignore [no-matching-overload]
         return pd.concat(
             (
                 self.id_series,
@@ -3163,6 +3192,7 @@ class BalanceFrame:
             df = df.loc[:, df.columns.isin(keep_set)]
 
             new_covars = [c for c in sf._column_roles["covars"] if c in keep_set]
+            # pyrefly: ignore [missing-attribute]
             sf._column_roles = dict(sf._column_roles)
             sf._column_roles["covars"] = new_covars
             if sf._column_roles["outcomes"]:
@@ -3178,6 +3208,7 @@ class BalanceFrame:
                     c for c in sf._column_roles["ignored"] if c in keep_set
                 ]
 
+        # pyrefly: ignore [missing-attribute]
         sf._df = df
         return sf
 
@@ -3345,7 +3376,9 @@ class BalanceFrame:
         new_bf._sf_sample_pre_adjust = self._sf_sample_pre_adjust
         new_bf._adjustment_model = self._adjustment_model
         # Preserve existing links (target, unadjusted).
+        # pyrefly: ignore [missing-attribute]
         for key, val in self._links.items():
+            # pyrefly: ignore [unsupported-operation]
             new_bf._links[key] = val
         return new_bf
 
@@ -3371,6 +3404,7 @@ class BalanceFrame:
                 f"set_unadjusted must be called with a BalanceFrame argument, got {type(second).__name__}"
             )
         new_bf = deepcopy(self)
+        # pyrefly: ignore [unsupported-operation]
         new_bf._links["unadjusted"] = second
         new_bf._sf_sample_pre_adjust = second._sf_sample
         return new_bf
@@ -3487,8 +3521,13 @@ class BalanceFrame:
 
         if self.has_target():
             common_variables = balance_util.choose_variables(
-                self, self._links["target"], variables=None
+                # pyrefly: ignore [unsupported-operation]
+                self,
+                # pyrefly: ignore [unsupported-operation]
+                self._links["target"],
+                variables=None,
             )
+            # pyrefly: ignore [unsupported-operation]
             target_str = self._links["target"].__str__().replace("\n", "\n\t")
             n_common = len(common_variables)
             common_variables = ",".join(common_variables)

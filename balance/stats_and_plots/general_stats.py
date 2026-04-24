@@ -85,6 +85,7 @@ def relative_response_rates(
         # If they are, we can proceed forward:
         target_n_notnull_rows = df_target.notnull().sum()
     else:  # number of notnull *rows* (i.e.: complete rows) in df_target
+        # pyrefly: ignore [missing-attribute]
         target_n_notnull_rows = df_target.notnull().all(axis=1).sum()
 
     if any(df_n_notnull_rows > target_n_notnull_rows):

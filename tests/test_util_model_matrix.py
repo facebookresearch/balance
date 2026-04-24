@@ -626,6 +626,7 @@ class TestUtil(
         """
         from balance.util import one_hot_encoding_greater_2  # noqa
         from patsy import (  # pyre-ignore[21]: Import `patsy.dmatrix` is not defined as a type.
+            # pyrefly: ignore [missing-module-attribute]
             dmatrix,
         )
 

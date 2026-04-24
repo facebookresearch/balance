@@ -281,6 +281,7 @@ def test_concat_mismatched_lengths_raises_error() -> None:
 
 def test_build_summary_matches_sample_summary() -> None:
     """Verify _build_summary produces the same output as Sample.summary()."""
+    # pyrefly: ignore [bad-argument-type]
     np.random.seed(42)
     sample = Sample.from_frame(
         pd.DataFrame(
@@ -351,6 +352,7 @@ def test_build_diagnostics_matches_sample_diagnostics() -> None:
 
     result = _build_diagnostics(
         covars_df=adjusted.covars().df,
+        # pyrefly: ignore [unsupported-operation]
         target_covars_df=adjusted._links["target"].covars().df,
         weights_summary=adjusted.weights().summary(),
         model_dict=adjusted.model,
@@ -367,6 +369,7 @@ def test_build_diagnostics_matches_sample_diagnostics() -> None:
 
 def test_build_diagnostics_with_ipw_matches_sample_diagnostics() -> None:
     """Verify _build_diagnostics matches Sample.diagnostics() for IPW adjustment."""
+    # pyrefly: ignore [bad-argument-type]
     np.random.seed(42)
     sample = Sample.from_frame(
         pd.DataFrame(
@@ -394,6 +397,7 @@ def test_build_diagnostics_with_ipw_matches_sample_diagnostics() -> None:
 
     result = _build_diagnostics(
         covars_df=adjusted.covars().df,
+        # pyrefly: ignore [unsupported-operation]
         target_covars_df=adjusted._links["target"].covars().df,
         weights_summary=adjusted.weights().summary(),
         model_dict=adjusted.model,
@@ -426,6 +430,7 @@ def test_build_diagnostics_model_dict_none_shows_unknown_method() -> None:
 
     result = _build_diagnostics(
         covars_df=adjusted.covars().df,
+        # pyrefly: ignore [unsupported-operation]
         target_covars_df=adjusted._links["target"].covars().df,
         weights_summary=adjusted.weights().summary(),
         model_dict=None,

@@ -398,6 +398,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         from numpy import random
 
         # Create test datasets with varied weights
+        # pyrefly: ignore [bad-argument-type]
         random.seed(96483)
 
         test_df = pd.DataFrame(
@@ -1115,6 +1116,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         """
         from balance.stats_and_plots.weighted_comparisons_plots import plot_qq
 
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(42)
         test_df = pd.DataFrame({"v1": np.random.uniform(size=50)})
 
@@ -1265,6 +1267,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_qq
 
         # Create test data with uniform distribution
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(42)
         test_df = pd.DataFrame(
             {
@@ -1366,6 +1369,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         )
 
         # Create test data with values that will produce clear density curves
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(42)
         test_df = pd.DataFrame(
             {
@@ -1586,6 +1590,7 @@ class Test_weighted_comparisons_plots(balance.testutil.BalanceTestCase):
         )
 
         # Create test data
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(42)
         test_df = pd.DataFrame(
             {
@@ -1719,6 +1724,7 @@ class TestSeabornPlotDistQQNumeric(balance.testutil.BalanceTestCase):
 
     def test_seaborn_plot_dist_qq_with_numeric(self) -> None:
         """Test seaborn_plot_dist uses plot_qq for numeric variables with qq dist_type."""
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(42)
         df1 = pd.DataFrame({"v1": np.random.randn(50)})
         df2 = pd.DataFrame({"v1": np.random.randn(50)})
@@ -1794,6 +1800,7 @@ class TestPlotlyPlotQQPlotIt(balance.testutil.BalanceTestCase):
 
         from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_qq
 
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(42)
         df = pd.DataFrame({"v1": np.random.randn(50), "weight": np.ones(50)})
         dict_of_dfs = {"self": df, "target": df.copy()}
@@ -1815,6 +1822,7 @@ class TestPlotlyPlotDistNoSampleKey(balance.testutil.BalanceTestCase):
         """Test plotly_plot_dist uses random key when 'sample' not present."""
         from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_dist
 
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(42)
         df = pd.DataFrame({"v1": np.random.randn(30), "weight": np.ones(30)})
         dict_of_dfs = {"self": df, "target": df.copy()}
@@ -1838,6 +1846,7 @@ class TestPlotlyPlotDistWithSampleKey(balance.testutil.BalanceTestCase):
         """
         from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_dist
 
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(42)
         df = pd.DataFrame({"v1": np.random.randn(30), "weight": np.ones(30)})
         dict_of_dfs = {"sample": df, "target": df.copy()}
@@ -1901,6 +1910,7 @@ class TestPlotlyPlotDistQQDistType(balance.testutil.BalanceTestCase):
         """Test plotly_plot_dist uses plotly_plot_qq for qq dist_type."""
         from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_dist
 
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(42)
         df = pd.DataFrame({"v1": np.random.randn(30), "weight": np.ones(30)})
         dict_of_dfs = {"self": df, "target": df.copy()}
@@ -1920,6 +1930,7 @@ class TestPlotDistPlotlyQQDistType(balance.testutil.BalanceTestCase):
 
     def test_plot_dist_plotly_with_qq_dist_type(self) -> None:
         """Test plot_dist with plotly library and qq dist_type."""
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(42)
         df = pd.DataFrame({"v1": np.random.randn(30)})
         dfs: List[DataFrameWithWeight] = [

@@ -653,6 +653,7 @@ def ascii_comparative_hist(
     # Header row
     header_parts = [range_header.ljust(range_width)]
     for di in range(len(legend_names)):
+        # pyrefly: ignore [bad-argument-type]
         header_parts.append(f"{legend_names[di]} (%)".ljust(col_widths[di]))
     lines.append(" | ".join(header_parts))
 
@@ -674,6 +675,7 @@ def ascii_comparative_hist(
     total_parts = ["Total".ljust(range_width)]
     for di in range(len(hist_pcts)):
         total_val = sum(hist_pcts[di])
+        # pyrefly: ignore [bad-argument-type]
         total_parts.append(f"{total_val:.1f}".ljust(col_widths[di]))
     lines.append(" | ".join(total_parts))
 

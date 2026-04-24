@@ -180,6 +180,7 @@ def _convert_to_dense_array(
     if issparse(X_matrix):
         X_matrix = X_matrix.toarray()
 
+    # pyrefly: ignore [bad-return]
     return X_matrix
 
 
@@ -722,6 +723,7 @@ def ipw(
 
     logger.info("Starting ipw function")
     np.random.seed(
+        # pyrefly: ignore [bad-argument-type]
         random_seed
     )  # setting random seed for cases of variations in sklearn
 
@@ -1056,6 +1058,7 @@ def ipw(
         # the chosen estimator. These are used by BalanceFrame.predict() so we do
         # not need to reconstruct preprocessing after fitting.
         target_matrix = X_matrix[sample_n:]
+        # pyrefly: ignore [missing-attribute]
         best_pred_target = best_model.predict_proba(target_matrix)[
             :, chosen_class_index
         ]

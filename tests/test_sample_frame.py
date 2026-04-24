@@ -824,6 +824,7 @@ class TestSampleFrameIntegration(BalanceTestCase):
             3. Multiple weight columns with add/switch workflow
             4. Numerical equivalence with Sample.from_frame()
         """
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(2021)
         df = pd.DataFrame(
             {

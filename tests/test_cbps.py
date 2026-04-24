@@ -146,6 +146,7 @@ class Testcbps(
         expected_loss = 39999200004.99
 
         self.assertEqual(
+            # pyrefly: ignore [no-matching-overload]
             round(result, 2),
             expected_loss,
             msg="Balance loss should be computed consistently",
@@ -169,6 +170,7 @@ class Testcbps(
         expected_loss = 91665.75
 
         self.assertEqual(
+            # pyrefly: ignore [no-matching-overload]
             round(result["loss"], 2),
             expected_loss,
             msg="GMM loss should be computed correctly with automatic covariance estimation",
@@ -185,6 +187,7 @@ class Testcbps(
         expected_loss_with_invV = 45967903.9923
 
         self.assertEqual(
+            # pyrefly: ignore [no-matching-overload]
             round(result_with_invV["loss"], 4),
             expected_loss_with_invV,
             msg="GMM loss should be computed correctly with provided inverse covariance matrix",
@@ -211,6 +214,7 @@ class Testcbps(
         expected_loss = 91665.75
 
         self.assertEqual(
+            # pyrefly: ignore [no-matching-overload]
             round(result, 2),
             expected_loss,
             msg="GMM loss should match expected value with automatic covariance estimation",
@@ -227,6 +231,7 @@ class Testcbps(
         expected_loss_with_invV = 45967903.9923
 
         self.assertEqual(
+            # pyrefly: ignore [no-matching-overload]
             round(result_with_invV, 4),
             expected_loss_with_invV,
             msg="GMM loss should match expected value with provided inverse covariance",
@@ -296,6 +301,7 @@ class Testcbps(
         expected_deff = 1.999258
 
         self.assertEqual(
+            # pyrefly: ignore [no-matching-overload]
             round(result, 6),
             expected_deff,
             msg="Design effect should be computed correctly from beta coefficients",
@@ -345,6 +351,7 @@ class Testcbps(
         )
 
     def test__reverse_svd_and_centralization(self) -> None:
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(10)
         m, n = 4, 3
         X_matrix = np.random.randn(m, n)
@@ -384,6 +391,7 @@ class Testcbps(
         may vary slightly between runs, so we test relative ordering instead.
         """
         # Generate complex sample data
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(TEST_SEED)
 
         # Create continuous variables for sample
@@ -408,6 +416,7 @@ class Testcbps(
         sample_df = sample_df.rename(columns={i: "abcdefghij"[i] for i in range(0, 10)})
 
         # Generate complex target data with different distribution
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(TEST_SEED)
 
         # Create continuous variables with different distribution for target
@@ -440,6 +449,7 @@ class Testcbps(
         target_df = target_df.rename(columns={i: "abcdefghij"[i] for i in range(0, 10)})
 
         # Generate random weights for realism
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(TEST_SEED)
         sample_weights = pd.Series(np.random.uniform(0, 1, size=SAMPLE_SIZE))
         target_weights = pd.Series(np.random.uniform(0, 1, size=TARGET_SIZE))
@@ -555,6 +565,7 @@ class Testcbps(
             )
             return
         self.assertTrue(
+            # pyrefly: ignore [no-matching-overload]
             round(constrained_de_over, 5) <= MAX_DESIGN_EFFECT,
             msg=f"Constrained CBPS ('over' method) should respect max_de={MAX_DESIGN_EFFECT}, got {constrained_de_over}",
         )
@@ -593,6 +604,7 @@ class Testcbps(
             )
             return
         self.assertTrue(
+            # pyrefly: ignore [no-matching-overload]
             round(constrained_de_exact, 5) <= MAX_DESIGN_EFFECT,
             msg=f"Constrained CBPS ('exact' method) should respect max_de={MAX_DESIGN_EFFECT}, got {constrained_de_exact}",
         )
@@ -620,17 +632,21 @@ class Testcbps(
 
         # Observations with identical covariate values should have identical weights
         self.assertEqual(
+            # pyrefly: ignore [unsupported-operation]
             round(weights[0], 10),
+            # pyrefly: ignore [unsupported-operation]
             round(weights[8], 10),
             msg="Observations with identical covariate values should have identical weights",
         )
 
         # Verify sensible weight ordering based on target distribution
         self.assertTrue(
+            # pyrefly: ignore [unsupported-operation]
             weights[0] < weights[1],
             msg="Weight ordering should reflect covariate distribution differences",
         )
         self.assertTrue(
+            # pyrefly: ignore [unsupported-operation]
             weights[0] < weights[7],
             msg="Weight ordering should be consistent with balancing needs",
         )
@@ -644,8 +660,10 @@ class Testcbps(
         3. Handle the degenerate case gracefully
         """
         # Test with identical sample and target distributions
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(1)
         n_obs = 1000
+        # pyrefly: ignore [missing-attribute]
         sample_df = pd.DataFrame({"a": np.random.normal(0, 1, n_obs).reshape((n_obs,))})
         sample_weights = pd.Series((1,) * n_obs)
         target_df = sample_df  # Identical to sample
@@ -670,6 +688,7 @@ class Testcbps(
         sample = Sample.from_frame(
             df=pd.DataFrame(
                 {
+                    # pyrefly: ignore [missing-attribute]
                     "a": np.random.normal(0, 1, n_obs).reshape((n_obs,)),
                     "id": range(0, n_obs),
                 }
@@ -967,7 +986,9 @@ class Testcbps(
         # Verify that weights differ between balanced and unbalanced approaches
         weights_diff = np.sum(
             np.abs(
-                result_unbalanced["weight"].values - result_balanced["weight"].values
+                # pyrefly: ignore [unsupported-operation]
+                result_unbalanced["weight"].values
+                - result_balanced["weight"].values
             )
         )
         self.assertTrue(
@@ -1292,6 +1313,7 @@ class Testcbps(
         # Verify that percentile trimming is applied correctly
         # The weights should be valid (positive and finite)
         weights_percentile = result_percentile["weight"].values
+        # pyrefly: ignore [unsupported-operation]
         self.assertTrue(np.all(weights_percentile > 0))
         self.assertTrue(np.all(np.isfinite(weights_percentile)))
 
@@ -1395,6 +1417,7 @@ class TestCbpsOptimizationConvergenceWarnings(balance.testutil.BalanceTestCase):
         import logging
 
         # Create data designed to cause convergence issues
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(42)
         n = 10
         # Sample with very different distribution than target
@@ -1471,6 +1494,7 @@ class TestCbpsOptimizationConvergenceWarnings(balance.testutil.BalanceTestCase):
         """
         import logging
 
+        # pyrefly: ignore [bad-argument-type]
         np.random.seed(123)
         n = 5
         # Create data that may cause alpha_function convergence issues
