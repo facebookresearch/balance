@@ -600,6 +600,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting cbps function&quot;</span><span class="p">)</span>
+    <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
     <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>  <span class="c1"># setting random seed for cases of variations in glmnet</span>
 
     <span class="n">balance_util</span><span class="o">.</span><span class="n">_check_weighting_methods_input</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">&quot;sample&quot;</span><span class="p">)</span>

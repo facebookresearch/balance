@@ -230,7 +230,9 @@
             <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_array_equal</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">first</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">second</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">first</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">second</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
             <span class="n">_assert_frame_equal_lazy</span><span class="p">(</span>
+                <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
                 <span class="n">first</span><span class="p">,</span>
+                <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
                 <span class="n">second</span><span class="p">,</span>
                 <span class="n">lazy</span><span class="p">,</span>
             <span class="p">)</span>

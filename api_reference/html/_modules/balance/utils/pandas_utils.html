@@ -267,6 +267,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Use _safe_replace_and_infer to avoid downcasting warnings</span>
     <span class="n">replaced_series</span> <span class="o">=</span> <span class="n">_safe_replace_and_infer</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="c1"># pyrefly: ignore [bad-return]</span>
     <span class="k">return</span> <span class="n">replaced_series</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span>
 
 
@@ -303,6 +304,7 @@
             <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;object&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">result</span>
 
+    <span class="c1"># pyrefly: ignore [missing-attribute]</span>
     <span class="n">object_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">dtype</span> <span class="ow">in</span> <span class="n">original_dtypes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">dtype</span> <span class="o">==</span> <span class="s2">&quot;object&quot;</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">object_cols</span><span class="p">:</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">object_cols</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">))</span>
@@ -339,6 +341,7 @@
             <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;object&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">result</span>
 
+    <span class="c1"># pyrefly: ignore [missing-attribute]</span>
     <span class="n">object_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">dtype</span> <span class="ow">in</span> <span class="n">original_dtypes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">dtype</span> <span class="o">==</span> <span class="s2">&quot;object&quot;</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">object_cols</span><span class="p">:</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">object_cols</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">))</span>
@@ -365,12 +368,14 @@
     <span class="c1"># Use include_groups=False to avoid FutureWarning about operating on grouping columns</span>
     <span class="c1"># Fall back to old behavior if include_groups parameter is not supported</span>
     <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># pyrefly: ignore [bad-return, unexpected-keyword]</span>
         <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">groupby_cols</span><span class="p">,</span> <span class="n">include_groups</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">apply_func</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
         <span class="c1"># Suppress pandas FutureWarnings about downcasting during fillna operations</span>
         <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="ne">FutureWarning</span><span class="p">)</span>
             <span class="c1"># Fallback for older pandas versions that don&#39;t support include_groups parameter</span>
+            <span class="c1"># pyrefly: ignore [bad-return]</span>
             <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">groupby_cols</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">apply_func</span><span class="p">)</span>
 
 

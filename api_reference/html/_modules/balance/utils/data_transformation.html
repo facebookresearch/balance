@@ -347,6 +347,7 @@
         <span class="c1"># Use include_groups=False to avoid FutureWarning about operating on grouping columns</span>
         <span class="c1"># Fall back to old behavior if include_groups parameter is not supported</span>
         <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># pyrefly: ignore [unexpected-keyword]</span>
             <span class="n">unique_userids</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">include_groups</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="n">id_</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
                 <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
             <span class="p">)</span>

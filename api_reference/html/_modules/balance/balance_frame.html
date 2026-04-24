@@ -208,11 +208,17 @@
 <span class="sd">        properties stay consistent with ``_sf_sample``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">SampleFrame</span><span class="p">):</span>
+            <span class="c1"># pyrefly: ignore [missing-attribute]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_df</span>
+            <span class="c1"># pyrefly: ignore [missing-attribute]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_id_column_name</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_id_column_name</span>
+            <span class="c1"># pyrefly: ignore [missing-attribute]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_column_roles</span>
+            <span class="c1"># pyrefly: ignore [missing-attribute]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_weight_column_name</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_weight_column_name</span>
+            <span class="c1"># pyrefly: ignore [missing-attribute]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_weight_metadata</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_weight_metadata</span>
+            <span class="c1"># pyrefly: ignore [missing-attribute]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_df_dtypes</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_df_dtypes</span>
 
     <span class="nd">@property</span>
@@ -222,6 +228,7 @@
 
     <span class="nd">@_df_dtypes</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_df_dtypes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># pyrefly: ignore [missing-attribute]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_df_dtypes</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
@@ -268,6 +275,7 @@
                 <span class="s2">&quot;Cannot set _df to None. A BalanceFrame must always have a &quot;</span>
                 <span class="s2">&quot;backing DataFrame.&quot;</span>
             <span class="p">)</span>
+        <span class="c1"># pyrefly: ignore [missing-attribute]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
@@ -398,6 +406,7 @@
         <span class="n">instance</span><span class="o">.</span><span class="n">_adjustment_model</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">instance</span><span class="o">.</span><span class="n">_links</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
             <span class="n">instance</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">target</span>
 
         <span class="c1"># When the instance is also a SampleFrame (e.g., Sample inherits</span>
@@ -555,6 +564,7 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">BalanceFrame</span><span class="p">):</span>
             <span class="c1"># BalanceFrame / Sample path: return a deep copy (immutable)</span>
             <span class="n">new_copy</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
             <span class="n">new_copy</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">target</span>
             <span class="n">BalanceFrame</span><span class="o">.</span><span class="n">_validate_covariate_overlap</span><span class="p">(</span>
                 <span class="n">new_copy</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">_sf_sample</span>
@@ -578,10 +588,12 @@
                         <span class="s2">&quot;instance.&quot;</span>
                     <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span> <span class="o">=</span> <span class="n">target</span>
+                <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">target</span>
                 <span class="c1"># Reset adjustment state — old adjustment is no longer valid.</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_adjustment_model</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="c1"># pyrefly: ignore [missing-attribute]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_sync_sampleframe_state_from_responder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">)</span>
                 <span class="k">return</span> <span class="bp">self</span>
@@ -641,11 +653,14 @@
             <span class="n">bf</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">frozen</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span>
             <span class="c1"># Preserve a richer target link (e.g., BalanceFrame/Sample object)</span>
             <span class="c1"># when present on the original.</span>
+            <span class="c1"># pyrefly: ignore [not-iterable]</span>
             <span class="k">if</span> <span class="s2">&quot;target&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">:</span>
+                <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
                 <span class="n">bf</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span>
         <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span> <span class="o">=</span> <span class="n">frozen</span>
         <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span> <span class="o">=</span> <span class="n">frozen</span>
         <span class="n">bf</span><span class="o">.</span><span class="n">_adjustment_model</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># pyrefly: ignore [missing-attribute]</span>
         <span class="n">bf</span><span class="o">.</span><span class="n">_links</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="n">bf</span><span class="o">.</span><span class="n">_sync_sampleframe_state_from_responder</span><span class="p">(</span><span class="n">frozen</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">bf</span></div>
@@ -789,11 +804,16 @@
         <span class="c1"># Always link back to the original unadjusted BalanceFrame so that</span>
         <span class="c1"># 3-way comparisons (adjusted vs original vs target) span the full</span>
         <span class="c1"># adjustment chain, not just the last step.</span>
+        <span class="c1"># pyrefly: ignore [not-iterable]</span>
         <span class="k">if</span> <span class="s2">&quot;unadjusted&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">:</span>
+            <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
             <span class="n">new_bf</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
             <span class="n">new_bf</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="c1"># pyrefly: ignore [not-iterable]</span>
         <span class="k">if</span> <span class="s2">&quot;target&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">:</span>
+            <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
             <span class="n">new_bf</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span>
 
         <span class="n">raw_model</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">)</span>
@@ -1292,7 +1312,9 @@
                 <span class="n">sample</span><span class="o">=</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">),</span>
                 <span class="n">target</span><span class="o">=</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">),</span>
             <span class="p">)</span>
+            <span class="c1"># pyrefly: ignore [not-iterable]</span>
             <span class="k">if</span> <span class="s2">&quot;target&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">:</span>
+                <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
                 <span class="n">bf</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">])</span>
 
         <span class="c1"># Separate _sf_sample from _sf_sample_pre_adjust BEFORE mutating weights,</span>
@@ -1308,6 +1330,7 @@
 
         <span class="c1"># Store the model and set adjustment state</span>
         <span class="n">bf</span><span class="o">.</span><span class="n">_adjustment_model</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
         <span class="n">bf</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span>
             <span class="n">sample</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span><span class="p">,</span>
             <span class="n">target</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">,</span>
@@ -2551,6 +2574,7 @@
             <span class="p">)</span>
 
         <span class="n">responders_sf</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_sample</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
+        <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
         <span class="n">target_sf</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_sample</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">])</span>
 
         <span class="n">bf</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">responders_sf</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">target_sf</span><span class="p">)</span>
@@ -2558,6 +2582,7 @@
         <span class="k">if</span> <span class="n">sample</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">():</span>
             <span class="c1"># Set unadjusted to a DIFFERENT SampleFrame so is_adjusted returns True</span>
             <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_sample</span><span class="p">(</span>
+                <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
                 <span class="n">sample</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span>
             <span class="p">)</span>
             <span class="n">bf</span><span class="o">.</span><span class="n">_adjustment_model</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">model</span>
@@ -2632,6 +2657,7 @@
                 <span class="n">standardize_types</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">result</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span> <span class="o">=</span> <span class="n">unadj_sf</span>
+            <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
             <span class="n">result</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">unadj_sf</span>
             <span class="n">result</span><span class="o">.</span><span class="n">_adjustment_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adjustment_model</span>
 
@@ -2902,6 +2928,7 @@
             <span class="n">de</span><span class="p">,</span> <span class="n">ess</span><span class="p">,</span> <span class="n">essp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_design_effect_diagnostics</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
             <span class="n">outcome_means</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># pyrefly: ignore [missing-attribute]</span>
                 <span class="n">outcome_means</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
             <span class="k">return</span> <span class="n">_build_summary</span><span class="p">(</span>
                 <span class="n">is_adjusted</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -3001,6 +3028,7 @@
         <span class="n">outcome_columns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df_outcomes</span>
         <span class="n">outcome_impact</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">weights_impact_on_outcome_method</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># pyrefly: ignore [missing-attribute]</span>
             <span class="n">outcome_impact</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">weights_impact_on_outcome_ss</span><span class="p">(</span>
                 <span class="n">method</span><span class="o">=</span><span class="n">weights_impact_on_outcome_method</span><span class="p">,</span>
                 <span class="n">conf_level</span><span class="o">=</span><span class="n">weights_impact_on_outcome_conf_level</span><span class="p">,</span>
@@ -3085,6 +3113,7 @@
         <span class="n">covars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span>
         <span class="n">outcomes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span>
         <span class="n">ignored</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df_ignored</span>
+        <span class="c1"># pyrefly: ignore [no-matching-overload]</span>
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
             <span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">id_series</span><span class="p">,</span>
@@ -3250,6 +3279,7 @@
             <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">keep_set</span><span class="p">)]</span>
 
             <span class="n">new_covars</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">sf</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;covars&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">keep_set</span><span class="p">]</span>
+            <span class="c1"># pyrefly: ignore [missing-attribute]</span>
             <span class="n">sf</span><span class="o">.</span><span class="n">_column_roles</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">sf</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">)</span>
             <span class="n">sf</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;covars&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_covars</span>
             <span class="k">if</span> <span class="n">sf</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes&quot;</span><span class="p">]:</span>
@@ -3265,6 +3295,7 @@
                     <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">sf</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;ignored&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">keep_set</span>
                 <span class="p">]</span>
 
+        <span class="c1"># pyrefly: ignore [missing-attribute]</span>
         <span class="n">sf</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">df</span>
         <span class="k">return</span> <span class="n">sf</span>
 
@@ -3446,7 +3477,9 @@
         <span class="n">new_bf</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span>
         <span class="n">new_bf</span><span class="o">.</span><span class="n">_adjustment_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adjustment_model</span>
         <span class="c1"># Preserve existing links (target, unadjusted).</span>
+        <span class="c1"># pyrefly: ignore [missing-attribute]</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
             <span class="n">new_bf</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
         <span class="k">return</span> <span class="n">new_bf</span></div>
 
@@ -3475,6 +3508,7 @@
                 <span class="sa">f</span><span class="s2">&quot;set_unadjusted must be called with a BalanceFrame argument, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">second</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
         <span class="n">new_bf</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
         <span class="n">new_bf</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">second</span>
         <span class="n">new_bf</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span> <span class="o">=</span> <span class="n">second</span><span class="o">.</span><span class="n">_sf_sample</span>
         <span class="k">return</span> <span class="n">new_bf</span></div>
@@ -3592,8 +3626,13 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">():</span>
             <span class="n">common_variables</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">choose_variables</span><span class="p">(</span>
-                <span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">],</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span>
+                <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
+                <span class="bp">self</span><span class="p">,</span>
+                <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">],</span>
+                <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="p">)</span>
+            <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
             <span class="n">target_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n\t</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">n_common</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">common_variables</span><span class="p">)</span>
             <span class="n">common_variables</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">common_variables</span><span class="p">)</span>

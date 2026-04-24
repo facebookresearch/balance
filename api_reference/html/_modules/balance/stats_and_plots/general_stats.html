@@ -124,6 +124,7 @@
         <span class="c1"># If they are, we can proceed forward:</span>
         <span class="n">target_n_notnull_rows</span> <span class="o">=</span> <span class="n">df_target</span><span class="o">.</span><span class="n">notnull</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>  <span class="c1"># number of notnull *rows* (i.e.: complete rows) in df_target</span>
+        <span class="c1"># pyrefly: ignore [missing-attribute]</span>
         <span class="n">target_n_notnull_rows</span> <span class="o">=</span> <span class="n">df_target</span><span class="o">.</span><span class="n">notnull</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
     <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">df_n_notnull_rows</span> <span class="o">&gt;</span> <span class="n">target_n_notnull_rows</span><span class="p">):</span>

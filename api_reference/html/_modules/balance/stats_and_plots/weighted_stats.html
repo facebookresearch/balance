@@ -53,6 +53,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weights_stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">_check_weights_are_valid</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">model_matrix</span><span class="p">,</span> <span class="n">rm_mutual_nas</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.input_validation</span><span class="w"> </span><span class="kn">import</span> <span class="n">_assert_type</span>
+
+<span class="c1"># pyrefly: ignore [missing-module-attribute]</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">norm</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">statsmodels.stats.weightstats</span><span class="w"> </span><span class="kn">import</span> <span class="n">DescrStatsW</span>
 
@@ -133,9 +135,11 @@
         <span class="c1"># Since v is guaranteed to be DataFrame and w is guaranteed to be Series at this point,</span>
         <span class="c1"># we can safely cast the results</span>
         <span class="n">v</span> <span class="o">=</span> <span class="n">_safe_replace_and_infer</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="c1"># pyrefly: ignore [bad-assignment]</span>
         <span class="n">w</span> <span class="o">=</span> <span class="n">_safe_replace_and_infer</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
 
     <span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># pyrefly: ignore [missing-attribute]</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="n">_check_weights_are_valid</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
@@ -733,6 +737,7 @@
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;group&quot;</span>
+            <span class="c1"># pyrefly: ignore [bad-assignment]</span>
             <span class="n">column</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">name</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;argument `df` must be a pandas DataFrame or Series&quot;</span><span class="p">)</span>

@@ -698,6 +698,7 @@
     <span class="c1"># Header row</span>
     <span class="n">header_parts</span> <span class="o">=</span> <span class="p">[</span><span class="n">range_header</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="n">range_width</span><span class="p">)]</span>
     <span class="k">for</span> <span class="n">di</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">legend_names</span><span class="p">)):</span>
+        <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
         <span class="n">header_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">legend_names</span><span class="p">[</span><span class="n">di</span><span class="p">]</span><span class="si">}</span><span class="s2"> (%)&quot;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="n">col_widths</span><span class="p">[</span><span class="n">di</span><span class="p">]))</span>
     <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot; | &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">header_parts</span><span class="p">))</span>
 
@@ -719,6 +720,7 @@
     <span class="n">total_parts</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Total&quot;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="n">range_width</span><span class="p">)]</span>
     <span class="k">for</span> <span class="n">di</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hist_pcts</span><span class="p">)):</span>
         <span class="n">total_val</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hist_pcts</span><span class="p">[</span><span class="n">di</span><span class="p">])</span>
+        <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
         <span class="n">total_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">total_val</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="n">col_widths</span><span class="p">[</span><span class="n">di</span><span class="p">]))</span>
     <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot; | &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">total_parts</span><span class="p">))</span>
 

@@ -607,6 +607,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_model_matrix</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="n">add_na</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;one&quot;</span>
                 <span class="p">)[</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">]</span>
+            <span class="c1"># pyrefly: ignore [bad-return]</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model_matrix</span>
 
         <span class="k">return</span> <span class="n">_assert_type</span><span class="p">(</span>
@@ -3259,6 +3260,7 @@
                 <span class="p">)</span>
             <span class="n">target_propensity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
                 <span class="nb">len</span><span class="p">(</span><span class="n">target_sample</span><span class="o">.</span><span class="n">weight_series</span><span class="p">),</span>
+                <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
                 <span class="nb">float</span><span class="p">(</span><span class="n">target_propensity</span><span class="p">),</span>
                 <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
             <span class="p">)</span>
