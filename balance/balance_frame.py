@@ -1059,9 +1059,17 @@ class BalanceFrame:
             ``store_fit_metadata=True`` by default so ``predict_weights()``
             can reconstruct CBPS scoring artifacts.  Pass
             ``store_fit_metadata=False`` to opt out.
+            For the built-in poststratify method, ``fit()`` enables
+            ``store_fit_metadata=True`` by default so ``predict_weights()``
+            can reconstruct poststratification cell-ratio artifacts, while
+            direct ``adjust(method='poststratify')`` remains metadata-light
+            unless ``store_fit_metadata=True`` is passed explicitly.
         """
         from balance.weighting_methods.cbps import cbps as built_in_cbps
         from balance.weighting_methods.ipw import ipw as built_in_ipw
+        from balance.weighting_methods.poststratify import (
+            poststratify as built_in_poststratify,
+        )
 
         resolved_method = self._resolve_adjustment_function(method)
         if resolved_method is built_in_ipw:
@@ -1099,6 +1107,8 @@ class BalanceFrame:
                     stacklevel=2,
                 )
                 kwargs["store_fit_metadata"] = False
+        if resolved_method is built_in_poststratify:
+            kwargs.setdefault("store_fit_metadata", True)
 
         if isinstance(target, (SampleFrame, BalanceFrame)):
             result = self.set_target(target, inplace=False).adjust(

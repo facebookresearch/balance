@@ -183,7 +183,7 @@ class Testpoststratify(
 
         pd.testing.assert_series_equal(trimmed, expected)
 
-    def test_poststratify_stores_fit_metadata_by_default(self) -> None:
+    def test_poststratify_stores_fit_metadata_when_enabled(self) -> None:
         sample_df = pd.DataFrame({"a": ["x", "y", "x"], "b": ["u", "u", "v"]})
         target_df = pd.DataFrame({"a": ["x", "y", "x"], "b": ["u", "u", "v"]})
         s_weights = pd.Series([1.0, 1.0, 1.0])
@@ -196,6 +196,7 @@ class Testpoststratify(
             target_weights=t_weights,
             variables=["a", "b"],
             transformations=None,
+            store_fit_metadata=True,
         )
         model = result["model"]
         assert isinstance(model, dict)
@@ -205,6 +206,22 @@ class Testpoststratify(
         self.assertIn("training_target_weights", model)
         self.assertIn("variables", model)
         self.assertTrue(bool(model.get("store_fit_metadata")))
+
+    def test_poststratify_defaults_to_minimal_model_payload(self) -> None:
+        sample_df = pd.DataFrame({"a": ["x", "y", "x"]})
+        target_df = pd.DataFrame({"a": ["x", "x", "y"]})
+        weights = pd.Series([1.0, 1.0, 1.0])
+        result = poststratify(
+            sample_df=sample_df,
+            sample_weights=weights,
+            target_df=target_df,
+            target_weights=weights,
+            variables=["a"],
+            transformations=None,
+        )
+        model = result["model"]
+        assert isinstance(model, dict)
+        self.assertEqual(model, {"method": "poststratify"})
 
     def test_poststratify_can_disable_fit_metadata_storage(self) -> None:
         sample_df = pd.DataFrame({"a": ["x", "y", "x"]})
@@ -242,6 +259,7 @@ class Testpoststratify(
             transformations=None,
             na_action="drop",
             strict_matching=False,
+            store_fit_metadata=True,
         )
         model = result["model"]
         assert isinstance(model, dict)
@@ -280,6 +298,7 @@ class Testpoststratify(
                 target_weights=weights,
                 variables=["a"],
                 transformations={"a": lambda x: x},
+                store_fit_metadata=True,
             )
 
     def test_poststratify_variables_arg(self) -> None:

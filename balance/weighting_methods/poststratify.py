@@ -11,7 +11,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import logging
 import pickle
 import re
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import pandas as pd
 from balance import adjustment as balance_adjustment, util as balance_util
@@ -27,7 +27,7 @@ def poststratify(
     target_df: pd.DataFrame,
     target_weights: pd.Series,
     variables: Optional[List[str]] = None,
-    transformations: Optional[str] = "default",
+    transformations: Dict[str, Callable[..., Any]] | str | None = "default",
     transformations_drop: bool = True,
     strict_matching: bool = True,
     na_action: str = "add_indicator",
@@ -53,7 +53,11 @@ def poststratify(
         target_df (pd.DataFrame): DataFrame representing the target population.
         target_weights (pd.Series): Design weights for the target.
         variables (Optional[List[str]], optional): List of variables to define post-stratification cells. If None, uses the intersection of columns in sample_df and target_df.
-        transformations (str, optional): Transformations to apply to data before fitting the model. Default is "default". See `balance.adjustment.apply_transformations`.
+        transformations (Dict[str, Callable[..., Any]] | str | None, optional):
+            Transformations to apply to data before fitting the model.
+            Accepts the same forms as
+            :func:`balance.adjustment.apply_transformations`. Defaults to
+            ``"default"``.
         transformations_drop (bool, optional): If True, drops variables not affected by transformations. Default is True.
         strict_matching (bool, optional): If True, requires all sample cells to be present in the target. If False, cells missing in the target are assigned weight 0 (and a warning is raised). Default is True.
         na_action (str, optional): How to handle missing values. Use

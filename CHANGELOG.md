@@ -142,6 +142,19 @@
   - Explicitly setting `store_fit_metadata=True` with `na_action='drop'` now
     raises `ValueError` with guidance to use `na_action='add_indicator'`.
 
+- **`poststratify(..., store_fit_metadata)` defaults differ by entry point**
+  - Direct weighting-method calls now default to
+    `poststratify(..., store_fit_metadata=False)`, preserving the
+    historical minimal model payload.
+  - `BalanceFrame.fit(method="poststratify")` now sets
+    `store_fit_metadata=True` by default so `predict_weights()` can
+    reconstruct poststratify weights from fit artifacts.
+  - Unknown kwargs to `poststratify(...)` now raise `TypeError` (instead
+    of being ignored), and `store_fit_metadata` must be a boolean.
+  - **Migration:** if you rely on persisted poststratify model artifacts
+    from direct `poststratify(...)` calls, pass
+    `store_fit_metadata=True` explicitly.
+
 ## Tests
 
 - Added coverage for:
