@@ -2478,10 +2478,34 @@ class BalanceFrame:
                 "predict_weights()."
             )
 
-        sample_weights, target_weights = self._resolve_design_weights(
-            model,
-            np.zeros(len(self._sf_sample.df.index)),
-        )
+        current_sample_weights = self._sf_sample.df_weights.iloc[:, 0]
+        current_target_weights = _assert_type(self._sf_target).df_weights.iloc[:, 0]
+
+        sample_weights = model.get("training_sample_weights")
+        if (
+            not isinstance(sample_weights, pd.Series)
+            or len(sample_weights) != len(current_sample_weights)
+            or not sample_weights.index.equals(current_sample_weights.index)
+        ):
+            raise ValueError(
+                "Poststratify predict_weights() requires compatible "
+                "fit-time sample design weights in model['training_sample_weights']. "
+                "Re-fit with BalanceFrame.fit(method='poststratify') and "
+                "store_fit_metadata=True."
+            )
+
+        target_weights = model.get("training_target_weights")
+        if (
+            not isinstance(target_weights, pd.Series)
+            or len(target_weights) != len(current_target_weights)
+            or not target_weights.index.equals(current_target_weights.index)
+        ):
+            raise ValueError(
+                "Poststratify predict_weights() requires compatible "
+                "fit-time target design weights in model['training_target_weights']. "
+                "Re-fit with BalanceFrame.fit(method='poststratify') and "
+                "store_fit_metadata=True."
+            )
 
         sample_covars = self._sf_sample.df_covars
         target_covars = _assert_type(self._sf_target).df_covars

@@ -175,9 +175,9 @@ def poststratify(
             "weight can't be a name of a column in sample or target when applying poststratify"
         )
 
-    user_supplied_variables = variables is not None
     if variables is not None and len(variables) == 0:
         variables = None
+    user_supplied_variables = variables is not None
 
     if formula is not None and variables is not None:
         raise ValueError("Specify only one of `variables` or `formula`.")

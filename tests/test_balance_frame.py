@@ -3791,6 +3791,38 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         with self.assertRaisesRegex(ValueError, "missing fit-time metadata"):
             adjusted.predict_weights()
 
+    def test_predict_weights_poststratify_missing_training_weights_raises(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "age_group": ["young", "young", "old", "old"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "age_group": ["young", "old", "old", "old"],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="poststratify",
+            variables=["age_group"],
+            transformations=None,
+        )
+        model = _assert_type(adjusted.model)
+        model.pop("training_sample_weights", None)
+        with self.assertRaisesRegex(
+            ValueError,
+            "fit-time sample design weights",
+        ):
+            adjusted.predict_weights()
+
     def test_predict_weights_cbps_requires_fit_metadata(self) -> None:
         adjusted = self.bf.adjust(method="cbps", transformations=None)
         with self.assertRaisesRegex(ValueError, "store_fit_metadata=True"):
