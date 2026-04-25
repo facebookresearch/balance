@@ -3649,6 +3649,43 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             equal_nan=True,
         )
 
+    def test_predict_weights_poststratify_na_drop_restores_full_index_with_nans(
+        self,
+    ) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "age_group": ["young", None, "old", None],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "age_group": ["young", "old", None, None],
+            }
+        )
+
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="poststratify",
+            variables=["age_group"],
+            transformations=None,
+            na_action="drop",
+            strict_matching=False,
+        )
+        predicted_weights = adjusted.predict_weights()
+        self.assertEqual(
+            list(predicted_weights.index), list(adjusted._sf_sample.df.index)
+        )
+        self.assertEqual(int(predicted_weights.isna().sum()), 2)
+        expected_nan_rows = sample_df["age_group"].isna().to_numpy()
+        np.testing.assert_array_equal(predicted_weights.isna().to_numpy(), expected_nan_rows)
+
     def test_predict_weights_poststratify_missing_cells_strict_matching_false(
         self,
     ) -> None:

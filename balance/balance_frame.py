@@ -2587,6 +2587,15 @@ class BalanceFrame:
             weight_trimming_percentile=model["weight_trimming_percentile"],
             keep_sum_of_weights=bool(model["keep_sum_of_weights"]),
         )
+        if na_action == "drop":
+            # Align back to the full fit-time sample index so rows dropped for
+            # missing covariates retain NaN weights, matching adjust() behavior.
+            full_index = current_sample_weights.index
+            trimmed_full = pd.Series(np.nan, index=full_index, dtype=float).rename(
+                trimmed.name
+            )
+            trimmed_full.loc[trimmed.index] = trimmed.to_numpy()
+            trimmed = trimmed_full
         weight_name = getattr(_assert_type(self.weight_series), "name", None)
         return cast(
             pd.Series,
