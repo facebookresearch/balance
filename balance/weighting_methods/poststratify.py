@@ -36,7 +36,7 @@ def poststratify(
     keep_sum_of_weights: bool = True,
     *args: Any,
     formula: Optional[Union[str, List[str]]] = None,
-    store_fit_metadata: bool = True,
+    store_fit_metadata: bool = False,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """
