@@ -100,7 +100,9 @@
   - Replaced obsolete `__future__` compatibility imports with
     `from __future__ import annotations` in `adjust_null`, `cbps`,
     `poststratify`, and `rake`.
-  - Removes dead compatibility scaffolding while preserving runtime behavior.
+  - Removes dead compatibility scaffolding while preserving algorithmic
+    behavior; note that annotation evaluation semantics change on Python
+    3.9/3.10 (for example, `__annotations__` become postponed/stringized).
 
 ## Breaking Changes
 
