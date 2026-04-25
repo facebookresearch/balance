@@ -530,6 +530,36 @@ class Testpoststratify(
             result_with_triple_interaction, result_with_all_vars
         )
 
+    def test_poststratify_formula_filters_out_of_scope_transformations(self) -> None:
+        s = pd.DataFrame(
+            {
+                "a": (0, 0, 1, 1),
+                "b": ("x", "y", "x", "y"),
+            }
+        )
+        s_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+        t = s.copy()
+        t_weights = pd.Series([1.0, 1.0, 3.0, 3.0])
+
+        expected = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            formula="a",
+            transformations=None,
+        )["weight"]
+
+        transformed = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            formula="a",
+            transformations={"b": lambda x: x},
+        )["weight"]
+        pd.testing.assert_series_equal(transformed, expected)
+
     def test_poststratify_formula_keeps_positional_argument_compatibility(self) -> None:
         s = pd.DataFrame(
             {

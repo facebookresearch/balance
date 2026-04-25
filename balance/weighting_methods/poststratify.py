@@ -177,7 +177,7 @@ def poststratify(
 
     if variables is not None and len(variables) == 0:
         variables = None
-    user_supplied_variables = variables is not None
+    explicit_cell_selection = formula is not None or variables is not None
 
     if formula is not None and variables is not None:
         raise ValueError("Specify only one of `variables` or `formula`.")
@@ -203,10 +203,11 @@ def poststratify(
     logger.debug(f"Join variables for sample and target: {variables}")
 
     transformations_to_apply = transformations
-    # When `variables` is explicitly set, ensure cell-definition precedence:
-    # only transformations on selected variables are applied. Transformations
-    # for out-of-scope keys are ignored so they cannot be treated as additions.
-    if user_supplied_variables and isinstance(transformations_to_apply, dict):
+    # When cell-definition variables are explicitly set (via `variables` or
+    # `formula`), ensure cell-definition precedence: only transformations on
+    # selected variables are applied. Transformations for out-of-scope keys are
+    # ignored so they cannot be treated as additions.
+    if explicit_cell_selection and isinstance(transformations_to_apply, dict):
         selected = set(variables)
         filtered = {k: v for k, v in transformations_to_apply.items() if k in selected}
         transformations_to_apply = filtered if filtered else None
