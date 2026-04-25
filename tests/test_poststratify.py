@@ -305,6 +305,21 @@ class Testpoststratify(
                 store_fit_metadata="False",  # type: ignore[arg-type]
             )
 
+    def test_poststratify_rejects_unknown_kwargs(self) -> None:
+        sample_df = pd.DataFrame({"a": ["x", "y"]})
+        target_df = pd.DataFrame({"a": ["x", "y"]})
+        weights = pd.Series([1.0, 1.0])
+        with self.assertRaisesRegex(TypeError, "Unexpected keyword arguments: typo"):
+            poststratify(
+                sample_df=sample_df,
+                sample_weights=weights,
+                target_df=target_df,
+                target_weights=weights,
+                variables=["a"],
+                transformations=None,
+                typo=True,
+            )
+
     def test_poststratify_rejects_unpickleable_transformations_when_storing_metadata(
         self,
     ) -> None:

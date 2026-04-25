@@ -1933,12 +1933,17 @@ class BalanceFrame:
           trimming, and design weights) to reproduce fitted responder weights.
         - **CBPS**: rebuilds the CBPS scoring artifacts from stored metadata
           and supports both in-place and ``data=...`` holdout scoring.
+        - **Poststratify**: reconstructs in-place responder weights from
+          stored cell-ratio metadata; ``data=...`` holdout scoring is not yet
+          supported for poststratify.
         - **Other methods**: not yet supported — will raise with guidance.
 
         Args:
             data: An optional BalanceFrame whose sample covariates are scored
                 using this object's stored model.  Must have matching covariate
-                column names and a target set.
+                column names and a target set. Supported for IPW and CBPS;
+                poststratify currently supports only in-place scoring
+                (``data=None``).
 
         Returns:
             A Series of predicted responder weights.
