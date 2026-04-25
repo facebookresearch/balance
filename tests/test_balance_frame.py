@@ -3684,7 +3684,9 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         )
         self.assertEqual(int(predicted_weights.isna().sum()), 2)
         expected_nan_rows = sample_df["age_group"].isna().to_numpy()
-        np.testing.assert_array_equal(predicted_weights.isna().to_numpy(), expected_nan_rows)
+        np.testing.assert_array_equal(
+            predicted_weights.isna().to_numpy(), expected_nan_rows
+        )
 
     def test_predict_weights_poststratify_missing_cells_strict_matching_false(
         self,
