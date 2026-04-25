@@ -228,6 +228,11 @@ def poststratify(
     else:
         raise ValueError("`na_action` must be 'add_indicator' or 'drop'")
 
+    if store_fit_metadata and transformations_to_apply == "default":
+        transformations_to_apply = balance_adjustment.default_transformations(
+            (sample_df, target_df)
+        )
+
     sample_df, target_df = balance_adjustment.apply_transformations(
         (sample_df, target_df),
         transformations=transformations_to_apply,

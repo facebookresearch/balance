@@ -207,6 +207,28 @@ class Testpoststratify(
         self.assertIn("variables", model)
         self.assertTrue(bool(model.get("store_fit_metadata")))
 
+    def test_poststratify_stores_resolved_default_transformations_in_metadata(
+        self,
+    ) -> None:
+        sample_df = pd.DataFrame({"a": [1.0, 2.0, 3.0], "b": ["x", "y", "x"]})
+        target_df = pd.DataFrame({"a": [1.0, 2.0, 3.0], "b": ["x", "y", "x"]})
+        s_weights = pd.Series([1.0, 1.0, 1.0])
+        t_weights = pd.Series([1.0, 1.0, 1.0])
+
+        result = poststratify(
+            sample_df=sample_df,
+            sample_weights=s_weights,
+            target_df=target_df,
+            target_weights=t_weights,
+            variables=["a", "b"],
+            transformations="default",
+            store_fit_metadata=True,
+        )
+        model = result["model"]
+        assert isinstance(model, dict)
+        self.assertIsInstance(model.get("transformations"), dict)
+        self.assertEqual(set(model["transformations"].keys()), {"a", "b"})
+
     def test_poststratify_defaults_to_minimal_model_payload(self) -> None:
         sample_df = pd.DataFrame({"a": ["x", "y", "x"]})
         target_df = pd.DataFrame({"a": ["x", "x", "y"]})

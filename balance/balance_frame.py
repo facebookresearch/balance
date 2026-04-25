@@ -1356,6 +1356,7 @@ class BalanceFrame:
         data: pd.DataFrame | pd.Series,
         index: pd.Index,
         caller: str,
+        method_name: str = "ipw",
     ) -> pd.DataFrame | pd.Series:
         """Align a DataFrame or Series to the given index.
 
@@ -1367,16 +1368,17 @@ class BalanceFrame:
             if len(data.index) == len(index) and not data.index.equals(index):
                 if not (data.index.isin(index).all() and index.isin(data.index).all()):
                     raise ValueError(
-                        f"Stored IPW {caller} output index does not match the current "
-                        "data index. Re-fit with BalanceFrame.fit(method='ipw') or "
+                        f"Stored {method_name.upper()} {caller} output index does not "
+                        "match the current data index. Re-fit with "
+                        f"BalanceFrame.fit(method='{method_name}') or "
                         "attach a model trained on matching rows."
                     )
             return data.reindex(index)
         if len(data.index) != len(index):
             raise ValueError(
-                f"Stored IPW {caller} output cannot be aligned to the current "
-                "index because lengths differ. Re-fit with "
-                "BalanceFrame.fit(method='ipw') to refresh stored artifacts."
+                f"Stored {method_name.upper()} {caller} output cannot be aligned to "
+                "the current index because lengths differ. Re-fit with "
+                f"BalanceFrame.fit(method='{method_name}') to refresh stored artifacts."
             )
         return data.set_axis(index, axis=0)
 
@@ -2587,6 +2589,7 @@ class BalanceFrame:
                 trimmed,
                 self._sf_sample.df.index,
                 caller="predict_weights()",
+                method_name="poststratify",
             ).rename(weight_name),
         )
 

@@ -3823,6 +3823,20 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         ):
             adjusted.predict_weights()
 
+    def test_align_to_index_poststratify_error_message_is_method_specific(
+        self,
+    ) -> None:
+        with self.assertRaisesRegex(
+            ValueError,
+            "BalanceFrame.fit\\(method='poststratify'\\)",
+        ):
+            self.bf._align_to_index(
+                pd.Series([1.0, 2.0], index=pd.Index(["a", "b"])),
+                pd.Index(["a", "c"]),
+                caller="predict_weights()",
+                method_name="poststratify",
+            )
+
     def test_predict_weights_cbps_requires_fit_metadata(self) -> None:
         adjusted = self.bf.adjust(method="cbps", transformations=None)
         with self.assertRaisesRegex(ValueError, "store_fit_metadata=True"):
