@@ -27,7 +27,7 @@ def poststratify(
     target_df: pd.DataFrame,
     target_weights: pd.Series,
     variables: Optional[List[str]] = None,
-    transformations: Dict[str, Callable[..., Any]] | str | None = "default",
+    transformations: Union[Dict[str, Callable[..., Any]], str, None] = "default",
     transformations_drop: bool = True,
     strict_matching: bool = True,
     na_action: str = "add_indicator",
