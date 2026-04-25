@@ -3729,6 +3729,40 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             )
         )
 
+    def test_predict_weights_poststratify_temp_ratio_name_collision(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "group": ["a", "a", "b", "b"],
+                "_cell_ratio": ["x", "x", "y", "y"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "group": ["a", "a", "b", "b"],
+                "_cell_ratio": ["x", "x", "y", "y"],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="poststratify",
+            variables=["group", "_cell_ratio"],
+            transformations=None,
+        )
+        predicted_weights = adjusted.predict_weights()
+        np.testing.assert_allclose(
+            predicted_weights.to_numpy(),
+            _assert_type(adjusted.weight_series).to_numpy(),
+            rtol=1e-6,
+            atol=1e-8,
+        )
+
     def test_predict_weights_poststratify_missing_cells_strict_matching_true_raises(
         self,
     ) -> None:

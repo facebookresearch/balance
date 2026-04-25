@@ -2559,6 +2559,8 @@ class BalanceFrame:
         sample_df = sample_df.loc[:, variables]
 
         ratio_name = "_cell_ratio"
+        while ratio_name in sample_df.columns:
+            ratio_name = f"{ratio_name}_tmp"
         sample_with_ratio = sample_df.join(
             ratio_series.rename(ratio_name), on=variables
         )
