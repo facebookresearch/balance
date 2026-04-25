@@ -20,13 +20,6 @@ from patsy.highlevel import ModelDesc
 logger: logging.Logger = logging.getLogger(__package__)
 
 
-# TODO: Add tests for all arguments of function
-# TODO: Store fit artifacts for predict_weights() support.
-# Save the cell-ratio table, the variable list, and na_action in the
-# returned model dict. Currently only {"method": "poststratify"} is
-# returned. Then implement `_predict_weights_poststratify()` in
-# balance_frame.py: join sample rows on stored cell-ratio table,
-# multiply ratio by design weight, normalize to target total. ~45 lines total.
 def poststratify(
     sample_df: pd.DataFrame,
     sample_weights: pd.Series,
@@ -43,7 +36,7 @@ def poststratify(
     *args: Any,
     formula: Optional[Union[str, List[str]]] = None,
     **kwargs: Any,
-) -> Dict[str, Union[pd.Series, Dict[str, str]]]:
+) -> Dict[str, Any]:
     """
     Perform cell-based post-stratification to adjust sample weights so that the sample matches the joint distribution of, one or more, specified variables in the target population.
 
@@ -96,12 +89,17 @@ def poststratify(
             not supported. Mutually exclusive with non-empty
             ``variables``.
         *args: Additional positional arguments (currently unused).
-        **kwargs: Additional keyword arguments (currently unused).
+        **kwargs: Additional keyword arguments. Supports:
+            ``store_fit_metadata`` (bool, default ``True``) to include
+            fit-time artifacts in the returned model dictionary so
+            ``BalanceFrame.predict_weights()`` can reconstruct
+            poststratification weights.
 
     Returns:
         dict:
             weight (pd.Series): Final weights for the sample, summing to the target's total weight.
-            model (dict): Description of the adjustment method used.
+            model (dict): Description of the adjustment method used, with
+                optional fit metadata when ``store_fit_metadata=True``.
 
     Raises:
         ValueError: If strict_matching is True and some sample cells are missing in the target.
@@ -180,6 +178,9 @@ def poststratify(
         variables = _variables_from_formula(sample_df, target_df, formula)
 
     variables = balance_util.choose_variables(sample_df, target_df, variables=variables)
+    variables_before_transformations = list(variables)
+    original_sample_weights = sample_weights.copy()
+    original_target_weights = target_weights.copy()
     logger.debug(f"Join variables for sample and target: {variables}")
 
     sample_df = sample_df.loc[:, variables]
@@ -245,9 +246,32 @@ def poststratify(
         keep_sum_of_weights=keep_sum_of_weights,
     ).rename(raw_weights.name)
 
+    model: Dict[str, Any] = {"method": "poststratify"}
+    store_fit_metadata = bool(kwargs.pop("store_fit_metadata", True))
+    if store_fit_metadata:
+        model.update(
+            {
+                "variables": variables,
+                "variables_before_transformations": variables_before_transformations,
+                "na_action": na_action,
+                "strict_matching": strict_matching,
+                "transformations": transformations,
+                "transformations_drop": transformations_drop,
+                "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
+                "weight_trimming_percentile": weight_trimming_percentile,
+                "keep_sum_of_weights": keep_sum_of_weights,
+                "cell_weight_ratio": combined["weight"].copy(),
+                "training_sample_weights": original_sample_weights,
+                "training_target_weights": original_target_weights,
+                "sample_index": sample_df.index.copy(),
+                "target_index": target_df.index.copy(),
+                "store_fit_metadata": True,
+            }
+        )
+
     return {
         "weight": w,
-        "model": {"method": "poststratify"},
+        "model": model,
     }
 
 

@@ -96,6 +96,17 @@
   - Calling `predict_weights()` on CBPS models without fit metadata now raises
     actionable guidance to fit with metadata enabled.
 
+- **Added poststratify fit metadata for weight reconstruction**
+  - `poststratify(...)` now stores fit-time artifacts in its returned
+    model dictionary by default (`store_fit_metadata=True`), including
+    cell-ratio tables, selected variables, NA handling mode, and
+    training design weights.
+  - `BalanceFrame.predict_weights()` now supports fitted
+    `method="poststratify"` models and reconstructs weights from stored
+    cell ratios with the same trimming behavior used at fit time.
+  - `poststratify(..., store_fit_metadata=False)` remains available for
+    minimal model payloads when weight reconstruction is not needed.
+
 ## Breaking Changes
 
 - **Changed `id_column` to return the column name (`str`)** on `SampleFrame`,
@@ -143,6 +154,10 @@
   - additional fitted-IPW workflow edge cases: default-model fit metadata
     storage, raw-covariate fit-matrix persistence (`use_model_matrix=False`),
     empty-input validation, and near-separation weight-stability checks.
+  - poststratify TODO scenarios: chained IPW→poststratify adjustment behavior,
+    transformations/transformations_drop interactions, explicit variables-vs-transformations
+    precedence, ASMD convergence on poststratification variables, outcome-shift
+    checks, and continuous-variable edge-case error handling.
 
 # 0.19.0 (2026-04-06)
 

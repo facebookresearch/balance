@@ -32,6 +32,7 @@ from balance.typing import FilePathOrBuffer
 from balance.util import (
     _assert_type,
     _detect_high_cardinality_features,
+    _safe_fillna_and_infer,
     HighCardinalityFeature,
 )
 from balance.utils.file_utils import _to_download
@@ -2026,36 +2027,13 @@ class BalanceFrame:
             return self._predict_weights_ipw(model)
         if method == "cbps":
             return self._predict_weights_cbps(model)
-
-        # TODO: Add predict_weights dispatch for other methods.
-        #
-        # Step 3 — Store fit artifacts in each weighting method:
-        #   - poststratify.py: Save the cell-ratio table
-        #     (`combined["weight"]` at line 194), the variable list, and
-        #     na_action in the returned model dict. Currently only
-        #     `{"method": "poststratify"}` is returned. ~15 lines.
-        #   - rake.py: Save the fitted contingency table (`m_fit`), the
-        #     variable lists, and category-to-index mappings. Currently
-        #     `m_fit` is discarded after per-row weight assignment.
-        #     More complex due to N-dimensional array indexing. ~25 lines.
-        #
-        # Step 4 — Implement _predict_weights_* for each method:
-        #   - _predict_weights_poststratify(model): Join current sample rows
-        #     on the stored cell-ratio table by cell variables, multiply
-        #     ratio by design weight, normalize to target total. ~20 lines.
-        #   - _predict_weights_rake(model): Look up each row's cell in the
-        #     stored fitted N-dimensional contingency table, compute weight
-        #     ratio (fitted_cell / original_cell), multiply by design
-        #     weight. Same logic as rake.py lines 229-239. ~30 lines.
-        #
-        # Note: shared preprocessing is already extracted into
-        # build_design_matrix() in utils/model_matrix.py, used by both
-        # _compute_ipw_matrices() and ipw().
+        if method == "poststratify":
+            return self._predict_weights_poststratify(model)
 
         raise ValueError(
             f"predict_weights() is not yet supported for method '{method}'. "
-            "Currently only 'ipw' and 'cbps' are supported. Use adjust() to obtain "
-            "weights directly for other methods."
+            "Currently only 'ipw', 'cbps', and 'poststratify' are supported. "
+            "Use adjust() to obtain weights directly for other methods."
         )
 
     def _resolve_ipw_link(self, model: dict[str, Any]) -> np.ndarray:
@@ -2441,6 +2419,159 @@ class BalanceFrame:
         weights = weights / original_sum * float(np.sum(target_weights))
         return pd.Series(weights, index=bf._sf_sample.df.index).rename(
             getattr(bf._sf_sample.weight_series, "name", None)
+        )
+
+    def _predict_weights_poststratify(self, model: dict[str, Any]) -> pd.Series:
+        """Poststratify-specific weight reconstruction from stored fit artifacts."""
+        required = (
+            "variables",
+            "variables_before_transformations",
+            "na_action",
+            "strict_matching",
+            "transformations_drop",
+            "cell_weight_ratio",
+        )
+        missing = [key for key in required if key not in model]
+        if missing:
+            raise ValueError(
+                "Poststratify model is missing fit-time metadata "
+                f"({missing}) for predict_weights(). "
+                "Call BalanceFrame.fit(method='poststratify') or run "
+                "poststratify(..., store_fit_metadata=True)."
+            )
+
+        variables = model.get("variables")
+        input_variables = model.get("variables_before_transformations")
+        if not isinstance(variables, list) or not all(
+            isinstance(v, str) for v in variables
+        ):
+            raise ValueError(
+                "Poststratify model has invalid 'variables' metadata for "
+                "predict_weights()."
+            )
+        if not isinstance(input_variables, list) or not all(
+            isinstance(v, str) for v in input_variables
+        ):
+            raise ValueError(
+                "Poststratify model has invalid "
+                "'variables_before_transformations' metadata for predict_weights()."
+            )
+
+        ratio_series = model.get("cell_weight_ratio")
+        if not isinstance(ratio_series, pd.Series):
+            raise ValueError(
+                "Poststratify model is missing cell-weight ratio metadata for "
+                "predict_weights()."
+            )
+
+        current_sample_weights = self._sf_sample.df_weights.iloc[:, 0]
+        current_target_weights = _assert_type(self._sf_target).df_weights.iloc[:, 0]
+        sample_weights = model.get("training_sample_weights")
+        target_weights = model.get("training_target_weights")
+        if (
+            not isinstance(sample_weights, pd.Series)
+            or len(sample_weights) != len(current_sample_weights)
+            or not sample_weights.index.equals(current_sample_weights.index)
+        ):
+            logger.warning(
+                "Falling back to current sample design weights in poststratify "
+                "predict_weights(); stored training_sample_weights are unavailable "
+                "or incompatible."
+            )
+            sample_weights = current_sample_weights
+        if (
+            not isinstance(target_weights, pd.Series)
+            or len(target_weights) != len(current_target_weights)
+            or not target_weights.index.equals(current_target_weights.index)
+        ):
+            logger.warning(
+                "Falling back to current target design weights in poststratify "
+                "predict_weights(); stored training_target_weights are unavailable "
+                "or incompatible."
+            )
+            target_weights = current_target_weights
+
+        sample_covars = self._sf_sample.df_covars
+        target_covars = _assert_type(self._sf_target).df_covars
+        for column in input_variables:
+            if (
+                column not in sample_covars.columns
+                or column not in target_covars.columns
+            ):
+                raise ValueError(
+                    "Poststratify predict_weights() cannot find required covariate "
+                    f"'{column}' in both sample and target."
+                )
+        sample_df = sample_covars.loc[:, input_variables]
+        target_df = target_covars.loc[:, input_variables]
+
+        na_action = cast(str, model.get("na_action", "add_indicator"))
+        if na_action == "drop":
+            sample_df, sample_weights = balance_util.drop_na_rows(
+                sample_df, sample_weights, "sample"
+            )
+            target_df, target_weights = balance_util.drop_na_rows(
+                target_df, target_weights, "target"
+            )
+        elif na_action == "add_indicator":
+            sample_df = pd.DataFrame(_safe_fillna_and_infer(sample_df, "__NaN__"))
+            target_df = pd.DataFrame(_safe_fillna_and_infer(target_df, "__NaN__"))
+        else:
+            raise ValueError(
+                "Poststratify model has invalid na_action metadata "
+                f"'{na_action}' for predict_weights()."
+            )
+
+        sample_df, _target_df = balance_adjustment.apply_transformations(
+            (sample_df, target_df),
+            transformations=model.get("transformations", "default"),
+            drop=bool(model.get("transformations_drop", True)),
+        )
+        for column in variables:
+            if column not in sample_df.columns:
+                raise ValueError(
+                    "Poststratify transform output is missing stored variable "
+                    f"'{column}' required for predict_weights()."
+                )
+        sample_df = sample_df.loc[:, variables]
+
+        ratio_name = "_cell_ratio"
+        sample_with_ratio = sample_df.join(
+            ratio_series.rename(ratio_name), on=variables
+        )
+        missing_ratio = sample_with_ratio[ratio_name].isna()
+        if bool(missing_ratio.any()):
+            if bool(model.get("strict_matching", True)):
+                raise ValueError(
+                    "Poststratify predict_weights() found sample cells missing from "
+                    "stored fit-time cell ratios. Re-fit with compatible cells or "
+                    "fit with strict_matching=False."
+                )
+            logger.warning(
+                "Poststratify predict_weights() encountered sample cells missing from "
+                "stored fit-time cell ratios; assigning zero weights to those rows."
+            )
+            sample_with_ratio[ratio_name] = _safe_fillna_and_infer(
+                sample_with_ratio[ratio_name], 0
+            )
+
+        raw_weights = sample_with_ratio[ratio_name] * sample_weights
+        target_total = raw_weights.sum()
+        trimmed = balance_adjustment.trim_weights(
+            raw_weights,
+            target_sum_weights=target_total,
+            weight_trimming_mean_ratio=model.get("weight_trimming_mean_ratio"),
+            weight_trimming_percentile=model.get("weight_trimming_percentile"),
+            keep_sum_of_weights=bool(model.get("keep_sum_of_weights", True)),
+        )
+        weight_name = getattr(_assert_type(self.weight_series), "name", None)
+        return cast(
+            pd.Series,
+            self._align_to_index(
+                trimmed,
+                self._sf_sample.df.index,
+                caller="predict_weights()",
+            ).rename(weight_name),
         )
 
     @property
