@@ -104,6 +104,12 @@
   - `BalanceFrame.predict_weights()` now supports fitted
     `method="poststratify"` models and reconstructs weights from stored
     cell ratios with the same trimming behavior used at fit time.
+  - `store_fit_metadata` is now an explicit argument on
+    `poststratify(...)`; non-boolean values raise `TypeError`, and
+    unknown kwargs raise `TypeError` to prevent silent misconfiguration.
+  - When `store_fit_metadata=True`, `transformations` must be pickleable;
+    pass `store_fit_metadata=False` if using non-pickleable callables
+    such as lambdas.
   - `poststratify(..., store_fit_metadata=False)` remains available for
     minimal model payloads when weight reconstruction is not needed.
 
@@ -154,7 +160,7 @@
   - additional fitted-IPW workflow edge cases: default-model fit metadata
     storage, raw-covariate fit-matrix persistence (`use_model_matrix=False`),
     empty-input validation, and near-separation weight-stability checks.
-  - poststratify TODO scenarios: chained IPW→poststratify adjustment behavior,
+  - poststratify TODO scenarios: chained IPW->poststratify adjustment behavior,
     transformations/transformations_drop interactions, explicit variables-vs-transformations
     precedence, ASMD convergence on poststratification variables, outcome-shift
     checks, and continuous-variable edge-case error handling.

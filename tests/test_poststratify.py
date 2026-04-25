@@ -250,6 +250,38 @@ class Testpoststratify(
         self.assertTrue(stored_sample.index.equals(s_weights.index))
         self.assertTrue(stored_target.index.equals(t_weights.index))
 
+    def test_poststratify_rejects_non_bool_store_fit_metadata(self) -> None:
+        sample_df = pd.DataFrame({"a": ["x", "y"]})
+        target_df = pd.DataFrame({"a": ["x", "y"]})
+        weights = pd.Series([1.0, 1.0])
+        with self.assertRaisesRegex(TypeError, "store_fit_metadata"):
+            poststratify(
+                sample_df=sample_df,
+                sample_weights=weights,
+                target_df=target_df,
+                target_weights=weights,
+                variables=["a"],
+                transformations=None,
+                store_fit_metadata="False",  # type: ignore[arg-type]
+            )
+
+    def test_poststratify_rejects_unpickleable_transformations_when_storing_metadata(
+        self,
+    ) -> None:
+        sample_df = pd.DataFrame({"a": ["x", "y", "x"]})
+        target_df = pd.DataFrame({"a": ["x", "y", "y"]})
+        weights = pd.Series([1.0, 1.0, 1.0])
+
+        with self.assertRaisesRegex(ValueError, "must be pickleable"):
+            poststratify(
+                sample_df=sample_df,
+                sample_weights=weights,
+                target_df=target_df,
+                target_weights=weights,
+                variables=["a"],
+                transformations={"a": lambda x: x},
+            )
+
     def test_poststratify_variables_arg(self) -> None:
         s = pd.DataFrame(
             {
@@ -919,6 +951,7 @@ class Testpoststratify(
             target_df=target_df,
             target_weights=t_weights,
             transformations={"age_group": lambda x: x},
+            store_fit_metadata=False,
         )["weight"]
         via_variables = poststratify(
             sample_df=sample_df,
@@ -954,6 +987,7 @@ class Testpoststratify(
             target_weights=t_weights,
             transformations={"age_group": lambda x: x},
             transformations_drop=False,
+            store_fit_metadata=False,
         )["weight"]
         via_both_variables = poststratify(
             sample_df=sample_df,
@@ -989,6 +1023,7 @@ class Testpoststratify(
             target_weights=t_weights,
             variables=["region"],
             transformations={"age_group": lambda x: x},
+            store_fit_metadata=False,
         )["weight"]
         via_region = poststratify(
             sample_df=sample_df,

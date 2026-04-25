@@ -2428,7 +2428,11 @@ class BalanceFrame:
             "variables_before_transformations",
             "na_action",
             "strict_matching",
+            "transformations",
             "transformations_drop",
+            "weight_trimming_mean_ratio",
+            "weight_trimming_percentile",
+            "keep_sum_of_weights",
             "cell_weight_ratio",
         )
         missing = [key for key in required if key not in model]
@@ -2464,32 +2468,10 @@ class BalanceFrame:
                 "predict_weights()."
             )
 
-        current_sample_weights = self._sf_sample.df_weights.iloc[:, 0]
-        current_target_weights = _assert_type(self._sf_target).df_weights.iloc[:, 0]
-        sample_weights = model.get("training_sample_weights")
-        target_weights = model.get("training_target_weights")
-        if (
-            not isinstance(sample_weights, pd.Series)
-            or len(sample_weights) != len(current_sample_weights)
-            or not sample_weights.index.equals(current_sample_weights.index)
-        ):
-            logger.warning(
-                "Falling back to current sample design weights in poststratify "
-                "predict_weights(); stored training_sample_weights are unavailable "
-                "or incompatible."
-            )
-            sample_weights = current_sample_weights
-        if (
-            not isinstance(target_weights, pd.Series)
-            or len(target_weights) != len(current_target_weights)
-            or not target_weights.index.equals(current_target_weights.index)
-        ):
-            logger.warning(
-                "Falling back to current target design weights in poststratify "
-                "predict_weights(); stored training_target_weights are unavailable "
-                "or incompatible."
-            )
-            target_weights = current_target_weights
+        sample_weights, target_weights = self._resolve_design_weights(
+            model,
+            np.zeros(len(self._sf_sample.df.index)),
+        )
 
         sample_covars = self._sf_sample.df_covars
         target_covars = _assert_type(self._sf_target).df_covars
@@ -2524,8 +2506,8 @@ class BalanceFrame:
 
         sample_df, _target_df = balance_adjustment.apply_transformations(
             (sample_df, target_df),
-            transformations=model.get("transformations", "default"),
-            drop=bool(model.get("transformations_drop", True)),
+            transformations=model["transformations"],
+            drop=bool(model["transformations_drop"]),
         )
         for column in variables:
             if column not in sample_df.columns:
@@ -2560,9 +2542,9 @@ class BalanceFrame:
         trimmed = balance_adjustment.trim_weights(
             raw_weights,
             target_sum_weights=target_total,
-            weight_trimming_mean_ratio=model.get("weight_trimming_mean_ratio"),
-            weight_trimming_percentile=model.get("weight_trimming_percentile"),
-            keep_sum_of_weights=bool(model.get("keep_sum_of_weights", True)),
+            weight_trimming_mean_ratio=model["weight_trimming_mean_ratio"],
+            weight_trimming_percentile=model["weight_trimming_percentile"],
+            keep_sum_of_weights=bool(model["keep_sum_of_weights"]),
         )
         weight_name = getattr(_assert_type(self.weight_series), "name", None)
         return cast(

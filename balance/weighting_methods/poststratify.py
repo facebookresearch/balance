@@ -9,6 +9,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import logging
+import pickle
 import re
 from typing import Any, Dict, List, Optional, Union
 
@@ -35,6 +36,7 @@ def poststratify(
     keep_sum_of_weights: bool = True,
     *args: Any,
     formula: Optional[Union[str, List[str]]] = None,
+    store_fit_metadata: bool = True,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """
@@ -89,11 +91,12 @@ def poststratify(
             not supported. Mutually exclusive with non-empty
             ``variables``.
         *args: Additional positional arguments (currently unused).
-        **kwargs: Additional keyword arguments. Supports:
-            ``store_fit_metadata`` (bool, default ``True``) to include
-            fit-time artifacts in the returned model dictionary so
+        store_fit_metadata (bool, optional): Whether to include fit-time
+            artifacts in the returned model dictionary so
             ``BalanceFrame.predict_weights()`` can reconstruct
-            poststratification weights.
+            poststratification weights. Defaults to ``True``.
+        **kwargs: Reserved for backward compatibility. Unknown keys raise
+            ``TypeError`` to avoid silently ignoring typos.
 
     Returns:
         dict:
@@ -174,6 +177,12 @@ def poststratify(
     if formula is not None and variables is not None:
         raise ValueError("Specify only one of `variables` or `formula`.")
 
+    if not isinstance(store_fit_metadata, bool):
+        raise TypeError("`store_fit_metadata` must be a bool.")
+    if kwargs:
+        unknown = ", ".join(sorted(kwargs.keys()))
+        raise TypeError(f"Unexpected keyword arguments: {unknown}")
+
     if formula is not None:
         variables = _variables_from_formula(sample_df, target_df, formula)
 
@@ -247,8 +256,18 @@ def poststratify(
     ).rename(raw_weights.name)
 
     model: Dict[str, Any] = {"method": "poststratify"}
-    store_fit_metadata = bool(kwargs.pop("store_fit_metadata", True))
     if store_fit_metadata:
+        # Persisting non-pickleable callables (e.g., lambdas/closures) breaks
+        # serialization workflows for fitted objects. Require picklable
+        # transformations when fit metadata storage is enabled.
+        try:
+            pickle.dumps(transformations)
+        except Exception as exc:
+            raise ValueError(
+                "`transformations` must be pickleable when "
+                "store_fit_metadata=True. Pass store_fit_metadata=False to "
+                "disable fit-artifact persistence for this run."
+            ) from exc
         model.update(
             {
                 "variables": variables,
