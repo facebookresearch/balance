@@ -96,6 +96,12 @@
   - Calling `predict_weights()` on CBPS models without fit metadata now raises
     actionable guidance to fit with metadata enabled.
 
+- **Cleaned up legacy Python 2 compatibility imports in weighting methods**
+  - Replaced obsolete `__future__` compatibility imports with
+    `from __future__ import annotations` in `adjust_null`, `cbps`,
+    `poststratify`, and `rake`.
+  - Removes dead compatibility scaffolding while preserving runtime behavior.
+
 ## Breaking Changes
 
 - **Changed `id_column` to return the column name (`str`)** on `SampleFrame`,
