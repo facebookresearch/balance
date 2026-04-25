@@ -98,7 +98,7 @@ def poststratify(
         store_fit_metadata (bool, optional): Whether to include fit-time
             artifacts in the returned model dictionary so
             ``BalanceFrame.predict_weights()`` can reconstruct
-            poststratification weights. Defaults to ``True``.
+            poststratification weights. Defaults to ``False``.
         **kwargs: Reserved for backward compatibility. Unknown keys raise
             ``TypeError`` to avoid silently ignoring typos.
 
@@ -175,6 +175,7 @@ def poststratify(
             "weight can't be a name of a column in sample or target when applying poststratify"
         )
 
+    user_supplied_variables = variables is not None
     if variables is not None and len(variables) == 0:
         variables = None
 
@@ -187,14 +188,28 @@ def poststratify(
         unknown = ", ".join(sorted(kwargs.keys()))
         raise TypeError(f"Unexpected keyword arguments: {unknown}")
 
+    original_sample_weights: Optional[pd.Series] = (
+        sample_weights.copy() if store_fit_metadata else None
+    )
+    original_target_weights: Optional[pd.Series] = (
+        target_weights.copy() if store_fit_metadata else None
+    )
+
     if formula is not None:
         variables = _variables_from_formula(sample_df, target_df, formula)
 
     variables = balance_util.choose_variables(sample_df, target_df, variables=variables)
     variables_before_transformations = list(variables)
-    original_sample_weights = sample_weights.copy()
-    original_target_weights = target_weights.copy()
     logger.debug(f"Join variables for sample and target: {variables}")
+
+    transformations_to_apply = transformations
+    # When `variables` is explicitly set, ensure cell-definition precedence:
+    # only transformations on selected variables are applied. Transformations
+    # for out-of-scope keys are ignored so they cannot be treated as additions.
+    if user_supplied_variables and isinstance(transformations_to_apply, dict):
+        selected = set(variables)
+        filtered = {k: v for k, v in transformations_to_apply.items() if k in selected}
+        transformations_to_apply = filtered if filtered else None
 
     sample_df = sample_df.loc[:, variables]
     target_df = target_df.loc[:, variables]
@@ -214,7 +229,7 @@ def poststratify(
 
     sample_df, target_df = balance_adjustment.apply_transformations(
         (sample_df, target_df),
-        transformations=transformations,
+        transformations=transformations_to_apply,
         drop=transformations_drop,
     )
     variables = list(sample_df.columns)
@@ -261,11 +276,13 @@ def poststratify(
 
     model: Dict[str, Any] = {"method": "poststratify"}
     if store_fit_metadata:
+        if original_sample_weights is None or original_target_weights is None:
+            raise RuntimeError("Unexpected missing stored training weights.")
         # Persisting non-pickleable callables (e.g., lambdas/closures) breaks
         # serialization workflows for fitted objects. Require picklable
         # transformations when fit metadata storage is enabled.
         try:
-            pickle.dumps(transformations)
+            pickle.dumps(transformations_to_apply)
         except Exception as exc:
             raise ValueError(
                 "`transformations` must be pickleable when "
@@ -278,7 +295,7 @@ def poststratify(
                 "variables_before_transformations": variables_before_transformations,
                 "na_action": na_action,
                 "strict_matching": strict_matching,
-                "transformations": transformations,
+                "transformations": transformations_to_apply,
                 "transformations_drop": transformations_drop,
                 "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
                 "weight_trimming_percentile": weight_trimming_percentile,

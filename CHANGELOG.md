@@ -97,10 +97,14 @@
     actionable guidance to fit with metadata enabled.
 
 - **Added poststratify fit metadata for weight reconstruction**
-  - `poststratify(...)` now stores fit-time artifacts in its returned
-    model dictionary by default (`store_fit_metadata=True`), including
-    cell-ratio tables, selected variables, NA handling mode, and
-    training design weights.
+  - `poststratify(..., store_fit_metadata=True)` now stores fit-time
+    artifacts in its returned model dictionary, including cell-ratio
+    tables, selected variables, NA handling mode, and training design
+    weights.
+  - Direct weighting-method calls keep the default
+    `store_fit_metadata=False` (minimal model payload), while
+    `BalanceFrame.fit(method="poststratify")` enables metadata storage
+    by default for `predict_weights()` workflows.
   - `BalanceFrame.predict_weights()` now supports fitted
     `method="poststratify"` models and reconstructs weights from stored
     cell ratios with the same trimming behavior used at fit time.

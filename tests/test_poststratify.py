@@ -1020,6 +1020,11 @@ class Testpoststratify(
         pd.testing.assert_series_equal(transformed_keep_rest, via_both_variables)
 
     def test_variables_and_transformations_prioritize_explicit_variables(self) -> None:
+        def _must_not_run(_: object) -> object:
+            raise AssertionError(
+                "Transformation outside explicit variables should not run."
+            )
+
         sample_df = pd.DataFrame(
             {
                 "age_group": ["young", "young", "old", "old"],
@@ -1041,7 +1046,7 @@ class Testpoststratify(
             target_df=target_df,
             target_weights=t_weights,
             variables=["region"],
-            transformations={"age_group": lambda x: x},
+            transformations={"age_group": _must_not_run},
             store_fit_metadata=False,
         )["weight"]
         via_region = poststratify(
