@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 from balance import adjustment as balance_adjustment
 from balance.sample_class import Sample
+from balance.util import _assert_type
 from balance.weighting_methods.poststratify import poststratify
 
 
@@ -181,6 +182,161 @@ class Testpoststratify(
         ).rename(baseline.name)
 
         pd.testing.assert_series_equal(trimmed, expected)
+
+    def test_poststratify_stores_fit_metadata_when_enabled(self) -> None:
+        sample_df = pd.DataFrame({"a": ["x", "y", "x"], "b": ["u", "u", "v"]})
+        target_df = pd.DataFrame({"a": ["x", "y", "x"], "b": ["u", "u", "v"]})
+        s_weights = pd.Series([1.0, 1.0, 1.0])
+        t_weights = pd.Series([1.0, 1.0, 1.0])
+
+        result = poststratify(
+            sample_df=sample_df,
+            sample_weights=s_weights,
+            target_df=target_df,
+            target_weights=t_weights,
+            variables=["a", "b"],
+            transformations=None,
+            store_fit_metadata=True,
+        )
+        model = result["model"]
+        assert isinstance(model, dict)
+        self.assertEqual(model["method"], "poststratify")
+        self.assertIn("cell_weight_ratio", model)
+        self.assertIn("training_sample_weights", model)
+        self.assertIn("training_target_weights", model)
+        self.assertIn("variables", model)
+        self.assertTrue(bool(model.get("store_fit_metadata")))
+
+    def test_poststratify_stores_resolved_default_transformations_in_metadata(
+        self,
+    ) -> None:
+        sample_df = pd.DataFrame({"a": [1.0, 2.0, 3.0], "b": ["x", "y", "x"]})
+        target_df = pd.DataFrame({"a": [1.0, 2.0, 3.0], "b": ["x", "y", "x"]})
+        s_weights = pd.Series([1.0, 1.0, 1.0])
+        t_weights = pd.Series([1.0, 1.0, 1.0])
+
+        result = poststratify(
+            sample_df=sample_df,
+            sample_weights=s_weights,
+            target_df=target_df,
+            target_weights=t_weights,
+            variables=["a", "b"],
+            transformations="default",
+            store_fit_metadata=True,
+        )
+        model = result["model"]
+        assert isinstance(model, dict)
+        self.assertIsInstance(model.get("transformations"), dict)
+        self.assertEqual(set(model["transformations"].keys()), {"a", "b"})
+
+    def test_poststratify_defaults_to_minimal_model_payload(self) -> None:
+        sample_df = pd.DataFrame({"a": ["x", "y", "x"]})
+        target_df = pd.DataFrame({"a": ["x", "x", "y"]})
+        weights = pd.Series([1.0, 1.0, 1.0])
+        result = poststratify(
+            sample_df=sample_df,
+            sample_weights=weights,
+            target_df=target_df,
+            target_weights=weights,
+            variables=["a"],
+            transformations=None,
+        )
+        model = result["model"]
+        assert isinstance(model, dict)
+        self.assertEqual(model, {"method": "poststratify"})
+
+    def test_poststratify_can_disable_fit_metadata_storage(self) -> None:
+        sample_df = pd.DataFrame({"a": ["x", "y", "x"]})
+        target_df = pd.DataFrame({"a": ["x", "x", "y"]})
+        s_weights = pd.Series([1.0, 1.0, 1.0])
+        t_weights = pd.Series([1.0, 1.0, 1.0])
+
+        result = poststratify(
+            sample_df=sample_df,
+            sample_weights=s_weights,
+            target_df=target_df,
+            target_weights=t_weights,
+            variables=["a"],
+            transformations=None,
+            store_fit_metadata=False,
+        )
+        model = result["model"]
+        assert isinstance(model, dict)
+        self.assertEqual(model, {"method": "poststratify"})
+
+    def test_poststratify_na_drop_stores_full_training_weight_indices(self) -> None:
+        sample_df = pd.DataFrame({"a": ["x", "y", None], "b": ["u", "v", "u"]})
+        target_df = pd.DataFrame({"a": ["x", "y", None], "b": ["u", "v", "v"]})
+        s_weights = pd.Series([1.0, 2.0, 3.0], index=["s0", "s1", "s2"])
+        t_weights = pd.Series([1.0, 1.0, 1.0], index=["t0", "t1", "t2"])
+        sample_df.index = s_weights.index
+        target_df.index = t_weights.index
+
+        result = poststratify(
+            sample_df=sample_df,
+            sample_weights=s_weights,
+            target_df=target_df,
+            target_weights=t_weights,
+            variables=["a"],
+            transformations=None,
+            na_action="drop",
+            strict_matching=False,
+            store_fit_metadata=True,
+        )
+        model = result["model"]
+        assert isinstance(model, dict)
+        stored_sample = _assert_type(model.get("training_sample_weights"))
+        stored_target = _assert_type(model.get("training_target_weights"))
+        self.assertTrue(stored_sample.index.equals(s_weights.index))
+        self.assertTrue(stored_target.index.equals(t_weights.index))
+
+    def test_poststratify_rejects_non_bool_store_fit_metadata(self) -> None:
+        sample_df = pd.DataFrame({"a": ["x", "y"]})
+        target_df = pd.DataFrame({"a": ["x", "y"]})
+        weights = pd.Series([1.0, 1.0])
+        with self.assertRaisesRegex(TypeError, "store_fit_metadata"):
+            poststratify(
+                sample_df=sample_df,
+                sample_weights=weights,
+                target_df=target_df,
+                target_weights=weights,
+                variables=["a"],
+                transformations=None,
+                store_fit_metadata="False",  # type: ignore[arg-type]
+            )
+
+    def test_poststratify_rejects_unknown_kwargs(self) -> None:
+        sample_df = pd.DataFrame({"a": ["x", "y"]})
+        target_df = pd.DataFrame({"a": ["x", "y"]})
+        weights = pd.Series([1.0, 1.0])
+        with self.assertRaisesRegex(TypeError, "Unexpected keyword arguments: typo"):
+            poststratify(
+                sample_df=sample_df,
+                sample_weights=weights,
+                target_df=target_df,
+                target_weights=weights,
+                variables=["a"],
+                transformations=None,
+                typo=True,
+            )
+
+    def test_poststratify_rejects_unpickleable_transformations_when_storing_metadata(
+        self,
+    ) -> None:
+        sample_df = pd.DataFrame({"a": ["x", "y", "x"]})
+        target_df = pd.DataFrame({"a": ["x", "y", "y"]})
+        weights = pd.Series([1.0, 1.0, 1.0])
+
+        with self.assertRaisesRegex(ValueError, "must be pickleable"):
+            poststratify(
+                sample_df=sample_df,
+                sample_weights=weights,
+                target_df=target_df,
+                target_weights=weights,
+                variables=["a"],
+                transformations={"a": lambda x: x},
+                store_fit_metadata=True,
+            )
 
     def test_poststratify_variables_arg(self) -> None:
         s = pd.DataFrame(
@@ -410,6 +566,36 @@ class Testpoststratify(
         pd.testing.assert_series_equal(
             result_with_triple_interaction, result_with_all_vars
         )
+
+    def test_poststratify_formula_filters_out_of_scope_transformations(self) -> None:
+        s = pd.DataFrame(
+            {
+                "a": (0, 0, 1, 1),
+                "b": ("x", "y", "x", "y"),
+            }
+        )
+        s_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+        t = s.copy()
+        t_weights = pd.Series([1.0, 1.0, 3.0, 3.0])
+
+        expected = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            formula="a",
+            transformations=None,
+        )["weight"]
+
+        transformed = poststratify(
+            sample_df=s,
+            sample_weights=s_weights,
+            target_df=t,
+            target_weights=t_weights,
+            formula="a",
+            transformations={"b": lambda x: x},
+        )["weight"]
+        pd.testing.assert_series_equal(transformed, expected)
 
     def test_poststratify_formula_keeps_positional_argument_compatibility(self) -> None:
         s = pd.DataFrame(
@@ -773,38 +959,274 @@ class Testpoststratify(
                 formula="a + . - c",
             )
 
-    # TODO: test chained adjustment (IPW → poststratify) — the two-stage pattern
-    #   from balance notebook v03:
-    #       sample_with_target = sample.set_target(target)
-    #       adjust_stage_1 = sample_with_target.adjust(method="ipw")
-    #       adjust_stage_2 = adjust_stage_1.adjust(method="poststratify")
-    #   Verify ASMD improves at each stage.
+    def test_chained_adjustment_ipw_then_poststratify_improves_poststrat_covars(
+        self,
+    ) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(8)],
+                "w": np.ones(8),
+                "signal": [0, 0, 0, 1, 1, 1, 1, 1],
+                "age_group": [
+                    "young",
+                    "young",
+                    "young",
+                    "young",
+                    "old",
+                    "old",
+                    "old",
+                    "old",
+                ],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(8)],
+                "w": np.ones(8),
+                "signal": [0, 1, 0, 1, 0, 1, 0, 1],
+                "age_group": ["young", "old", "old", "old", "old", "old", "old", "old"],
+            }
+        )
+        sample = Sample.from_frame(sample_df, id_column="id", weight_column="w")
+        target = Sample.from_frame(target_df, id_column="id", weight_column="w")
 
-    # TODO: test transformations as a dict with identity lambdas — verify only
-    #   the named column is used for cell definition (others are dropped when
-    #   transformations_drop=True, the default).
-    #   Example from balance notebook v03:
-    #       transformations = {"age_group": lambda x: x}
-    #       adjusted = ipw_adjusted.adjust(method="poststratify",
-    #                                      transformations=transformations)
+        stage_1 = sample.adjust(
+            target,
+            method="ipw",
+            variables=["signal"],
+            transformations=None,
+            num_lambdas=1,
+        )
+        stage_2 = stage_1.adjust(
+            method="poststratify",
+            variables=["age_group"],
+            transformations=None,
+        )
 
-    # TODO: test transformations_drop=False — verify that columns NOT in the
-    #   transformations dict are kept (not dropped) when this flag is set.
+        stage_1_asmd = stage_1.covars().asmd()
+        stage_2_asmd = stage_2.covars().asmd()
+        self.assertLessEqual(
+            float(stage_2_asmd.loc["self", "age_group[young]"]),
+            float(stage_1_asmd.loc["self", "age_group[young]"]),
+        )
+        self.assertAlmostEqual(
+            float(stage_2_asmd.loc["self", "age_group[young]"]),
+            0.0,
+            places=10,
+        )
 
-    # TODO: test interaction between variables= and transformations= — what
-    #   happens when both are provided? Which takes precedence?
+    def test_transformations_identity_only_uses_transformed_columns(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "age_group": ["young", "young", "old", "old"],
+                "region": ["east", "west", "east", "west"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "age_group": ["young", "young", "old", "old"],
+                "region": ["east", "west", "east", "west"],
+            }
+        )
+        s_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+        t_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
 
-    # TODO: test ASMD after poststratify — verify that ASMD on the PS variables
-    #   reaches 0 (or near 0) after adjustment.
-    #   Example pattern from balance notebook v03:
-    #       adjusted.covars().asmd().T
+        transformed_only = poststratify(
+            sample_df=sample_df,
+            sample_weights=s_weights,
+            target_df=target_df,
+            target_weights=t_weights,
+            transformations={"age_group": lambda x: x},
+            store_fit_metadata=False,
+        )["weight"]
+        via_variables = poststratify(
+            sample_df=sample_df,
+            sample_weights=s_weights,
+            target_df=target_df,
+            target_weights=t_weights,
+            variables=["age_group"],
+            transformations=None,
+        )["weight"]
 
-    # TODO: test outcomes after poststratify — verify outcome distributions
-    #   shift appropriately when accessed via .outcomes().
-    #   Example pattern from balance notebook v03:
-    #       adjusted.outcomes().plot()
+        pd.testing.assert_series_equal(transformed_only, via_variables)
 
-    # TODO: test poststratify with continuous (non-categorical) variables —
-    #   what happens when you PS on a numeric column without binning? The
-    #   default transformations handle this via quantize/fct_lump, but explicit
-    #   tests for this edge case are missing.
+    def test_transformations_drop_false_keeps_untransformed_columns(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "age_group": ["young", "young", "old", "old"],
+                "region": ["east", "west", "east", "west"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "age_group": ["young", "young", "old", "old"],
+                "region": ["east", "west", "east", "west"],
+            }
+        )
+        s_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+        t_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+
+        transformed_keep_rest = poststratify(
+            sample_df=sample_df,
+            sample_weights=s_weights,
+            target_df=target_df,
+            target_weights=t_weights,
+            transformations={"age_group": lambda x: x},
+            transformations_drop=False,
+            store_fit_metadata=False,
+        )["weight"]
+        via_both_variables = poststratify(
+            sample_df=sample_df,
+            sample_weights=s_weights,
+            target_df=target_df,
+            target_weights=t_weights,
+            variables=["age_group", "region"],
+            transformations=None,
+        )["weight"]
+
+        pd.testing.assert_series_equal(transformed_keep_rest, via_both_variables)
+
+    def test_variables_and_transformations_prioritize_explicit_variables(self) -> None:
+        def _must_not_run(_: object) -> object:
+            raise AssertionError(
+                "Transformation outside explicit variables should not run."
+            )
+
+        sample_df = pd.DataFrame(
+            {
+                "age_group": ["young", "young", "old", "old"],
+                "region": ["east", "west", "east", "west"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "age_group": ["young", "old", "old", "old"],
+                "region": ["west", "east", "east", "east"],
+            }
+        )
+        s_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+        t_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+
+        mixed_arguments = poststratify(
+            sample_df=sample_df,
+            sample_weights=s_weights,
+            target_df=target_df,
+            target_weights=t_weights,
+            variables=["region"],
+            transformations={"age_group": _must_not_run},
+            store_fit_metadata=False,
+        )["weight"]
+        via_region = poststratify(
+            sample_df=sample_df,
+            sample_weights=s_weights,
+            target_df=target_df,
+            target_weights=t_weights,
+            variables=["region"],
+            transformations=None,
+        )["weight"]
+
+        pd.testing.assert_series_equal(mixed_arguments, via_region)
+
+    def test_poststratify_drives_asmd_to_zero_on_poststrat_variables(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": ["1", "2", "3", "4"],
+                "w": [1.0, 1.0, 1.0, 1.0],
+                "age_group": ["young", "young", "old", "old"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": ["5", "6", "7", "8"],
+                "w": [1.0, 1.0, 1.0, 1.0],
+                "age_group": ["young", "old", "old", "old"],
+            }
+        )
+        sample = Sample.from_frame(sample_df, id_column="id", weight_column="w")
+        target = Sample.from_frame(target_df, id_column="id", weight_column="w")
+        adjusted = sample.adjust(
+            target,
+            method="poststratify",
+            variables=["age_group"],
+            transformations=None,
+        )
+
+        asmd = adjusted.covars().asmd()
+        self.assertAlmostEqual(
+            float(asmd.loc["self", "age_group[young]"]), 0.0, places=10
+        )
+        self.assertAlmostEqual(
+            float(asmd.loc["self", "age_group[old]"]), 0.0, places=10
+        )
+
+    def test_poststratify_updates_outcome_distribution_toward_target(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["1", "2", "3", "4"],
+                    "w": [1.0, 1.0, 1.0, 1.0],
+                    "age_group": ["young", "young", "old", "old"],
+                    "y": [1.0, 1.0, 10.0, 10.0],
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+            outcome_columns=["y"],
+        )
+        target = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["5", "6", "7", "8"],
+                    "w": [1.0, 1.0, 1.0, 1.0],
+                    "age_group": ["young", "old", "old", "old"],
+                    "y": [1.0, 10.0, 10.0, 10.0],
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+            outcome_columns=["y"],
+        )
+
+        adjusted = sample.adjust(
+            target,
+            method="poststratify",
+            variables=["age_group"],
+            transformations=None,
+        )
+        means = _assert_type(adjusted.outcomes()).mean()
+        self.assertAlmostEqual(
+            float(means.loc["self", "y"]), float(means.loc["target", "y"])
+        )
+        self.assertNotAlmostEqual(
+            float(means.loc["self", "y"]),
+            float(means.loc["unadjusted", "y"]),
+        )
+
+    def test_poststratify_on_continuous_variable_with_default_transformations(
+        self,
+    ) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "x": [10.0, 20.0, 30.0, 40.0],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "x": [12.0, 18.0, 33.0, 45.0],
+            }
+        )
+        s_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+        t_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+
+        with self.assertRaisesRegex(
+            ValueError, "Cannot normalise weights because their sum is zero"
+        ):
+            poststratify(
+                sample_df=sample_df,
+                sample_weights=s_weights,
+                target_df=target_df,
+                target_weights=t_weights,
+                variables=["x"],
+                transformations="default",
+                strict_matching=False,
+            )

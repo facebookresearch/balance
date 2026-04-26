@@ -105,6 +105,27 @@
     is enabled, runtime annotation introspection changes (for example,
     `__annotations__` become postponed/stringized).
 
+- **Added poststratify fit metadata for weight reconstruction**
+  - `poststratify(..., store_fit_metadata=True)` now stores fit-time
+    artifacts in its returned model dictionary, including cell-ratio
+    tables, selected variables, NA handling mode, and training design
+    weights.
+  - Direct weighting-method calls keep the default
+    `store_fit_metadata=False` (minimal model payload), while
+    `BalanceFrame.fit(method="poststratify")` enables metadata storage
+    by default for `predict_weights()` workflows.
+  - `BalanceFrame.predict_weights()` now supports fitted
+    `method="poststratify"` models and reconstructs weights from stored
+    cell ratios with the same trimming behavior used at fit time.
+  - `store_fit_metadata` is now an explicit argument on
+    `poststratify(...)`; non-boolean values raise `TypeError`, and
+    unknown kwargs raise `TypeError` to prevent silent misconfiguration.
+  - When `store_fit_metadata=True`, `transformations` must be pickleable;
+    pass `store_fit_metadata=False` if using non-pickleable callables
+    such as lambdas.
+  - `poststratify(..., store_fit_metadata=False)` remains available for
+    minimal model payloads when weight reconstruction is not needed.
+
 ## Breaking Changes
 
 - **Changed `id_column` to return the column name (`str`)** on `SampleFrame`,
@@ -134,6 +155,19 @@
   - Explicitly setting `store_fit_metadata=True` with `na_action='drop'` now
     raises `ValueError` with guidance to use `na_action='add_indicator'`.
 
+- **`poststratify(..., store_fit_metadata)` defaults differ by entry point**
+  - Direct weighting-method calls now default to
+    `poststratify(..., store_fit_metadata=False)`, preserving the
+    historical minimal model payload.
+  - `BalanceFrame.fit(method="poststratify")` now sets
+    `store_fit_metadata=True` by default so `predict_weights()` can
+    reconstruct poststratify weights from fit artifacts.
+  - Unknown kwargs to `poststratify(...)` now raise `TypeError` (instead
+    of being ignored), and `store_fit_metadata` must be a boolean.
+  - **Migration:** if you rely on persisted poststratify model artifacts
+    from direct `poststratify(...)` calls, pass
+    `store_fit_metadata=True` explicitly.
+
 ## Tests
 
 - Added coverage for:
@@ -152,6 +186,10 @@
   - additional fitted-IPW workflow edge cases: default-model fit metadata
     storage, raw-covariate fit-matrix persistence (`use_model_matrix=False`),
     empty-input validation, and near-separation weight-stability checks.
+  - poststratify TODO scenarios: chained IPW->poststratify adjustment behavior,
+    transformations/transformations_drop interactions, explicit variables-vs-transformations
+    precedence, ASMD convergence on poststratification variables, outcome-shift
+    checks, and continuous-variable edge-case error handling.
 
 # 0.19.0 (2026-04-06)
 
