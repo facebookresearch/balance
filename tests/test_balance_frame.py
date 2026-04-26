@@ -3545,6 +3545,371 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         self.assertTrue(np.all(np.isfinite(weights_via_data.to_numpy())))
         self.assertTrue(np.all(weights_via_data.to_numpy() >= 0))
 
+    def test_predict_weights_poststratify_fit_matches_weight_series(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "age_group": [
+                    "young",
+                    "young",
+                    "young",
+                    "young",
+                    "old",
+                    "old",
+                    "old",
+                    "old",
+                ],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "age_group": ["young", "old", "old", "old", "old", "old", "old", "old"],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="poststratify",
+            variables=["age_group"],
+            transformations=None,
+        )
+        predicted_weights = adjusted.predict_weights()
+        np.testing.assert_allclose(
+            predicted_weights.to_numpy(),
+            _assert_type(adjusted.weight_series).to_numpy(),
+            rtol=1e-6,
+            atol=1e-8,
+        )
+
+    def test_predict_weights_poststratify_requires_fit_metadata(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "age_group": ["young", "young", "old", "old"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "age_group": ["young", "old", "old", "old"],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="poststratify",
+            variables=["age_group"],
+            transformations=None,
+            store_fit_metadata=False,
+        )
+        with self.assertRaisesRegex(ValueError, "missing fit-time metadata"):
+            adjusted.predict_weights()
+
+    def test_predict_weights_poststratify_na_drop_reconstructs(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "age_group": ["young", "young", None, "old", "old", None],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "age_group": ["young", "old", "old", "old", None, None],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="poststratify",
+            variables=["age_group"],
+            transformations=None,
+            na_action="drop",
+            strict_matching=False,
+        )
+        predicted_weights = adjusted.predict_weights()
+        np.testing.assert_allclose(
+            predicted_weights.to_numpy(),
+            _assert_type(adjusted.weight_series).to_numpy(),
+            rtol=1e-6,
+            atol=1e-8,
+            equal_nan=True,
+        )
+
+    def test_predict_weights_poststratify_na_drop_restores_full_index_with_nans(
+        self,
+    ) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "age_group": ["young", None, "old", None],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "age_group": ["young", "old", None, None],
+            }
+        )
+
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="poststratify",
+            variables=["age_group"],
+            transformations=None,
+            na_action="drop",
+            strict_matching=False,
+        )
+        predicted_weights = adjusted.predict_weights()
+        self.assertEqual(
+            list(predicted_weights.index), list(adjusted._sf_sample.df.index)
+        )
+        self.assertEqual(int(predicted_weights.isna().sum()), 2)
+        expected_nan_rows = sample_df["age_group"].isna().to_numpy()
+        np.testing.assert_array_equal(
+            predicted_weights.isna().to_numpy(), expected_nan_rows
+        )
+
+    def test_predict_weights_poststratify_missing_cells_strict_matching_false(
+        self,
+    ) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "age_group": ["young", "young", "young", "old", "old", "old"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "age_group": ["young", "old", "old", "old", "old", "old"],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="poststratify",
+            variables=["age_group"],
+            transformations=None,
+            strict_matching=False,
+        )
+        model = _assert_type(adjusted.model)
+        ratio = _assert_type(model.get("cell_weight_ratio"))
+        if isinstance(ratio.index, pd.MultiIndex):
+            ratio = ratio.drop(index=("young",), errors="ignore")
+        else:
+            ratio = ratio.drop(index="young", errors="ignore")
+        model["cell_weight_ratio"] = ratio
+        predicted_weights = adjusted.predict_weights()
+        self.assertTrue(
+            np.all(
+                predicted_weights[adjusted._sf_sample.df["age_group"] == "young"] == 0
+            )
+        )
+
+    def test_predict_weights_poststratify_temp_ratio_name_collision(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "group": ["a", "a", "b", "b"],
+                "_cell_ratio": ["x", "x", "y", "y"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "group": ["a", "a", "b", "b"],
+                "_cell_ratio": ["x", "x", "y", "y"],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="poststratify",
+            variables=["group", "_cell_ratio"],
+            transformations=None,
+        )
+        predicted_weights = adjusted.predict_weights()
+        np.testing.assert_allclose(
+            predicted_weights.to_numpy(),
+            _assert_type(adjusted.weight_series).to_numpy(),
+            rtol=1e-6,
+            atol=1e-8,
+        )
+
+    def test_predict_weights_poststratify_missing_cells_strict_matching_true_raises(
+        self,
+    ) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "age_group": ["young", "young", "old", "old"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "age_group": ["young", "old", "old", "old"],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="poststratify",
+            variables=["age_group"],
+            transformations=None,
+            strict_matching=True,
+        )
+        model = _assert_type(adjusted.model)
+        ratio = _assert_type(model.get("cell_weight_ratio"))
+        if isinstance(ratio.index, pd.MultiIndex):
+            ratio = ratio.drop(index=("young",), errors="ignore")
+        else:
+            ratio = ratio.drop(index="young", errors="ignore")
+        model["cell_weight_ratio"] = ratio
+
+        with self.assertRaisesRegex(ValueError, "missing from stored fit-time cell"):
+            adjusted.predict_weights()
+
+    def test_predict_weights_poststratify_invalid_na_action_metadata_raises(
+        self,
+    ) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "age_group": ["young", "young", "old", "old"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "age_group": ["young", "old", "old", "old"],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="poststratify",
+            variables=["age_group"],
+            transformations=None,
+        )
+        model = _assert_type(adjusted.model)
+        model["na_action"] = "unknown_mode"
+
+        with self.assertRaisesRegex(ValueError, "invalid na_action metadata"):
+            adjusted.predict_weights()
+
+    def test_predict_weights_poststratify_missing_transform_metadata_raises(
+        self,
+    ) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "age_group": ["young", "young", "old", "old"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "age_group": ["young", "old", "old", "old"],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="poststratify",
+            variables=["age_group"],
+            transformations=None,
+        )
+        model = _assert_type(adjusted.model)
+        model.pop("transformations", None)
+        with self.assertRaisesRegex(ValueError, "missing fit-time metadata"):
+            adjusted.predict_weights()
+
+    def test_predict_weights_poststratify_missing_training_weights_raises(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "age_group": ["young", "young", "old", "old"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "age_group": ["young", "old", "old", "old"],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="poststratify",
+            variables=["age_group"],
+            transformations=None,
+        )
+        model = _assert_type(adjusted.model)
+        model.pop("training_sample_weights", None)
+        with self.assertRaisesRegex(
+            ValueError,
+            "fit-time sample design weights",
+        ):
+            adjusted.predict_weights()
+
+    def test_align_to_index_poststratify_error_message_is_method_specific(
+        self,
+    ) -> None:
+        with self.assertRaisesRegex(
+            ValueError,
+            "BalanceFrame.fit\\(method='poststratify'\\)",
+        ):
+            self.bf._align_to_index(
+                pd.Series([1.0, 2.0], index=pd.Index(["a", "b"])),
+                pd.Index(["a", "c"]),
+                caller="predict_weights()",
+                method_name="poststratify",
+            )
+
     def test_predict_weights_cbps_requires_fit_metadata(self) -> None:
         adjusted = self.bf.adjust(method="cbps", transformations=None)
         with self.assertRaisesRegex(ValueError, "store_fit_metadata=True"):

@@ -8,8 +8,9 @@
 from __future__ import annotations
 
 import logging
+import pickle
 import re
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import pandas as pd
 from balance import adjustment as balance_adjustment, util as balance_util
@@ -19,20 +20,13 @@ from patsy.highlevel import ModelDesc
 logger: logging.Logger = logging.getLogger(__package__)
 
 
-# TODO: Add tests for all arguments of function
-# TODO: Store fit artifacts for predict_weights() support.
-# Save the cell-ratio table, the variable list, and na_action in the
-# returned model dict. Currently only {"method": "poststratify"} is
-# returned. Then implement `_predict_weights_poststratify()` in
-# balance_frame.py: join sample rows on stored cell-ratio table,
-# multiply ratio by design weight, normalize to target total. ~45 lines total.
 def poststratify(
     sample_df: pd.DataFrame,
     sample_weights: pd.Series,
     target_df: pd.DataFrame,
     target_weights: pd.Series,
     variables: Optional[List[str]] = None,
-    transformations: Optional[str] = "default",
+    transformations: Union[Dict[str, Callable[..., Any]], str, None] = "default",
     transformations_drop: bool = True,
     strict_matching: bool = True,
     na_action: str = "add_indicator",
@@ -41,8 +35,9 @@ def poststratify(
     keep_sum_of_weights: bool = True,
     *args: Any,
     formula: Optional[Union[str, List[str]]] = None,
+    store_fit_metadata: bool = False,
     **kwargs: Any,
-) -> Dict[str, Union[pd.Series, Dict[str, str]]]:
+) -> Dict[str, Any]:
     """
     Perform cell-based post-stratification to adjust sample weights so that the sample matches the joint distribution of, one or more, specified variables in the target population.
 
@@ -57,7 +52,11 @@ def poststratify(
         target_df (pd.DataFrame): DataFrame representing the target population.
         target_weights (pd.Series): Design weights for the target.
         variables (Optional[List[str]], optional): List of variables to define post-stratification cells. If None, uses the intersection of columns in sample_df and target_df.
-        transformations (str, optional): Transformations to apply to data before fitting the model. Default is "default". See `balance.adjustment.apply_transformations`.
+        transformations (Dict[str, Callable[..., Any]] | str | None, optional):
+            Transformations to apply to data before fitting the model.
+            Accepts the same forms as
+            :func:`balance.adjustment.apply_transformations`. Defaults to
+            ``"default"``.
         transformations_drop (bool, optional): If True, drops variables not affected by transformations. Default is True.
         strict_matching (bool, optional): If True, requires all sample cells to be present in the target. If False, cells missing in the target are assigned weight 0 (and a warning is raised). Default is True.
         na_action (str, optional): How to handle missing values. Use
@@ -95,12 +94,25 @@ def poststratify(
             not supported. Mutually exclusive with non-empty
             ``variables``.
         *args: Additional positional arguments (currently unused).
-        **kwargs: Additional keyword arguments (currently unused).
+        store_fit_metadata (bool, optional): Whether to include fit-time
+            artifacts in the returned model dictionary so
+            ``BalanceFrame.predict_weights()`` can reconstruct
+            poststratification weights. Defaults to ``False``.
+        **kwargs: Reserved for backward compatibility. Unknown keys raise
+            ``TypeError`` to avoid silently ignoring typos.
 
     Returns:
         dict:
-            weight (pd.Series): Final weights for the sample, summing to the target's total weight.
-            model (dict): Description of the adjustment method used.
+            weight (pd.Series): Final weights for the sample. With
+                ``strict_matching=True`` (the default), every sample cell is
+                also present in the target and the weights sum to the target's
+                total weight. With ``strict_matching=False``, sample rows
+                whose cell is absent from the target are assigned weight 0,
+                so the weights sum to the total target weight restricted to
+                cells that are present in the sample (i.e. target-only cells
+                are effectively excluded).
+            model (dict): Description of the adjustment method used, with
+                optional fit metadata when ``store_fit_metadata=True``.
 
     Raises:
         ValueError: If strict_matching is True and some sample cells are missing in the target.
@@ -171,15 +183,40 @@ def poststratify(
 
     if variables is not None and len(variables) == 0:
         variables = None
+    explicit_cell_selection = formula is not None or variables is not None
 
     if formula is not None and variables is not None:
         raise ValueError("Specify only one of `variables` or `formula`.")
+
+    if not isinstance(store_fit_metadata, bool):
+        raise TypeError("`store_fit_metadata` must be a bool.")
+    if kwargs:
+        unknown = ", ".join(sorted(kwargs.keys()))
+        raise TypeError(f"Unexpected keyword arguments: {unknown}")
+
+    original_sample_weights: Optional[pd.Series] = (
+        sample_weights.copy() if store_fit_metadata else None
+    )
+    original_target_weights: Optional[pd.Series] = (
+        target_weights.copy() if store_fit_metadata else None
+    )
 
     if formula is not None:
         variables = _variables_from_formula(sample_df, target_df, formula)
 
     variables = balance_util.choose_variables(sample_df, target_df, variables=variables)
+    variables_before_transformations = list(variables)
     logger.debug(f"Join variables for sample and target: {variables}")
+
+    transformations_to_apply = transformations
+    # When cell-definition variables are explicitly set (via `variables` or
+    # `formula`), ensure cell-definition precedence: only transformations on
+    # selected variables are applied. Transformations for out-of-scope keys are
+    # ignored so they cannot be treated as additions.
+    if explicit_cell_selection and isinstance(transformations_to_apply, dict):
+        selected = set(variables)
+        filtered = {k: v for k, v in transformations_to_apply.items() if k in selected}
+        transformations_to_apply = filtered if filtered else None
 
     sample_df = sample_df.loc[:, variables]
     target_df = target_df.loc[:, variables]
@@ -197,9 +234,14 @@ def poststratify(
     else:
         raise ValueError("`na_action` must be 'add_indicator' or 'drop'")
 
+    if store_fit_metadata and transformations_to_apply == "default":
+        transformations_to_apply = balance_adjustment.default_transformations(
+            (sample_df, target_df)
+        )
+
     sample_df, target_df = balance_adjustment.apply_transformations(
         (sample_df, target_df),
-        transformations=transformations,
+        transformations=transformations_to_apply,
         drop=transformations_drop,
     )
     variables = list(sample_df.columns)
@@ -244,9 +286,45 @@ def poststratify(
         keep_sum_of_weights=keep_sum_of_weights,
     ).rename(raw_weights.name)
 
+    model: Dict[str, Any] = {"method": "poststratify"}
+    if store_fit_metadata:
+        if original_sample_weights is None or original_target_weights is None:
+            raise RuntimeError("Unexpected missing stored training weights.")
+        # Persisting non-pickleable callables (e.g., lambdas/closures) breaks
+        # serialization workflows for fitted objects. Require picklable
+        # transformations when fit metadata storage is enabled.
+        try:
+            # @lint-ignore PYTHONPICKLEISBAD - serializability check only; no untrusted deserialization
+            pickle.dumps(transformations_to_apply)
+        except Exception as exc:
+            raise ValueError(
+                "`transformations` must be pickleable when "
+                "store_fit_metadata=True. Pass store_fit_metadata=False to "
+                "disable fit-artifact persistence for this run."
+            ) from exc
+        model.update(
+            {
+                "variables": variables,
+                "variables_before_transformations": variables_before_transformations,
+                "na_action": na_action,
+                "strict_matching": strict_matching,
+                "transformations": transformations_to_apply,
+                "transformations_drop": transformations_drop,
+                "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
+                "weight_trimming_percentile": weight_trimming_percentile,
+                "keep_sum_of_weights": keep_sum_of_weights,
+                "cell_weight_ratio": combined["weight"].copy(),
+                "training_sample_weights": original_sample_weights,
+                "training_target_weights": original_target_weights,
+                "sample_index": sample_df.index.copy(),
+                "target_index": target_df.index.copy(),
+                "store_fit_metadata": True,
+            }
+        )
+
     return {
         "weight": w,
-        "model": {"method": "poststratify"},
+        "model": model,
     }
 
 
