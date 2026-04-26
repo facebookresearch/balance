@@ -3652,6 +3652,5 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
         sample_df = pd.DataFrame({"a": [1.0, 2.0, 3.0]})
         target_df = pd.DataFrame({"a": [4.0, 5.0, 6.0]})
         with self.assertRaisesRegex(ValueError, "std_type must be in"):
-            weighted_comparisons_stats.asmd(
-                sample_df, target_df, std_type="invalid"  # pyre-ignore[6]
-            )
+            # pyrefly: ignore [bad-argument-type]
+            weighted_comparisons_stats.asmd(sample_df, target_df, std_type="invalid")

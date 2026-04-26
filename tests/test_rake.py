@@ -825,7 +825,7 @@ class Testrake(
 
         # float max_length rejected
         with self.assertRaises(ValueError):
-            # pyre-ignore[6]: Deliberately testing invalid type
+            # pyrefly: ignore [bad-argument-type]
             _realize_dicts_of_proportions(simple, 10000.0)
 
         # max_length < 1 rejected
@@ -985,7 +985,7 @@ class Testrake(
 
         # np.float64 proportions — the common case from Series.to_dict()
         result = _hare_niemeyer_allocation(
-            # pyre-ignore[6]: Testing numpy scalar compatibility
+            # pyrefly: ignore [bad-argument-type]
             {"a": np.float64(0.2), "b": np.float64(0.8)},
             5,
         )
@@ -993,13 +993,13 @@ class Testrake(
         self.assertEqual(len(result), 5)
 
         # np.int64 proportions (unnormalized counts)
-        # pyre-ignore[6]: Testing numpy scalar compatibility
+        # pyrefly: ignore [bad-argument-type]
         result2 = _hare_niemeyer_allocation({"x": np.int64(2), "y": np.int64(8)}, 10)
         self.assertEqual(result2.count("x"), 2)
         self.assertEqual(result2.count("y"), 8)
 
         # Mixed Python float and np.float64
-        # pyre-ignore[6]: Testing numpy scalar compatibility
+        # pyrefly: ignore [bad-argument-type]
         result3 = _hare_niemeyer_allocation({"p": 0.3, "q": np.float64(0.7)}, 10)
         self.assertEqual(len(result3), 10)
 
@@ -1614,4 +1614,5 @@ class TestRakeValidation(
                 return 0
 
         with self.assertRaisesRegex(ValueError, "convertible to float"):
-            _realize_dicts_of_proportions({"var": {"cat": BadReal()}})  # pyre-ignore[6]
+            # pyrefly: ignore [bad-argument-type]
+            _realize_dicts_of_proportions({"var": {"cat": BadReal()}})

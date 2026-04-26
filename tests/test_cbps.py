@@ -310,7 +310,7 @@ class Testcbps(
     def test__standardize_model_matrix(self) -> None:
         # numpy array as input
         mat = np.array([[1, 2], [3, 4]])
-        # pyre-fixme[6]: Testing with ndarray is valid
+        # pyrefly: ignore [bad-argument-type]
         res = balance_cbps._standardize_model_matrix(mat, ["a", "b"])
         self.assertEqual(res["model_matrix"], np.array([[-1.0, -1.0], [1.0, 1.0]]))
         self.assertEqual(res["model_matrix_columns_names"], ["a", "b"])
@@ -318,7 +318,7 @@ class Testcbps(
         self.assertEqual(res["model_matrix_std"], np.array([1.0, 1.0]))
         # check when column is constant
         mat = np.array([[1, 2], [1, 4]])
-        # pyre-fixme[6]: Testing with ndarray is valid
+        # pyrefly: ignore [bad-argument-type]
         res = balance_cbps._standardize_model_matrix(mat, ["a", "b"])
         self.assertEqual(res["model_matrix"], np.array([[-1.0], [1.0]]))
         self.assertEqual(res["model_matrix_columns_names"], ["b"])
@@ -327,7 +327,7 @@ class Testcbps(
 
         # pandas dataframe as input
         mat = pd.DataFrame({"a": (1, 3), "b": (2, 4)}).values
-        # pyre-fixme[6]: Testing with ndarray is valid
+        # pyrefly: ignore [bad-argument-type]
         res = balance_cbps._standardize_model_matrix(mat, ["a", "b"])
         self.assertEqual(res["model_matrix"], np.array([[-1.0, -1.0], [1.0, 1.0]]))
         self.assertEqual(res["model_matrix_columns_names"], ["a", "b"])
@@ -335,7 +335,7 @@ class Testcbps(
         self.assertEqual(res["model_matrix_std"], np.array([1.0, 1.0]))
         # check when column is constant
         mat = pd.DataFrame({"a": (1, 1), "b": (2, 4)}).values
-        # pyre-fixme[6]: Testing with ndarray is valid
+        # pyrefly: ignore [bad-argument-type]
         res = balance_cbps._standardize_model_matrix(mat, ["a", "b"])
         self.assertEqual(res["model_matrix"], np.array([[-1.0], [1.0]]))
         self.assertEqual(res["model_matrix_columns_names"], ["b"])
@@ -843,9 +843,7 @@ class Testcbps(
         target_df, sample_df = load_data("sim_data_cbps")
 
         # Create Sample objects with outcome columns
-        # pyre-ignore[6]: Optional DataFrame is checked in load_data
         sample = Sample.from_frame(sample_df, outcome_columns=["y", "cbps_weights"])
-        # pyre-ignore[6]: Optional DataFrame is checked in load_data
         target = Sample.from_frame(target_df, outcome_columns=["y", "cbps_weights"])
         sample_target = sample.set_target(target)
 
@@ -1342,9 +1340,9 @@ class TestCbpsEdgeCases(balance.testutil.BalanceTestCase):
         result = balance_cbps.gmm_function(
             beta,
             X,
-            # pyre-ignore[6]: Series is accepted at runtime via conversion
+            # pyrefly: ignore [bad-argument-type]
             design_weights,
-            # pyre-ignore[6]: Series is accepted at runtime via conversion
+            # pyrefly: ignore [bad-argument-type]
             in_pop,
         )
 

@@ -615,7 +615,7 @@ happiness  53.295  56.278      48.559  (52.096, 54.495)  (55.961, 56.595)  (47.6
     # -----------------------------------------------------------------------
     # 15. Comparing adjustment methods: HGB
     # -----------------------------------------------------------------------
-    @pytest.mark.requires_sklearn_1_4  # pyre-ignore[56]
+    @pytest.mark.requires_sklearn_1_4
     @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires sklearn >= 1.4")
     def test_adjust_hgb_native_categorical(self) -> None:
         from sklearn.ensemble import HistGradientBoostingClassifier

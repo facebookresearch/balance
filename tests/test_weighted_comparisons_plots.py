@@ -1896,7 +1896,7 @@ class TestPlotlyPlotDistUnsupportedDistType(balance.testutil.BalanceTestCase):
             plotly_plot_dist(
                 dict_of_dfs,
                 variables=["v1"],
-                # pyre-ignore[6]: Testing invalid dist_type intentionally
+                # pyrefly: ignore [bad-argument-type]
                 dist_type="unknown_type",
                 plot_it=False,
                 return_dict_of_figures=True,

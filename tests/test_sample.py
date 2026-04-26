@@ -376,7 +376,7 @@ class TestSample(
             )
 
         with self.assertRaisesRegex(ValueError, "not in df columns"):
-            # pyre-ignore[6]: Intentionally passing int to test validation
+            # pyrefly: ignore [bad-argument-type]
             Sample.from_frame(df, ignored_columns=["a", 3])
 
         with self.assertRaisesRegex(ValueError, "not in df columns"):
@@ -503,7 +503,7 @@ class TestSample(
             ValueError,
             "'method' must be a string naming a weighting method or a callable",
         ):
-            # pyre-ignore[6]: Intentionally passing None to test exception handling
+            # pyrefly: ignore [bad-argument-type]
             s1.set_target(s2).adjust(method=None)
 
 
@@ -544,7 +544,7 @@ class TestSample_base_and_adjust_methods(
 
         # Test that df cannot be called as function
         with self.assertRaisesRegex(TypeError, "'DataFrame' object is not callable"):
-            # pyre-ignore[29]: Intentionally calling DataFrame to test exception
+            # pyrefly: ignore [not-callable]
             s1.df()
 
         # Test s2 DataFrame structure and type conversion
@@ -735,7 +735,7 @@ class TestSample_base_and_adjust_methods(
             TypeError,
             "set_unadjusted must be called with a BalanceFrame argument",
         ):
-            # pyre-ignore[6]: Intentionally passing str to test exception handling
+            # pyrefly: ignore [bad-argument-type]
             s1.set_unadjusted("Not a Sample object")
 
     def test_Sample_is_adjusted(self) -> None:
@@ -777,7 +777,7 @@ class TestSample_base_and_adjust_methods(
             TypeError,
             "A target, a Sample object, must be specified",
         ):
-            # pyre-ignore[6]: Intentionally passing str to test exception handling
+            # pyrefly: ignore [bad-argument-type]
             s1.set_target("Not a Sample object")
 
     def test_Sample_has_target(self) -> None:
@@ -2313,7 +2313,7 @@ class TestSampleFromFrameGuessIdColumnCandidates(balance.testutil.BalanceTestCas
         ):
             Sample.from_frame(
                 pd.DataFrame({"user_id": [1, 2, 3], "a": [1, 2, 3]}),
-                # pyre-ignore[6]: Intentionally passing invalid type to test error handling
+                # pyrefly: ignore [bad-argument-type]
                 id_column_candidates=["user_id", 1],
             )
 

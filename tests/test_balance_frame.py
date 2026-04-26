@@ -88,7 +88,8 @@ class TestBalanceFrameConstruction(BalanceTestCase):
     def test_non_sampleframe_responders_raises(self) -> None:
         with self.assertRaises(TypeError):
             BalanceFrame._create(
-                sample="not a SampleFrame",  # pyre-ignore[6]
+                # pyrefly: ignore [bad-argument-type]
+                sample="not a SampleFrame",
                 target=self.tgt_sf,
             )
 
@@ -96,7 +97,8 @@ class TestBalanceFrameConstruction(BalanceTestCase):
         with self.assertRaises(TypeError):
             BalanceFrame._create(
                 sample=self.resp_sf,
-                target=pd.DataFrame(),  # pyre-ignore[6]
+                # pyrefly: ignore [bad-argument-type]
+                target=pd.DataFrame(),
             )
 
 
@@ -518,7 +520,8 @@ class TestBalanceFrameAdjust(BalanceTestCase):
     def test_adjust_invalid_method_type_raises(self) -> None:
         """adjust() with a non-string, non-callable method raises ValueError."""
         with self.assertRaises(ValueError):
-            self.bf.adjust(method=42)  # pyre-ignore[6]
+            # pyrefly: ignore [bad-argument-type]
+            self.bf.adjust(method=42)
 
     def test_adjust_deepcopy_adjusted(self) -> None:
         """Deepcopy of an adjusted BalanceFrame preserves adjustment state."""
@@ -655,7 +658,8 @@ class TestBalanceFrameSetTarget(BalanceTestCase):
     def test_set_target_non_sampleframe_raises(self) -> None:
         bf = BalanceFrame(sample=self.resp_sf)
         with self.assertRaises(TypeError):
-            bf.set_target("not a SampleFrame")  # pyre-ignore[6]
+            # pyrefly: ignore [bad-argument-type]
+            bf.set_target("not a SampleFrame")
 
     def test_set_target_no_overlap_raises(self) -> None:
         bf = BalanceFrame(sample=self.resp_sf)
@@ -2966,7 +2970,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         )
         np.testing.assert_allclose(adjusted_weights, expected.to_numpy())
 
-    @pytest.mark.requires_sklearn_1_4  # pyre-ignore[56]
+    @pytest.mark.requires_sklearn_1_4
     @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires scikit-learn >= 1.4")
     def test_use_model_matrix_false_recompute_matches_fit_preprocessing(self) -> None:
         from sklearn.ensemble import HistGradientBoostingClassifier
@@ -3203,6 +3207,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         self.assertTrue(isinstance(model.get("training_target_weights"), pd.Series))
 
     @pytest.mark.requires_sklearn_1_4  # pyre-ignore[56]
+    @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires scikit-learn >= 1.4")
     def test_store_fit_matrices_use_model_matrix_false(self) -> None:
         from sklearn.ensemble import HistGradientBoostingClassifier
 
@@ -4170,7 +4175,8 @@ class TestBalanceFrameSetFittedModelValidation(BalanceTestCase):
         """Line 1148: fitted model is not a dict."""
         fitted, resp_sf, tgt_sf = self._make_fitted()
 
-        fitted._adjustment_model = "not_a_dict"  # pyre-ignore[8]
+        # pyrefly: ignore [bad-assignment]
+        fitted._adjustment_model = "not_a_dict"
         holdout = BalanceFrame(
             sample=SampleFrame.from_frame(resp_sf._df.copy()),
             target=SampleFrame.from_frame(tgt_sf._df.copy()),
