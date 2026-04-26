@@ -23,7 +23,7 @@ from balance.util import TruncationFormatter  # noqa
 
 # pyrefly: ignore [unknown-name]
 global __version__
-__version__ = "0.19.0"
+__version__ = "0.20.0"
 
 WELCOME_MESSAGE = f"""
 balance (Version {__version__}) loaded:
