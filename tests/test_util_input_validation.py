@@ -140,7 +140,7 @@ class TestUtil(
         ):
             guess_id_column(
                 df,
-                # pyre-ignore[6]: Intentionally passing invalid type to test error handling
+                # pyrefly: ignore [bad-argument-type]
                 possible_id_columns=["user_id", 1],
             )
         with self.assertRaisesRegex(
@@ -149,7 +149,7 @@ class TestUtil(
         ):
             guess_id_column(
                 df,
-                # pyre-ignore[6]: Intentionally passing invalid type to test error handling
+                # pyrefly: ignore [bad-argument-type]
                 possible_id_columns=1,
             )
 
@@ -393,7 +393,6 @@ class TestUtil(
         # NOTE: pd.FloatingArray were only added in pandas version 1.2.0.
         # Before that, they were called PandasArray. For details, see:
         # https://pandas.pydata.org/docs/dev/reference/api/pandas.arrays.FloatingArray.html
-        # pyre-ignore[16]: Module `pandas` has no attribute `__version__`.
         if pd.__version__ < "1.2.0":
             expected_floating_types = [
                 numpy_array_type,
@@ -602,7 +601,7 @@ class TestUtil(
 
         for value, expected_type, description in success_cases:
             with self.subTest(description=description):
-                # pyre-ignore[6]: Testing runtime behavior with various types
+                # pyrefly: ignore [no-matching-overload]
                 result = _assert_type(value, expected_type)
                 self.assertEqual(result, value)
 
@@ -623,7 +622,7 @@ class TestUtil(
         for value, expected_type, expected_exception, description in error_cases:
             with self.subTest(description=description):
                 with self.assertRaises(expected_exception):
-                    # pyre-ignore[6]: Testing runtime behavior with various types
+                    # pyrefly: ignore [no-matching-overload]
                     _assert_type(value, expected_type)
 
     def test__float_or_none(self) -> None:

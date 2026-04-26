@@ -342,7 +342,7 @@ class TestIPW(
                 use_model_matrix=False,
             )
 
-    @pytest.mark.requires_sklearn_1_4  # pyre-ignore[56]
+    @pytest.mark.requires_sklearn_1_4
     @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires sklearn >= 1.4")
     def test_ipw_use_model_matrix_false_preserves_categoricals(self) -> None:
         """Raw-covariate IPW preserves categorical dtype for native sklearn categorical support."""
@@ -442,7 +442,7 @@ class TestIPW(
             self.assertIn("scikit-learn >= 1.4", str(ctx.exception))
             self.assertIn("1.3.2", str(ctx.exception))
 
-    @pytest.mark.requires_sklearn_1_4  # pyre-ignore[56]
+    @pytest.mark.requires_sklearn_1_4
     @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires sklearn >= 1.4")
     def test_ipw_use_model_matrix_false_no_error_on_new_sklearn(self) -> None:
         """No version error when sklearn >= 1.4 and categorical columns are present."""
@@ -1420,7 +1420,8 @@ class TestIpwEdgeCases(balance.testutil.BalanceTestCase):
                 sample_weights,
                 target,
                 target_weights,
-                model=123,  # pyre-ignore[6]: Intentionally testing invalid model type
+                # pyrefly: ignore [bad-argument-type]
+                model=123,
             )
 
     def test_ipw_single_value_sample_indicator(self) -> None:

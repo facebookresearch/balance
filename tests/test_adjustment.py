@@ -88,7 +88,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
             TypeError,
             "weights must be np.array, list, tuple, or pd.Series, are of type:.*",
         ):
-            # pyre-ignore[6]: Testing error handling with intentionally wrong type
+            # pyrefly: ignore [bad-argument-type]
             trim_weights("Strings don't get trimmed", weight_trimming_mean_ratio=1)
 
         list_weights = [0.0, 1.0, 2.0]
@@ -540,7 +540,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
 
         # Test unknown adjustment method
         with self.assertRaisesRegex(ValueError, "Unknown adjustment method*"):
-            # pyre-ignore[6]: Testing error handling with intentionally wrong type
+            # pyrefly: ignore [bad-argument-type]
             balance.adjustment._find_adjustment_method("some_other_value")
 
     def test_validate_limit_none_input(self) -> None:
@@ -990,7 +990,7 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
         ):
             trim_weights(
                 weights,
-                # pyre-ignore[6]: Intentionally passing wrong type to test error handling
+                # pyrefly: ignore [bad-argument-type]
                 weight_trimming_percentile=(0.1, 0.2, 0.3),  # 3 values - invalid
                 keep_sum_of_weights=False,
             )

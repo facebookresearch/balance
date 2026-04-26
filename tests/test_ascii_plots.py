@@ -528,7 +528,8 @@ class TestPlotDistBalanceLibrary(balance.testutil.BalanceTestCase):
             {"df": df, "weight": pd.Series(np.ones(2))},
         ]
         with self.assertRaises(ValueError) as cm:
-            plot_dist(dfs, names=["self"], library="invalid")  # pyre-ignore[6]
+            # pyrefly: ignore [bad-argument-type]
+            plot_dist(dfs, names=["self"], library="invalid")
         self.assertIn("balance", str(cm.exception))
 
 

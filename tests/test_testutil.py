@@ -296,13 +296,13 @@ class TestNoneThrows(
         """Test that _assert_type accepts value when it matches one of multiple types."""
         # Test with string (first type in tuple)
         str_value = "test"
-        # pyre-fixme[6]: Tuple types work at runtime but overloads don't support union narrowing
+        # pyrefly: ignore [no-matching-overload]
         result_str = balance.testutil._assert_type(str_value, (str, int))
         self.assertEqual(result_str, "test")
 
         # Test with int (second type in tuple)
         int_value = 42
-        # pyre-fixme[6]: Tuple types work at runtime but overloads don't support union narrowing
+        # pyrefly: ignore [no-matching-overload]
         result_int = balance.testutil._assert_type(int_value, (str, int))
         self.assertEqual(result_int, 42)
 
@@ -310,7 +310,7 @@ class TestNoneThrows(
         """Test that _assert_type raises TypeError when value doesn't match any type in tuple."""
         value = 3.14  # float, not in (str, int)
         with self.assertRaises(TypeError) as context:
-            # pyre-fixme[6]: Tuple types work at runtime but overloads don't support union narrowing
+            # pyrefly: ignore [no-matching-overload]
             balance.testutil._assert_type(value, (str, int))
         self.assertIn("Expected type", str(context.exception))
         self.assertIn("float", str(context.exception))

@@ -1137,7 +1137,7 @@ class TestSampleFrameFromSample(BalanceTestCase):
 
     def test_from_sample_type_error(self) -> None:
         with self.assertRaises(TypeError):
-            SampleFrame.from_sample("not a sample")  # pyre-ignore[6]
+            SampleFrame.from_sample("not a sample")
 
     def test_from_sample_roundtrip_covars_match(self) -> None:
         df = pd.DataFrame(
@@ -1270,7 +1270,8 @@ class TestSampleFrameUncoveredLines(BalanceTestCase):
         )
         sf = SampleFrame.from_frame(df)
         with self.assertRaises(TypeError) as ctx:
-            sf.set_weights(np.array([1.0, 2.0, 3.0]), use_index=True)  # pyre-ignore[6]
+            # pyrefly: ignore [bad-argument-type]
+            sf.set_weights(np.array([1.0, 2.0, 3.0]), use_index=True)
         self.assertIn("use_index=True requires a pandas Series", str(ctx.exception))
 
     def test_rename_weight_column_bad_old_name(self) -> None:

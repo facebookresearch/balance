@@ -218,7 +218,8 @@ class TestBalanceDFOutcomes(BalanceTestCase):
         self.assertTrue(isinstance(BalanceDFOutcomes.df, property))
         # We can no longer call .df() as if it was a function:
         with self.assertRaisesRegex(TypeError, "'DataFrame' object is not callable"):
-            o.df()  # pyre-ignore[29]: Testing property call error
+            # pyrefly: ignore [not-callable]
+            o.df()
         # Here is how we can call it as a function:
         # pyrefly: ignore [not-callable]
         self.assertEqual(BalanceDFOutcomes.df.fget(o), o.df)
@@ -568,7 +569,8 @@ class TestBalanceDFCovars(BalanceTestCase):
         self.assertEqual(BalanceDFOutcomes.df.fget(c), c.df)
         # We can no longer call .df() as if it was a function:
         with self.assertRaisesRegex(TypeError, "'DataFrame' object is not callable"):
-            c.df()  # pyre-ignore[29]: Testing property call error
+            # pyrefly: ignore [not-callable]
+            c.df()
         # NOTE: while the original datatype had integers, the stored df has only floats:
         self.assertEqual(
             c.df,
@@ -611,12 +613,14 @@ class TestBalanceDFWeights(BalanceTestCase):
         # Verify that the @property decorator works properly.
         self.assertTrue(isinstance(BalanceDFWeights.df, property))
         self.assertEqual(
-            BalanceDFWeights.df.fget(w),  # pyre-ignore[29]: Testing property getter
+            # pyrefly: ignore [not-callable]
+            BalanceDFWeights.df.fget(w),
             w.df,
         )
         # We can no longer call .df() as if it was a function:
         with self.assertRaisesRegex(TypeError, "'DataFrame' object is not callable"):
-            w.df()  # pyre-ignore[29]: Testing property call error
+            # pyrefly: ignore [not-callable]
+            w.df()
         # Check values are as expected:
         self.assertEqual(w.df, pd.DataFrame({"w": (0.5, 2, 1, 1)}))
 
@@ -2582,7 +2586,8 @@ class TestBalanceDF(BalanceTestCase):
     def test_check_if_not_balancedf(self) -> None:
         with self.assertRaisesRegex(ValueError, "number must be balancedf_class"):
             BalanceDF._check_if_not_balancedf(
-                5,  # pyre-ignore[6]: Testing error handling with wrong type
+                # pyrefly: ignore [bad-argument-type]
+                5,
                 "number",
             )
         self.assertTrue(BalanceDF._check_if_not_balancedf(s3.covars()) is None)
@@ -3741,7 +3746,8 @@ class TestBalanceDFOutcomes_no_outcome_columns(BalanceTestCase):
             weight_column="w",
         )
         with self.assertRaisesRegex(ValueError, "no outcome columns are defined"):
-            BalanceDFOutcomes(sample=sample_no_outcomes)  # pyre-ignore[6]
+            # pyrefly: ignore [bad-argument-type]
+            BalanceDFOutcomes(sample=sample_no_outcomes)
 
 
 class TestBalanceDFWeights_design_effect_prop_type_error(BalanceTestCase):

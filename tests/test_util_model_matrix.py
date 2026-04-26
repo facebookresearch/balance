@@ -80,8 +80,8 @@ class TestUtil(
         self.assertEqual(
             f1.rhs_termlist,
             [
-                Term([EvalFactor("a"), EvalFactor("b")]),  # pyre-ignore[16]
-                Term([EvalFactor("a"), EvalFactor("aab")]),  # pyre-ignore[16]
+                Term([EvalFactor("a"), EvalFactor("b")]),
+                Term([EvalFactor("a"), EvalFactor("aab")]),
             ],
         )
 
@@ -89,22 +89,16 @@ class TestUtil(
         self.assertEqual(
             f2.rhs_termlist,
             [
-                Term(  # pyre-ignore[16]
+                Term(
                     [
-                        EvalFactor(  # pyre-ignore[16]
-                            "C(a, one_hot_encoding_greater_2)"
-                        ),
-                        EvalFactor(  # pyre-ignore[16]
-                            "C(b, one_hot_encoding_greater_2)"
-                        ),
+                        EvalFactor("C(a, one_hot_encoding_greater_2)"),
+                        EvalFactor("C(b, one_hot_encoding_greater_2)"),
                     ]
                 ),
-                Term(  # pyre-ignore[16]
+                Term(
                     [
-                        EvalFactor(  # pyre-ignore[16]
-                            "C(a, one_hot_encoding_greater_2)"
-                        ),
-                        EvalFactor("aab"),  # pyre-ignore[16]
+                        EvalFactor("C(a, one_hot_encoding_greater_2)"),
+                        EvalFactor("aab"),
                     ]
                 ),
             ],
@@ -625,10 +619,7 @@ class TestUtil(
         - Work correctly with patsy's dmatrix function
         """
         from balance.util import one_hot_encoding_greater_2  # noqa
-        from patsy import (  # pyre-ignore[21]: Import `patsy.dmatrix` is not defined as a type.
-            # pyrefly: ignore [missing-module-attribute]
-            dmatrix,
-        )
+        from patsy import dmatrix  # pyrefly: ignore [missing-module-attribute]
 
         d = {
             "a": ["a1", "a2", "a1", "a1"],
@@ -637,9 +628,7 @@ class TestUtil(
         }
         df = pd.DataFrame(data=d)
 
-        res = dmatrix(  # pyre-ignore[16]: Module `patsy` has no attribute `dmatrix`.
-            "C(a, one_hot_encoding_greater_2)", df, return_type="dataframe"
-        )
+        res = dmatrix("C(a, one_hot_encoding_greater_2)", df, return_type="dataframe")
         expected = {
             "Intercept": [1.0, 1.0, 1.0, 1.0],
             "C(a, one_hot_encoding_greater_2)[a2]": [0.0, 1.0, 0.0, 0.0],
@@ -647,9 +636,7 @@ class TestUtil(
         expected = pd.DataFrame(data=expected)
         self.assertEqual(res, expected)
 
-        res = dmatrix(  # pyre-ignore[16]: Module `patsy` has no attribute `dmatrix`.
-            "C(b, one_hot_encoding_greater_2)", df, return_type="dataframe"
-        )
+        res = dmatrix("C(b, one_hot_encoding_greater_2)", df, return_type="dataframe")
         expected = {
             "Intercept": [1.0, 1.0, 1.0, 1.0],
             "C(b, one_hot_encoding_greater_2)[b1]": [1.0, 0.0, 0.0, 0.0],
@@ -659,9 +646,7 @@ class TestUtil(
         expected = pd.DataFrame(data=expected)
         self.assertEqual(res, expected)
 
-        res = dmatrix(  # pyre-ignore[16]: Module `patsy` has no attribute `dmatrix`.
-            "C(c, one_hot_encoding_greater_2)", df, return_type="dataframe"
-        )
+        res = dmatrix("C(c, one_hot_encoding_greater_2)", df, return_type="dataframe")
         expected = {
             "Intercept": [1.0, 1.0, 1.0, 1.0],
             "C(c, one_hot_encoding_greater_2)[c1]": [1.0, 1.0, 1.0, 1.0],
