@@ -517,7 +517,12 @@ opt out.
 For the built-in CBPS method, <code class="docutils literal notranslate"><span class="pre">fit()</span></code> enables
 <code class="docutils literal notranslate"><span class="pre">store_fit_metadata=True</span></code> by default so <code class="docutils literal notranslate"><span class="pre">predict_weights()</span></code>
 can reconstruct CBPS scoring artifacts.  Pass
-<code class="docutils literal notranslate"><span class="pre">store_fit_metadata=False</span></code> to opt out.</p>
+<code class="docutils literal notranslate"><span class="pre">store_fit_metadata=False</span></code> to opt out.
+For the built-in poststratify method, <code class="docutils literal notranslate"><span class="pre">fit()</span></code> enables
+<code class="docutils literal notranslate"><span class="pre">store_fit_metadata=True</span></code> by default so <code class="docutils literal notranslate"><span class="pre">predict_weights()</span></code>
+can reconstruct poststratification cell-ratio artifacts, while
+direct <code class="docutils literal notranslate"><span class="pre">adjust(method='poststratify')</span></code> remains metadata-light
+unless <code class="docutils literal notranslate"><span class="pre">store_fit_metadata=True</span></code> is passed explicitly.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -811,13 +816,18 @@ alternative to the <code class="docutils literal notranslate"><span class="pre">
 trimming, and design weights) to reproduce fitted responder weights.</p></li>
 <li><p><strong>CBPS</strong>: rebuilds the CBPS scoring artifacts from stored metadata
 and supports both in-place and <code class="docutils literal notranslate"><span class="pre">data=...</span></code> holdout scoring.</p></li>
+<li><p><strong>Poststratify</strong>: reconstructs in-place responder weights from
+stored cell-ratio metadata; <code class="docutils literal notranslate"><span class="pre">data=...</span></code> holdout scoring is not yet
+supported for poststratify.</p></li>
 <li><p><strong>Other methods</strong>: not yet supported — will raise with guidance.</p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>data</strong> – An optional BalanceFrame whose sample covariates are scored
 using this object’s stored model.  Must have matching covariate
-column names and a target set.</p>
+column names and a target set. Supported for IPW and CBPS;
+poststratify currently supports only in-place scoring
+(<code class="docutils literal notranslate"><span class="pre">data=None</span></code>).</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A Series of predicted responder weights.</p>
