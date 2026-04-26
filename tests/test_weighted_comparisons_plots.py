@@ -1815,6 +1815,42 @@ class TestPlotlyPlotQQPlotIt(balance.testutil.BalanceTestCase):
             mock_iplot.assert_called()
 
 
+class TestSafePlotlyIplot(balance.testutil.BalanceTestCase):
+    """Tests for notebook-dependency fallback in _safe_plotly_iplot."""
+
+    def test_safe_plotly_iplot_falls_back_when_nbformat_missing(self) -> None:
+        from unittest.mock import patch
+
+        from balance.stats_and_plots.weighted_comparisons_plots import (
+            _safe_plotly_iplot,
+        )
+
+        fig = {"data": [], "layout": {}}
+        with (
+            patch(
+                "plotly.offline.iplot",
+                side_effect=ValueError(
+                    "Mime type rendering requires nbformat>=4.2.0 but it is not installed"
+                ),
+            ) as mock_iplot,
+            patch("plotly.offline.plot") as mock_plot,
+        ):
+            _safe_plotly_iplot(fig)
+            mock_iplot.assert_called_once()
+            mock_plot.assert_called_once_with(fig, auto_open=False, output_type="div")
+
+    def test_safe_plotly_iplot_reraises_other_value_errors(self) -> None:
+        from unittest.mock import patch
+
+        from balance.stats_and_plots.weighted_comparisons_plots import (
+            _safe_plotly_iplot,
+        )
+
+        with patch("plotly.offline.iplot", side_effect=ValueError("other")):
+            with self.assertRaisesRegex(ValueError, "other"):
+                _safe_plotly_iplot({"data": [], "layout": {}})
+
+
 class TestPlotlyPlotDistNoSampleKey(balance.testutil.BalanceTestCase):
     """Test cases for plotly_plot_dist without 'sample' key."""
 

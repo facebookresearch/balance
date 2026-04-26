@@ -1,3 +1,15 @@
+# 0.21.0 (Unreleased - TBD)
+
+## Code Quality & Refactoring
+
+- Diagnostics construction now wires `adjustment_failure` metadata from model
+  outputs when available (instead of hardcoding success), and supports an
+  optional `adjustment_failure_reason` diagnostics row for richer failure
+  reporting in downstream tooling.
+- Plotly distribution plotting now gracefully falls back to generating an
+  HTML div when notebook mime rendering dependencies are unavailable, avoiding
+  runtime crashes in non-notebook/test environments.
+
 # 0.20.0 (2026-04-26)
 
 ## Breaking Changes

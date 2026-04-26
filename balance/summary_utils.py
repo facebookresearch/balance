@@ -18,7 +18,7 @@ class hierarchy.
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -26,6 +26,57 @@ from balance.typing import DiagnosticScalar
 from balance.util import _coerce_scalar
 
 logger: logging.Logger = logging.getLogger(__package__)
+
+
+def _resolve_adjustment_failure_metadata(
+    model_dict: Optional[dict[str, Any]],
+) -> Tuple[int, Optional[str]]:
+    """Normalize adjustment failure metadata from ``model_dict``.
+
+    Args:
+        model_dict: Adjustment model metadata dictionary.
+
+    Returns:
+        Tuple of ``(adjustment_failure, adjustment_failure_reason)`` where:
+            * ``adjustment_failure`` is always ``0`` or ``1``.
+            * ``adjustment_failure_reason`` is a stripped non-empty string only
+              when a failure is recorded, otherwise ``None``.
+    """
+
+    failure: int = 0
+    reason: Optional[str] = None
+    if model_dict is None:
+        return failure, reason
+
+    raw_failure = model_dict.get("adjustment_failure", 0)
+
+    if isinstance(raw_failure, bool):
+        failure = int(raw_failure)
+    elif isinstance(raw_failure, (int, np.integer)):
+        failure = int(raw_failure != 0)
+    elif isinstance(raw_failure, (float, np.floating)):
+        if np.isnan(raw_failure):
+            failure = 0
+        else:
+            failure = int(raw_failure != 0.0)
+    elif isinstance(raw_failure, str):
+        normalized = raw_failure.strip().lower()
+        if normalized in {"", "0", "false", "no", "n", "success", "succeeded"}:
+            failure = 0
+        elif normalized in {"1", "true", "yes", "y", "failure", "failed"}:
+            failure = 1
+        else:
+            failure = int(bool(normalized))
+    else:
+        failure = int(bool(raw_failure))
+
+    raw_reason = model_dict.get("adjustment_failure_reason")
+    if failure == 1 and isinstance(raw_reason, str):
+        stripped_reason = raw_reason.strip()
+        if stripped_reason:
+            reason = stripped_reason
+
+    return failure, reason
 
 
 def _concat_metric_val_var(
@@ -545,13 +596,25 @@ def _build_diagnostics(
     # ----------------------------------------------------
     # Diagnostics if there was an adjustment_failure
     # ----------------------------------------------------
-    diagnostics = pd.concat(
-        (
-            diagnostics,
-            # TODO: wire adjustment_failure to actual adjustment outcome instead of hardcoding 0
-            pd.DataFrame({"metric": ("adjustment_failure",), "val": (0,)}),
-        )
+    (
+        resolved_adjustment_failure,
+        resolved_adjustment_failure_reason,
+    ) = _resolve_adjustment_failure_metadata(model_dict)
+
+    diagnostics = _concat_metric_val_var(
+        diagnostics,
+        "adjustment_failure",
+        [resolved_adjustment_failure],
+        [None],
     )
+
+    if resolved_adjustment_failure_reason is not None:
+        diagnostics = _concat_metric_val_var(
+            diagnostics,
+            "adjustment_failure_reason",
+            [resolved_adjustment_failure_reason],
+            [None],
+        )
 
     diagnostics = diagnostics.reset_index(drop=True)
 

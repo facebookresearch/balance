@@ -57,6 +57,23 @@ class DataFrameWithWeight(TypedDict, total=False):
     weight: Optional[pd.Series]
 
 
+def _safe_plotly_iplot(fig: Any) -> None:
+    """Render Plotly figure in a way that is resilient to missing notebook deps.
+
+    In non-notebook environments, ``offline.iplot`` may raise a ``ValueError``
+    when Plotly's mime renderer cannot import ``nbformat``. In that case, fall
+    back to generating an HTML div via ``offline.plot`` so plotting remains
+    non-crashing for CLI/test workflows.
+    """
+
+    try:
+        offline.iplot(fig)
+    except ValueError as error:
+        if "nbformat>=4.2.0" not in str(error):
+            raise
+        offline.plot(fig, auto_open=False, output_type="div")
+
+
 ################################################################################
 #  seaborn plots below
 ################################################################################
@@ -898,7 +915,7 @@ def plotly_plot_qq(
         fig.update_layout(**kwargs)
         dict_of_qqs[variable] = fig
         if plot_it:
-            offline.iplot(fig)
+            _safe_plotly_iplot(fig)
     if return_dict_of_figures:
         return dict_of_qqs
 
@@ -1061,7 +1078,7 @@ def plotly_plot_density(
         fig.update_layout(**kwargs)
 
         if plot_it:
-            offline.iplot(fig)
+            _safe_plotly_iplot(fig)
 
     if return_dict_of_figures:
         return dict_of_density_plots
@@ -1183,7 +1200,7 @@ def plotly_plot_bar(
 
         dict_of_bars[variable] = fig
         if plot_it:
-            offline.iplot(fig)
+            _safe_plotly_iplot(fig)
     if return_dict_of_figures:
         return dict_of_bars
 
@@ -1223,7 +1240,7 @@ def plotly_plot_dist(
             If returned - the dictionary is of plots.
             Keys in this dictionary are the variable names for each plot.
             Values are plotly plot objects plotted like:
-                offline.iplot(dict_of_all_plots['age'])
+                _safe_plotly_iplot(dict_of_all_plots['age'])
             Or simply:
                 dict_of_all_plots['age']
         ylim (Optional[Tuple[float, float]], optional): A tuple with two float values representing the lower and upper limits of the y-axis.

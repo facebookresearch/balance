@@ -12,6 +12,7 @@ from balance.summary_utils import (
     _build_diagnostics,
     _build_summary,
     _concat_metric_val_var,
+    _resolve_adjustment_failure_metadata,
 )
 
 
@@ -445,3 +446,113 @@ def test_build_diagnostics_model_dict_none_shows_unknown_method() -> None:
     method_rows = result[result["metric"] == "adjustment_method"]
     assert len(method_rows) == 1
     assert method_rows["var"].iloc[0] == "unknown"
+
+
+def test_build_diagnostics_uses_model_adjustment_failure_metadata() -> None:
+    """_build_diagnostics should propagate adjustment failure metadata from model_dict."""
+    sample = Sample.from_frame(
+        pd.DataFrame({"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}),
+        id_column="id",
+        weight_column="weight",
+        standardize_types=False,
+    )
+    target = Sample.from_frame(
+        pd.DataFrame({"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}),
+        id_column="id",
+        weight_column="weight",
+        standardize_types=False,
+    )
+    adjusted = sample.set_target(target).adjust(method="null")
+
+    model_dict = {
+        "method": "null",
+        "adjustment_failure": 1,
+        "adjustment_failure_reason": "boom",
+    }
+
+    result = _build_diagnostics(
+        covars_df=adjusted.covars().df,
+        # pyrefly: ignore [unsupported-operation]
+        target_covars_df=adjusted._links["target"].covars().df,
+        weights_summary=adjusted.weights().summary(),
+        model_dict=model_dict,
+        covars_asmd=adjusted.covars().asmd(),
+        covars_asmd_main=adjusted.covars().asmd(aggregate_by_main_covar=True),
+        outcome_columns=adjusted._outcome_columns,
+        weights_impact_on_outcome_method="t_test",
+        weights_impact_on_outcome_conf_level=0.95,
+        outcome_impact=None,
+    )
+
+    failure_rows = result[result["metric"] == "adjustment_failure"]
+    assert len(failure_rows) == 1
+    assert int(failure_rows["val"].iloc[0]) == 1
+
+    reason_rows = result[result["metric"] == "adjustment_failure_reason"]
+    assert len(reason_rows) == 1
+    assert reason_rows["val"].iloc[0] == "boom"
+
+
+def test_build_diagnostics_omits_reason_when_failure_is_zero() -> None:
+    """Failure reason should not be emitted when adjustment_failure resolves to zero."""
+    sample = Sample.from_frame(
+        pd.DataFrame({"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}),
+        id_column="id",
+        weight_column="weight",
+        standardize_types=False,
+    )
+    target = Sample.from_frame(
+        pd.DataFrame({"id": ["3", "4"], "x": [0, 1], "weight": [1.0, 1.0]}),
+        id_column="id",
+        weight_column="weight",
+        standardize_types=False,
+    )
+    adjusted = sample.set_target(target).adjust(method="null")
+
+    model_dict = {
+        "method": "null",
+        "adjustment_failure": 0,
+        "adjustment_failure_reason": "should-not-appear",
+    }
+
+    result = _build_diagnostics(
+        covars_df=adjusted.covars().df,
+        # pyrefly: ignore [unsupported-operation]
+        target_covars_df=adjusted._links["target"].covars().df,
+        weights_summary=adjusted.weights().summary(),
+        model_dict=model_dict,
+        covars_asmd=adjusted.covars().asmd(),
+        covars_asmd_main=adjusted.covars().asmd(aggregate_by_main_covar=True),
+        outcome_columns=adjusted._outcome_columns,
+        weights_impact_on_outcome_method="t_test",
+        weights_impact_on_outcome_conf_level=0.95,
+        outcome_impact=None,
+    )
+
+    failure_rows = result[result["metric"] == "adjustment_failure"]
+    assert len(failure_rows) == 1
+    assert int(failure_rows["val"].iloc[0]) == 0
+    assert "adjustment_failure_reason" not in set(result["metric"].values)
+
+
+def test_resolve_adjustment_failure_metadata_edge_cases() -> None:
+    """Resolve helper should normalize supported edge-case input shapes."""
+    assert _resolve_adjustment_failure_metadata(None) == (0, None)
+    assert _resolve_adjustment_failure_metadata({}) == (0, None)
+    assert _resolve_adjustment_failure_metadata({"adjustment_failure": True}) == (
+        1,
+        None,
+    )
+    assert _resolve_adjustment_failure_metadata({"adjustment_failure": "yes"}) == (
+        1,
+        None,
+    )
+    assert _resolve_adjustment_failure_metadata(
+        {"adjustment_failure": 1.0, "adjustment_failure_reason": " boom "}
+    ) == (1, "boom")
+    assert _resolve_adjustment_failure_metadata(
+        {"adjustment_failure": float("nan")}
+    ) == (0, None)
+    assert _resolve_adjustment_failure_metadata(
+        {"adjustment_failure": 0, "adjustment_failure_reason": "ignored"}
+    ) == (0, None)
