@@ -97,6 +97,31 @@
 
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_safe_plotly_iplot</span><span class="p">(</span><span class="n">fig</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Render Plotly figure in a way that is resilient to missing notebook deps.</span>
+
+<span class="sd">    In non-notebook environments, ``offline.iplot`` may raise a ``ValueError``</span>
+<span class="sd">    when Plotly&#39;s mime renderer cannot import ``nbformat``. In that case, log a</span>
+<span class="sd">    warning and skip the interactive plot so CLI/test workflows don&#39;t crash.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">offline</span><span class="o">.</span><span class="n">iplot</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+        <span class="n">error_message</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">is_nbformat_mime_error</span> <span class="o">=</span> <span class="s2">&quot;nbformat&quot;</span> <span class="ow">in</span> <span class="n">error_message</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="s2">&quot;mime type rendering requires&quot;</span> <span class="ow">in</span> <span class="n">error_message</span>
+            <span class="ow">or</span> <span class="s2">&quot;mime rendering requires&quot;</span> <span class="ow">in</span> <span class="n">error_message</span>
+            <span class="ow">or</span> <span class="s2">&quot;not installed&quot;</span> <span class="ow">in</span> <span class="n">error_message</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_nbformat_mime_error</span><span class="p">:</span>
+            <span class="k">raise</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;Plotly notebook mime rendering unavailable; skipping interactive plot. Original error: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">error</span><span class="p">,</span>
+        <span class="p">)</span>
+
+
 <span class="c1">################################################################################</span>
 <span class="c1">#  seaborn plots below</span>
 <span class="c1">################################################################################</span>
@@ -958,7 +983,7 @@
         <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">dict_of_qqs</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig</span>
         <span class="k">if</span> <span class="n">plot_it</span><span class="p">:</span>
-            <span class="n">offline</span><span class="o">.</span><span class="n">iplot</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+            <span class="n">_safe_plotly_iplot</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">return_dict_of_figures</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dict_of_qqs</span></div>
 
@@ -1124,7 +1149,7 @@
         <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">plot_it</span><span class="p">:</span>
-            <span class="n">offline</span><span class="o">.</span><span class="n">iplot</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+            <span class="n">_safe_plotly_iplot</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">return_dict_of_figures</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dict_of_density_plots</span></div>
@@ -1249,7 +1274,7 @@
 
         <span class="n">dict_of_bars</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig</span>
         <span class="k">if</span> <span class="n">plot_it</span><span class="p">:</span>
-            <span class="n">offline</span><span class="o">.</span><span class="n">iplot</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+            <span class="n">_safe_plotly_iplot</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">return_dict_of_figures</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dict_of_bars</span></div>
 
@@ -1292,7 +1317,7 @@
 <span class="sd">            If returned - the dictionary is of plots.</span>
 <span class="sd">            Keys in this dictionary are the variable names for each plot.</span>
 <span class="sd">            Values are plotly plot objects plotted like:</span>
-<span class="sd">                offline.iplot(dict_of_all_plots[&#39;age&#39;])</span>
+<span class="sd">                plotly.offline.iplot(dict_of_all_plots[&#39;age&#39;])</span>
 <span class="sd">            Or simply:</span>
 <span class="sd">                dict_of_all_plots[&#39;age&#39;]</span>
 <span class="sd">        ylim (Optional[Tuple[float, float]], optional): A tuple with two float values representing the lower and upper limits of the y-axis.</span>
