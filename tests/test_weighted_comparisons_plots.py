@@ -1826,18 +1826,18 @@ class TestSafePlotlyIplot(balance.testutil.BalanceTestCase):
         )
 
         fig = {"data": [], "layout": {}}
-        with (
-            patch(
-                "plotly.offline.iplot",
-                side_effect=ValueError(
-                    "Mime type rendering requires nbformat>=4.2.0 but it is not installed"
-                ),
-            ) as mock_iplot,
-            patch("plotly.offline.plot") as mock_plot,
-        ):
-            _safe_plotly_iplot(fig)
-            mock_iplot.assert_called_once()
-            mock_plot.assert_called_once_with(fig, auto_open=False, output_type="div")
+        with patch(
+            "plotly.offline.iplot",
+            side_effect=ValueError(
+                "Mime type rendering requires nbformat>=4.2.0 but it is not installed"
+            ),
+        ) as mock_iplot:
+            with patch("plotly.offline.plot") as mock_plot:
+                _safe_plotly_iplot(fig)
+                mock_iplot.assert_called_once()
+                mock_plot.assert_called_once_with(
+                    fig, auto_open=False, output_type="div"
+                )
 
     def test_safe_plotly_iplot_reraises_other_value_errors(self) -> None:
         from unittest.mock import patch
