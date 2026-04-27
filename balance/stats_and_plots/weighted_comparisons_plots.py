@@ -1240,7 +1240,7 @@ def plotly_plot_dist(
             If returned - the dictionary is of plots.
             Keys in this dictionary are the variable names for each plot.
             Values are plotly plot objects plotted like:
-                _safe_plotly_iplot(dict_of_all_plots['age'])
+                plotly.offline.iplot(dict_of_all_plots['age'])
             Or simply:
                 dict_of_all_plots['age']
         ylim (Optional[Tuple[float, float]], optional): A tuple with two float values representing the lower and upper limits of the y-axis.
