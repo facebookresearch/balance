@@ -550,6 +550,78 @@ class TestBalanceDFOutcomes(BalanceTestCase):
         summary = sample.outcomes().summary()
         self.assertIn("Weights impact on outcomes (t_test)", summary)
 
+    def test_blog_v0_20_0_outcomes_summary_full_output(self) -> None:
+        """Mirrors the "How much bias do the weights actually remove" snippet
+        from the v0.20.0 blog post
+        (``website/blog/2026/04/26/balance-0-20-0.md``). Asserts on the full
+        rendered summary so the published numbers stay in sync with library
+        behavior.
+        """
+        # pyrefly: ignore [bad-argument-type]
+        np.random.seed(0)
+        sample_df = pd.DataFrame(
+            {
+                "id": list(range(1, 21)),
+                "age": np.random.choice([20, 25, 30, 35, 40], size=20),
+                "gender": np.random.choice(["F", "M"], size=20, p=[0.7, 0.3]),
+                "outcome": np.random.normal(2.0, 1.0, size=20),
+                "weight": [1.0] * 20,
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": list(range(101, 151)),
+                "age": np.random.choice([20, 25, 30, 35, 40], size=50),
+                "gender": np.random.choice(["F", "M"], size=50, p=[0.5, 0.5]),
+                "outcome": np.random.normal(2.5, 1.0, size=50),
+                "weight": [1.0] * 50,
+            }
+        )
+        sample = Sample.from_frame(
+            sample_df,
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=["outcome"],
+        )
+        target = Sample.from_frame(
+            target_df,
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=["outcome"],
+        )
+        adjusted = sample.adjust(target, method="ipw")
+        # pyrefly: ignore [missing-attribute]
+        summary = adjusted.outcomes().summary()
+
+        expected = (
+            "1 outcomes: ['outcome']\n"
+            "Mean outcomes (with 95% confidence intervals):\n"
+            "source    self  target  unadjusted         self_ci       target_ci   unadjusted_ci\n"
+            "outcome  1.924   2.431       1.929  (1.434, 2.413)  (2.175, 2.686)  (1.438, 2.419)\n"
+            "\n"
+            "Weights impact on outcomes (t_test):\n"
+            "         mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value     n\n"
+            "outcome\n"
+            "outcome     1.929     1.924     -0.005         -0.024          0.014  -0.539    0.596  20.0\n"
+            "\n"
+            "Response rates (relative to number of respondents in sample):\n"
+            "   outcome\n"
+            "n     20.0\n"
+            "%    100.0\n"
+            "Response rates (relative to notnull rows in the target):\n"
+            "    outcome\n"
+            "n     20.0\n"
+            "%     40.0\n"
+            "Response rates (in the target):\n"
+            "    outcome\n"
+            "n     50.0\n"
+            "%    100.0"
+        )
+
+        actual_lines = [line.rstrip() for line in summary.rstrip().splitlines()]
+        expected_lines = [line.rstrip() for line in expected.rstrip().splitlines()]
+        self.assertEqual(actual_lines, expected_lines)
+
 
 class TestBalanceDFCovars(BalanceTestCase):
     """Test cases for BalanceDFCovars class functionality."""

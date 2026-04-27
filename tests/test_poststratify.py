@@ -469,6 +469,44 @@ class Testpoststratify(
             pd.Series([4.0, 4.0, 2.0, 6.0], name="w"),
         )
 
+    def test_blog_v0_20_0_poststratify_interaction_formula(self) -> None:
+        """Mirrors the "Formula support for poststratification" snippet from
+        the v0.20.0 blog post
+        (``website/blog/2026/04/26/balance-0-20-0.md``)."""
+        sample_df = pd.DataFrame(
+            {
+                "id": ["1", "2", "3", "4"],
+                "gender": ["F", "F", "M", "M"],
+                "age_group": ["18-34", "35+", "18-34", "35+"],
+                "weight": [1.0, 1.0, 1.0, 1.0],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": ["11", "12", "13", "14", "15", "16"],
+                "gender": ["F", "F", "F", "M", "M", "M"],
+                "age_group": ["18-34", "18-34", "35+", "18-34", "35+", "35+"],
+                "weight": [1.0] * 6,
+            }
+        )
+
+        sample = Sample.from_frame(
+            sample_df,
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        target = Sample.from_frame(
+            target_df,
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        adj = sample.adjust(target, method="poststratify", formula="gender:age_group")
+
+        weights = adj.weights().df["weight"].round(3).tolist()
+        self.assertEqual(weights, [2.0, 1.0, 1.0, 2.0])
+
     def test_poststratify_formula_edge_cases(self) -> None:
         s = pd.DataFrame(
             {
