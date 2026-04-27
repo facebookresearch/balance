@@ -837,6 +837,78 @@ class TestAsciiComparativeHistEndToEnd(balance.testutil.BalanceTestCase):
         )
         self.assertEqual(result, "No data available.")
 
+    def test_blog_v0_20_0_comparative_hist_population_adjusted_sample(
+        self,
+    ) -> None:
+        """Mirrors the "Comparative ASCII plots" snippet from the v0.20.0
+        blog post (``website/blog/2026/04/26/balance-0-20-0.md``)."""
+        from balance.sample_class import Sample
+
+        # pyrefly: ignore [bad-argument-type]
+        np.random.seed(0)
+        sample_df = pd.DataFrame(
+            {
+                "id": list(range(1, 21)),
+                "age": np.random.choice([20, 25, 30, 35, 40], size=20),
+                "gender": np.random.choice(["F", "M"], size=20, p=[0.7, 0.3]),
+                "outcome": np.random.normal(2.0, 1.0, size=20),
+                "weight": [1.0] * 20,
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": list(range(101, 151)),
+                "age": np.random.choice([20, 25, 30, 35, 40], size=50),
+                "gender": np.random.choice(["F", "M"], size=50, p=[0.5, 0.5]),
+                "outcome": np.random.normal(2.5, 1.0, size=50),
+                "weight": [1.0] * 50,
+            }
+        )
+        sample = Sample.from_frame(
+            sample_df,
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=["outcome"],
+        )
+        target = Sample.from_frame(
+            target_df,
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=["outcome"],
+        )
+        adjusted = sample.adjust(target, method="ipw")
+
+        dfs: List[DataFrameWithWeight] = [
+            {"df": target.df[["age"]], "weight": target.df["weight"]},
+            {"df": adjusted.df[["age"]], "weight": adjusted.df["weight"]},
+            {"df": sample.df[["age"]], "weight": sample.df["weight"]},
+        ]
+        rendered = ascii_comparative_hist(
+            dfs,
+            names=["population", "adjusted", "sample"],
+            column="age",
+            n_bins=4,
+            bar_width=20,
+        )
+
+        self._assert_lines_equal(
+            rendered,
+            """\
+            === age (numeric, comparative) ===
+
+            Range          | population (%)         | adjusted (%)              | sample (%)
+            -----------------------------------------------------------------------------------------------
+            [20.00, 25.00) | ██████████ 20.0        | ██████████▒▒ 25.0         | ██████████▒▒ 25.0
+            [25.00, 30.00) | ████████ 16.0          | ████████▒▒▒▒ 25.0         | ████████▒▒▒▒ 25.0
+            [30.00, 35.00) | ███████████████ 30.0   | █████         ] 10.3      | █████         ] 10.0
+            [35.00, 40.00] | █████████████████ 34.0 | █████████████████▒▒▒ 39.7 | █████████████████▒▒▒ 40.0
+            -----------------------------------------------------------------------------------------------
+            Total          | 100.0                  | 100.0                     | 100.0
+
+            Key: █ = shared with population, ▒ = excess,    ] = deficit
+            """,
+        )
+
 
 class TestAsciiPlotsAdjustmentEndToEnd(balance.testutil.BalanceTestCase):
     """End-to-end test: adjust a biased sample and verify ASCII plot output."""

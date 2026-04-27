@@ -4017,6 +4017,425 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         with self.assertRaisesRegex(ValueError, "positive sample and target weight"):
             fitted.predict_weights(data=holdout_bf)
 
+    @pytest.mark.requires_sklearn_1_4  # pyre-ignore[56]
+    @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires scikit-learn >= 1.4")
+    def test_blog_v0_20_0_fit_and_predict_weights_on_holdout(self) -> None:
+        """Mirrors the "Reusable fit/predict workflows" snippet from the
+        v0.20.0 blog post (``website/blog/2026/04/26/balance-0-20-0.md``).
+        Keeps the published numbers in sync with library behavior. Gated on
+        sklearn ≥ 1.4 because the snapshot was generated against the same
+        environment the blog was rendered with — older sklearn drifts in the
+        last decimal of the IPW weights.
+        """
+        from sklearn.linear_model import LogisticRegression
+
+        sample_df = pd.DataFrame(
+            {
+                "id": ["1", "2", "3", "4", "5", "6"],
+                "age": [20, 25, 30, 35, 40, 45],
+                "gender": ["F", "F", "M", "M", "F", "M"],
+                "weight": [1.0] * 6,
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": ["11", "12", "13", "14", "15", "16", "17", "18"],
+                "age": [22, 27, 32, 37, 42, 47, 52, 57],
+                "gender": ["F", "M", "F", "M", "F", "M", "F", "M"],
+                "weight": [1.0] * 8,
+            }
+        )
+        holdout_df = pd.DataFrame(
+            {
+                "id": ["101", "102", "103"],
+                "age": [29, 41, 53],
+                "gender": ["F", "M", "F"],
+                "weight": [1.0, 1.0, 1.0],
+            }
+        )
+
+        sf = SampleFrame.from_frame(
+            sample_df,
+            id_column="id",
+            weight_column="weight",
+            covar_columns=["age", "gender"],
+            standardize_types=False,
+        )
+        tf = SampleFrame.from_frame(
+            target_df,
+            id_column="id",
+            weight_column="weight",
+            covar_columns=["age", "gender"],
+            standardize_types=False,
+        )
+        hf = SampleFrame.from_frame(
+            holdout_df,
+            id_column="id",
+            weight_column="weight",
+            covar_columns=["age", "gender"],
+            standardize_types=False,
+        )
+
+        bf = BalanceFrame(sample=sf, target=tf)
+        fitted = bf.fit(
+            method="ipw",
+            model=LogisticRegression(random_state=0, max_iter=200),
+            inplace=False,
+        )
+        bf_holdout = BalanceFrame(sample=hf, target=tf)
+
+        fitted_weights = fitted.weights().df["weight"].round(3).tolist()
+        holdout_weights = fitted.predict_weights(data=bf_holdout).round(3).tolist()
+
+        self.assertEqual(fitted_weights, [1.689, 1.127, 1.479, 1.083, 1.539, 1.083])
+        self.assertEqual(holdout_weights, [2.709, 2.582, 2.709])
+
+    @pytest.mark.requires_sklearn_1_4  # pyre-ignore[56]
+    @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires scikit-learn >= 1.4")
+    def test_blog_v0_20_0_set_fitted_model_holdout_summary(self) -> None:
+        """Mirrors the ``bf_holdout.set_fitted_model(fitted)`` +
+        ``bf_holdout.summary()`` variant of the v0.20.0 blog snippet
+        (``website/blog/2026/04/26/balance-0-20-0.md``). Gated on sklearn
+        ≥ 1.4 because the snapshot's ASMD/KLD figures drift in the last
+        decimal under older sklearn."""
+        from sklearn.linear_model import LogisticRegression
+
+        sample_df = pd.DataFrame(
+            {
+                "id": ["1", "2", "3", "4", "5", "6"],
+                "age": [20, 25, 30, 35, 40, 45],
+                "gender": ["F", "F", "M", "M", "F", "M"],
+                "weight": [1.0] * 6,
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": ["11", "12", "13", "14", "15", "16", "17", "18"],
+                "age": [22, 27, 32, 37, 42, 47, 52, 57],
+                "gender": ["F", "M", "F", "M", "F", "M", "F", "M"],
+                "weight": [1.0] * 8,
+            }
+        )
+        holdout_df = pd.DataFrame(
+            {
+                "id": ["101", "102", "103"],
+                "age": [29, 41, 53],
+                "gender": ["F", "M", "F"],
+                "weight": [1.0, 1.0, 1.0],
+            }
+        )
+
+        sf = SampleFrame.from_frame(
+            sample_df,
+            id_column="id",
+            weight_column="weight",
+            covar_columns=["age", "gender"],
+            standardize_types=False,
+        )
+        tf = SampleFrame.from_frame(
+            target_df,
+            id_column="id",
+            weight_column="weight",
+            covar_columns=["age", "gender"],
+            standardize_types=False,
+        )
+        hf = SampleFrame.from_frame(
+            holdout_df,
+            id_column="id",
+            weight_column="weight",
+            covar_columns=["age", "gender"],
+            standardize_types=False,
+        )
+
+        bf = BalanceFrame(sample=sf, target=tf)
+        fitted = bf.fit(
+            method="ipw",
+            model=LogisticRegression(random_state=0, max_iter=200),
+            inplace=False,
+        )
+
+        bf_holdout = BalanceFrame(sample=hf, target=tf)
+        bf_holdout.set_fitted_model(fitted)
+
+        expected = (
+            "Adjustment details:\n"
+            "    method: ipw\n"
+            "    weight trimming mean ratio: 20\n"
+            "Covariate diagnostics:\n"
+            "    Covar ASMD reduction: -4.5%\n"
+            "    Covar ASMD (3 variables): 0.217 -> 0.227\n"
+            "    Covar mean KLD reduction: -4.4%\n"
+            "    Covar mean KLD (2 variables): 0.036 -> 0.037\n"
+            "Weight diagnostics:\n"
+            "    design effect (Deff): 1.001\n"
+            "    effective sample size proportion (ESSP): 0.999\n"
+            "    effective sample size (ESS): 3.0\n"
+            "Model performance: Model proportion deviance explained: 0.150"
+        )
+
+        actual_lines = [
+            line.rstrip() for line in bf_holdout.summary().rstrip().splitlines()
+        ]
+        expected_lines = [line.rstrip() for line in expected.rstrip().splitlines()]
+        self.assertEqual(actual_lines, expected_lines)
+
+
+@pytest.mark.requires_sklearn_1_4  # pyre-ignore[56]
+@unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires scikit-learn >= 1.4")
+class TestBlogV0_20_0SimDataHoldout(BalanceTestCase):
+    """End-to-end tests for the v0.20.0 blog snippets that share a single
+    ``bf_holdout`` built from ``load_data()`` (``sim_data_01``). One
+    ``setUpClass`` fits IPW once and reuses the resulting BalanceFrame across
+    all tests; each test mirrors a code block in
+    ``website/blog/2026/04/26/balance-0-20-0.md`` so the published outputs
+    stay in sync with library behavior.
+
+    The whole class is gated on sklearn ≥ 1.4 because the snapshots
+    (IPW weights, ASMD/KLD/r_indicator numbers, ASCII-plot percentages,
+    column-aligned summary tables) match the environment the blog was
+    rendered with. Older sklearn drifts in the last decimal across all of
+    them, which would falsely trip the strict snapshot contract.
+    """
+
+    bf_holdout: BalanceFrame
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from balance import load_data
+        from sklearn.linear_model import LogisticRegression
+
+        target_df, sample_df = load_data()
+        assert target_df is not None and sample_df is not None
+        train_df = sample_df.iloc[:100].copy()
+        holdout_df = sample_df.iloc[100:].copy()
+        covar_cols = ["age_group", "gender", "income"]
+
+        train_sf = SampleFrame.from_frame(
+            train_df,
+            id_column="id",
+            covar_columns=covar_cols,
+            outcome_columns=["happiness"],
+            standardize_types=False,
+        )
+        target_sf = SampleFrame.from_frame(
+            target_df,
+            id_column="id",
+            covar_columns=covar_cols,
+            outcome_columns=["happiness"],
+            standardize_types=False,
+        )
+        holdout_sf = SampleFrame.from_frame(
+            holdout_df,
+            id_column="id",
+            covar_columns=covar_cols,
+            outcome_columns=["happiness"],
+            standardize_types=False,
+        )
+
+        bf_train = BalanceFrame(sample=train_sf, target=target_sf)
+        fitted = bf_train.fit(
+            method="ipw",
+            model=LogisticRegression(random_state=0, max_iter=200),
+            inplace=False,
+        )
+
+        bf_holdout = BalanceFrame(sample=holdout_sf, target=target_sf)
+        bf_holdout.set_fitted_model(fitted)
+        cls.bf_holdout = bf_holdout
+
+    def test_blog_v0_20_0_simdata_holdout_summary(self) -> None:
+        """Mirrors ``print(bf_holdout.summary())`` from the "Reusable
+        fit/predict workflows" section."""
+        expected = (
+            "Adjustment details:\n"
+            "    method: ipw\n"
+            "    weight trimming mean ratio: 20\n"
+            "Covariate diagnostics:\n"
+            "    Covar ASMD reduction: 5.4%\n"
+            "    Covar ASMD (7 variables): 0.336 -> 0.318\n"
+            "    Covar mean KLD reduction: 37.2%\n"
+            "    Covar mean KLD (3 variables): 0.188 -> 0.118\n"
+            "Weight diagnostics:\n"
+            "    design effect (Deff): 1.292\n"
+            "    effective sample size proportion (ESSP): 0.774\n"
+            "    effective sample size (ESS): 696.5\n"
+            "Outcome weighted means:\n"
+            "            happiness\n"
+            "source\n"
+            "self           50.330\n"
+            "target         56.278\n"
+            "unadjusted     48.487\n"
+            "Model performance: Model proportion deviance explained: 0.572"
+        )
+        actual_lines = [
+            line.rstrip() for line in self.bf_holdout.summary().rstrip().splitlines()
+        ]
+        expected_lines = [line.rstrip() for line in expected.rstrip().splitlines()]
+        self.assertEqual(actual_lines, expected_lines)
+
+    def test_blog_v0_20_0_simdata_holdout_outcomes_summary(self) -> None:
+        """Mirrors ``bf_holdout.outcomes().summary()`` from the "How much
+        bias do the weights actually remove" section."""
+        # pyrefly: ignore [missing-attribute]
+        summary = self.bf_holdout.outcomes().summary()
+        expected = (
+            "1 outcomes: ['happiness']\n"
+            "Mean outcomes (with 95% confidence intervals):\n"
+            "source      self  target  unadjusted           self_ci         target_ci     unadjusted_ci\n"
+            "happiness  50.33  56.278      48.487  (49.275, 51.384)  (55.961, 56.595)  (47.551, 49.424)\n"
+            "\n"
+            "Weights impact on outcomes (t_test):\n"
+            "           mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value      n\n"
+            "outcome\n"
+            "happiness    48.487     50.33      1.842         -0.214          3.898   1.759    0.079  900.0\n"
+            "\n"
+            "Response rates (relative to number of respondents in sample):\n"
+            "   happiness\n"
+            "n      900.0\n"
+            "%      100.0\n"
+            "Response rates (relative to notnull rows in the target):\n"
+            "    happiness\n"
+            "n      900.0\n"
+            "%        9.0\n"
+            "Response rates (in the target):\n"
+            "    happiness\n"
+            "n    10000.0\n"
+            "%      100.0"
+        )
+        actual_lines = [line.rstrip() for line in summary.rstrip().splitlines()]
+        expected_lines = [line.rstrip() for line in expected.rstrip().splitlines()]
+        self.assertEqual(actual_lines, expected_lines)
+
+    def test_blog_v0_20_0_simdata_holdout_r_indicator(self) -> None:
+        """Mirrors ``bf_holdout.weights().r_indicator()`` from the
+        "r_indicator for representativeness" section."""
+        # pyrefly: ignore [missing-attribute]
+        value = float(self.bf_holdout.weights().r_indicator())
+        self.assertAlmostEqual(value, 0.5094452588289895, places=10)
+
+    def test_blog_v0_20_0_simdata_holdout_ascii_plot_full_output(self) -> None:
+        """Mirrors ``bf_holdout.covars().plot(library='balance',
+        dist_type='hist_ascii')`` from the "Comparative ASCII plots" section.
+        Asserts on the full multi-section output (age_group, gender, income)
+        the blog reproduces verbatim — using auto-binning (Sturges' rule)
+        for the income histogram."""
+        rendered = self.bf_holdout.covars().plot(
+            library="balance", dist_type="hist_ascii"
+        )
+        assert isinstance(rendered, str)
+
+        expected = (
+            "=== age_group (categorical) ===\n"
+            "\n"
+            "Category | population  adjusted  sample\n"
+            "         |\n"
+            "18-24    | ████████████████████████ (19.7%)\n"
+            "         | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (28.6%)\n"
+            "         | ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐ (48.6%)\n"
+            "\n"
+            "25-34    | █████████████████████████████████████ (29.7%)\n"
+            "         | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (36.9%)\n"
+            "         | ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐ (30.2%)\n"
+            "\n"
+            "35-44    | █████████████████████████████████████ (29.9%)\n"
+            "         | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (18.6%)\n"
+            "         | ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐ (15.7%)\n"
+            "\n"
+            "45+      | █████████████████████████ (20.6%)\n"
+            "         | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (15.8%)\n"
+            "         | ▐▐▐▐▐▐▐ (5.6%)\n"
+            "\n"
+            "Legend: █ population  ▒ adjusted  ▐ sample\n"
+            "Bar lengths are proportional to weighted frequency within each dataset.\n"
+            "\n"
+            "=== gender (categorical) ===\n"
+            "\n"
+            "Category | population  adjusted  sample\n"
+            "         |\n"
+            "Female   | ██████████████████████████████████████████ (50.0%)\n"
+            "         | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (28.7%)\n"
+            "         | ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐ (29.2%)\n"
+            "\n"
+            "Male     | ██████████████████████████████████████████ (50.0%)\n"
+            "         | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (71.3%)\n"
+            "         | ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐ (70.8%)\n"
+            "\n"
+            "Legend: █ population  ▒ adjusted  ▐ sample\n"
+            "Bar lengths are proportional to weighted frequency within each dataset.\n"
+            "\n"
+            "=== income (numeric, comparative) ===\n"
+            "\n"
+            "Range            | population (%) | adjusted (%)      | sample (%)\n"
+            "-------------------------------------------------------------------------\n"
+            "[0.00, 8.57)     | ████████ 49.0  | ████████▒▒▒▒ 72.6 | ████████▒▒▒▒ 73.4\n"
+            "[8.57, 17.14)    | ████ 23.1      | ███] 20.3         | ███] 19.1\n"
+            "[17.14, 25.71)   | ██ 13.2        | █] 5.0            | █] 5.1\n"
+            "[25.71, 34.28)   | █ 7.3          | ] 1.3             | ] 1.6\n"
+            "[34.28, 42.85)   | █ 3.9          | ] 0.4             | ] 0.4\n"
+            "[42.85, 51.41)   | 1.8            | 0.1               | 0.1\n"
+            "[51.41, 59.98)   | 0.9            | 0.3               | 0.2\n"
+            "[59.98, 68.55)   | 0.4            | 0.0               | 0.0\n"
+            "[68.55, 77.12)   | 0.2            | 0.0               | 0.0\n"
+            "[77.12, 85.69)   | 0.1            | 0.0               | 0.0\n"
+            "[85.69, 94.26)   | 0.0            | 0.0               | 0.0\n"
+            "[94.26, 102.83)  | 0.0            | 0.0               | 0.0\n"
+            "[102.83, 111.40) | 0.0            | 0.0               | 0.0\n"
+            "[111.40, 119.97) | 0.0            | 0.0               | 0.0\n"
+            "[119.97, 128.54] | 0.0            | 0.0               | 0.0\n"
+            "-------------------------------------------------------------------------\n"
+            "Total            | 100.0          | 100.0             | 100.0\n"
+            "\n"
+            "Key: █ = shared with population, ▒ = excess,    ] = deficit"
+        )
+
+        actual_lines = [line.rstrip() for line in rendered.rstrip().splitlines()]
+        expected_lines = [line.rstrip() for line in expected.rstrip().splitlines()]
+        self.assertEqual(actual_lines, expected_lines)
+
+    def test_blog_v0_20_0_simdata_holdout_covars_kld(self) -> None:
+        """Mirrors ``bf_holdout.covars().kld()`` from the "Distribution
+        distances on raw categoricals" section."""
+        # pyrefly: ignore [missing-attribute]
+        kld = self.bf_holdout.covars().kld().round(6)
+        self.assertEqual(list(kld.index), ["self", "unadjusted", "unadjusted - self"])
+        self.assertEqual(
+            list(kld.columns), ["age_group", "gender", "income", "mean(kld)"]
+        )
+        self.assertEqual(kld.loc["self", "age_group"], 0.056796)
+        self.assertEqual(kld.loc["self", "gender"], 0.188210)
+        self.assertEqual(kld.loc["self", "income"], 0.109138)
+        self.assertEqual(kld.loc["self", "mean(kld)"], 0.118048)
+        self.assertEqual(kld.loc["unadjusted", "age_group"], 0.268381)
+        self.assertEqual(kld.loc["unadjusted", "gender"], 0.183109)
+        self.assertEqual(kld.loc["unadjusted", "income"], 0.112641)
+        self.assertEqual(kld.loc["unadjusted", "mean(kld)"], 0.188044)
+        self.assertEqual(kld.loc["unadjusted - self", "age_group"], 0.211585)
+        self.assertEqual(kld.loc["unadjusted - self", "gender"], -0.005101)
+        self.assertEqual(kld.loc["unadjusted - self", "income"], 0.003503)
+        self.assertEqual(kld.loc["unadjusted - self", "mean(kld)"], 0.069996)
+
+    def test_blog_v0_20_0_simdata_holdout_chained_poststratify(self) -> None:
+        """Mirrors ``bf_holdout.adjust(method='poststratify',
+        formula='age_group:gender')`` + ``adj.summary()`` from the
+        "Sequential adjustments + formula support in poststratification"
+        section. Confirms compound adjustment improves overall ASMD/KLD
+        beyond IPW alone."""
+        adj = self.bf_holdout.adjust(method="poststratify", formula="age_group:gender")
+        summary = adj.summary()
+
+        self.assertIn("method: poststratify", summary)
+        self.assertIn("Covar ASMD reduction: 47.9%", summary)
+        self.assertIn("Covar ASMD (7 variables): 0.336 -> 0.175", summary)
+        self.assertIn("Covar mean KLD reduction: 67.2%", summary)
+        self.assertIn("Covar mean KLD (3 variables): 0.188 -> 0.062", summary)
+        self.assertIn("design effect (Deff): 2.395", summary)
+        self.assertIn("effective sample size proportion (ESSP): 0.417", summary)
+        self.assertIn("effective sample size (ESS): 375.7", summary)
+        # Outcome means in the expected order.
+        self.assertIn("self           55.453", summary)
+        self.assertIn("target         56.278", summary)
+        self.assertIn("unadjusted     48.487", summary)
+
 
 # =====================================================================
 # Coverage tests for uncovered lines in balance_frame.py

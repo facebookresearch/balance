@@ -1800,6 +1800,14 @@ class TestBalance_weighted_comparisons_stats(
         self.assertAlmostEqual(result, expected)
         self.assertIsInstance(result, np.float64)
 
+    def test_r_indicator_blog_v0_20_0_example(self) -> None:
+        """Mirrors the "r_indicator for representativeness" snippet from the
+        v0.20.0 blog post (``website/blog/2026/04/26/balance-0-20-0.md``)."""
+        sample_p = [0.2, 0.4, 0.6, 0.8]
+        target_p = [0.3, 0.5, 0.7, 0.9]
+        result = weighted_comparisons_stats.r_indicator(sample_p, target_p)
+        self.assertEqual(round(float(result), 6), 0.510102)
+
     def test_r_indicator_constant_propensities(self) -> None:
         """r_indicator should be 1.0 when all propensities are identical."""
         result = weighted_comparisons_stats.r_indicator([0.5, 0.5], [0.5, 0.5])
