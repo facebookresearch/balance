@@ -28,6 +28,67 @@ from balance.util import _coerce_scalar
 logger: logging.Logger = logging.getLogger(__package__)
 
 
+_FAILURE_FALSE_STRINGS: frozenset[str] = frozenset(
+    {"", "0", "false", "no", "n", "success", "succeeded"}
+)
+_FAILURE_TRUE_STRINGS: frozenset[str] = frozenset(
+    {"1", "true", "yes", "y", "failure", "failed"}
+)
+
+
+def _coerce_failure_flag(raw_failure: Any) -> int:
+    """Coerce a raw ``adjustment_failure`` value to a 0/1 int.
+
+    Handles bool, int, float (including NaN), and str inputs explicitly so
+    callers don't need to dispatch on the source dtype themselves.
+    """
+    if isinstance(raw_failure, bool):
+        return int(raw_failure)
+    if isinstance(raw_failure, (int, np.integer)):
+        return int(raw_failure != 0)
+    if isinstance(raw_failure, (float, np.floating)):
+        if np.isnan(raw_failure):
+            return 0
+        return int(raw_failure != 0.0)
+    if isinstance(raw_failure, str):
+        normalized = raw_failure.strip().lower()
+        if normalized in _FAILURE_FALSE_STRINGS:
+            return 0
+        if normalized in _FAILURE_TRUE_STRINGS:
+            return 1
+        return int(bool(normalized))
+    return int(bool(raw_failure))
+
+
+def _resolve_adjustment_failure_metadata(
+    model_dict: dict[str, Any] | None,
+) -> tuple[int, str | None]:
+    """Normalize adjustment failure metadata from ``model_dict``.
+
+    Args:
+        model_dict: Adjustment model metadata dictionary.
+
+    Returns:
+        Tuple of ``(adjustment_failure, adjustment_failure_reason)`` where:
+            * ``adjustment_failure`` is always ``0`` or ``1``.
+            * ``adjustment_failure_reason`` is a stripped non-empty string only
+              when a failure is recorded, otherwise ``None``.
+    """
+    if model_dict is None:
+        return 0, None
+
+    failure = _coerce_failure_flag(model_dict.get("adjustment_failure", 0))
+    if failure != 1:
+        return failure, None
+
+    raw_reason = model_dict.get("adjustment_failure_reason")
+    if isinstance(raw_reason, str):
+        stripped_reason = raw_reason.strip()
+        if stripped_reason:
+            return failure, stripped_reason
+    return failure, None
+
+
 def _concat_metric_val_var(
     diagnostics: pd.DataFrame,
     metric: str,
@@ -545,13 +606,29 @@ def _build_diagnostics(
     # ----------------------------------------------------
     # Diagnostics if there was an adjustment_failure
     # ----------------------------------------------------
-    diagnostics = pd.concat(
-        (
-            diagnostics,
-            # TODO: wire adjustment_failure to actual adjustment outcome instead of hardcoding 0
-            pd.DataFrame({"metric": ("adjustment_failure",), "val": (0,)}),
-        )
+    (
+        resolved_adjustment_failure,
+        resolved_adjustment_failure_reason,
+    ) = _resolve_adjustment_failure_metadata(model_dict)
+
+    diagnostics = _concat_metric_val_var(
+        diagnostics,
+        "adjustment_failure",
+        [resolved_adjustment_failure],
+        [None],
     )
+
+    if resolved_adjustment_failure_reason is not None:
+        # Schema matches the CLI failure path in `balance/cli.py` (e.g. lines
+        # 713-716, 855-861): the reason text lives in the ``val`` column with
+        # ``var=None``, so downstream consumers see a consistent
+        # ``adjustment_failure_reason`` row regardless of source.
+        diagnostics = _concat_metric_val_var(
+            diagnostics,
+            "adjustment_failure_reason",
+            [resolved_adjustment_failure_reason],
+            [None],
+        )
 
     diagnostics = diagnostics.reset_index(drop=True)
 

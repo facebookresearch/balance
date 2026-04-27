@@ -1815,6 +1815,73 @@ class TestPlotlyPlotQQPlotIt(balance.testutil.BalanceTestCase):
             mock_iplot.assert_called()
 
 
+class TestPlotlyIplotNbformatFallback(balance.testutil.BalanceTestCase):
+    """Tests for notebook-dependency fallback via public plotly_plot_qq."""
+
+    def _make_qq_data(self) -> dict[str, pd.DataFrame]:
+        # pyrefly: ignore [bad-argument-type]
+        np.random.seed(42)
+        df = pd.DataFrame({"v1": np.random.randn(30), "weight": np.ones(30)})
+        return {"self": df, "target": df.copy()}
+
+    def test_plotly_plot_qq_skips_plot_when_nbformat_missing(self) -> None:
+        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_qq
+
+        dict_of_dfs = self._make_qq_data()
+        with patch(
+            "plotly.offline.iplot",
+            side_effect=ValueError(
+                "Mime type rendering requires nbformat>=4.2.0 but it is not installed"
+            ),
+        ) as mock_iplot:
+            with self.assertLogs(
+                "balance.stats_and_plots", level="WARNING"
+            ) as log_context:
+                result = plotly_plot_qq(
+                    dict_of_dfs,
+                    variables=["v1"],
+                    plot_it=True,
+                    return_dict_of_figures=True,
+                )
+            mock_iplot.assert_called_once()
+            self.assertTrue(
+                any("skipping interactive plot" in line for line in log_context.output)
+            )
+        self.assertIsNotNone(result)
+        assert result is not None  # type narrowing for Pyre
+        self.assertIn("v1", result)
+
+    def test_plotly_plot_qq_skips_plot_for_generic_nbformat_mime_error(self) -> None:
+        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_qq
+
+        dict_of_dfs = self._make_qq_data()
+        with patch(
+            "plotly.offline.iplot",
+            side_effect=ValueError("MIME rendering requires nbformat support"),
+        ) as mock_iplot:
+            with self.assertLogs("balance.stats_and_plots", level="WARNING"):
+                plotly_plot_qq(
+                    dict_of_dfs,
+                    variables=["v1"],
+                    plot_it=True,
+                    return_dict_of_figures=True,
+                )
+            mock_iplot.assert_called_once()
+
+    def test_plotly_plot_qq_reraises_other_value_errors(self) -> None:
+        from balance.stats_and_plots.weighted_comparisons_plots import plotly_plot_qq
+
+        dict_of_dfs = self._make_qq_data()
+        with patch("plotly.offline.iplot", side_effect=ValueError("other")):
+            with self.assertRaisesRegex(ValueError, "other"):
+                plotly_plot_qq(
+                    dict_of_dfs,
+                    variables=["v1"],
+                    plot_it=True,
+                    return_dict_of_figures=True,
+                )
+
+
 class TestPlotlyPlotDistNoSampleKey(balance.testutil.BalanceTestCase):
     """Test cases for plotly_plot_dist without 'sample' key."""
 
