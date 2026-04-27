@@ -69,8 +69,18 @@ def _safe_plotly_iplot(fig: Any) -> None:
     try:
         offline.iplot(fig)
     except ValueError as error:
-        if "nbformat>=4.2.0" not in str(error):
+        error_message = str(error).lower()
+        is_nbformat_mime_error = "nbformat" in error_message and (
+            "mime type rendering requires" in error_message
+            or "mime rendering requires" in error_message
+            or "not installed" in error_message
+        )
+        if not is_nbformat_mime_error:
             raise
+        logger.warning(
+            "Plotly notebook mime rendering unavailable; falling back to offline.plot div. Original error: %s",
+            error,
+        )
         offline.plot(fig, auto_open=False, output_type="div")
 
 

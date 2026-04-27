@@ -1833,6 +1833,34 @@ class TestSafePlotlyIplot(balance.testutil.BalanceTestCase):
             ),
         ) as mock_iplot:
             with patch("plotly.offline.plot") as mock_plot:
+                with self.assertLogs(
+                    "balance.stats_and_plots", level="WARNING"
+                ) as log_context:
+                    _safe_plotly_iplot(fig)
+                mock_iplot.assert_called_once()
+                mock_plot.assert_called_once_with(
+                    fig, auto_open=False, output_type="div"
+                )
+                self.assertTrue(
+                    any(
+                        "falling back to offline.plot div" in line
+                        for line in log_context.output
+                    )
+                )
+
+    def test_safe_plotly_iplot_falls_back_for_generic_nbformat_mime_error(self) -> None:
+        from unittest.mock import patch
+
+        from balance.stats_and_plots.weighted_comparisons_plots import (
+            _safe_plotly_iplot,
+        )
+
+        fig = {"data": [], "layout": {}}
+        with patch(
+            "plotly.offline.iplot",
+            side_effect=ValueError("MIME rendering requires nbformat support"),
+        ) as mock_iplot:
+            with patch("plotly.offline.plot") as mock_plot:
                 _safe_plotly_iplot(fig)
                 mock_iplot.assert_called_once()
                 mock_plot.assert_called_once_with(
