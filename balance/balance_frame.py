@@ -2539,11 +2539,6 @@ class BalanceFrame:
         sample_df = sample_covars.loc[:, input_variables]
         target_df = target_covars.loc[:, input_variables]
 
-        sample_df, target_df = balance_adjustment.apply_transformations(
-            (sample_df, target_df),
-            transformations=model["transformations"],
-        )
-
         na_action = cast(str, model.get("na_action", "add_indicator"))
         if na_action == "drop":
             sample_df, sample_weights = balance_util.drop_na_rows(

@@ -3591,6 +3591,43 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             atol=1e-8,
         )
 
+    def test_predict_weights_poststratify_default_transformations_matches_weights(
+        self,
+    ) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(8)],
+                "weight": [1.0, 1.5, 0.7, 2.0, 1.2, 1.8, 0.9, 1.1],
+                "age": [21, 24, 29, 35, 42, 49, 53, 61],
+                "gender": ["f", "m", "f", "m", "f", "m", "f", "m"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(10)],
+                "weight": [1.0, 1.1, 0.9, 1.2, 1.3, 1.4, 1.0, 0.8, 1.6, 1.5],
+                "age": [20, 23, 28, 34, 41, 48, 52, 58, 63, 66],
+                "gender": ["f", "m", "f", "m", "f", "m", "f", "m", "f", "m"],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="poststratify",
+            variables=["age", "gender"],
+            transformations="default",
+            strict_matching=False,
+        )
+        predicted_weights = adjusted.predict_weights()
+        np.testing.assert_allclose(
+            predicted_weights.to_numpy(),
+            _assert_type(adjusted.weight_series).to_numpy(),
+            rtol=1e-6,
+            atol=1e-8,
+        )
+
     def test_predict_weights_poststratify_requires_fit_metadata(self) -> None:
         sample_df = pd.DataFrame(
             {
