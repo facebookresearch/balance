@@ -3619,6 +3619,142 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         with self.assertRaisesRegex(ValueError, "missing fit-time metadata"):
             adjusted.predict_weights()
 
+    def test_predict_weights_rake_fit_matches_weight_series(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "age_group": [
+                    "young",
+                    "young",
+                    "young",
+                    "old",
+                    "old",
+                    "old",
+                    "old",
+                    "old",
+                ],
+                "region": [
+                    "north",
+                    "south",
+                    "north",
+                    "south",
+                    "north",
+                    "south",
+                    "north",
+                    "south",
+                ],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "age_group": [
+                    "young",
+                    "old",
+                    "old",
+                    "old",
+                    "old",
+                    "old",
+                    "young",
+                    "old",
+                ],
+                "region": [
+                    "north",
+                    "north",
+                    "south",
+                    "south",
+                    "north",
+                    "south",
+                    "north",
+                    "south",
+                ],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="rake",
+            variables=["age_group", "region"],
+            transformations=None,
+        )
+        predicted_weights = adjusted.predict_weights()
+        np.testing.assert_allclose(
+            predicted_weights.to_numpy(),
+            _assert_type(adjusted.weight_series).to_numpy(),
+            rtol=1e-6,
+            atol=1e-8,
+        )
+
+    def test_predict_weights_rake_requires_fit_metadata(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "age_group": ["young", "young", "old", "old"],
+                "region": ["north", "south", "north", "south"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "age_group": ["young", "old", "old", "old"],
+                "region": ["north", "south", "north", "south"],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="rake",
+            variables=["age_group", "region"],
+            transformations=None,
+            store_fit_metadata=False,
+        )
+        with self.assertRaisesRegex(ValueError, "missing fit-time metadata"):
+            adjusted.predict_weights()
+
+    def test_predict_weights_rake_na_drop_reconstructs(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "age_group": ["young", "young", None, "old", "old", None],
+                "region": ["north", "south", "north", "south", "north", "south"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "age_group": ["young", "old", "old", "old", None, None],
+                "region": ["north", "north", "south", "south", "north", "south"],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="rake",
+            variables=["age_group", "region"],
+            transformations=None,
+            na_action="drop",
+        )
+        predicted_weights = adjusted.predict_weights()
+        np.testing.assert_allclose(
+            predicted_weights.to_numpy(),
+            _assert_type(adjusted.weight_series).to_numpy(),
+            rtol=1e-6,
+            atol=1e-8,
+            equal_nan=True,
+        )
+
     def test_predict_weights_poststratify_na_drop_reconstructs(self) -> None:
         sample_df = pd.DataFrame(
             {

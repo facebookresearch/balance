@@ -1,5 +1,10 @@
 # 0.21.0 (Unreleased - TBD)
 
+## New Features
+
+- Rake now supports fit-time artifact persistence (`store_fit_metadata`) and
+  `BalanceFrame.predict_weights()` reconstruction for fitted rake models.
+
 ## Code Quality & Refactoring
 
 - Diagnostics construction now wires `adjustment_failure` metadata from model

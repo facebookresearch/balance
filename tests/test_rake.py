@@ -1436,6 +1436,23 @@ class TestRakeEdgeCases(balance.testutil.BalanceTestCase):
             any("convergence was not achieved" in message for message in logs.output)
         )
 
+    def test_rake_rejects_non_bool_store_fit_metadata(self) -> None:
+        sample = pd.DataFrame(
+            {"a": ["1", "2", "1", "2"], "b": ["x", "x", "y", "y"], "id": [1, 2, 3, 4]}
+        )
+        target = sample.copy()
+        sample_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+        target_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+        with self.assertRaisesRegex(TypeError, "store_fit_metadata"):
+            rake(
+                sample,
+                sample_weights,
+                target,
+                target_weights,
+                # pyre-ignore[6]
+                store_fit_metadata="False",
+            )
+
 
 class TestRunIpfNumpyNanConv(balance.testutil.BalanceTestCase):
     """Test _run_ipf_numpy nan convergence handling (line 97)."""

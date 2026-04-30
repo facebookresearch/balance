@@ -1064,12 +1064,16 @@ class BalanceFrame:
             can reconstruct poststratification cell-ratio artifacts, while
             direct ``adjust(method='poststratify')`` remains metadata-light
             unless ``store_fit_metadata=True`` is passed explicitly.
+            For the built-in rake method, ``fit()`` enables
+            ``store_fit_metadata=True`` by default so ``predict_weights()``
+            can reconstruct raking contingency-table artifacts.
         """
         from balance.weighting_methods.cbps import cbps as built_in_cbps
         from balance.weighting_methods.ipw import ipw as built_in_ipw
         from balance.weighting_methods.poststratify import (
             poststratify as built_in_poststratify,
         )
+        from balance.weighting_methods.rake import rake as built_in_rake
 
         resolved_method = self._resolve_adjustment_function(method)
         if resolved_method is built_in_ipw:
@@ -1108,6 +1112,8 @@ class BalanceFrame:
                 )
                 kwargs["store_fit_metadata"] = False
         if resolved_method is built_in_poststratify:
+            kwargs.setdefault("store_fit_metadata", True)
+        if resolved_method is built_in_rake:
             kwargs.setdefault("store_fit_metadata", True)
 
         if isinstance(target, (SampleFrame, BalanceFrame)):
@@ -1936,6 +1942,9 @@ class BalanceFrame:
         - **Poststratify**: reconstructs in-place responder weights from
           stored cell-ratio metadata; ``data=...`` holdout scoring is not yet
           supported for poststratify.
+        - **Rake**: reconstructs in-place responder weights from stored
+          contingency-table fit artifacts; ``data=...`` holdout scoring is not
+          yet supported for rake.
         - **Other methods**: not yet supported — will raise with guidance.
 
         Args:
@@ -2046,10 +2055,12 @@ class BalanceFrame:
             return self._predict_weights_cbps(model)
         if method == "poststratify":
             return self._predict_weights_poststratify(model)
+        if method == "rake":
+            return self._predict_weights_rake(model)
 
         raise ValueError(
             f"predict_weights() is not yet supported for method '{method}'. "
-            "Currently only 'ipw', 'cbps', and 'poststratify' are supported. "
+            "Currently only 'ipw', 'cbps', 'poststratify', and 'rake' are supported. "
             "Use adjust() to obtain weights directly for other methods."
         )
 
@@ -2606,6 +2617,195 @@ class BalanceFrame:
                 self._sf_sample.df.index,
                 caller="predict_weights()",
                 method_name="poststratify",
+            ).rename(weight_name),
+        )
+
+    def _predict_weights_rake(self, model: dict[str, Any]) -> pd.Series:
+        """Rake-specific weight reconstruction from stored fit artifacts."""
+        required = (
+            "variables",
+            "variables_before_transformations",
+            "na_action",
+            "transformations",
+            "weight_trimming_mean_ratio",
+            "weight_trimming_percentile",
+            "keep_sum_of_weights",
+            "m_fit",
+            "m_sample",
+            "category_to_index",
+            "training_sample_weights",
+            "training_target_weights",
+        )
+        missing = [key for key in required if key not in model]
+        if missing:
+            raise ValueError(
+                "Rake model is missing fit-time metadata "
+                f"({missing}) for predict_weights(). "
+                "Call BalanceFrame.fit(method='rake') or run "
+                "rake(..., store_fit_metadata=True)."
+            )
+
+        variables = model.get("variables")
+        input_variables = model.get("variables_before_transformations")
+        if not isinstance(variables, list) or not all(
+            isinstance(v, str) for v in variables
+        ):
+            raise ValueError(
+                "Rake model has invalid 'variables' metadata for predict_weights()."
+            )
+        if not isinstance(input_variables, list) or not all(
+            isinstance(v, str) for v in input_variables
+        ):
+            raise ValueError(
+                "Rake model has invalid 'variables_before_transformations' metadata "
+                "for predict_weights()."
+            )
+
+        category_to_index = model.get("category_to_index")
+        if not isinstance(category_to_index, dict):
+            raise ValueError(
+                "Rake model has invalid category-to-index metadata for predict_weights()."
+            )
+
+        m_fit = model.get("m_fit")
+        m_sample = model.get("m_sample")
+        if not isinstance(m_fit, np.ndarray) or not isinstance(m_sample, np.ndarray):
+            raise ValueError(
+                "Rake model is missing contingency-table metadata for predict_weights()."
+            )
+        if m_fit.shape != m_sample.shape:
+            raise ValueError(
+                "Rake model has incompatible contingency-table shapes for "
+                "predict_weights()."
+            )
+
+        current_sample_weights = self._sf_sample.df_weights.iloc[:, 0]
+        current_target_weights = _assert_type(self._sf_target).df_weights.iloc[:, 0]
+
+        sample_weights = model.get("training_sample_weights")
+        if (
+            not isinstance(sample_weights, pd.Series)
+            or len(sample_weights) != len(current_sample_weights)
+            or not sample_weights.index.equals(current_sample_weights.index)
+        ):
+            raise ValueError(
+                "Rake predict_weights() requires compatible fit-time sample "
+                "design weights in model['training_sample_weights']. Re-fit with "
+                "BalanceFrame.fit(method='rake') and store_fit_metadata=True."
+            )
+
+        target_weights = model.get("training_target_weights")
+        if (
+            not isinstance(target_weights, pd.Series)
+            or len(target_weights) != len(current_target_weights)
+            or not target_weights.index.equals(current_target_weights.index)
+        ):
+            raise ValueError(
+                "Rake predict_weights() requires compatible fit-time target "
+                "design weights in model['training_target_weights']. Re-fit with "
+                "BalanceFrame.fit(method='rake') and store_fit_metadata=True."
+            )
+
+        sample_covars = self._sf_sample.df_covars
+        target_covars = _assert_type(self._sf_target).df_covars
+        for column in input_variables:
+            if (
+                column not in sample_covars.columns
+                or column not in target_covars.columns
+            ):
+                raise ValueError(
+                    "Rake predict_weights() cannot find required covariate "
+                    f"'{column}' in both sample and target."
+                )
+        sample_df = sample_covars.loc[:, input_variables]
+        target_df = target_covars.loc[:, input_variables]
+
+        na_action = cast(str, model.get("na_action", "add_indicator"))
+        if na_action == "drop":
+            sample_df, sample_weights = balance_util.drop_na_rows(
+                sample_df, sample_weights, "sample"
+            )
+            target_df, target_weights = balance_util.drop_na_rows(
+                target_df, target_weights, "target"
+            )
+        elif na_action == "add_indicator":
+            sample_df = pd.DataFrame(_safe_fillna_and_infer(sample_df, "__NaN__"))
+            target_df = pd.DataFrame(_safe_fillna_and_infer(target_df, "__NaN__"))
+        else:
+            raise ValueError(
+                f"Rake model has invalid na_action metadata '{na_action}' for "
+                "predict_weights()."
+            )
+
+        sample_df, _target_df = balance_adjustment.apply_transformations(
+            (sample_df, target_df),
+            transformations=model["transformations"],
+        )
+
+        for column in variables:
+            if column not in sample_df.columns:
+                raise ValueError(
+                    "Rake transform output is missing stored variable "
+                    f"'{column}' required for predict_weights()."
+                )
+        sample_df = sample_df.loc[:, variables]
+
+        m_ratio = np.zeros_like(m_fit, dtype=float)
+        np.divide(m_fit, m_sample, out=m_ratio, where=m_sample != 0)
+
+        positions = []
+        missing_levels: list[str] = []
+        for row in sample_df.astype(str).itertuples(index=False, name=None):
+            row_pos = []
+            for variable, value in zip(variables, row):
+                var_map = category_to_index.get(variable)
+                if not isinstance(var_map, dict) or value not in var_map:
+                    missing_levels.append(f"{variable}={value}")
+                    row_pos = []
+                    break
+                row_pos.append(int(var_map[value]))
+            if row_pos:
+                positions.append(tuple(row_pos))
+            else:
+                positions.append(None)
+        if missing_levels:
+            raise ValueError(
+                "Rake predict_weights() encountered covariate levels that were not "
+                f"present at fit time: {sorted(set(missing_levels))[:5]}"
+            )
+
+        ratios = np.array([m_ratio[pos] for pos in positions if pos is not None])
+        raw_weights = (
+            pd.Series(
+                ratios,
+                index=sample_weights.index,
+                dtype=float,
+                name="rake_weight",
+            )
+            * sample_weights
+        )
+        trimmed = balance_adjustment.trim_weights(
+            raw_weights,
+            target_sum_weights=target_weights.sum(),
+            weight_trimming_mean_ratio=model["weight_trimming_mean_ratio"],
+            weight_trimming_percentile=model["weight_trimming_percentile"],
+            keep_sum_of_weights=bool(model["keep_sum_of_weights"]),
+        )
+        if na_action == "drop":
+            full_index = current_sample_weights.index
+            trimmed_full = pd.Series(np.nan, index=full_index, dtype=float).rename(
+                trimmed.name
+            )
+            trimmed_full.loc[trimmed.index] = trimmed.to_numpy()
+            trimmed = trimmed_full
+        weight_name = getattr(_assert_type(self.weight_series), "name", None)
+        return cast(
+            pd.Series,
+            self._align_to_index(
+                trimmed,
+                self._sf_sample.df.index,
+                caller="predict_weights()",
+                method_name="rake",
             ).rename(weight_name),
         )
 

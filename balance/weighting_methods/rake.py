@@ -110,13 +110,6 @@ def _run_ipf_numpy(
     return table, converged, iterations_df
 
 
-# TODO: Store fit artifacts for predict_weights() support.
-# Save the fitted contingency table (`m_fit`), variable lists, and
-# category-to-index mappings in the returned model dict. Currently
-# `m_fit` is discarded after per-row weight assignment. Then implement
-# `_predict_weights_rake()` in balance_frame.py: look up each row's cell
-# in the stored N-dimensional table, compute weight ratio, multiply by
-# design weight. ~80 lines total.
 def rake(
     sample_df: pd.DataFrame,
     sample_weights: pd.Series,
@@ -132,6 +125,7 @@ def rake(
     weight_trimming_percentile: Union[float, None] = None,
     keep_sum_of_weights: bool = True,
     *args: Any,
+    store_fit_metadata: bool = False,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """
@@ -167,6 +161,10 @@ def rake(
                                    Delegated to :func:`balance.adjustment.trim_weights`.
     keep_sum_of_weights --- (bool, optional) preserve the sum of weights during trimming before
                             rescaling to the target total. Defaults to True.
+    store_fit_metadata --- (bool, optional) when True, stores fit artifacts in
+                           the returned model dictionary so
+                           ``BalanceFrame.predict_weights()`` can reconstruct
+                           raked weights.
 
     Returns:
     A dictionary including:
@@ -188,6 +186,12 @@ def rake(
         result["weight"].tolist()
         # [1.0, 1.0]
     """
+    if not isinstance(store_fit_metadata, bool):
+        raise TypeError("`store_fit_metadata` must be a bool.")
+
+    original_sample_weights = sample_weights.copy() if store_fit_metadata else None
+    original_target_weights = target_weights.copy() if store_fit_metadata else None
+
     assert (
         "weight" not in sample_df.columns.values
     ), "weight shouldn't be a name for covariate in the sample data"
@@ -370,15 +374,39 @@ def rake(
         weight_trimming_percentile=weight_trimming_percentile,
         keep_sum_of_weights=keep_sum_of_weights,
     ).rename("rake_weight")
+    model: Dict[str, Any] = {
+        "method": "rake",
+        "iterations": iterations,
+        "converged": converged,
+        "perf": {"prop_dev_explained": np.array([np.nan])},
+        # TODO: fix functions that use the perf and remove it from here
+    }
+
+    if store_fit_metadata:
+        assert original_sample_weights is not None
+        assert original_target_weights is not None
+        model["store_fit_metadata"] = True
+        model["variables"] = alphabetized_variables
+        model["variables_before_transformations"] = list(variables)
+        model["na_action"] = na_action
+        model["transformations"] = transformations
+        model["weight_trimming_mean_ratio"] = weight_trimming_mean_ratio
+        model["weight_trimming_percentile"] = weight_trimming_percentile
+        model["keep_sum_of_weights"] = keep_sum_of_weights
+        model["m_fit"] = m_fit.copy()
+        model["m_sample"] = m_sample.copy()
+        model["category_to_index"] = {
+            variable: {category: i for i, category in enumerate(cats)}
+            for variable, cats in zip(alphabetized_variables, categories)
+        }
+        model["training_sample_weights"] = original_sample_weights
+        model["training_target_weights"] = original_target_weights
+        model["sample_index"] = original_sample_weights.index.copy()
+        model["target_index"] = original_target_weights.index.copy()
+
     return {
         "weight": w,
-        "model": {
-            "method": "rake",
-            "iterations": iterations,
-            "converged": converged,
-            "perf": {"prop_dev_explained": np.array([np.nan])},
-            # TODO: fix functions that use the perf and remove it from here
-        },
+        "model": model,
     }
 
 
