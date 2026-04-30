@@ -3689,6 +3689,85 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             atol=1e-8,
         )
 
+    def test_predict_weights_rake_default_transformations_non_uniform_weights(
+        self,
+    ) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(10)],
+                "weight": [1.0, 2.0, 0.5, 3.0, 1.5, 2.5, 4.0, 0.8, 1.2, 2.2],
+                "age_group": [
+                    "young",
+                    "young",
+                    "young",
+                    "old",
+                    "old",
+                    "old",
+                    "old",
+                    "old",
+                    "young",
+                    "old",
+                ],
+                "region": [
+                    "north",
+                    "south",
+                    "north",
+                    "south",
+                    "north",
+                    "south",
+                    "north",
+                    "south",
+                    "north",
+                    "south",
+                ],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(10)],
+                "weight": [1.1, 0.9, 1.7, 1.3, 1.0, 2.0, 0.8, 1.6, 1.4, 1.2],
+                "age_group": [
+                    "young",
+                    "old",
+                    "old",
+                    "old",
+                    "old",
+                    "old",
+                    "young",
+                    "old",
+                    "young",
+                    "old",
+                ],
+                "region": [
+                    "north",
+                    "north",
+                    "south",
+                    "south",
+                    "north",
+                    "south",
+                    "north",
+                    "south",
+                    "north",
+                    "south",
+                ],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="rake",
+            variables=["age_group", "region"],
+        )
+        predicted_weights = adjusted.predict_weights()
+        np.testing.assert_allclose(
+            predicted_weights.to_numpy(),
+            _assert_type(adjusted.weight_series).to_numpy(),
+            rtol=1e-6,
+            atol=1e-8,
+        )
+
     def test_predict_weights_rake_requires_fit_metadata(self) -> None:
         sample_df = pd.DataFrame(
             {

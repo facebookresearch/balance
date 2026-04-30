@@ -232,8 +232,14 @@ def rake(
         f"Currently have variables={variables} only"
     )
 
+    transformations_to_apply = transformations
+    if store_fit_metadata and transformations_to_apply == "default":
+        transformations_to_apply = balance_adjustment.default_transformations(
+            (sample_df, target_df)
+        )
+
     sample_df, target_df = balance_adjustment.apply_transformations(
-        (sample_df, target_df), transformations
+        (sample_df, target_df), transformations_to_apply
     )
 
     # TODO: separate into a function that handles NA (for rake, ipw, poststratify)
@@ -389,7 +395,7 @@ def rake(
         model["variables"] = alphabetized_variables
         model["variables_before_transformations"] = list(variables)
         model["na_action"] = na_action
-        model["transformations"] = transformations
+        model["transformations"] = transformations_to_apply
         model["weight_trimming_mean_ratio"] = weight_trimming_mean_ratio
         model["weight_trimming_percentile"] = weight_trimming_percentile
         model["keep_sum_of_weights"] = keep_sum_of_weights

@@ -2539,6 +2539,11 @@ class BalanceFrame:
         sample_df = sample_covars.loc[:, input_variables]
         target_df = target_covars.loc[:, input_variables]
 
+        sample_df, target_df = balance_adjustment.apply_transformations(
+            (sample_df, target_df),
+            transformations=model["transformations"],
+        )
+
         na_action = cast(str, model.get("na_action", "add_indicator"))
         if na_action == "drop":
             sample_df, sample_weights = balance_util.drop_na_rows(
@@ -2720,6 +2725,11 @@ class BalanceFrame:
         sample_df = sample_covars.loc[:, input_variables]
         target_df = target_covars.loc[:, input_variables]
 
+        sample_df, target_df = balance_adjustment.apply_transformations(
+            (sample_df, target_df),
+            transformations=model["transformations"],
+        )
+
         na_action = cast(str, model.get("na_action", "add_indicator"))
         if na_action == "drop":
             sample_df, sample_weights = balance_util.drop_na_rows(
@@ -2736,11 +2746,6 @@ class BalanceFrame:
                 f"Rake model has invalid na_action metadata '{na_action}' for "
                 "predict_weights()."
             )
-
-        sample_df, _target_df = balance_adjustment.apply_transformations(
-            (sample_df, target_df),
-            transformations=model["transformations"],
-        )
 
         for column in variables:
             if column not in sample_df.columns:
@@ -2775,14 +2780,11 @@ class BalanceFrame:
             )
 
         ratios = np.array([m_ratio[pos] for pos in positions if pos is not None])
-        raw_weights = (
-            pd.Series(
-                ratios,
-                index=sample_weights.index,
-                dtype=float,
-                name="rake_weight",
-            )
-            * sample_weights
+        raw_weights = pd.Series(
+            ratios,
+            index=sample_weights.index,
+            dtype=float,
+            name="rake_weight",
         )
         trimmed = balance_adjustment.trim_weights(
             raw_weights,
