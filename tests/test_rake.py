@@ -452,21 +452,16 @@ class Testrake(
         w = result["weight"]
 
         # Marginal recovery: weighted sum per level must equal target marginal
-        target_sum = float(target_weights.sum())
         for level in ["1", "2"]:
             mask = sample_df["a"] == level
             observed = w[mask].sum()
-            expected = (
-                float((target_df["a"] == level).sum()) / target_sum * target_sum
-            )
+            expected = float((target_df["a"] == level).sum())
             self.assertAlmostEqual(observed, expected, places=4)
 
         for level in ["x", "y"]:
             mask = sample_df["b"] == level
             observed = w[mask].sum()
-            expected = (
-                float((target_df["b"] == level).sum()) / target_sum * target_sum
-            )
+            expected = float((target_df["b"] == level).sum())
             self.assertAlmostEqual(observed, expected, places=4)
 
     def test_rake_nonuniform_design_weights_per_cell_totals(self) -> None:
@@ -508,21 +503,15 @@ class Testrake(
         )
         w = result["weight"]
 
-        # Marginal for "a"="1" should equal 50% of target_sum (=4.0) * 10/4 = 5
+        # Marginal for "a"="1" should equal 50% of target_sum (=4.0)
         # (rake rescales marginals to sample_sum, then trim_weights rescales to target_sum)
-        # Let's just verify marginals match target proportions * target_sum_weights.
+        # Verify marginals match target marginals (each level appears twice in target).
         target_sum = float(target_weights.sum())
         for level_col, levels in [("a", ["1", "2"]), ("b", ["x", "y"])]:
             for level in levels:
                 mask = sample_df[level_col] == level
                 observed = w[mask].sum()
-                target_marginal = (
-                    target_df[target_df[level_col] == level]["weight"].sum()
-                    if "weight" in target_df.columns
-                    else float((target_df[level_col] == level).sum())
-                )
-                # target marginals are all equal (1 per level × sum_weights/count)
-                expected = target_marginal / target_sum * target_sum
+                expected = float((target_df[level_col] == level).sum())
                 self.assertAlmostEqual(observed, expected, places=4)
 
     def test_rake_weights_scale_to_pop(self) -> None:
