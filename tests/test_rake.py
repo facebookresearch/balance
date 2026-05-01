@@ -403,6 +403,125 @@ class Testrake(
             pd.Series([1.25, 0.25] * 6, name="rake_weight").rename_axis("index"),
         )
 
+    def test_rake_nonuniform_design_weights_marginal_recovery(self) -> None:
+        """
+        Test that rake correctly preserves design weights in per-row final weights.
+
+        When sample units carry non-uniform design weights, the final rake weight
+        for each unit must equal: w_design_i * (m_fit[c] / m_sample[c]).
+        This ensures the weighted marginals match the target marginals.
+
+        Setup (two raking variables "a" and "b"):
+          - sample has non-uniform design weights
+          - target has 40% "a=1", 60% "a=2" and balanced "b"
+          - After raking, sum of final weights for each level of "a" must equal
+            the target proportion times target_sum_weights.
+        """
+        # 8 sample rows: variable "a" ∈ {"1","2"}, variable "b" ∈ {"x","y"}
+        # Non-uniform design weights: rows with a="1" have weight 4.0, rows with a="2" have weight 1.0
+        sample_df = pd.DataFrame(
+            {
+                "a": ["1", "1", "1", "1", "2", "2", "2", "2"],
+                "b": ["x", "x", "y", "y", "x", "x", "y", "y"],
+            }
+        )
+        sample_weights = pd.Series([4.0, 4.0, 4.0, 4.0, 1.0, 1.0, 1.0, 1.0])
+        # sample_sum_weights = 4*4 + 4*1 = 20.0
+
+        # Target: 40% "1", 60% "2"; balanced "b"
+        # 10 rows total, uniform weights → target_sum_weights = 10
+        target_df = pd.DataFrame(
+            {
+                "a": ["1", "1", "2", "2", "2", "2", "1", "1", "2", "2"],
+                "b": ["x", "y", "x", "y", "x", "y", "x", "y", "x", "y"],
+            }
+        )
+        target_weights = pd.Series([1.0] * 10)
+        # target marginals: a="1" → 4, a="2" → 6; b="x" → 5, b="y" → 5
+
+        result = rake(
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            variables=["a", "b"],
+            transformations=None,
+        )
+        w = result["weight"]
+
+        # Marginal recovery: weighted sum per level must equal target marginal
+        for level in ["1", "2"]:
+            mask = sample_df["a"] == level
+            observed = w[mask].sum()
+            expected = float((target_df["a"] == level).sum())
+            self.assertAlmostEqual(observed, expected, places=4)
+
+        for level in ["x", "y"]:
+            mask = sample_df["b"] == level
+            observed = w[mask].sum()
+            expected = float((target_df["b"] == level).sum())
+            self.assertAlmostEqual(observed, expected, places=4)
+
+    def test_rake_nonuniform_design_weights_per_cell_totals(self) -> None:
+        """
+        Test that per-row weights within a cell are proportional to design weights.
+
+        When multiple sample rows share the same joint cell, the final rake weight
+        for each row must be proportional to its design weight::
+
+            w_final_i / w_final_j = w_design_i / w_design_j   (rows i,j in same cell)
+
+        The pre-fix bug assigned ``m_fit[c] / m_sample[c]`` to every row in a cell,
+        making within-cell weights identical regardless of design weights.
+        """
+        # Sample: 2 rows per joint cell, with differing design weights within each cell.
+        # cell (a="1", b="x"): design weights 3.0, 1.0  → ratio 3:1
+        # cell (a="1", b="y"): design weights 3.0, 1.0  → ratio 3:1
+        # cell (a="2", b="x"): design weights 1.0, 3.0  → ratio 1:3
+        # cell (a="2", b="y"): design weights 1.0, 3.0  → ratio 1:3
+        sample_df = pd.DataFrame(
+            {
+                "a": ["1", "1", "1", "1", "2", "2", "2", "2"],
+                "b": ["x", "x", "y", "y", "x", "x", "y", "y"],
+            }
+        )
+        sample_weights = pd.Series([3.0, 1.0, 3.0, 1.0, 1.0, 3.0, 1.0, 3.0])
+
+        # Balanced target: 50% "1", 50% "2"; 50% "x", 50% "y"
+        target_df = pd.DataFrame(
+            {
+                "a": ["1", "1", "2", "2"],
+                "b": ["x", "y", "x", "y"],
+            }
+        )
+        target_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+
+        result = rake(
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            variables=["a", "b"],
+            transformations=None,
+        )
+        w = result["weight"]
+
+        # Within each cell the ratio of final weights must equal the ratio of design weights.
+        # trim_weights applies a uniform scalar, so within-cell ratios are preserved.
+        # Bug: all rows in a cell get the same weight → ratio = 1.0.
+        # Fix: ratio equals design weight ratio (3:1).
+        for idx_heavy, idx_light in [
+            (0, 1),  # cell (1,x): design 3.0 / 1.0
+            (2, 3),  # cell (1,y): design 3.0 / 1.0
+            (5, 4),  # cell (2,x): design 3.0 / 1.0
+            (7, 6),  # cell (2,y): design 3.0 / 1.0
+        ]:
+            expected_ratio = (
+                sample_weights.iloc[idx_heavy] / sample_weights.iloc[idx_light]
+            )
+            observed_ratio = w.iloc[idx_heavy] / w.iloc[idx_light]
+            self.assertAlmostEqual(observed_ratio, expected_ratio, places=4)
+
     def test_rake_weights_scale_to_pop(self) -> None:
         """
         Test that rake weights properly scale to match target population size.

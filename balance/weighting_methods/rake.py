@@ -123,7 +123,7 @@ def rake(
     target_df: pd.DataFrame,
     target_weights: pd.Series,
     variables: Union[List[str], None] = None,
-    transformations: Union[Dict[str, Callable[..., Any]], str] = "default",
+    transformations: Union[Dict[str, Callable[..., Any]], str, None] = "default",
     na_action: str = "add_indicator",
     max_iteration: int = 1000,
     convergence_rate: float = 0.0005,
@@ -360,7 +360,9 @@ def rake(
     ).set_index("index")
 
     raked_rescaled["rake_weight"] = (
-        raked_rescaled["rake_weight"] / raked_rescaled["total_survey_weight"]
+        raked_rescaled["rake_weight"]
+        * raked_rescaled["weight"]
+        / raked_rescaled["total_survey_weight"]
     )
 
     w = balance_adjustment.trim_weights(
