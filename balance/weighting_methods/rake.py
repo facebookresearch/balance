@@ -360,7 +360,9 @@ def rake(
     ).set_index("index")
 
     raked_rescaled["rake_weight"] = (
-        raked_rescaled["rake_weight"] / raked_rescaled["total_survey_weight"]
+        raked_rescaled["rake_weight"]
+        * raked_rescaled["weight"]
+        / raked_rescaled["total_survey_weight"]
     )
 
     w = balance_adjustment.trim_weights(
