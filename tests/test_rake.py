@@ -503,10 +503,7 @@ class Testrake(
         )
         w = result["weight"]
 
-        # Marginal for "a"="1" should equal 50% of target_sum (=4.0)
-        # (rake rescales marginals to sample_sum, then trim_weights rescales to target_sum)
         # Verify marginals match target marginals (each level appears twice in target).
-        target_sum = float(target_weights.sum())
         for level_col, levels in [("a", ["1", "2"]), ("b", ["x", "y"])]:
             for level in levels:
                 mask = sample_df[level_col] == level
