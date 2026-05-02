@@ -2149,9 +2149,13 @@ class BalanceFrame:
         sample_covars = bf._sf_sample.df_covars
         target_covars = _assert_type(bf._sf_target).df_covars
         for column in input_variables:
-            if column not in sample_covars.columns:
+            if (
+                column not in sample_covars.columns
+                or column not in target_covars.columns
+            ):
                 raise ValueError(
-                    f"Rake predict_weights() cannot find required covariate '{column}'."
+                    "Rake predict_weights() cannot find required covariate "
+                    f"'{column}' in both sample and target."
                 )
         sample_df = sample_covars.loc[:, input_variables]
         target_df = target_covars.loc[:, input_variables]

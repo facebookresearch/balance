@@ -205,8 +205,6 @@ def rake(
     assert (
         "weight" not in sample_df.columns.values
     ), "weight shouldn't be a name for covariate in the sample data"
-    if "store_fit_metadata" in kwargs:
-        store_fit_metadata = kwargs.pop("store_fit_metadata")
     if not isinstance(store_fit_metadata, bool):
         raise TypeError("`store_fit_metadata` must be a bool.")
     assert (

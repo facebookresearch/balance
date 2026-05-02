@@ -3797,6 +3797,39 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         with self.assertRaisesRegex(ValueError, "data must have a target set"):
             fitted.predict_weights(data=no_target_bf)
 
+    def test_predict_weights_rake_data_requires_covariates_in_both_sample_and_target(
+        self,
+    ) -> None:
+        train_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "a": ["A", "A", "B", "B", "A", "B"],
+                "b": ["X", "Y", "X", "Y", "X", "Y"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "a": ["A", "A", "A", "B", "B", "B"],
+                "b": ["X", "Y", "X", "X", "Y", "Y"],
+            }
+        )
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(train_df),
+            target=SampleFrame.from_frame(target_df),
+        ).fit(method="rake", variables=["a", "b"], transformations=None)
+
+        # Build scoring frame with sample having covariate 'b' but target missing it.
+        bad_target = target_df.drop(columns=["b"])
+        bad_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(train_df.copy()),
+            target=SampleFrame.from_frame(bad_target),
+        )
+        with self.assertRaisesRegex(ValueError, "both sample and target"):
+            fitted._predict_weights_rake(_assert_type(fitted.model), source=bad_bf)
+
     def test_rake_joint_distribution_divergence_helper(self) -> None:
         a = np.array([[1.0, 1.0], [1.0, 1.0]])
         self.assertAlmostEqual(_rake_joint_distribution_divergence(a, a), 0.0)
