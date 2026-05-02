@@ -3809,18 +3809,6 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         with self.assertRaises(ValueError):
             _rake_joint_distribution_divergence(np.ones((2, 2)), np.ones((2, 3)))
 
-    def test_rake_joint_distribution_divergence_helper(self) -> None:
-        a = np.array([[1.0, 1.0], [1.0, 1.0]])
-        self.assertAlmostEqual(_rake_joint_distribution_divergence(a, a), 0.0)
-        b = np.array([[4.0, 0.0], [0.0, 0.0]])
-        c = np.array([[0.0, 0.0], [0.0, 4.0]])
-        self.assertAlmostEqual(_rake_joint_distribution_divergence(b, c), 1.0)
-        d = np.array([[2.0, 1.0], [1.0, 0.0]])
-        e = np.array([[1.0, 1.0], [1.0, 1.0]])
-        self.assertGreater(_rake_joint_distribution_divergence(d, e), 0.0)
-        with self.assertRaises(ValueError):
-            _rake_joint_distribution_divergence(np.ones((2, 2)), np.ones((2, 3)))
-
     def test_predict_weights_poststratify_na_drop_reconstructs(self) -> None:
         sample_df = pd.DataFrame(
             {
