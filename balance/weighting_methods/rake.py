@@ -11,6 +11,7 @@ import itertools
 import logging
 import math
 import numbers
+import pickle
 from fractions import Fraction
 from functools import reduce
 from typing import Any, Callable, Dict, List, Tuple, Union
@@ -205,7 +206,9 @@ def rake(
         "weight" not in sample_df.columns.values
     ), "weight shouldn't be a name for covariate in the sample data"
     if "store_fit_metadata" in kwargs:
-        store_fit_metadata = bool(kwargs.pop("store_fit_metadata"))
+        store_fit_metadata = kwargs.pop("store_fit_metadata")
+    if not isinstance(store_fit_metadata, bool):
+        raise TypeError("`store_fit_metadata` must be a bool.")
     assert (
         "weight" not in target_df.columns.values
     ), "weight shouldn't be a name for covariate in the target data"
@@ -395,6 +398,14 @@ def rake(
         # TODO: fix functions that use the perf and remove it from here
     }
     if store_fit_metadata:
+        try:
+            pickle.dumps(transformations)
+        except Exception as exc:  # pragma: no cover - exact pickle errors vary
+            raise TypeError(
+                "Rake transformations must be pickle-serializable when "
+                "store_fit_metadata=True. Pass store_fit_metadata=False or use "
+                "pickle-safe transformations."
+            ) from exc
         model.update(
             {
                 "store_fit_metadata": True,

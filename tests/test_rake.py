@@ -1803,3 +1803,25 @@ class TestRakeFitMetadata(balance.testutil.BalanceTestCase):
             **{"store_fit_metadata": True},
         )
         self.assertTrue(bool(result["model"].get("store_fit_metadata")))
+
+    def test_rake_rejects_non_bool_store_fit_metadata(self) -> None:
+        with self.assertRaisesRegex(TypeError, "store_fit_metadata"):
+            rake(
+                self.sample_df,
+                self.sample_w,
+                self.target_df,
+                self.target_w,
+                transformations=None,
+                store_fit_metadata="False",  # type: ignore[arg-type]
+            )
+
+    def test_rake_store_fit_metadata_requires_pickleable_transformations(self) -> None:
+        with self.assertRaisesRegex(TypeError, "pickle-serializable"):
+            rake(
+                self.sample_df,
+                self.sample_w,
+                self.target_df,
+                self.target_w,
+                transformations={"a": lambda s: s, "b": lambda s: s},  # noqa: E731
+                store_fit_metadata=True,
+            )

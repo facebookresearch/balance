@@ -1278,13 +1278,7 @@ class BalanceFrame:
 
         # Use holdout's own design weights
         current_sample_weights = self._sf_sample.df_weights.iloc[:, 0]
-        training_sample_weights = model.get("training_sample_weights")
-        sample_weights = (
-            training_sample_weights
-            if isinstance(training_sample_weights, pd.Series)
-            and training_sample_weights.index.equals(current_sample_weights.index)
-            else current_sample_weights
-        )
+        sample_weights = current_sample_weights
         target_weights = _assert_type(self._sf_target).df_weights.iloc[:, 0]
 
         # Warn if holdout target weight sum differs >1% from training
@@ -2165,6 +2159,19 @@ class BalanceFrame:
         training_sample_weights = model.get("training_sample_weights")
         sample_weights = sample_weights_full
         na_action = cast(str, model.get("na_action", "add_indicator"))
+
+        sample_df, target_df = balance_adjustment.apply_transformations(
+            (sample_df, target_df), transformations=model.get("transformations")
+        )
+        for column in variables:
+            if column not in sample_df.columns:
+                raise ValueError(
+                    "Rake transform output is missing stored variable "
+                    f"'{column}' required for predict_weights()."
+                )
+        sample_df = sample_df.loc[:, variables]
+        target_df = target_df.loc[:, variables]
+
         if source is None:
             if isinstance(
                 training_sample_weights, pd.Series
@@ -2195,17 +2202,7 @@ class BalanceFrame:
             raise ValueError(
                 f"Rake model has invalid na_action metadata '{na_action}' for predict_weights()."
             )
-
-        sample_df, _target_df = balance_adjustment.apply_transformations(
-            (sample_df, target_df), transformations=model.get("transformations")
-        )
-        for column in variables:
-            if column not in sample_df.columns:
-                raise ValueError(
-                    "Rake transform output is missing stored variable "
-                    f"'{column}' required for predict_weights()."
-                )
-        sample_df = sample_df.loc[:, variables].astype(str)
+        sample_df = sample_df.astype(str)
         if m_fit.shape != m_sample.shape:
             raise ValueError(
                 "Rake model metadata has incompatible fitted and sample table shapes."
