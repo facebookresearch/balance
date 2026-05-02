@@ -110,13 +110,6 @@ def _run_ipf_numpy(
     return table, converged, iterations_df
 
 
-# TODO: Store fit artifacts for predict_weights() support.
-# Save the fitted contingency table (`m_fit`), variable lists, and
-# category-to-index mappings in the returned model dict. Currently
-# `m_fit` is discarded after per-row weight assignment. Then implement
-# `_predict_weights_rake()` in balance_frame.py: look up each row's cell
-# in the stored N-dimensional table, compute weight ratio, multiply by
-# design weight. ~80 lines total.
 def rake(
     sample_df: pd.DataFrame,
     sample_weights: pd.Series,
@@ -132,6 +125,7 @@ def rake(
     weight_trimming_percentile: Union[float, None] = None,
     keep_sum_of_weights: bool = True,
     *args: Any,
+    store_fit_metadata: bool = False,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """
@@ -167,6 +161,10 @@ def rake(
                                    Delegated to :func:`balance.adjustment.trim_weights`.
     keep_sum_of_weights --- (bool, optional) preserve the sum of weights during trimming before
                             rescaling to the target total. Defaults to True.
+    store_fit_metadata --- (bool, optional, keyword-only)
+                           when True, persist fit-time artifacts in
+                           ``model`` for `BalanceFrame.predict_weights()`
+                           replay/transfer workflows. Defaults to False.
 
     Returns:
     A dictionary including:
@@ -174,6 +172,21 @@ def rake(
     "model" --- parameters of the model: iterations (dataframe with iteration numbers and
                 convergence rate information at all steps), converged (Flag with the output
                 status: 0 for failure and 1 for success).
+                When ``store_fit_metadata=True`` it also includes fit-time
+                artifacts for ``BalanceFrame.predict_weights()`` reconstruction.
+
+    Notes:
+    ``BalanceFrame.predict_weights()`` for rake reuses the fitted cell-ratio
+    surface from this function (effectively ``m_fit / m_sample`` per joint
+    cell) and applies it to design weights in the scoring sample. This is
+    exact in-place replay (same sample rows as fit), but for ``data=...`` it is
+    a transfer operation whose validity depends on the new sample having a
+    similar joint distribution over rake variables as the training sample.
+    If the joint distribution diverges, transferred rake weights can fail to
+    recover target marginals even though the same fitted model artifacts are
+    used. In that case, re-fit rake on the new sample against the same target.
+    For this reason, balance emits a warning when transferred scoring detects
+    material joint-distribution divergence.
 
     Examples:
     .. code-block:: python
@@ -191,6 +204,8 @@ def rake(
     assert (
         "weight" not in sample_df.columns.values
     ), "weight shouldn't be a name for covariate in the sample data"
+    if "store_fit_metadata" in kwargs:
+        store_fit_metadata = bool(kwargs.pop("store_fit_metadata"))
     assert (
         "weight" not in target_df.columns.values
     ), "weight shouldn't be a name for covariate in the target data"
@@ -372,16 +387,32 @@ def rake(
         weight_trimming_percentile=weight_trimming_percentile,
         keep_sum_of_weights=keep_sum_of_weights,
     ).rename("rake_weight")
-    return {
-        "weight": w,
-        "model": {
-            "method": "rake",
-            "iterations": iterations,
-            "converged": converged,
-            "perf": {"prop_dev_explained": np.array([np.nan])},
-            # TODO: fix functions that use the perf and remove it from here
-        },
+    model: Dict[str, Any] = {
+        "method": "rake",
+        "iterations": iterations,
+        "converged": converged,
+        "perf": {"prop_dev_explained": np.array([np.nan])},
+        # TODO: fix functions that use the perf and remove it from here
     }
+    if store_fit_metadata:
+        model.update(
+            {
+                "store_fit_metadata": True,
+                "variables": alphabetized_variables,
+                "variables_before_transformations": list(variables),
+                "categories": categories,
+                "m_fit": m_fit.copy(),
+                "m_sample": m_sample.copy(),
+                "na_action": na_action,
+                "transformations": transformations,
+                "training_sample_weights": sample_weights.copy(),
+                "training_target_weights": target_weights.copy(),
+                "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
+                "weight_trimming_percentile": weight_trimming_percentile,
+                "keep_sum_of_weights": keep_sum_of_weights,
+            }
+        )
+    return {"weight": w, "model": model}
 
 
 def _lcm(a: int, b: int) -> int:

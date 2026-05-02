@@ -18,7 +18,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
-from balance.balance_frame import BalanceFrame
+from balance.balance_frame import _rake_joint_distribution_divergence, BalanceFrame
 from balance.datasets import load_data
 from balance.sample_class import Sample
 from balance.sample_frame import SampleFrame
@@ -3618,6 +3618,171 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         )
         with self.assertRaisesRegex(ValueError, "missing fit-time metadata"):
             adjusted.predict_weights()
+
+    def test_predict_weights_rake_fit_matches_weight_series(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(8)],
+                "weight": [1.0, 2.0, 1.5, 2.5, 1.0, 1.2, 0.8, 1.1],
+                "age_group": [
+                    "young",
+                    "young",
+                    "old",
+                    "old",
+                    "young",
+                    "old",
+                    "young",
+                    "old",
+                ],
+                "sex": ["f", "m", "f", "m", "f", "f", "m", "m"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "age_group": [
+                    "young",
+                    "young",
+                    "old",
+                    "old",
+                    "old",
+                    "old",
+                    "young",
+                    "old",
+                ],
+                "sex": ["f", "m", "f", "m", "f", "m", "f", "m"],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="rake",
+            variables=["age_group", "sex"],
+            transformations=None,
+        )
+        predicted_weights = adjusted.predict_weights()
+        np.testing.assert_allclose(
+            predicted_weights.to_numpy(),
+            _assert_type(adjusted.weight_series).to_numpy(),
+            rtol=1e-6,
+            atol=1e-8,
+        )
+
+    def test_predict_weights_rake_requires_fit_metadata(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "age_group": ["young", "young", "old", "old", "young", "old"],
+                "sex": ["f", "m", "f", "m", "f", "m"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "age_group": ["young", "old", "old", "old", "young", "old"],
+                "sex": ["f", "m", "f", "m", "f", "m"],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="rake",
+            variables=["age_group", "sex"],
+            transformations=None,
+            store_fit_metadata=False,
+        )
+        with self.assertRaisesRegex(ValueError, "missing fit-time metadata"):
+            adjusted.predict_weights()
+
+    def test_predict_weights_rake_na_drop_restores_full_index_with_nans(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "age_group": ["young", None, "old", "old", "young", None],
+                "sex": ["f", "m", "f", "m", "f", "m"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "age_group": ["young", "old", "old", "old", None, "young"],
+                "sex": ["f", "m", "f", "m", "f", "m"],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="rake",
+            variables=["age_group", "sex"],
+            transformations=None,
+            na_action="drop",
+        )
+        predicted_weights = adjusted.predict_weights()
+        self.assertTrue(predicted_weights.isna().equals(adjusted.weight_series.isna()))
+        self.assertTrue(np.all(np.isfinite(predicted_weights.dropna().to_numpy())))
+        self.assertTrue(np.all(predicted_weights.dropna().to_numpy() >= 0))
+
+    def test_predict_weights_rake_data_argument_warns_on_divergence(self) -> None:
+        train_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "a": ["A", "A", "A", "A", "B", "B", "B", "B"],
+                "b": ["X", "X", "Y", "Y", "X", "X", "Y", "Y"],
+            }
+        )
+        eval_df = pd.DataFrame(
+            {
+                "id": [f"e{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "a": ["A", "A", "A", "A", "B", "B", "B", "B"],
+                "b": ["X", "X", "X", "X", "Y", "Y", "Y", "Y"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "a": ["A", "A", "B", "B", "A", "B", "A", "B"],
+                "b": ["X", "Y", "X", "Y", "X", "Y", "X", "Y"],
+            }
+        )
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(train_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        eval_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(eval_df),
+            target=SampleFrame.from_frame(target_df.copy()),
+        )
+        fitted = train_bf.fit(method="rake", variables=["a", "b"], transformations=None)
+        with self.assertLogs("balance", level="WARNING") as cm:
+            weights = fitted.predict_weights(data=eval_bf)
+        self.assertEqual(len(weights), len(eval_df))
+        self.assertIn("joint distribution", " ".join(cm.output))
+
+    def test_rake_joint_distribution_divergence_helper(self) -> None:
+        a = np.array([[1.0, 1.0], [1.0, 1.0]])
+        self.assertAlmostEqual(_rake_joint_distribution_divergence(a, a), 0.0)
+        b = np.array([[4.0, 0.0], [0.0, 0.0]])
+        c = np.array([[0.0, 0.0], [0.0, 4.0]])
+        self.assertAlmostEqual(_rake_joint_distribution_divergence(b, c), 1.0)
+        d = np.array([[2.0, 1.0], [1.0, 0.0]])
+        e = np.array([[1.0, 1.0], [1.0, 1.0]])
+        self.assertGreater(_rake_joint_distribution_divergence(d, e), 0.0)
+        with self.assertRaises(ValueError):
+            _rake_joint_distribution_divergence(np.ones((2, 2)), np.ones((2, 3)))
 
     def test_predict_weights_poststratify_na_drop_reconstructs(self) -> None:
         sample_df = pd.DataFrame(

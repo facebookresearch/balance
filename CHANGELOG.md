@@ -11,6 +11,15 @@
   design weights are uniform (the common case), so existing behaviour is
   preserved.
 
+## New Features
+
+- **Rake now supports fit-time metadata persistence and `predict_weights()` reconstruction.**
+  - `rake(..., store_fit_metadata=True)` now stores contingency-table artifacts
+    and fit-time metadata required to rebuild weights later.
+  - `BalanceFrame.fit(method="rake")` now enables `store_fit_metadata=True` by
+    default so fitted rake models can be reused with
+    `BalanceFrame.predict_weights()` without refitting.
+
 ## Code Quality & Refactoring
 
 - Diagnostics construction now wires `adjustment_failure` metadata from model
