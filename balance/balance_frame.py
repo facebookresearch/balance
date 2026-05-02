@@ -2236,22 +2236,27 @@ class BalanceFrame:
                 "Rake model metadata has incompatible fitted and sample table shapes."
             )
 
+        category_maps = [{cat: i for i, cat in enumerate(cats)} for cats in categories]
+        code_columns = []
+        for column, cat_map in zip(variables, category_maps):
+            codes = sample_df[column].map(cat_map)
+            if bool(codes.isna().any()):
+                raise ValueError(
+                    "Rake predict_weights() found rows that do not map to stored fit-time "
+                    "categories. Re-fit with compatible covariates."
+                )
+            code_columns.append(codes.astype(int).to_numpy())
+        code_index = tuple(code_columns)
+
         ratio = np.divide(
             m_fit,
             m_sample,
             out=np.zeros_like(m_fit, dtype=float),
             where=m_sample != 0,
         )
-        index = pd.MultiIndex.from_product(categories, names=variables)
         if source is not None:
-            score_joint = (
-                sample_df.assign(_w=sample_weights)
-                .groupby(variables)["_w"]
-                .sum()
-                .reindex(index, fill_value=0)
-                .to_numpy()
-                .reshape(m_sample.shape)
-            )
+            score_joint = np.zeros_like(m_sample, dtype=float)
+            np.add.at(score_joint, code_index, sample_weights.to_numpy())
             divergence = _rake_joint_distribution_divergence(m_sample, score_joint)
             if divergence > 0.02:
                 logger.warning(
@@ -2261,25 +2266,18 @@ class BalanceFrame:
                     "re-fit rake on the scoring sample for exact marginal matching.",
                     divergence,
                 )
-        ratio_series = pd.Series(ratio.flatten(), index=index, name="_rake_ratio")
-        support_series = pd.Series(
-            (m_sample > 0).flatten(), index=index, name="_in_fit_support"
-        )
-        joined = sample_df.join(ratio_series, on=variables).join(
-            support_series, on=variables
-        )
-        if bool(joined["_rake_ratio"].isna().any()):
-            raise ValueError(
-                "Rake predict_weights() found rows that do not map to stored fit-time "
-                "categories. Re-fit with compatible covariates."
-            )
-        if bool((~joined["_in_fit_support"]).any()):
+        in_support = m_sample[code_index] > 0
+        if bool((~in_support).any()):
             raise ValueError(
                 "Rake predict_weights() encountered sample rows in joint cells with "
                 "zero fit-time sample mass (m_sample==0). Re-fit rake on data with "
                 "compatible joint support."
             )
-        raw = sample_weights * joined["_rake_ratio"]
+        raw = pd.Series(
+            sample_weights.to_numpy() * ratio[code_index],
+            index=sample_weights.index,
+            dtype=float,
+        )
         target_weights = model.get("training_target_weights")
         if source is None and not isinstance(target_weights, pd.Series):
             raise ValueError(
