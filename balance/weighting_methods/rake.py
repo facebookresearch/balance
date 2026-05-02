@@ -252,8 +252,8 @@ def rake(
     if store_fit_metadata:
         try:
             pickle.dumps(transformations_to_apply)
-        except Exception as exc:  # pragma: no cover
-            raise TypeError(
+        except Exception as exc:
+            raise ValueError(
                 "Rake transformations must be pickle-serializable when "
                 "store_fit_metadata=True. Pass store_fit_metadata=False or use "
                 "pickle-safe transformations."

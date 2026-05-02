@@ -1817,7 +1817,7 @@ class TestRakeFitMetadata(balance.testutil.BalanceTestCase):
             )
 
     def test_rake_store_fit_metadata_requires_pickleable_transformations(self) -> None:
-        with self.assertRaisesRegex(TypeError, "pickle-serializable"):
+        with self.assertRaisesRegex(ValueError, "pickle-serializable"):
             rake(
                 self.sample_df,
                 self.sample_w,
