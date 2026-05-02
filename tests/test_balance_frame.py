@@ -3908,6 +3908,44 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             float(scored.sum()), float(expected_target_sum), places=6
         )
 
+    def test_predict_weights_rake_data_raises_on_zero_fit_support_cell(self) -> None:
+        train_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "a": ["A", "A", "A", "B", "B", "B"],
+                "b": ["X", "X", "X", "Y", "Y", "Y"],  # only A:X and B:Y
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "a": ["A", "A", "B", "B", "A", "B", "A", "B"],
+                "b": ["X", "Y", "X", "Y", "X", "Y", "X", "Y"],
+            }
+        )
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(train_df),
+            target=SampleFrame.from_frame(target_df),
+        ).fit(method="rake", variables=["a", "b"], transformations=None)
+
+        # Scoring contains unseen joint cells A:Y and B:X (present in target levels).
+        score_df = pd.DataFrame(
+            {
+                "id": [f"h{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "a": ["A", "A", "B", "B"],
+                "b": ["Y", "Y", "X", "X"],
+            }
+        )
+        score_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(score_df),
+            target=SampleFrame.from_frame(target_df.copy()),
+        )
+        with self.assertRaisesRegex(ValueError, "zero fit-time sample mass"):
+            fitted.predict_weights(data=score_bf)
+
     def test_rake_joint_distribution_divergence_helper(self) -> None:
         a = np.array([[1.0, 1.0], [1.0, 1.0]])
         self.assertAlmostEqual(_rake_joint_distribution_divergence(a, a), 0.0)

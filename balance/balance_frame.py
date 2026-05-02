@@ -2262,11 +2262,22 @@ class BalanceFrame:
                     divergence,
                 )
         ratio_series = pd.Series(ratio.flatten(), index=index, name="_rake_ratio")
-        joined = sample_df.join(ratio_series, on=variables)
+        support_series = pd.Series(
+            (m_sample > 0).flatten(), index=index, name="_in_fit_support"
+        )
+        joined = sample_df.join(ratio_series, on=variables).join(
+            support_series, on=variables
+        )
         if bool(joined["_rake_ratio"].isna().any()):
             raise ValueError(
                 "Rake predict_weights() found rows that do not map to stored fit-time "
                 "categories. Re-fit with compatible covariates."
+            )
+        if bool((~joined["_in_fit_support"]).any()):
+            raise ValueError(
+                "Rake predict_weights() encountered sample rows in joint cells with "
+                "zero fit-time sample mass (m_sample==0). Re-fit rake on data with "
+                "compatible joint support."
             )
         raw = sample_weights * joined["_rake_ratio"]
         target_weights = model.get("training_target_weights")
