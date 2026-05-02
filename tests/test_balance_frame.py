@@ -3772,6 +3772,43 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         self.assertEqual(len(weights), len(eval_df))
         self.assertIn("joint distribution", " ".join(cm.output))
 
+    def test_predict_weights_rake_data_requires_target(self) -> None:
+        train_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "a": ["A", "A", "B", "B", "A", "B"],
+                "b": ["X", "Y", "X", "Y", "X", "Y"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "a": ["A", "A", "A", "B", "B", "B"],
+                "b": ["X", "Y", "X", "X", "Y", "Y"],
+            }
+        )
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(train_df),
+            target=SampleFrame.from_frame(target_df),
+        ).fit(method="rake", variables=["a", "b"], transformations=None)
+        no_target_bf = BalanceFrame(sample=SampleFrame.from_frame(train_df.copy()))
+        with self.assertRaisesRegex(ValueError, "data must have a target set"):
+            fitted.predict_weights(data=no_target_bf)
+
+    def test_rake_joint_distribution_divergence_helper(self) -> None:
+        a = np.array([[1.0, 1.0], [1.0, 1.0]])
+        self.assertAlmostEqual(_rake_joint_distribution_divergence(a, a), 0.0)
+        b = np.array([[4.0, 0.0], [0.0, 0.0]])
+        c = np.array([[0.0, 0.0], [0.0, 4.0]])
+        self.assertAlmostEqual(_rake_joint_distribution_divergence(b, c), 1.0)
+        d = np.array([[2.0, 1.0], [1.0, 0.0]])
+        e = np.array([[1.0, 1.0], [1.0, 1.0]])
+        self.assertGreater(_rake_joint_distribution_divergence(d, e), 0.0)
+        with self.assertRaises(ValueError):
+            _rake_joint_distribution_divergence(np.ones((2, 2)), np.ones((2, 3)))
+
     def test_rake_joint_distribution_divergence_helper(self) -> None:
         a = np.array([[1.0, 1.0], [1.0, 1.0]])
         self.assertAlmostEqual(_rake_joint_distribution_divergence(a, a), 0.0)

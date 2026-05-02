@@ -1097,6 +1097,11 @@ class BalanceFrame:
             can reconstruct poststratification cell-ratio artifacts, while
             direct ``adjust(method='poststratify')`` remains metadata-light
             unless ``store_fit_metadata=True`` is passed explicitly.
+            For the built-in rake method, ``fit()`` enables
+            ``store_fit_metadata=True`` by default so ``predict_weights()``
+            can replay/transfer fitted rake artifacts. This may increase
+            memory usage because contingency tables and fit metadata are
+            stored; pass ``store_fit_metadata=False`` to opt out.
         """
         from balance.weighting_methods.cbps import cbps as built_in_cbps
         from balance.weighting_methods.ipw import ipw as built_in_ipw
@@ -1189,8 +1194,10 @@ class BalanceFrame:
             holdout_bf.set_fitted_model(fitted)
             holdout_bf.summary()
 
-        Currently supports IPW models.  Other methods (CBPS, rake,
-        poststratify) will be supported once they store fit-time artifacts.
+        Currently ``set_fitted_model`` applies fitted IPW models directly.
+        Other methods may have fit artifacts but are routed through their
+        dedicated ``predict_weights(data=...)`` workflows instead of this
+        method-specific application path.
 
         Args:
             fitted: A BalanceFrame already adjusted with a supported method.
@@ -2141,6 +2148,10 @@ class BalanceFrame:
             raise ValueError("Rake model is missing stored contingency tables.")
 
         bf = source if source is not None else self
+        if source is not None and bf._sf_target is None:
+            raise ValueError(
+                "data must have a target set for rake predict_weights(data=...)."
+            )
         sample_covars = bf._sf_sample.df_covars
         target_covars = _assert_type(bf._sf_target).df_covars
         for column in input_variables:
