@@ -9,6 +9,10 @@ FontAwesome icons were used under the
 
 ### Installation
 
+### Node.js requirement
+
+This website now requires **Node.js 22 or newer** (`engines.node: >=22`). The repository also enforces engines via `website/.npmrc` (`engine-strict = true`), so installs on Node 20/21 will fail fast with an engine error.
+
 ```
 $ yarn
 ```
