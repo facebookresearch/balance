@@ -3672,7 +3672,9 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         )
         self.assertIsNone(_assert_type(adjusted.model).get("transformations"))
 
-    def test_predict_weights_rake_default_transformations_transfer(self) -> None:
+    def test_predict_weights_rake_default_transformations_transfer_rejected(
+        self,
+    ) -> None:
         sample_df = pd.DataFrame(
             {
                 "id": [f"s{i}" for i in range(10)],
@@ -3698,8 +3700,8 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             sample=SampleFrame.from_frame(sample_df.copy()),
             target=SampleFrame.from_frame(target_df.copy()),
         )
-        weights = fitted.predict_weights(data=holdout)
-        self.assertEqual(len(weights), len(sample_df))
+        with self.assertRaisesRegex(ValueError, "transformations='default'"):
+            fitted.predict_weights(data=holdout)
 
     def test_predict_weights_rake_requires_fit_metadata(self) -> None:
         sample_df = pd.DataFrame(

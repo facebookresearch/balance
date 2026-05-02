@@ -1102,6 +1102,10 @@ class BalanceFrame:
             can replay/transfer fitted rake artifacts. This may increase
             memory usage because contingency tables and fit metadata are
             stored; pass ``store_fit_metadata=False`` to opt out.
+            When metadata is stored, rake transformations must be
+            pickle-serializable (for example, lambdas/closures may fail).
+            If needed, use pickle-safe callables or set
+            ``store_fit_metadata=False``.
         """
         from balance.weighting_methods.cbps import cbps as built_in_cbps
         from balance.weighting_methods.ipw import ipw as built_in_ipw
@@ -2134,6 +2138,7 @@ class BalanceFrame:
         categories = model.get("categories")
         m_fit = model.get("m_fit")
         m_sample = model.get("m_sample")
+        transformations_origin = model.get("transformations_origin")
         if (
             not isinstance(variables, list)
             or not isinstance(input_variables, list)
@@ -2147,6 +2152,13 @@ class BalanceFrame:
         if source is not None and bf._sf_target is None:
             raise ValueError(
                 "data must have a target set for rake predict_weights(data=...)."
+            )
+        if source is not None and transformations_origin == "default":
+            raise ValueError(
+                "Rake predict_weights(data=...) is unsupported for models fitted "
+                "with transformations='default' because those transformations are "
+                "data-dependent and not replayable across new samples. Re-fit on "
+                "the scoring data or fit with explicit deterministic transformations."
             )
         sample_covars = bf._sf_sample.df_covars
         target_covars = _assert_type(bf._sf_target).df_covars

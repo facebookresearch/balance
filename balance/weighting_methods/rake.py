@@ -421,6 +421,7 @@ def rake(
                 "m_sample": m_sample.copy(),
                 "na_action": na_action,
                 "transformations": transformations_to_apply,
+                "transformations_origin": transformations,
                 "training_sample_weights": sample_weights.copy(),
                 "training_target_weights": target_weights.copy(),
                 "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
