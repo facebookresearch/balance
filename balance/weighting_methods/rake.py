@@ -244,8 +244,23 @@ def rake(
         f"Currently have variables={variables} only"
     )
 
+    transformations_to_apply = transformations
+    if transformations == "default":
+        transformations_to_apply = balance_adjustment.default_transformations(
+            (sample_df, target_df)
+        )
+    if store_fit_metadata:
+        try:
+            pickle.dumps(transformations_to_apply)
+        except Exception as exc:  # pragma: no cover
+            raise TypeError(
+                "Rake transformations must be pickle-serializable when "
+                "store_fit_metadata=True. Pass store_fit_metadata=False or use "
+                "pickle-safe transformations."
+            ) from exc
+
     sample_df, target_df = balance_adjustment.apply_transformations(
-        (sample_df, target_df), transformations
+        (sample_df, target_df), transformations_to_apply
     )
 
     # TODO: separate into a function that handles NA (for rake, ipw, poststratify)
@@ -396,14 +411,6 @@ def rake(
         # TODO: fix functions that use the perf and remove it from here
     }
     if store_fit_metadata:
-        try:
-            pickle.dumps(transformations)
-        except Exception as exc:  # pragma: no cover - exact pickle errors vary
-            raise TypeError(
-                "Rake transformations must be pickle-serializable when "
-                "store_fit_metadata=True. Pass store_fit_metadata=False or use "
-                "pickle-safe transformations."
-            ) from exc
         model.update(
             {
                 "store_fit_metadata": True,
@@ -413,7 +420,7 @@ def rake(
                 "m_fit": m_fit.copy(),
                 "m_sample": m_sample.copy(),
                 "na_action": na_action,
-                "transformations": transformations,
+                "transformations": transformations_to_apply,
                 "training_sample_weights": sample_weights.copy(),
                 "training_target_weights": target_weights.copy(),
                 "weight_trimming_mean_ratio": weight_trimming_mean_ratio,

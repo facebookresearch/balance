@@ -2118,6 +2118,8 @@ class BalanceFrame:
             "na_action",
             "transformations",
         )
+        if source is None:
+            required = required + ("training_sample_weights", "training_target_weights")
         missing = [key for key in required if key not in model]
         if missing:
             raise ValueError(

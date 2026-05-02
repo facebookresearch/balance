@@ -1792,6 +1792,7 @@ class TestRakeFitMetadata(balance.testutil.BalanceTestCase):
         ):
             self.assertIn(key, model)
         self.assertEqual(model["m_fit"].shape, model["m_sample"].shape)
+        self.assertIn(type(model["transformations"]), (dict, type(None)))
 
     def test_rake_store_fit_metadata_via_kwargs_is_accepted(self) -> None:
         result = rake(
