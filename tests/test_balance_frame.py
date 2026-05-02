@@ -3730,6 +3730,12 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         )
         predicted_weights = adjusted.predict_weights()
         self.assertTrue(predicted_weights.isna().equals(adjusted.weight_series.isna()))
+        np.testing.assert_allclose(
+            predicted_weights.dropna().to_numpy(),
+            _assert_type(adjusted.weight_series).dropna().to_numpy(),
+            rtol=1e-6,
+            atol=1e-8,
+        )
         self.assertTrue(np.all(np.isfinite(predicted_weights.dropna().to_numpy())))
         self.assertTrue(np.all(predicted_weights.dropna().to_numpy() >= 0))
 

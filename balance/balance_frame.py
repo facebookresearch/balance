@@ -2177,11 +2177,20 @@ class BalanceFrame:
         target_df = target_df.loc[:, variables]
 
         if source is None:
-            if isinstance(
-                training_sample_weights, pd.Series
-            ) and training_sample_weights.index.equals(sample_weights_full.index):
-                sample_weights = training_sample_weights
-            elif na_action != "drop":
+            if isinstance(training_sample_weights, pd.Series):
+                if na_action == "drop":
+                    sample_weights = training_sample_weights
+                elif training_sample_weights.index.equals(sample_weights_full.index):
+                    sample_weights = training_sample_weights
+                else:
+                    raise ValueError(
+                        "Rake predict_weights() requires compatible fit-time sample design "
+                        "weights for in-place replay. This can happen because "
+                        "store_fit_metadata is missing/incompatible, or because you're "
+                        "scoring a different sample; use predict_weights(data=...) "
+                        "for different samples."
+                    )
+            else:
                 raise ValueError(
                     "Rake predict_weights() requires compatible fit-time sample design "
                     "weights for in-place replay. This can happen because "
@@ -2255,7 +2264,14 @@ class BalanceFrame:
                 "scoring a different sample; use predict_weights(data=...) "
                 "for different samples."
             )
-        if isinstance(target_weights, pd.Series):
+        if source is not None:
+            if na_action == "drop" and isinstance(dropped_target_weights, pd.Series):
+                target_sum = float(dropped_target_weights.sum())
+            else:
+                target_sum = float(
+                    _assert_type(bf._sf_target).df_weights.iloc[:, 0].sum()
+                )
+        elif isinstance(target_weights, pd.Series):
             target_sum = float(target_weights.sum())
         elif na_action == "drop" and isinstance(dropped_target_weights, pd.Series):
             target_sum = float(dropped_target_weights.sum())
