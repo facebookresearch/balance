@@ -3830,6 +3830,46 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         with self.assertRaisesRegex(ValueError, "both sample and target"):
             fitted._predict_weights_rake(_assert_type(fitted.model), source=bad_bf)
 
+    def test_predict_weights_rake_data_na_drop_uses_dropped_target_sum(self) -> None:
+        train_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "a": ["A", "A", "A", "B", "B", "B", "A", "B"],
+                "b": ["X", "Y", "X", "Y", "X", "Y", "X", "Y"],
+            }
+        )
+        train_target = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "a": ["A", "A", "B", "B", "A", None, "A", "B"],
+                "b": ["X", "Y", "X", "Y", "X", "Y", "X", None],
+            }
+        )
+        eval_df = train_df.copy()
+        eval_target = train_target.copy()
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(train_df),
+            target=SampleFrame.from_frame(train_target),
+        ).fit(
+            method="rake", variables=["a", "b"], transformations=None, na_action="drop"
+        )
+        scored = fitted.predict_weights(
+            data=BalanceFrame(
+                sample=SampleFrame.from_frame(eval_df),
+                target=SampleFrame.from_frame(eval_target),
+            )
+        )
+        expected_target_sum = (
+            SampleFrame.from_frame(eval_target)
+            .df_weights.iloc[:, 0][eval_target[["a", "b"]].notna().all(axis=1)]
+            .sum()
+        )
+        self.assertAlmostEqual(
+            float(scored.sum()), float(expected_target_sum), places=6
+        )
+
     def test_rake_joint_distribution_divergence_helper(self) -> None:
         a = np.array([[1.0, 1.0], [1.0, 1.0]])
         self.assertAlmostEqual(_rake_joint_distribution_divergence(a, a), 0.0)

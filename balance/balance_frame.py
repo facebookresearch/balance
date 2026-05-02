@@ -2190,11 +2190,12 @@ class BalanceFrame:
                     "for different samples."
                 )
 
+        dropped_target_weights: pd.Series | None = None
         if na_action == "drop":
             sample_df, sample_weights = balance_util.drop_na_rows(
                 sample_df, sample_weights, "sample"
             )
-            target_df, _target_weights = balance_util.drop_na_rows(
+            target_df, dropped_target_weights = balance_util.drop_na_rows(
                 target_df,
                 _assert_type(bf._sf_target).df_weights.iloc[:, 0],
                 "target",
@@ -2254,11 +2255,12 @@ class BalanceFrame:
                 "scoring a different sample; use predict_weights(data=...) "
                 "for different samples."
             )
-        target_sum = (
-            float(target_weights.sum())
-            if isinstance(target_weights, pd.Series)
-            else float(_assert_type(bf._sf_target).df_weights.iloc[:, 0].sum())
-        )
+        if isinstance(target_weights, pd.Series):
+            target_sum = float(target_weights.sum())
+        elif na_action == "drop" and isinstance(dropped_target_weights, pd.Series):
+            target_sum = float(dropped_target_weights.sum())
+        else:
+            target_sum = float(_assert_type(bf._sf_target).df_weights.iloc[:, 0].sum())
         predicted = balance_adjustment.trim_weights(
             raw,
             target_sum_weights=target_sum,
