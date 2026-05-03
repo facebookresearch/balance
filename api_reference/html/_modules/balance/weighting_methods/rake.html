@@ -48,13 +48,15 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numbers</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">fractions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Fraction</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">reduce</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">adjustment</span> <span class="k">as</span> <span class="n">balance_adjustment</span><span class="p">,</span> <span class="n">util</span> <span class="k">as</span> <span class="n">balance_util</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">_safe_fillna_and_infer</span>
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
 
@@ -147,13 +149,6 @@
     <span class="k">return</span> <span class="n">table</span><span class="p">,</span> <span class="n">converged</span><span class="p">,</span> <span class="n">iterations_df</span>
 
 
-<span class="c1"># TODO: Store fit artifacts for predict_weights() support.</span>
-<span class="c1"># Save the fitted contingency table (`m_fit`), variable lists, and</span>
-<span class="c1"># category-to-index mappings in the returned model dict. Currently</span>
-<span class="c1"># `m_fit` is discarded after per-row weight assignment. Then implement</span>
-<span class="c1"># `_predict_weights_rake()` in balance_frame.py: look up each row&#39;s cell</span>
-<span class="c1"># in the stored N-dimensional table, compute weight ratio, multiply by</span>
-<span class="c1"># design weight. ~80 lines total.</span>
 <div class="viewcode-block" id="rake">
 <a class="viewcode-back" href="../../../balance.weighting_methods.rake.html#balance.weighting_methods.rake.rake">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">rake</span><span class="p">(</span>
@@ -171,6 +166,7 @@
     <span class="n">weight_trimming_percentile</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">keep_sum_of_weights</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">store_fit_metadata</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -206,6 +202,10 @@
 <span class="sd">                                   Delegated to :func:`balance.adjustment.trim_weights`.</span>
 <span class="sd">    keep_sum_of_weights --- (bool, optional) preserve the sum of weights during trimming before</span>
 <span class="sd">                            rescaling to the target total. Defaults to True.</span>
+<span class="sd">    store_fit_metadata --- (bool, optional, keyword-only)</span>
+<span class="sd">                           when True, persist fit-time artifacts in</span>
+<span class="sd">                           ``model`` for `BalanceFrame.predict_weights()`</span>
+<span class="sd">                           replay/transfer workflows. Defaults to False.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">    A dictionary including:</span>
@@ -213,6 +213,24 @@
 <span class="sd">    &quot;model&quot; --- parameters of the model: iterations (dataframe with iteration numbers and</span>
 <span class="sd">                convergence rate information at all steps), converged (Flag with the output</span>
 <span class="sd">                status: 0 for failure and 1 for success).</span>
+<span class="sd">                When ``store_fit_metadata=True`` it also includes fit-time</span>
+<span class="sd">                artifacts for ``BalanceFrame.predict_weights()`` reconstruction.</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">    ``BalanceFrame.predict_weights()`` for rake reuses the fitted cell-ratio</span>
+<span class="sd">    surface from this function (effectively ``m_fit / m_sample`` per joint</span>
+<span class="sd">    cell) and applies it to design weights in the scoring sample. This is</span>
+<span class="sd">    exact in-place replay (same sample rows as fit), but for ``data=...`` it is</span>
+<span class="sd">    a transfer operation whose validity depends on the new sample having a</span>
+<span class="sd">    similar joint distribution over rake variables as the training sample.</span>
+<span class="sd">    If the joint distribution diverges, transferred rake weights can fail to</span>
+<span class="sd">    recover target marginals even though the same fitted model artifacts are</span>
+<span class="sd">    used. In that case, re-fit rake on the new sample against the same target.</span>
+<span class="sd">    For this reason, balance emits an unconditional warning on transferred</span>
+<span class="sd">    scoring (``predict_weights(data=...)``) when the fit is otherwise</span>
+<span class="sd">    replayable, and raises for known unreplayable cases — currently</span>
+<span class="sd">    ``transformations=&#39;default&#39;`` and explicit dicts containing the known</span>
+<span class="sd">    data-dependent helpers (``quantize``, ``fct_lump``).</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">    .. code-block:: python</span>
@@ -251,6 +269,29 @@
         <span class="s2">&quot;target_weights must be the same length as target_df&quot;</span>
         <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">target_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">target_weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">store_fit_metadata</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;`store_fit_metadata` must be a bool.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">store_fit_metadata</span> <span class="ow">and</span> <span class="n">transformations</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
+        <span class="c1"># `transformations=&#39;default&#39;` resolves to data-dependent helpers</span>
+        <span class="c1"># (`quantize`/`fct_lump`) which recompute bins/levels from the input</span>
+        <span class="c1"># data. The fitted model can be replayed in-place via</span>
+        <span class="c1"># `BalanceFrame.predict_weights()` but cannot be transferred to new</span>
+        <span class="c1"># data via `predict_weights(data=...)` — that path will raise. To</span>
+        <span class="c1"># enable transfer scoring, pass deterministic transformations at fit</span>
+        <span class="c1"># time (e.g. wrappers built around stored fit-time bin edges).</span>
+        <span class="c1"># TODO: replace this warning with a shared</span>
+        <span class="c1"># `_freeze_data_dependent_transformations(transformations, dfs)`</span>
+        <span class="c1"># helper that captures fit-time parameters (bin edges for `quantize`,</span>
+        <span class="c1"># kept levels for `fct_lump`) and replays them as a deterministic</span>
+        <span class="c1"># closure, so transfer scoring works out of the box for all four</span>
+        <span class="c1"># weighting methods (rake/cbps/poststratify/ipw).</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;rake(store_fit_metadata=True) is being used together with &quot;</span>
+            <span class="s2">&quot;transformations=&#39;default&#39;. The fitted model can be replayed &quot;</span>
+            <span class="s2">&quot;in-place via BalanceFrame.predict_weights(), but transfer &quot;</span>
+            <span class="s2">&quot;scoring via predict_weights(data=...) will raise. Pass &quot;</span>
+            <span class="s2">&quot;deterministic transformations at fit time to enable transfer.&quot;</span>
+        <span class="p">)</span>
 
     <span class="n">variables</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">choose_variables</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">)</span>
 
@@ -267,8 +308,30 @@
         <span class="sa">f</span><span class="s2">&quot;Currently have variables=</span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2"> only&quot;</span>
     <span class="p">)</span>
 
+    <span class="n">transformations_to_apply</span> <span class="o">=</span> <span class="n">transformations</span>
+    <span class="k">if</span> <span class="n">transformations</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
+        <span class="n">transformations_to_apply</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">default_transformations</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">store_fit_metadata</span><span class="p">:</span>
+        <span class="c1"># Fail fast: persisting non-pickleable callables (e.g. lambdas,</span>
+        <span class="c1"># closures) would break `pickle.dumps(adjusted_bf)` workflows</span>
+        <span class="c1"># downstream. Check here, before the IPF compute, so users don&#39;t</span>
+        <span class="c1"># wait for a long fit only to fail at the end. Matches the</span>
+        <span class="c1"># poststratify pattern.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># @lint-ignore PYTHONPICKLEISBAD - serializability check only; no untrusted deserialization</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">transformations_to_apply</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;`transformations` must be pickleable when &quot;</span>
+                <span class="s2">&quot;store_fit_metadata=True. Pass store_fit_metadata=False to &quot;</span>
+                <span class="s2">&quot;disable fit-artifact persistence for this run.&quot;</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+
     <span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">apply_transformations</span><span class="p">(</span>
-        <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">),</span> <span class="n">transformations</span>
+        <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">),</span> <span class="n">transformations_to_apply</span>
     <span class="p">)</span>
 
     <span class="c1"># TODO: separate into a function that handles NA (for rake, ipw, poststratify)</span>
@@ -280,8 +343,6 @@
             <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span>
         <span class="p">)</span>
     <span class="k">elif</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">:</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">_safe_fillna_and_infer</span>
-
         <span class="c1"># pyrefly: ignore [bad-assignment]</span>
         <span class="n">target_df</span> <span class="o">=</span> <span class="n">_safe_fillna_and_infer</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="s2">&quot;__NaN__&quot;</span><span class="p">)</span>
         <span class="c1"># pyrefly: ignore [bad-assignment]</span>
@@ -411,17 +472,353 @@
         <span class="n">weight_trimming_percentile</span><span class="o">=</span><span class="n">weight_trimming_percentile</span><span class="p">,</span>
         <span class="n">keep_sum_of_weights</span><span class="o">=</span><span class="n">keep_sum_of_weights</span><span class="p">,</span>
     <span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;rake_weight&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">w</span><span class="p">,</span>
-        <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;rake&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;iterations&quot;</span><span class="p">:</span> <span class="n">iterations</span><span class="p">,</span>
-            <span class="s2">&quot;converged&quot;</span><span class="p">:</span> <span class="n">converged</span><span class="p">,</span>
-            <span class="s2">&quot;perf&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;prop_dev_explained&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">])},</span>
-            <span class="c1"># TODO: fix functions that use the perf and remove it from here</span>
-        <span class="p">},</span>
-    <span class="p">}</span></div>
+    <span class="n">model</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;rake&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;iterations&quot;</span><span class="p">:</span> <span class="n">iterations</span><span class="p">,</span>
+        <span class="s2">&quot;converged&quot;</span><span class="p">:</span> <span class="n">converged</span><span class="p">,</span>
+        <span class="s2">&quot;perf&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;prop_dev_explained&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">])},</span>
+        <span class="c1"># TODO: fix functions that use the perf and remove it from here</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">store_fit_metadata</span><span class="p">:</span>
+        <span class="c1"># Pickleability of `transformations_to_apply` was already validated</span>
+        <span class="c1"># earlier (before the IPF compute), so persistence here is safe.</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;store_fit_metadata&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;variables&quot;</span><span class="p">:</span> <span class="n">alphabetized_variables</span><span class="p">,</span>
+                <span class="s2">&quot;variables_before_transformations&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">variables</span><span class="p">),</span>
+                <span class="s2">&quot;categories&quot;</span><span class="p">:</span> <span class="n">categories</span><span class="p">,</span>
+                <span class="s2">&quot;m_fit&quot;</span><span class="p">:</span> <span class="n">m_fit</span><span class="p">,</span>
+                <span class="s2">&quot;m_sample&quot;</span><span class="p">:</span> <span class="n">m_sample</span><span class="p">,</span>
+                <span class="s2">&quot;na_action&quot;</span><span class="p">:</span> <span class="n">na_action</span><span class="p">,</span>
+                <span class="s2">&quot;transformations&quot;</span><span class="p">:</span> <span class="n">transformations_to_apply</span><span class="p">,</span>
+                <span class="s2">&quot;transformations_origin&quot;</span><span class="p">:</span> <span class="n">transformations</span><span class="p">,</span>
+                <span class="s2">&quot;training_sample_weights&quot;</span><span class="p">:</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">&quot;training_target_weights&quot;</span><span class="p">:</span> <span class="n">target_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">&quot;weight_trimming_mean_ratio&quot;</span><span class="p">:</span> <span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
+                <span class="s2">&quot;weight_trimming_percentile&quot;</span><span class="p">:</span> <span class="n">weight_trimming_percentile</span><span class="p">,</span>
+                <span class="s2">&quot;keep_sum_of_weights&quot;</span><span class="p">:</span> <span class="n">keep_sum_of_weights</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">w</span><span class="p">,</span> <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">model</span><span class="p">}</span></div>
 
+
+
+<span class="c1"># Private to ``balance``: callers should reach this through</span>
+<span class="c1"># ``BalanceFrame.predict_weights()`` rather than importing it directly.</span>
+<span class="c1">#</span>
+<span class="c1"># TODO: decompose into smaller helpers (validate metadata, apply stored</span>
+<span class="c1"># transformations, NA handling, code mapping, cell-ratio compute, target-sum</span>
+<span class="c1"># determination, na_action=&#39;drop&#39; index restoration). Best done alongside</span>
+<span class="c1"># the cbps / poststratify / ipw extractions, where the same helpers can be</span>
+<span class="c1"># shared across all four methods to reduce duplication.</span>
+<span class="c1">#</span>
+<span class="c1"># TODO: replace the ``transformations=&#39;default&#39;`` and explicit</span>
+<span class="c1"># data-dependent-dict transfer guards (below) with a shared helper</span>
+<span class="c1"># ``_freeze_data_dependent_transformations(transformations, dfs) -&gt; dict[str, Callable]``</span>
+<span class="c1"># that captures fit-time parameters (bin edges for ``quantize``, kept</span>
+<span class="c1"># levels for ``fct_lump``) and replays them as deterministic closures.</span>
+<span class="c1"># Once that exists, transfer scoring works out of the box for</span>
+<span class="c1"># ``transformations=&#39;default&#39;`` and for explicit dicts containing</span>
+<span class="c1"># ``quantize``/``fct_lump`` (or wrappers thereof such as</span>
+<span class="c1"># ``functools.partial(fct_lump, prop=0.1)``), removing the entire</span>
+<span class="c1"># transfer-rejection branch and its breaking-change burden on users. The</span>
+<span class="c1"># helper should live alongside ``apply_transformations`` so all four</span>
+<span class="c1"># weighting methods (rake/cbps/poststratify/ipw) can share it.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_predict_weights_from_model</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">sample_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">sample_weights_full</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">target_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">is_transfer</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reconstruct rake weights from a stored fit-time model dict.</span>
+
+<span class="sd">    Internal helper. The pure-math/model-driven core of</span>
+<span class="sd">    ``BalanceFrame.predict_weights()`` for rake — callers should reach</span>
+<span class="sd">    this through that public API rather than importing the helper</span>
+<span class="sd">    directly. It takes plain DataFrames and Series for the scoring sample</span>
+<span class="sd">    and target, plus the ``model`` dict persisted by :func:`rake` when</span>
+<span class="sd">    ``store_fit_metadata=True``, and replays the cell-ratio surface</span>
+<span class="sd">    (``m_fit / m_sample``) on the scoring sample.</span>
+
+<span class="sd">    Two modes:</span>
+<span class="sd">    - ``is_transfer=False`` (in-place replay): the scoring frames must be</span>
+<span class="sd">      the same rows that were fit; ``training_sample_weights`` and</span>
+<span class="sd">      ``training_target_weights`` from ``model`` are used as the canonical</span>
+<span class="sd">      fit-time weights.</span>
+<span class="sd">    - ``is_transfer=True`` (``data=...`` transfer): the scoring frames are</span>
+<span class="sd">      a different sample/target. A warning is emitted unconditionally</span>
+<span class="sd">      because transferred rake weights are only guaranteed to recover</span>
+<span class="sd">      target marginals when the new sample&#39;s joint distribution over the</span>
+<span class="sd">      rake variables is similar to the training sample&#39;s.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: Fitted rake model dict produced with ``store_fit_metadata=True``.</span>
+<span class="sd">        sample_df: Scoring sample&#39;s covariate frame (full index, pre-transform).</span>
+<span class="sd">            Must contain every column listed in</span>
+<span class="sd">            ``model[&#39;variables_before_transformations&#39;]``.</span>
+<span class="sd">        sample_weights_full: Scoring sample&#39;s design weights aligned to</span>
+<span class="sd">            ``sample_df``&#39;s full index.</span>
+<span class="sd">        target_df: Scoring target&#39;s covariate frame (pre-transform).</span>
+<span class="sd">            Must contain every column listed in</span>
+<span class="sd">            ``model[&#39;variables_before_transformations&#39;]``.</span>
+<span class="sd">        target_weights: Scoring target&#39;s design weights aligned to</span>
+<span class="sd">            ``target_df``&#39;s full index.</span>
+<span class="sd">        is_transfer: ``True`` when called from</span>
+<span class="sd">            ``BalanceFrame.predict_weights(data=...)``; ``False`` for</span>
+<span class="sd">            in-place replay (``data=None``).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Predicted weights as a ``pd.Series`` with ``sample_weights_full``&#39;s</span>
+<span class="sd">        index. For ``na_action=&#39;drop&#39;`` rake models, rows dropped during</span>
+<span class="sd">        scoring are returned as ``NaN``.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If model metadata is missing/malformed, if the scoring</span>
+<span class="sd">            frames are missing required covariates, if scoring rows fall in</span>
+<span class="sd">            joint cells with zero fit-time sample mass, or if in-place</span>
+<span class="sd">            replay is requested without compatible fit-time design weights.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">required</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;variables&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;variables_before_transformations&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;categories&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;m_fit&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;m_sample&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;na_action&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;transformations&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_transfer</span><span class="p">:</span>
+        <span class="n">required</span> <span class="o">=</span> <span class="n">required</span> <span class="o">+</span> <span class="p">(</span><span class="s2">&quot;training_sample_weights&quot;</span><span class="p">,</span> <span class="s2">&quot;training_target_weights&quot;</span><span class="p">)</span>
+    <span class="n">missing</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">required</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">model</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Rake model is missing fit-time metadata &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">) for predict_weights(). &quot;</span>
+            <span class="s2">&quot;Call BalanceFrame.fit(method=&#39;rake&#39;) or run rake(..., &quot;</span>
+            <span class="s2">&quot;store_fit_metadata=True).&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">variables</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;variables&quot;</span><span class="p">)</span>
+    <span class="n">input_variables</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;variables_before_transformations&quot;</span><span class="p">)</span>
+    <span class="n">categories</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;categories&quot;</span><span class="p">)</span>
+    <span class="n">m_fit</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;m_fit&quot;</span><span class="p">)</span>
+    <span class="n">m_sample</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;m_sample&quot;</span><span class="p">)</span>
+    <span class="n">transformations_origin</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;transformations_origin&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_variables</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">categories</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Rake model metadata is malformed for predict_weights().&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m_fit</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m_sample</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Rake model is missing stored contingency tables.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">is_transfer</span> <span class="ow">and</span> <span class="n">transformations_origin</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Rake predict_weights(data=...) is unsupported for models fitted &quot;</span>
+            <span class="s2">&quot;with transformations=&#39;default&#39; because those transformations are &quot;</span>
+            <span class="s2">&quot;data-dependent and not replayable across new samples. &quot;</span>
+            <span class="s2">&quot;BalanceFrame.fit(method=&#39;rake&#39;) uses transformations=&#39;default&#39; &quot;</span>
+            <span class="s2">&quot;out of the box; to enable transfer scoring, pass deterministic &quot;</span>
+            <span class="s2">&quot;transformations explicitly at fit time (for example &quot;</span>
+            <span class="s2">&quot;transformations={&#39;age&#39;: partial(quantize_with_edges, edges=...)} &quot;</span>
+            <span class="s2">&quot;where the wrapper closes over fit-time bin edges) or re-fit rake &quot;</span>
+            <span class="s2">&quot;on the scoring data.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">is_transfer</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">transformations_origin</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="c1"># Best-effort guard: reject explicit dicts that directly</span>
+        <span class="c1"># reference balance&#39;s known data-dependent helpers</span>
+        <span class="c1"># (quantize, fct_lump). These recompute bins/levels from the</span>
+        <span class="c1"># scoring data, so stored cell ratios no longer line up with</span>
+        <span class="c1"># the transformed scoring cells and transfer would silently</span>
+        <span class="c1"># return incorrect weights.</span>
+        <span class="c1">#</span>
+        <span class="c1"># This guard does NOT catch indirect uses such as</span>
+        <span class="c1"># ``functools.partial(fct_lump, prop=0.1)``, top-level wrapper</span>
+        <span class="c1"># functions, or user-defined data-dependent transformations.</span>
+        <span class="c1"># The general invariant is: any callable whose output for a</span>
+        <span class="c1"># row depends on other rows in the input is unsafe to replay</span>
+        <span class="c1"># on a different sample. Users supplying such transformations</span>
+        <span class="c1"># are responsible for either (a) wrapping them as</span>
+        <span class="c1"># deterministic functions of stored fit-time parameters or</span>
+        <span class="c1"># (b) re-fitting rake on the scoring data.</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.data_transformation</span><span class="w"> </span><span class="kn">import</span> <span class="n">fct_lump</span><span class="p">,</span> <span class="n">quantize</span>
+
+        <span class="n">data_dependent_helpers</span> <span class="o">=</span> <span class="p">{</span><span class="n">quantize</span><span class="p">,</span> <span class="n">fct_lump</span><span class="p">}</span>
+        <span class="n">offenders</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="nb">getattr</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">&quot;__name__&quot;</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="n">fn</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">transformations_origin</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">data_dependent_helpers</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">offenders</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Rake predict_weights(data=...) is unsupported for models &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;fitted with data-dependent transformations (</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">offenders</span><span class="p">)</span><span class="si">}</span><span class="s2">). &quot;</span>
+                <span class="s2">&quot;These recompute bins/levels from the scoring data, so &quot;</span>
+                <span class="s2">&quot;stored cell ratios no longer line up with the transformed &quot;</span>
+                <span class="s2">&quot;cells. To enable transfer scoring, replace each &quot;</span>
+                <span class="s2">&quot;data-dependent helper with a deterministic wrapper that &quot;</span>
+                <span class="s2">&quot;closes over fit-time parameters (e.g. partial(quantize, &quot;</span>
+                <span class="s2">&quot;edges=fit_time_edges) or partial(fct_lump, kept_levels=&quot;</span>
+                <span class="s2">&quot;fit_time_levels)) — the wrappers must depend only on the &quot;</span>
+                <span class="s2">&quot;stored fit-time state, not on the scoring data — or re-fit &quot;</span>
+                <span class="s2">&quot;rake on the scoring data.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">input_variables</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">column</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span> <span class="ow">or</span> <span class="n">column</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Rake predict_weights() cannot find required covariate &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s2">&#39; in both sample and target.&quot;</span>
+            <span class="p">)</span>
+    <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">input_variables</span><span class="p">]</span>
+    <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">input_variables</span><span class="p">]</span>
+
+    <span class="n">na_action</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;na_action&quot;</span><span class="p">,</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">))</span>
+
+    <span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">apply_transformations</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">),</span> <span class="n">transformations</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;transformations&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">column</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Rake transform output is missing stored variable &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s2">&#39; required for predict_weights().&quot;</span>
+            <span class="p">)</span>
+    <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
+    <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
+
+    <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">sample_weights_full</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_transfer</span><span class="p">:</span>
+        <span class="n">training_sample_weights</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;training_sample_weights&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">training_sample_weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;drop&quot;</span><span class="p">:</span>
+                <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">training_sample_weights</span>
+            <span class="k">elif</span> <span class="n">training_sample_weights</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">sample_weights_full</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+                <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">training_sample_weights</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Rake predict_weights() requires compatible fit-time sample design &quot;</span>
+                    <span class="s2">&quot;weights for in-place replay. This can happen because &quot;</span>
+                    <span class="s2">&quot;store_fit_metadata is missing/incompatible, or because you&#39;re &quot;</span>
+                    <span class="s2">&quot;scoring a different sample; use predict_weights(data=...) &quot;</span>
+                    <span class="s2">&quot;for different samples.&quot;</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Rake predict_weights() requires compatible fit-time sample design &quot;</span>
+                <span class="s2">&quot;weights for in-place replay. This can happen because &quot;</span>
+                <span class="s2">&quot;store_fit_metadata is missing/incompatible, or because you&#39;re &quot;</span>
+                <span class="s2">&quot;scoring a different sample; use predict_weights(data=...) &quot;</span>
+                <span class="s2">&quot;for different samples.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="n">dropped_target_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;drop&quot;</span><span class="p">:</span>
+        <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">drop_na_rows</span><span class="p">(</span>
+            <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">&quot;sample&quot;</span>
+        <span class="p">)</span>
+        <span class="n">target_df</span><span class="p">,</span> <span class="n">dropped_target_weights</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">drop_na_rows</span><span class="p">(</span>
+            <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">:</span>
+        <span class="n">sample_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">_safe_fillna_and_infer</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="s2">&quot;__NaN__&quot;</span><span class="p">))</span>
+        <span class="n">target_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">_safe_fillna_and_infer</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="s2">&quot;__NaN__&quot;</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Rake model has invalid na_action metadata &#39;</span><span class="si">{</span><span class="n">na_action</span><span class="si">}</span><span class="s2">&#39; for predict_weights().&quot;</span>
+        <span class="p">)</span>
+    <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">m_fit</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">m_sample</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Rake model metadata has incompatible fitted and sample table shapes.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">category_maps</span> <span class="o">=</span> <span class="p">[{</span><span class="n">cat</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">cat</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cats</span><span class="p">)}</span> <span class="k">for</span> <span class="n">cats</span> <span class="ow">in</span> <span class="n">categories</span><span class="p">]</span>
+    <span class="n">code_columns</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">cat_map</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">category_maps</span><span class="p">):</span>
+        <span class="n">codes</span> <span class="o">=</span> <span class="n">sample_df</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">cat_map</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">codes</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">()):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Rake predict_weights() found rows that do not map to stored fit-time &quot;</span>
+                <span class="s2">&quot;categories. Re-fit with compatible covariates.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">code_columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">codes</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">())</span>
+    <span class="n">code_index</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">code_columns</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">is_transfer</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;Rake predict_weights(data=...): replaying fitted rake &quot;</span>
+            <span class="s2">&quot;artifacts on a different sample is a transfer operation, &quot;</span>
+            <span class="s2">&quot;not an exact fit. The stored cell-ratio surface &quot;</span>
+            <span class="s2">&quot;(m_fit / m_sample) encodes the *training* target&#39;s &quot;</span>
+            <span class="s2">&quot;marginal distribution; applying it to a new sample only &quot;</span>
+            <span class="s2">&quot;produces weights calibrated to that *training* target, &quot;</span>
+            <span class="s2">&quot;rescaled to the new target&#39;s total weight. The new &quot;</span>
+            <span class="s2">&quot;target&#39;s marginals are NOT re-balanced. Predictions are &quot;</span>
+            <span class="s2">&quot;therefore only valid when (a) the scoring sample&#39;s joint &quot;</span>
+            <span class="s2">&quot;distribution over the rake variables is similar to the &quot;</span>
+            <span class="s2">&quot;training sample&#39;s, AND (b) the scoring target&#39;s marginal &quot;</span>
+            <span class="s2">&quot;distribution is similar to the training target&#39;s. &quot;</span>
+            <span class="s2">&quot;Re-fit rake on the scoring sample/target for exact &quot;</span>
+            <span class="s2">&quot;marginal matching.&quot;</span>
+        <span class="p">)</span>
+    <span class="n">m_sample_at_cells</span> <span class="o">=</span> <span class="n">m_sample</span><span class="p">[</span><span class="n">code_index</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">bool</span><span class="p">((</span><span class="n">m_sample_at_cells</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">()):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Rake predict_weights() encountered sample rows in joint cells with &quot;</span>
+            <span class="s2">&quot;zero fit-time sample mass (m_sample==0). Re-fit rake on data with &quot;</span>
+            <span class="s2">&quot;compatible joint support.&quot;</span>
+        <span class="p">)</span>
+    <span class="c1"># Compute ratios only for the scored cells. Avoids materializing a</span>
+    <span class="c1"># dense array the size of the full contingency table on every call</span>
+    <span class="c1"># (relevant for high-cardinality rakes).</span>
+    <span class="n">cell_ratios</span> <span class="o">=</span> <span class="n">m_fit</span><span class="p">[</span><span class="n">code_index</span><span class="p">]</span> <span class="o">/</span> <span class="n">m_sample_at_cells</span>
+    <span class="n">raw</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+        <span class="n">sample_weights</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span> <span class="o">*</span> <span class="n">cell_ratios</span><span class="p">,</span>
+        <span class="n">index</span><span class="o">=</span><span class="n">sample_weights</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+        <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">training_target_weights</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;training_target_weights&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_transfer</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">training_target_weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Rake predict_weights() requires compatible fit-time target design &quot;</span>
+            <span class="s2">&quot;weights for in-place replay. This can happen because &quot;</span>
+            <span class="s2">&quot;store_fit_metadata is missing/incompatible, or because you&#39;re &quot;</span>
+            <span class="s2">&quot;scoring a different sample; use predict_weights(data=...) &quot;</span>
+            <span class="s2">&quot;for different samples.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">is_transfer</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;drop&quot;</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dropped_target_weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+            <span class="n">target_sum</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">dropped_target_weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">target_sum</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">target_weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">training_target_weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+        <span class="n">target_sum</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">training_target_weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="k">elif</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;drop&quot;</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dropped_target_weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+        <span class="n">target_sum</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">dropped_target_weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">target_sum</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">target_weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+
+    <span class="n">predicted</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">trim_weights</span><span class="p">(</span>
+        <span class="n">raw</span><span class="p">,</span>
+        <span class="n">target_sum_weights</span><span class="o">=</span><span class="n">target_sum</span><span class="p">,</span>
+        <span class="n">weight_trimming_mean_ratio</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weight_trimming_mean_ratio&quot;</span><span class="p">),</span>
+        <span class="n">weight_trimming_percentile</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weight_trimming_percentile&quot;</span><span class="p">),</span>
+        <span class="n">keep_sum_of_weights</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;keep_sum_of_weights&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)),</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;drop&quot;</span><span class="p">:</span>
+        <span class="n">predicted_full</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">sample_weights_full</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">predicted</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">predicted_full</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">predicted</span><span class="o">.</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">predicted</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+        <span class="n">predicted</span> <span class="o">=</span> <span class="n">predicted_full</span>
+    <span class="k">return</span> <span class="n">predicted</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_lcm</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>

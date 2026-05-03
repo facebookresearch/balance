@@ -1114,12 +1114,31 @@
 <span class="sd">            can reconstruct poststratification cell-ratio artifacts, while</span>
 <span class="sd">            direct ``adjust(method=&#39;poststratify&#39;)`` remains metadata-light</span>
 <span class="sd">            unless ``store_fit_metadata=True`` is passed explicitly.</span>
+<span class="sd">            For the built-in rake method, ``fit()`` enables</span>
+<span class="sd">            ``store_fit_metadata=True`` by default so ``predict_weights()``</span>
+<span class="sd">            can replay/transfer fitted rake artifacts. This may increase</span>
+<span class="sd">            memory usage because contingency tables and fit metadata are</span>
+<span class="sd">            stored; pass ``store_fit_metadata=False`` to opt out. When</span>
+<span class="sd">            metadata is stored, ``transformations`` must be pickleable</span>
+<span class="sd">            (lambdas/closures are rejected at fit time so the resulting</span>
+<span class="sd">            ``BalanceFrame`` remains serializable).</span>
+<span class="sd">            Note: in-place ``predict_weights()`` works for any rake fit,</span>
+<span class="sd">            including the default ``transformations=&#39;default&#39;``. Transfer</span>
+<span class="sd">            scoring (``predict_weights(data=...)``), however, rejects</span>
+<span class="sd">            models fitted with ``transformations=&#39;default&#39;`` or with</span>
+<span class="sd">            explicit dicts containing known data-dependent helpers</span>
+<span class="sd">            (``quantize``, ``fct_lump``) because those transformations</span>
+<span class="sd">            recompute bins/levels from each scoring sample, which would</span>
+<span class="sd">            silently invalidate the stored cell ratios. To use rake&#39;s</span>
+<span class="sd">            ``data=...`` transfer path, pass deterministic transformations</span>
+<span class="sd">            at fit time or re-fit rake on the scoring data.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods.cbps</span><span class="w"> </span><span class="kn">import</span> <span class="n">cbps</span> <span class="k">as</span> <span class="n">built_in_cbps</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods.ipw</span><span class="w"> </span><span class="kn">import</span> <span class="n">ipw</span> <span class="k">as</span> <span class="n">built_in_ipw</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods.poststratify</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
             <span class="n">poststratify</span> <span class="k">as</span> <span class="n">built_in_poststratify</span><span class="p">,</span>
         <span class="p">)</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods.rake</span><span class="w"> </span><span class="kn">import</span> <span class="n">rake</span> <span class="k">as</span> <span class="n">built_in_rake</span>
 
         <span class="n">resolved_method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_adjustment_function</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">resolved_method</span> <span class="ow">is</span> <span class="n">built_in_ipw</span><span class="p">:</span>
@@ -1158,6 +1177,8 @@
                 <span class="p">)</span>
                 <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;store_fit_metadata&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="n">resolved_method</span> <span class="ow">is</span> <span class="n">built_in_poststratify</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;store_fit_metadata&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">resolved_method</span> <span class="ow">is</span> <span class="n">built_in_rake</span><span class="p">:</span>
             <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;store_fit_metadata&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="p">(</span><span class="n">SampleFrame</span><span class="p">,</span> <span class="n">BalanceFrame</span><span class="p">)):</span>
@@ -1206,8 +1227,10 @@
 <span class="sd">            holdout_bf.set_fitted_model(fitted)</span>
 <span class="sd">            holdout_bf.summary()</span>
 
-<span class="sd">        Currently supports IPW models.  Other methods (CBPS, rake,</span>
-<span class="sd">        poststratify) will be supported once they store fit-time artifacts.</span>
+<span class="sd">        Currently ``set_fitted_model`` applies fitted IPW models directly.</span>
+<span class="sd">        Other methods may have fit artifacts but are routed through their</span>
+<span class="sd">        dedicated ``predict_weights(data=...)`` workflows instead of this</span>
+<span class="sd">        method-specific application path.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            fitted: A BalanceFrame already adjusted with a supported method.</span>
@@ -1998,13 +2021,16 @@
 <span class="sd">        - **Poststratify**: reconstructs in-place responder weights from</span>
 <span class="sd">          stored cell-ratio metadata; ``data=...`` holdout scoring is not yet</span>
 <span class="sd">          supported for poststratify.</span>
+<span class="sd">        - **Rake**: replays fitted cell-ratio artifacts in-place and supports</span>
+<span class="sd">          ``data=...`` transfer scoring. See :func:`balance.weighting_methods.rake.rake`</span>
+<span class="sd">          Notes for validity constraints and interpretation.</span>
 <span class="sd">        - **Other methods**: not yet supported — will raise with guidance.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            data: An optional BalanceFrame whose sample covariates are scored</span>
 <span class="sd">                using this object&#39;s stored model.  Must have matching covariate</span>
-<span class="sd">                column names and a target set. Supported for IPW and CBPS;</span>
-<span class="sd">                poststratify currently supports only in-place scoring</span>
+<span class="sd">                column names and a target set. Supported for IPW, CBPS, and</span>
+<span class="sd">                rake. Poststratify is supported only for in-place scoring</span>
 <span class="sd">                (``data=None``).</span>
 
 <span class="sd">        Returns:</span>
@@ -2044,10 +2070,33 @@
             <span class="n">method</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;method&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;cbps&quot;</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_weights_cbps</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;rake&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_weights_rake</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+            <span class="c1"># TODO: add predict_weights(data=...) support for &#39;poststratify&#39;.</span>
+            <span class="c1"># Sketch of approach (mirrors the rake transfer path):</span>
+            <span class="c1">#   1. In poststratify(), when store_fit_metadata=True, persist the</span>
+            <span class="c1">#      same artifacts already stored for in-place replay</span>
+            <span class="c1">#      (variables, variables_before_transformations, categories,</span>
+            <span class="c1">#      m_fit, m_sample, na_action, transformations, transformations_origin,</span>
+            <span class="c1">#      training_target_weights, weight_trimming_*).</span>
+            <span class="c1">#   2. Add a `_predict_weights_poststratify(model, source=data)`</span>
+            <span class="c1">#      branch that, like _predict_weights_rake, applies the stored</span>
+            <span class="c1">#      transformations to data._sf_sample, maps each row to its</span>
+            <span class="c1">#      stored joint cell index, multiplies the row&#39;s design weight</span>
+            <span class="c1">#      by the cell ratio (m_fit / m_sample), validates joint</span>
+            <span class="c1">#      support, then renormalizes to data target weight sum.</span>
+            <span class="c1">#   3. Reject `transformations_origin == &quot;default&quot;` for transfer</span>
+            <span class="c1">#      scoring (data-dependent transforms aren&#39;t replayable),</span>
+            <span class="c1">#      mirroring the rake guard.</span>
+            <span class="c1">#   4. Unlike rake, poststratify cell ratios are exact responder</span>
+            <span class="c1">#      weights (no IPF), so transfer is a single multiply — no</span>
+            <span class="c1">#      iteration. The transfer-validity caveat still applies; see</span>
+            <span class="c1">#      the rake path&#39;s unconditional transfer warning for the</span>
+            <span class="c1">#      pattern to follow.</span>
             <span class="k">if</span> <span class="n">method</span> <span class="o">!=</span> <span class="s2">&quot;ipw&quot;</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;predict_weights(data=...) is not yet supported for method &#39;</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
-                    <span class="s2">&quot;Currently only &#39;ipw&#39; and &#39;cbps&#39; are supported.&quot;</span>
+                    <span class="s2">&quot;Currently only &#39;ipw&#39;, &#39;cbps&#39;, and &#39;rake&#39; are supported.&quot;</span>
                 <span class="p">)</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods.ipw</span><span class="w"> </span><span class="kn">import</span> <span class="n">link_transform</span><span class="p">,</span> <span class="n">weights_from_link</span>
 
@@ -2108,13 +2157,65 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_weights_cbps</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;poststratify&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_weights_poststratify</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;rake&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_weights_rake</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;predict_weights() is not yet supported for method &#39;</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
-            <span class="s2">&quot;Currently only &#39;ipw&#39;, &#39;cbps&#39;, and &#39;poststratify&#39; are supported. &quot;</span>
+            <span class="s2">&quot;Currently only &#39;ipw&#39;, &#39;cbps&#39;, &#39;poststratify&#39;, and &#39;rake&#39; are supported. &quot;</span>
             <span class="s2">&quot;Use adjust() to obtain weights directly for other methods.&quot;</span>
         <span class="p">)</span></div>
 
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_predict_weights_rake</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">source</span><span class="p">:</span> <span class="n">BalanceFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Thin wrapper around :func:`weighting_methods.rake._predict_weights_from_model`.</span>
+
+<span class="sd">        Resolves ``self`` vs ``source`` (the BalanceFrame whose covariates</span>
+<span class="sd">        are scored), validates that the resolved frame has a target set,</span>
+<span class="sd">        extracts plain DataFrames/Series from it, delegates the actual</span>
+<span class="sd">        cell-ratio replay to ``_predict_weights_from_model``, then renames</span>
+<span class="sd">        the result to the active weight column and aligns it to the</span>
+<span class="sd">        scoring sample&#39;s full index.</span>
+
+<span class="sd">        Validation order: the target-not-set check runs *before*</span>
+<span class="sd">        ``_predict_weights_from_model`` checks for missing model metadata.</span>
+<span class="sd">        Both errors are caller-fixable; we raise the target one first</span>
+<span class="sd">        because a missing target is more typical when callers compose</span>
+<span class="sd">        ``predict_weights(data=new_bf)`` against a freshly built</span>
+<span class="sd">        ``new_bf`` and forget to ``set_target``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods.rake</span><span class="w"> </span><span class="kn">import</span> <span class="n">_predict_weights_from_model</span>
+
+        <span class="n">bf</span> <span class="o">=</span> <span class="n">source</span> <span class="k">if</span> <span class="n">source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">bf</span><span class="o">.</span><span class="n">_sf_target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;data must have a target set for rake predict_weights(data=...).&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">target_frame</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span>
+        <span class="n">predicted</span> <span class="o">=</span> <span class="n">_predict_weights_from_model</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+            <span class="n">sample_df</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df_covars</span><span class="p">,</span>
+            <span class="n">sample_weights_full</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df_weights</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="n">target_df</span><span class="o">=</span><span class="n">target_frame</span><span class="o">.</span><span class="n">df_covars</span><span class="p">,</span>
+            <span class="n">target_weights</span><span class="o">=</span><span class="n">target_frame</span><span class="o">.</span><span class="n">df_weights</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="n">is_transfer</span><span class="o">=</span><span class="n">source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">weight_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">_assert_type</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">weight_series</span><span class="p">),</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_align_to_index</span><span class="p">(</span>
+                <span class="n">predicted</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">weight_name</span><span class="p">),</span>
+                <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                <span class="n">caller</span><span class="o">=</span><span class="s2">&quot;predict_weights()&quot;</span><span class="p">,</span>
+                <span class="n">method_name</span><span class="o">=</span><span class="s2">&quot;rake&quot;</span><span class="p">,</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_ipw_link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve sample link values from stored artifacts or recomputation.&quot;&quot;&quot;</span>

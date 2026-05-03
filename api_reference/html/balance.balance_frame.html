@@ -522,7 +522,25 @@ For the built-in poststratify method, <code class="docutils literal notranslate"
 <code class="docutils literal notranslate"><span class="pre">store_fit_metadata=True</span></code> by default so <code class="docutils literal notranslate"><span class="pre">predict_weights()</span></code>
 can reconstruct poststratification cell-ratio artifacts, while
 direct <code class="docutils literal notranslate"><span class="pre">adjust(method='poststratify')</span></code> remains metadata-light
-unless <code class="docutils literal notranslate"><span class="pre">store_fit_metadata=True</span></code> is passed explicitly.</p>
+unless <code class="docutils literal notranslate"><span class="pre">store_fit_metadata=True</span></code> is passed explicitly.
+For the built-in rake method, <code class="docutils literal notranslate"><span class="pre">fit()</span></code> enables
+<code class="docutils literal notranslate"><span class="pre">store_fit_metadata=True</span></code> by default so <code class="docutils literal notranslate"><span class="pre">predict_weights()</span></code>
+can replay/transfer fitted rake artifacts. This may increase
+memory usage because contingency tables and fit metadata are
+stored; pass <code class="docutils literal notranslate"><span class="pre">store_fit_metadata=False</span></code> to opt out. When
+metadata is stored, <code class="docutils literal notranslate"><span class="pre">transformations</span></code> must be pickleable
+(lambdas/closures are rejected at fit time so the resulting
+<code class="docutils literal notranslate"><span class="pre">BalanceFrame</span></code> remains serializable).
+Note: in-place <code class="docutils literal notranslate"><span class="pre">predict_weights()</span></code> works for any rake fit,
+including the default <code class="docutils literal notranslate"><span class="pre">transformations='default'</span></code>. Transfer
+scoring (<code class="docutils literal notranslate"><span class="pre">predict_weights(data=...)</span></code>), however, rejects
+models fitted with <code class="docutils literal notranslate"><span class="pre">transformations='default'</span></code> or with
+explicit dicts containing known data-dependent helpers
+(<code class="docutils literal notranslate"><span class="pre">quantize</span></code>, <code class="docutils literal notranslate"><span class="pre">fct_lump</span></code>) because those transformations
+recompute bins/levels from each scoring sample, which would
+silently invalidate the stored cell ratios. To use rake’s
+<code class="docutils literal notranslate"><span class="pre">data=...</span></code> transfer path, pass deterministic transformations
+at fit time or re-fit rake on the scoring data.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -819,14 +837,17 @@ and supports both in-place and <code class="docutils literal notranslate"><span 
 <li><p><strong>Poststratify</strong>: reconstructs in-place responder weights from
 stored cell-ratio metadata; <code class="docutils literal notranslate"><span class="pre">data=...</span></code> holdout scoring is not yet
 supported for poststratify.</p></li>
+<li><p><strong>Rake</strong>: replays fitted cell-ratio artifacts in-place and supports
+<code class="docutils literal notranslate"><span class="pre">data=...</span></code> transfer scoring. See <a class="reference internal" href="balance.weighting_methods.rake.html#balance.weighting_methods.rake.rake" title="balance.weighting_methods.rake.rake"><code class="xref py py-func docutils literal notranslate"><span class="pre">balance.weighting_methods.rake.rake()</span></code></a>
+Notes for validity constraints and interpretation.</p></li>
 <li><p><strong>Other methods</strong>: not yet supported — will raise with guidance.</p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>data</strong> – An optional BalanceFrame whose sample covariates are scored
 using this object’s stored model.  Must have matching covariate
-column names and a target set. Supported for IPW and CBPS;
-poststratify currently supports only in-place scoring
+column names and a target set. Supported for IPW, CBPS, and
+rake. Poststratify is supported only for in-place scoring
 (<code class="docutils literal notranslate"><span class="pre">data=None</span></code>).</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -922,8 +943,10 @@ returned object is fully adjusted (<code class="docutils literal notranslate"><s
 <span class="n">holdout_bf</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>Currently supports IPW models.  Other methods (CBPS, rake,
-poststratify) will be supported once they store fit-time artifacts.</p>
+<p>Currently <code class="docutils literal notranslate"><span class="pre">set_fitted_model</span></code> applies fitted IPW models directly.
+Other methods may have fit artifacts but are routed through their
+dedicated <code class="docutils literal notranslate"><span class="pre">predict_weights(data=...)</span></code> workflows instead of this
+method-specific application path.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
