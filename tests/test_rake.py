@@ -1735,3 +1735,94 @@ class TestRakeValidation(
         with self.assertRaisesRegex(ValueError, "convertible to float"):
             # pyrefly: ignore [bad-argument-type]
             _realize_dicts_of_proportions({"var": {"cat": BadReal()}})
+
+
+class TestRakeFitMetadata(balance.testutil.BalanceTestCase):
+    """Coverage for rake fit-metadata persistence edge-cases."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.sample_df = pd.DataFrame(
+            {
+                "a": ["A", "A", "B", "B", "A", "B"],
+                "b": ["X", "Y", "X", "Y", "X", "Y"],
+            }
+        )
+        self.target_df = pd.DataFrame(
+            {
+                "a": ["A", "A", "A", "B", "B", "B"],
+                "b": ["X", "Y", "X", "X", "Y", "Y"],
+            }
+        )
+        self.sample_w = pd.Series(np.ones(len(self.sample_df)))
+        self.target_w = pd.Series(np.ones(len(self.target_df)))
+
+    def test_rake_does_not_store_fit_metadata_by_default(self) -> None:
+        result = rake(
+            self.sample_df,
+            self.sample_w,
+            self.target_df,
+            self.target_w,
+            transformations=None,
+        )
+        model = result["model"]
+        self.assertNotIn("m_fit", model)
+        self.assertNotIn("training_sample_weights", model)
+
+    def test_rake_store_fit_metadata_true_persists_required_artifacts(self) -> None:
+        result = rake(
+            self.sample_df,
+            self.sample_w,
+            self.target_df,
+            self.target_w,
+            transformations=None,
+            store_fit_metadata=True,
+        )
+        model = result["model"]
+        for key in (
+            "variables",
+            "variables_before_transformations",
+            "categories",
+            "m_fit",
+            "m_sample",
+            "na_action",
+            "transformations",
+            "training_sample_weights",
+            "training_target_weights",
+        ):
+            self.assertIn(key, model)
+        self.assertEqual(model["m_fit"].shape, model["m_sample"].shape)
+        self.assertIn(type(model["transformations"]), (dict, type(None)))
+
+    def test_rake_store_fit_metadata_via_kwargs_is_accepted(self) -> None:
+        result = rake(
+            self.sample_df,
+            self.sample_w,
+            self.target_df,
+            self.target_w,
+            transformations=None,
+            **{"store_fit_metadata": True},
+        )
+        self.assertTrue(bool(result["model"].get("store_fit_metadata")))
+
+    def test_rake_rejects_non_bool_store_fit_metadata(self) -> None:
+        with self.assertRaisesRegex(TypeError, "store_fit_metadata"):
+            rake(
+                self.sample_df,
+                self.sample_w,
+                self.target_df,
+                self.target_w,
+                transformations=None,
+                store_fit_metadata="False",  # type: ignore[arg-type]
+            )
+
+    def test_rake_store_fit_metadata_requires_pickleable_transformations(self) -> None:
+        with self.assertRaisesRegex(ValueError, "pickleable"):
+            rake(
+                self.sample_df,
+                self.sample_w,
+                self.target_df,
+                self.target_w,
+                transformations={"a": lambda s: s, "b": lambda s: s},  # noqa: E731
+                store_fit_metadata=True,
+            )
