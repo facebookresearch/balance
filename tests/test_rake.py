@@ -25,6 +25,7 @@ from balance.weighting_methods.rake import (
     _find_lcm_of_array_lengths,
     _hare_niemeyer_allocation,
     _lcm,
+    _predict_weights_from_model,
     _proportional_array_from_dict,
     _realize_dicts_of_proportions,
     _run_ipf_numpy,
@@ -1839,4 +1840,96 @@ class TestRakeFitMetadata(balance.testutil.BalanceTestCase):
                 self.target_w,
                 transformations={"a": lambda s: s, "b": lambda s: s},  # noqa: E731
                 store_fit_metadata=True,
+            )
+
+
+class TestPredictWeightsFromModelDirect(balance.testutil.BalanceTestCase):
+    """Direct-call coverage for ``_predict_weights_from_model``.
+
+    The function is reached in production through
+    ``BalanceFrame.predict_weights()``, but it is callable on its own with
+    plain DataFrames/Series and a fitted ``model`` dict. This test class
+    pins that contract so the function stays usable as an internal helper
+    even after future refactors of ``BalanceFrame``.
+    """
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.sample_df = pd.DataFrame(
+            {
+                "a": ["A", "A", "B", "B", "A", "B"],
+                "b": ["X", "Y", "X", "Y", "X", "Y"],
+            }
+        )
+        self.target_df = pd.DataFrame(
+            {
+                "a": ["A", "A", "A", "B", "B", "B"],
+                "b": ["X", "Y", "X", "X", "Y", "Y"],
+            }
+        )
+        self.sample_w = pd.Series(np.ones(len(self.sample_df)))
+        self.target_w = pd.Series(np.ones(len(self.target_df)))
+        self.model = rake(
+            self.sample_df,
+            self.sample_w,
+            self.target_df,
+            self.target_w,
+            transformations=None,
+            store_fit_metadata=True,
+        )["model"]
+
+    def test_in_place_replay_matches_fit_time_weights(self) -> None:
+        # In-place replay (is_transfer=False) should reproduce the rake
+        # weights from the fit-time call.
+        fit_weights = rake(
+            self.sample_df,
+            self.sample_w,
+            self.target_df,
+            self.target_w,
+            transformations=None,
+        )["weight"]
+        predicted = _predict_weights_from_model(
+            model=self.model,
+            sample_df=self.sample_df,
+            sample_weights_full=self.sample_w,
+            target_df=self.target_df,
+            target_weights=self.target_w,
+            is_transfer=False,
+        )
+        np.testing.assert_allclose(
+            predicted.to_numpy(),
+            fit_weights.to_numpy(),
+            rtol=1e-6,
+            atol=1e-8,
+        )
+
+    def test_transfer_warns_and_recovers_target_total(self) -> None:
+        # Transfer (is_transfer=True) on a holdout with the same joint
+        # distribution should recover the holdout's total target weight,
+        # and emit the unconditional transfer warning.
+        with self.assertLogs("balance", level="WARNING") as cm:
+            predicted = _predict_weights_from_model(
+                model=self.model,
+                sample_df=self.sample_df.copy(),
+                sample_weights_full=self.sample_w.copy(),
+                target_df=self.target_df.copy(),
+                target_weights=self.target_w.copy(),
+                is_transfer=True,
+            )
+        self.assertIn("transfer operation", " ".join(cm.output))
+        self.assertAlmostEqual(
+            float(predicted.sum()), float(self.target_w.sum()), places=4
+        )
+
+    def test_missing_metadata_raises(self) -> None:
+        # A model dict without the persisted fit-time keys should raise.
+        bare_model = {"method": "rake"}
+        with self.assertRaisesRegex(ValueError, "missing fit-time metadata"):
+            _predict_weights_from_model(
+                model=bare_model,
+                sample_df=self.sample_df,
+                sample_weights_full=self.sample_w,
+                target_df=self.target_df,
+                target_weights=self.target_w,
+                is_transfer=False,
             )

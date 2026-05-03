@@ -4040,7 +4040,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         # the literal ``fct_lump`` function object, not partial wrappers.
         # Transfer scoring with a partial-wrapped fct_lump emits the
         # unconditional transfer warning but does NOT raise. The TODO in
-        # ``predict_weights_from_model`` tracks the proposed shared
+        # ``_predict_weights_from_model`` tracks the proposed shared
         # ``_freeze_data_dependent_transformations`` helper that would close
         # this gap by capturing fit-time levels and replaying them
         # deterministically. Until then, this test pins the existing
