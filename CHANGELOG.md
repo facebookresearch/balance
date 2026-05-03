@@ -1,5 +1,25 @@
 # 0.21.0 (Unreleased - TBD)
 
+## Breaking Changes
+
+- **`BalanceFrame.fit(method="rake")` now requires pickleable `transformations`.**
+  The new default `store_fit_metadata=True` (see *New Features* below)
+  persists the transformations dict in the fitted model, and rake now
+  raises `ValueError` at fit time if the transformations are not
+  pickleable (for example lambdas or closures). This mirrors the
+  existing behaviour of `poststratify(..., store_fit_metadata=True)`
+  and protects downstream `pickle.dumps(adjusted_bf)` workflows from
+  silently breaking. **Migration**: convert any lambda/closure
+  transformations to top-level functions or
+  `functools.partial(...)` of top-level functions, or pass
+  `store_fit_metadata=False` to opt out of fit-metadata persistence
+  for that call. **Memory note**: storing fit metadata persists the
+  full `m_fit` and `m_sample` contingency tables in the returned
+  model, which can meaningfully increase the size of pickled
+  `BalanceFrame` objects for high-cardinality rake fits — pass
+  `store_fit_metadata=False` if memory footprint matters more than
+  the ability to call `predict_weights()` later.
+
 ## Bug Fixes
 
 - **`rake()` now correctly incorporates per-row design weights in final weights.**
@@ -10,6 +30,25 @@
   distribution when design weights are non-uniform. The fix is a no-op when
   design weights are uniform (the common case), so existing behaviour is
   preserved.
+
+## New Features
+
+- **Rake now supports fit-time metadata persistence and `predict_weights()` reconstruction.**
+  - `rake(..., store_fit_metadata=True)` now stores contingency-table artifacts
+    and fit-time metadata required to rebuild weights later.
+  - `BalanceFrame.fit(method="rake")` now enables `store_fit_metadata=True` by
+    default so fitted rake models can be reused with
+    `BalanceFrame.predict_weights()` without refitting.
+  - **In-place replay** (`predict_weights()` with no `data=`) works with
+    any transformations, including the rake default
+    `transformations="default"`.
+  - **Transfer scoring** (`predict_weights(data=...)`) requires
+    deterministic transformations: it raises `ValueError` for models
+    fitted with `transformations="default"` and for explicit dicts that
+    directly reference known data-dependent helpers (`quantize`,
+    `fct_lump`). To enable transfer scoring, pass deterministic
+    transformations at fit time (e.g. wrappers built around stored
+    fit-time bin edges) or re-fit rake on the scoring data.
 
 ## Code Quality & Refactoring
 

@@ -28,6 +28,14 @@ from balance.weighting_methods.ipw import ipw as ipw_func
 from scipy.special import expit
 
 
+def _astype_str(s: pd.Series) -> pd.Series:
+    """Deterministic, pickleable top-level transformation used in rake
+    transfer-scoring tests. Each row's output depends only on its own
+    value, so it's safe to replay across different samples.
+    """
+    return s.astype(str)
+
+
 class TestBalanceFrameConstruction(BalanceTestCase):
     def setUp(self) -> None:
         super().setUp()
@@ -3618,6 +3626,491 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         )
         with self.assertRaisesRegex(ValueError, "missing fit-time metadata"):
             adjusted.predict_weights()
+
+    def test_predict_weights_rake_fit_matches_weight_series(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(8)],
+                "weight": [1.0, 2.0, 1.5, 2.5, 1.0, 1.2, 0.8, 1.1],
+                "age_group": [
+                    "young",
+                    "young",
+                    "old",
+                    "old",
+                    "young",
+                    "old",
+                    "young",
+                    "old",
+                ],
+                "sex": ["f", "m", "f", "m", "f", "f", "m", "m"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "age_group": [
+                    "young",
+                    "young",
+                    "old",
+                    "old",
+                    "old",
+                    "old",
+                    "young",
+                    "old",
+                ],
+                "sex": ["f", "m", "f", "m", "f", "m", "f", "m"],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="rake",
+            variables=["age_group", "sex"],
+            transformations=None,
+        )
+        predicted_weights = adjusted.predict_weights()
+        np.testing.assert_allclose(
+            predicted_weights.to_numpy(),
+            _assert_type(adjusted.weight_series).to_numpy(),
+            rtol=1e-6,
+            atol=1e-8,
+        )
+        self.assertIsNone(_assert_type(adjusted.model).get("transformations"))
+
+    def test_predict_weights_rake_default_transformations_transfer_rejected(
+        self,
+    ) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(10)],
+                "weight": np.ones(10),
+                "group": ["g1", "g2", "g3", "g1", "g2", "g3", "g1", "g2", "g3", "g1"],
+                "sex": ["f", "m"] * 5,
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(10)],
+                "weight": np.ones(10),
+                "group": ["g1", "g2", "g3", "g1", "g2", "g3", "g1", "g2", "g3", "g1"],
+                "sex": ["f", "m"] * 5,
+            }
+        )
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        ).fit(method="rake", variables=["group", "sex"])
+        self.assertIsInstance(_assert_type(fitted.model).get("transformations"), dict)
+        holdout = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df.copy()),
+            target=SampleFrame.from_frame(target_df.copy()),
+        )
+        with self.assertRaisesRegex(ValueError, "transformations='default'"):
+            fitted.predict_weights(data=holdout)
+
+    def test_predict_weights_rake_explicit_data_dependent_transforms_transfer_rejected(
+        self,
+    ) -> None:
+        # Explicit dict containing a known data-dependent helper (here:
+        # `quantize`) should be rejected for transfer scoring even though
+        # transformations_origin != "default".
+        from balance.utils.data_transformation import quantize
+
+        # Identical sample/target data so fit() succeeds. The guard fires
+        # at predict_weights(data=...) time based on the model's stored
+        # transformations_origin, regardless of the holdout's contents.
+        df = pd.DataFrame(
+            {
+                "id": [f"i{i}" for i in range(20)],
+                "weight": np.ones(20),
+                "x": np.linspace(0.0, 1.0, 20),
+                "y": np.linspace(0.0, 1.0, 20),
+            }
+        )
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(df.copy()),
+            target=SampleFrame.from_frame(df.copy()),
+        ).fit(
+            method="rake",
+            variables=["x", "y"],
+            transformations={"x": quantize, "y": quantize},
+        )
+        holdout = BalanceFrame(
+            sample=SampleFrame.from_frame(df.copy()),
+            target=SampleFrame.from_frame(df.copy()),
+        )
+        with self.assertRaisesRegex(ValueError, "data-dependent transformations"):
+            fitted.predict_weights(data=holdout)
+
+    def test_predict_weights_rake_requires_fit_metadata(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "age_group": ["young", "young", "old", "old", "young", "old"],
+                "sex": ["f", "m", "f", "m", "f", "m"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "age_group": ["young", "old", "old", "old", "young", "old"],
+                "sex": ["f", "m", "f", "m", "f", "m"],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="rake",
+            variables=["age_group", "sex"],
+            transformations=None,
+            store_fit_metadata=False,
+        )
+        with self.assertRaisesRegex(ValueError, "missing fit-time metadata"):
+            adjusted.predict_weights()
+
+    def test_predict_weights_rake_na_drop_restores_full_index_with_nans(self) -> None:
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "age_group": ["young", None, "old", "old", "young", None],
+                "sex": ["f", "m", "f", "m", "f", "m"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "age_group": ["young", "old", "old", "old", None, "young"],
+                "sex": ["f", "m", "f", "m", "f", "m"],
+            }
+        )
+        bf = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        adjusted = bf.fit(
+            method="rake",
+            variables=["age_group", "sex"],
+            transformations=None,
+            na_action="drop",
+        )
+        predicted_weights = adjusted.predict_weights()
+        # ``weight_series`` is ``pd.Series | None`` on the BalanceFrame
+        # interface; ``_assert_type`` narrows for Pyre (matches the style
+        # used on line ~3767 below and balance/CLAUDE.md's
+        # "Type annotation style" guidance: prefer ``_assert_type`` over
+        # ``cast``/``none_throws``).
+        self.assertTrue(
+            predicted_weights.isna().equals(_assert_type(adjusted.weight_series).isna())
+        )
+        np.testing.assert_allclose(
+            predicted_weights.dropna().to_numpy(),
+            _assert_type(adjusted.weight_series).dropna().to_numpy(),
+            rtol=1e-6,
+            atol=1e-8,
+        )
+        self.assertTrue(np.all(np.isfinite(predicted_weights.dropna().to_numpy())))
+        self.assertTrue(np.all(predicted_weights.dropna().to_numpy() >= 0))
+
+    def test_predict_weights_rake_data_argument_always_warns(self) -> None:
+        train_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "a": ["A", "A", "A", "A", "B", "B", "B", "B"],
+                "b": ["X", "X", "Y", "Y", "X", "X", "Y", "Y"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "a": ["A", "A", "B", "B", "A", "B", "A", "B"],
+                "b": ["X", "Y", "X", "Y", "X", "Y", "X", "Y"],
+            }
+        )
+        train_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(train_df),
+            target=SampleFrame.from_frame(target_df),
+        )
+        # Use the same data for fit and scoring — even with no joint shift,
+        # transferred rake is a transfer operation by definition and should
+        # warn unconditionally.
+        eval_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(train_df.copy()),
+            target=SampleFrame.from_frame(target_df.copy()),
+        )
+        fitted = train_bf.fit(method="rake", variables=["a", "b"], transformations=None)
+        with self.assertLogs("balance", level="WARNING") as cm:
+            weights = fitted.predict_weights(data=eval_bf)
+        self.assertEqual(len(weights), len(train_df))
+        self.assertIn("transfer operation", " ".join(cm.output))
+
+    def test_predict_weights_rake_data_requires_target(self) -> None:
+        train_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "a": ["A", "A", "B", "B", "A", "B"],
+                "b": ["X", "Y", "X", "Y", "X", "Y"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "a": ["A", "A", "A", "B", "B", "B"],
+                "b": ["X", "Y", "X", "X", "Y", "Y"],
+            }
+        )
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(train_df),
+            target=SampleFrame.from_frame(target_df),
+        ).fit(method="rake", variables=["a", "b"], transformations=None)
+        no_target_bf = BalanceFrame(sample=SampleFrame.from_frame(train_df.copy()))
+        with self.assertRaisesRegex(ValueError, "data must have a target set"):
+            fitted.predict_weights(data=no_target_bf)
+
+    def test_predict_weights_rake_data_rejects_mismatched_target_covariates(
+        self,
+    ) -> None:
+        train_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "a": ["A", "A", "B", "B", "A", "B"],
+                "b": ["X", "Y", "X", "Y", "X", "Y"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "a": ["A", "A", "A", "B", "B", "B"],
+                "b": ["X", "Y", "X", "X", "Y", "Y"],
+            }
+        )
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(train_df),
+            target=SampleFrame.from_frame(target_df),
+        ).fit(method="rake", variables=["a", "b"], transformations=None)
+
+        # Build scoring frame whose target is missing covariate 'b' that the
+        # fitted model needs. The public predict_weights(data=...) path runs
+        # _validate_data_covariates first, which catches the mismatch.
+        bad_target = target_df.drop(columns=["b"])
+        bad_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(train_df.copy()),
+            target=SampleFrame.from_frame(bad_target),
+        )
+        with self.assertRaisesRegex(
+            ValueError, "matching target covariate column names"
+        ):
+            fitted.predict_weights(data=bad_bf)
+
+    def test_predict_weights_rake_data_na_drop_uses_dropped_target_sum(self) -> None:
+        train_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "a": ["A", "A", "A", "B", "B", "B", "A", "B"],
+                "b": ["X", "Y", "X", "Y", "X", "Y", "X", "Y"],
+            }
+        )
+        train_target = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "a": ["A", "A", "B", "B", "A", None, "A", "B"],
+                "b": ["X", "Y", "X", "Y", "X", "Y", "X", None],
+            }
+        )
+        eval_df = train_df.copy()
+        eval_target = train_target.copy()
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(train_df),
+            target=SampleFrame.from_frame(train_target),
+        ).fit(
+            method="rake", variables=["a", "b"], transformations=None, na_action="drop"
+        )
+        scored = fitted.predict_weights(
+            data=BalanceFrame(
+                sample=SampleFrame.from_frame(eval_df),
+                target=SampleFrame.from_frame(eval_target),
+            )
+        )
+        expected_target_sum = (
+            SampleFrame.from_frame(eval_target)
+            .df_weights.iloc[:, 0][eval_target[["a", "b"]].notna().all(axis=1)]
+            .sum()
+        )
+        self.assertAlmostEqual(
+            float(scored.sum()), float(expected_target_sum), places=6
+        )
+
+    def test_predict_weights_rake_data_raises_on_zero_fit_support_cell(self) -> None:
+        train_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "a": ["A", "A", "A", "B", "B", "B"],
+                "b": ["X", "X", "X", "Y", "Y", "Y"],  # only A:X and B:Y
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "a": ["A", "A", "B", "B", "A", "B", "A", "B"],
+                "b": ["X", "Y", "X", "Y", "X", "Y", "X", "Y"],
+            }
+        )
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(train_df),
+            target=SampleFrame.from_frame(target_df),
+        ).fit(method="rake", variables=["a", "b"], transformations=None)
+
+        # Scoring contains unseen joint cells A:Y and B:X (present in target levels).
+        score_df = pd.DataFrame(
+            {
+                "id": [f"h{i}" for i in range(4)],
+                "weight": np.ones(4),
+                "a": ["A", "A", "B", "B"],
+                "b": ["Y", "Y", "X", "X"],
+            }
+        )
+        score_bf = BalanceFrame(
+            sample=SampleFrame.from_frame(score_df),
+            target=SampleFrame.from_frame(target_df.copy()),
+        )
+        with self.assertRaisesRegex(ValueError, "zero fit-time sample mass"):
+            fitted.predict_weights(data=score_bf)
+
+    def test_predict_weights_rake_keep_sum_of_weights_false(self) -> None:
+        # Pin that ``keep_sum_of_weights=False`` is faithfully replayed by
+        # ``predict_weights()``. Uses non-uniform design weights so the
+        # option's effect on trim_weights is observable.
+        sample_df = pd.DataFrame(
+            {
+                "id": [f"s{i}" for i in range(8)],
+                "weight": [3.0, 1.0, 2.0, 0.5, 1.5, 4.0, 0.7, 2.3],
+                "a": ["A", "A", "A", "B", "B", "B", "A", "B"],
+                "b": ["X", "Y", "X", "Y", "X", "Y", "X", "Y"],
+            }
+        )
+        target_df = pd.DataFrame(
+            {
+                "id": [f"t{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "a": ["A", "A", "B", "B", "A", "B", "A", "B"],
+                "b": ["X", "Y", "X", "Y", "X", "Y", "X", "Y"],
+            }
+        )
+        adjusted = BalanceFrame(
+            sample=SampleFrame.from_frame(sample_df),
+            target=SampleFrame.from_frame(target_df),
+        ).fit(
+            method="rake",
+            variables=["a", "b"],
+            transformations=None,
+            keep_sum_of_weights=False,
+        )
+        predicted_weights = adjusted.predict_weights()
+        np.testing.assert_allclose(
+            predicted_weights.to_numpy(),
+            _assert_type(adjusted.weight_series).to_numpy(),
+            rtol=1e-6,
+            atol=1e-8,
+        )
+        self.assertEqual(_assert_type(adjusted.model).get("keep_sum_of_weights"), False)
+
+    def test_predict_weights_rake_data_partial_fct_lump_currently_bypasses_guard(
+        self,
+    ) -> None:
+        # Pin the current gap: ``functools.partial(fct_lump, ...)`` bypasses
+        # the data-dependent transformation guard because the guard matches
+        # the literal ``fct_lump`` function object, not partial wrappers.
+        # Transfer scoring with a partial-wrapped fct_lump emits the
+        # unconditional transfer warning but does NOT raise. The TODO in
+        # ``predict_weights_from_model`` tracks the proposed shared
+        # ``_freeze_data_dependent_transformations`` helper that would close
+        # this gap by capturing fit-time levels and replaying them
+        # deterministically. Until then, this test pins the existing
+        # behaviour so we notice if the guard is changed silently.
+        from functools import partial
+
+        from balance.utils.data_transformation import fct_lump
+
+        df = pd.DataFrame(
+            {
+                "id": [f"i{i}" for i in range(20)],
+                "weight": np.ones(20),
+                "x": ["a", "b", "c", "a", "b"] * 4,
+                "y": ["m", "n"] * 10,
+            }
+        )
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(df.copy()),
+            target=SampleFrame.from_frame(df.copy()),
+        ).fit(
+            method="rake",
+            variables=["x", "y"],
+            transformations={
+                "x": partial(fct_lump, prop=0.1),
+                "y": partial(fct_lump, prop=0.1),
+            },
+        )
+        holdout = BalanceFrame(
+            sample=SampleFrame.from_frame(df.copy()),
+            target=SampleFrame.from_frame(df.copy()),
+        )
+        with self.assertLogs("balance", level="WARNING") as cm:
+            weights = fitted.predict_weights(data=holdout)
+        self.assertIn("transfer operation", " ".join(cm.output))
+        self.assertEqual(len(weights), len(df))
+
+    def test_predict_weights_rake_data_deterministic_explicit_dict_allowed(
+        self,
+    ) -> None:
+        # An explicit transformations dict containing only deterministic
+        # top-level functions (here: a no-op string cast) does not trigger
+        # the transfer guard, passes the fit-time pickleability check, and
+        # produces transfer weights that recover the new target's total
+        # weight when the joint distribution is unchanged.
+        df = pd.DataFrame(
+            {
+                "id": [f"i{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "a": ["AA", "BB", "AA", "BB", "AA", "BB", "AA", "BB"],
+                "b": ["XX", "XX", "YY", "YY", "XX", "XX", "YY", "YY"],
+            }
+        )
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(df.copy()),
+            target=SampleFrame.from_frame(df.copy()),
+        ).fit(
+            method="rake",
+            variables=["a", "b"],
+            transformations={"a": _astype_str, "b": _astype_str},
+        )
+        holdout = BalanceFrame(
+            sample=SampleFrame.from_frame(df.copy()),
+            target=SampleFrame.from_frame(df.copy()),
+        )
+        with self.assertLogs("balance", level="WARNING") as cm:
+            weights = fitted.predict_weights(data=holdout)
+        self.assertIn("transfer operation", " ".join(cm.output))
+        self.assertAlmostEqual(
+            float(weights.sum()), float(df["weight"].sum()), places=4
+        )
 
     def test_predict_weights_poststratify_na_drop_reconstructs(self) -> None:
         sample_df = pd.DataFrame(
