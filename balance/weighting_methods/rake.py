@@ -253,6 +253,7 @@ def rake(
         raise ValueError(
             "No shared weighting variables were found between sample and target. "
             "Pass `variables=[...]` with at least one common column."
+            "calling predict_weights()."
         )
 
     # Keep single-variable fallback behavior aligned with poststratify:
@@ -701,8 +702,9 @@ def _predict_weights_from_model(
 
     if len(variables) == 0:
         raise ValueError(
-            "No shared weighting variables were found between sample and target. "
-            "Pass `variables=[...]` with at least one common column."
+            "Rake predict_weights() model metadata is missing stored weighting "
+            "variables. Re-fit the model (with store_fit_metadata=True) before "
+            "calling predict_weights()."
         )
 
     sample_weights = sample_weights_full
