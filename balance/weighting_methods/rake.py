@@ -246,6 +246,12 @@ def rake(
     sample_df = sample_df.loc[:, variables]
     target_df = target_df.loc[:, variables]
 
+    if len(variables) == 0:
+        raise ValueError(
+            "No shared weighting variables were found between sample and target. "
+            "Pass `variables=[...]` with at least one common column."
+        )
+
     # Keep single-variable fallback behavior aligned with poststratify:
     # when variables are explicitly provided, out-of-scope transformation
     # entries are ignored.
@@ -321,12 +327,6 @@ def rake(
             "in-place via BalanceFrame.predict_weights(), but transfer "
             "scoring via predict_weights(data=...) will raise. Pass "
             "deterministic transformations at fit time to enable transfer."
-        )
-
-    if len(variables) <= 1:
-        raise ValueError(
-            "Must weight on at least two variables for raking. "
-            f"Currently have variables={variables} only"
         )
 
     transformations_to_apply = transformations
@@ -695,6 +695,12 @@ def _predict_weights_from_model(
             )
     sample_df = sample_df.loc[:, variables]
     target_df = target_df.loc[:, variables]
+
+    if len(variables) == 0:
+        raise ValueError(
+            "No shared weighting variables were found between sample and target. "
+            "Pass `variables=[...]` with at least one common column."
+        )
 
     sample_weights = sample_weights_full
     if not is_transfer:

@@ -164,6 +164,21 @@ class Testrake(
             pd.Series((1,) * (n_rows - 1)),
         )
 
+    def test_rake_no_shared_variables_raises_actionable_error(self) -> None:
+        """No shared columns should raise a clear error before pickle checks."""
+        sample = pd.DataFrame({"a": ["x", "y"]})
+        target = pd.DataFrame({"b": ["x", "y"]})
+        with self.assertRaisesRegex(ValueError, "No shared weighting variables"):
+            rake(
+                sample,
+                pd.Series([1.0, 1.0]),
+                target,
+                pd.Series([1.0, 1.0]),
+                variables=None,
+                transformations={"z": lambda s: s},
+                store_fit_metadata=True,
+            )
+
     def test_rake_single_variable_delegates_to_poststratify(self) -> None:
         """rake() with one variable should warn and delegate to poststratify()."""
         sample = pd.DataFrame({"a": ["x", "x", "y", "y"], "b": [1, 2, 3, 4]})
