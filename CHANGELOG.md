@@ -32,11 +32,13 @@
   preserved.
 
 - **`rake()` now gracefully handles single-variable adjustments.**
-  When `rake(..., variables=["..."])` receives exactly one adjustment
-  variable, it now logs a warning and delegates to `poststratify(...)`
-  instead of raising an assertion. This preserves passthrough behaviour
-  for transformations, NA handling, trimming controls, and
-  fit-metadata persistence options while making
+  When `rake(...)` resolves to exactly one adjustment variable—either
+  because `variables=["..."]` explicitly names one variable, or because
+  `variables=None` and sample/target share exactly one common column—it
+  now logs a warning and delegates to `poststratify(...)` instead of
+  raising an assertion. This preserves passthrough behaviour for
+  transformations, NA handling, trimming controls, and fit-metadata
+  persistence options while making
   `BalanceFrame.fit(method="rake")` more robust for one-variable inputs.
   In this delegated path, model metadata records `method='poststratify'`
   (explicitly noted in the warning) while returned weights keep the
