@@ -316,6 +316,26 @@ class Testrake(
         )
         self.assertIn("weight", result)
 
+    def test_rake_single_variable_ignores_out_of_scope_unpickleable_transform(
+        self,
+    ) -> None:
+        """Out-of-scope non-pickleable transforms should be ignored like poststratify."""
+        sample = pd.DataFrame({"a": ["x", "y"], "b": [1, 2]})
+        target = pd.DataFrame({"a": ["x", "y"], "b": [3, 4]})
+
+        result = rake(
+            sample,
+            pd.Series([1.0, 1.0]),
+            target,
+            pd.Series([1.0, 1.0]),
+            variables=["a"],
+            transformations={"b": lambda s: s},
+            store_fit_metadata=True,
+        )
+
+        self.assertIn("weight", result)
+        self.assertEqual(result["weight"].name, "rake_weight")
+
     def test_rake_single_variable_store_fit_metadata_pickle_validation(self) -> None:
         """Single-variable fallback should preserve fast pickleability validation."""
         sample = pd.DataFrame({"a": ["x", "y"]})

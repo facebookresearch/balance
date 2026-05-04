@@ -245,6 +245,23 @@ def rake(
             (sample_df, target_df)
         )
 
+    # Keep single-variable fallback behavior aligned with poststratify:
+    # when variables are explicitly provided, out-of-scope transformation
+    # entries are ignored.
+    single_variable_transformations = transformations
+    if len(variables) == 1 and isinstance(transformations, dict):
+        single_variable_transformations = {
+            key: value for key, value in transformations.items() if key in variables
+        }
+        if len(single_variable_transformations) == 0:
+            single_variable_transformations = None
+
+    transformations_for_pickle = (
+        single_variable_transformations
+        if len(variables) == 1
+        else transformations_to_apply
+    )
+
     if store_fit_metadata:
         # Fail fast: persisting non-pickleable callables (e.g. lambdas,
         # closures) would break `pickle.dumps(adjusted_bf)` workflows
@@ -252,7 +269,7 @@ def rake(
         # poststratify pattern.
         try:
             # @lint-ignore PYTHONPICKLEISBAD - serializability check only; no untrusted deserialization
-            pickle.dumps(transformations_to_apply)
+            pickle.dumps(transformations_for_pickle)
         except Exception as exc:
             raise ValueError(
                 "`transformations` must be pickleable when "
@@ -275,7 +292,7 @@ def rake(
             target_df=target_df,
             target_weights=target_weights,
             variables=variables,
-            transformations=transformations,
+            transformations=single_variable_transformations,
             na_action=na_action,
             weight_trimming_mean_ratio=weight_trimming_mean_ratio,
             weight_trimming_percentile=weight_trimming_percentile,
