@@ -35,6 +35,10 @@ from balance.weighting_methods.rake import (
 )
 
 
+def _astype_str(s: pd.Series) -> pd.Series:
+    return s.astype(str)
+
+
 class Testrake(
     balance.testutil.BalanceTestCase,
 ):
@@ -251,6 +255,52 @@ class Testrake(
             sorted(rake_result["model"].keys()),
             sorted(post_result["model"].keys()),
         )
+
+    def test_rake_single_variable_transformations_match_poststratify(self) -> None:
+        """Fallback should match poststratify for default and explicit transforms."""
+        sample = pd.DataFrame(
+            {
+                "a": ["x", "x", "very_rare", np.nan, "y", "y"],
+                "b": [1, 2, 3, 4, 5, 6],
+            }
+        )
+        target = pd.DataFrame(
+            {
+                "a": ["x", "x", "x", "y", np.nan, "very_rare"],
+                "b": [10, 20, 30, 40, 50, 60],
+            }
+        )
+        sample_weights = pd.Series([1.0, 2.0, 1.0, 1.0, 2.0, 1.0])
+        target_weights = pd.Series([1.0] * 6)
+
+        for transformations, na_action in (
+            ("default", "add_indicator"),
+            ({"a": _astype_str}, "drop"),
+        ):
+            rake_result = rake(
+                sample,
+                sample_weights,
+                target,
+                target_weights,
+                variables=["a"],
+                transformations=transformations,
+                na_action=na_action,
+                store_fit_metadata=True,
+            )
+            post_result = poststratify(
+                sample,
+                sample_weights,
+                target,
+                target_weights,
+                variables=["a"],
+                transformations=transformations,
+                na_action=na_action,
+                store_fit_metadata=True,
+            )
+            np.testing.assert_allclose(
+                rake_result["weight"].to_numpy(), post_result["weight"].to_numpy()
+            )
+            self.assertEqual(rake_result["weight"].name, "rake_weight")
 
     def test_rake_single_variable_ignores_unknown_kwargs_like_rake(self) -> None:
         """Fallback keeps rake's current behaviour of accepting unknown kwargs."""
