@@ -178,6 +178,16 @@ def rake(
                 artifacts for ``BalanceFrame.predict_weights()`` reconstruction.
 
     Notes:
+    When exactly one adjustment variable is selected (either explicitly via
+    ``variables=[...]`` or implicitly because only one common variable exists),
+    this function delegates to :func:`balance.weighting_methods.poststratify.poststratify`.
+    In that fallback path, the returned model metadata records
+    ``method='poststratify'`` and the returned weight series is renamed to
+    ``rake_weight`` for API consistency. Because
+    ``BalanceFrame.predict_weights(data=...)`` dispatches by
+    ``model['method']``, delegated fits follow poststratify's transfer-scoring
+    capabilities/limitations rather than rake's.
+
     ``BalanceFrame.predict_weights()`` for rake reuses the fitted cell-ratio
     surface from this function (effectively ``m_fit / m_sample`` per joint
     cell) and applies it to design weights in the scoring sample. This is
@@ -232,6 +242,79 @@ def rake(
     )
     if not isinstance(store_fit_metadata, bool):
         raise TypeError("`store_fit_metadata` must be a bool.")
+    variables = balance_util.choose_variables(sample_df, target_df, variables=variables)
+
+    logger.debug(f"Join variables for sample and target: {variables}")
+
+    sample_df = sample_df.loc[:, variables]
+    target_df = target_df.loc[:, variables]
+
+    if len(variables) == 0:
+        raise ValueError(
+            "No shared weighting variables were found between sample and target. "
+            "Pass `variables=[...]` with at least one common column present in both."
+        )
+
+    # Keep single-variable fallback behavior aligned with poststratify:
+    # when variables are explicitly provided, out-of-scope transformation
+    # entries are ignored.
+    single_variable_transformations = transformations
+    if len(variables) == 1 and isinstance(transformations, dict):
+        single_variable_transformations = {
+            key: value for key, value in transformations.items() if key in variables
+        }
+        if len(single_variable_transformations) == 0:
+            single_variable_transformations = None
+
+    transformations_for_pickle = single_variable_transformations
+    if len(variables) > 1:
+        if transformations == "default":
+            transformations_for_pickle = balance_adjustment.default_transformations(
+                (sample_df, target_df)
+            )
+        else:
+            transformations_for_pickle = transformations
+
+    if store_fit_metadata:
+        # Fail fast: persisting non-pickleable callables (e.g. lambdas,
+        # closures) would break `pickle.dumps(adjusted_bf)` workflows
+        # downstream. Check here, before long-running fit work. Matches the
+        # poststratify pattern.
+        try:
+            # @lint-ignore PYTHONPICKLEISBAD - serializability check only; no untrusted deserialization
+            pickle.dumps(transformations_for_pickle)
+        except Exception as exc:
+            raise ValueError(
+                "`transformations` must be pickleable when "
+                "store_fit_metadata=True. Pass store_fit_metadata=False to "
+                "disable fit-artifact persistence for this run."
+            ) from exc
+
+    if len(variables) == 1:
+        logger.warning(
+            "rake() received a single adjustment variable (%s); "
+            "delegating to poststratify(). Returned model metadata will "
+            "record method='poststratify'.",
+            variables[0],
+        )
+        from balance.weighting_methods.poststratify import poststratify
+
+        poststratified = poststratify(
+            sample_df=sample_df,
+            sample_weights=sample_weights,
+            target_df=target_df,
+            target_weights=target_weights,
+            variables=variables,
+            transformations=single_variable_transformations,
+            na_action=na_action,
+            weight_trimming_mean_ratio=weight_trimming_mean_ratio,
+            weight_trimming_percentile=weight_trimming_percentile,
+            keep_sum_of_weights=keep_sum_of_weights,
+            store_fit_metadata=store_fit_metadata,
+        )
+        poststratified["weight"] = poststratified["weight"].rename("rake_weight")
+        return poststratified
+
     if store_fit_metadata and transformations == "default":
         # `transformations='default'` resolves to data-dependent helpers
         # (`quantize`/`fct_lump`) which recompute bins/levels from the input
@@ -254,42 +337,14 @@ def rake(
             "deterministic transformations at fit time to enable transfer."
         )
 
-    variables = balance_util.choose_variables(sample_df, target_df, variables=variables)
-
-    logger.debug(f"Join variables for sample and target: {variables}")
-
-    sample_df = sample_df.loc[:, variables]
-    target_df = target_df.loc[:, variables]
-
-    # TODO: When len(variables) == 1, fall back to poststratify instead of
-    # raising, so users can call adjust(method="rake") without worrying about
-    # the variable count.
-    assert len(variables) > 1, (
-        "Must weight on at least two variables for raking. "
-        f"Currently have variables={variables} only"
-    )
-
     transformations_to_apply = transformations
     if transformations == "default":
-        transformations_to_apply = balance_adjustment.default_transformations(
-            (sample_df, target_df)
-        )
-
-    if store_fit_metadata:
-        # Fail fast: persisting non-pickleable callables (e.g. lambdas,
-        # closures) would break `pickle.dumps(adjusted_bf)` workflows
-        # downstream. Check here, before the IPF compute, so users don't
-        # wait for a long fit only to fail at the end. Matches the
-        # poststratify pattern.
-        try:
-            # @lint-ignore PYTHONPICKLEISBAD - serializability check only; no untrusted deserialization
-            pickle.dumps(transformations_to_apply)
-        except Exception as exc:
-            raise ValueError(
-                "`transformations` must be pickleable when "
-                "store_fit_metadata=True. Pass store_fit_metadata=False to "
-                "disable fit-artifact persistence for this run."
-            ) from exc
+        if store_fit_metadata:
+            transformations_to_apply = transformations_for_pickle
+        else:
+            transformations_to_apply = balance_adjustment.default_transformations(
+                (sample_df, target_df)
+            )
 
     sample_df, target_df = balance_adjustment.apply_transformations(
         (sample_df, target_df), transformations_to_apply
@@ -651,6 +706,13 @@ def _predict_weights_from_model(
             )
     sample_df = sample_df.loc[:, variables]
     target_df = target_df.loc[:, variables]
+
+    if len(variables) == 0:
+        raise ValueError(
+            "Rake predict_weights() model metadata is missing stored weighting "
+            "variables. Re-fit the model (with store_fit_metadata=True) before "
+            "calling predict_weights()."
+        )
 
     sample_weights = sample_weights_full
     if not is_transfer:
