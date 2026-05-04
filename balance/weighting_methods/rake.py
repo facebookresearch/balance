@@ -252,8 +252,7 @@ def rake(
     if len(variables) == 0:
         raise ValueError(
             "No shared weighting variables were found between sample and target. "
-            "Pass `variables=[...]` with at least one common column."
-            "calling predict_weights()."
+            "Pass `variables=[...]` with at least one common column present in both."
         )
 
     # Keep single-variable fallback behavior aligned with poststratify:
@@ -267,9 +266,14 @@ def rake(
         if len(single_variable_transformations) == 0:
             single_variable_transformations = None
 
-    transformations_for_pickle = (
-        single_variable_transformations if len(variables) == 1 else transformations
-    )
+    transformations_for_pickle = single_variable_transformations
+    if len(variables) > 1:
+        if transformations == "default":
+            transformations_for_pickle = balance_adjustment.default_transformations(
+                (sample_df, target_df)
+            )
+        else:
+            transformations_for_pickle = transformations
 
     if store_fit_metadata:
         # Fail fast: persisting non-pickleable callables (e.g. lambdas,
