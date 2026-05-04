@@ -21,6 +21,7 @@ import pandas as pd
 from balance import adjustment as balance_adjustment
 from balance.sample_class import Sample
 from balance.util import _assert_type
+from balance.weighting_methods.poststratify import poststratify
 from balance.weighting_methods.rake import (
     _find_lcm_of_array_lengths,
     _hare_niemeyer_allocation,
@@ -124,15 +125,6 @@ class Testrake(
             pd.Series((1,) * n_rows),
         )
 
-        # Must pass more than one variable
-        self._assert_rake_raises_with_message(
-            "Must weight on at least two variables",
-            sample[["a"]],
-            pd.Series((1,) * n_rows),
-            target[["a"]],
-            pd.Series((1,) * n_rows),
-        )
-
         # Must pass weights for sample
         self._assert_rake_raises_with_message(
             "sample_weights must be a pandas Series",
@@ -168,6 +160,110 @@ class Testrake(
             target[["a", "b"]],
             pd.Series((1,) * (n_rows - 1)),
         )
+
+    def test_rake_single_variable_delegates_to_poststratify(self) -> None:
+        """rake() with one variable should warn and delegate to poststratify()."""
+        sample = pd.DataFrame({"a": ["x", "x", "y", "y"], "b": [1, 2, 3, 4]})
+        target = pd.DataFrame({"a": ["x", "x", "x", "y"], "b": [10, 20, 30, 40]})
+        sample_weights = pd.Series([1.0, 2.0, 1.0, 2.0])
+        target_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+
+        with self.assertLogs("balance", level="WARNING") as cm:
+            rake_result = rake(
+                sample,
+                sample_weights,
+                target,
+                target_weights,
+                variables=["a"],
+                transformations=None,
+                na_action="add_indicator",
+                keep_sum_of_weights=True,
+                store_fit_metadata=True,
+            )
+
+        self.assertIn("delegating to poststratify()", " ".join(cm.output))
+
+        post_result = poststratify(
+            sample,
+            sample_weights,
+            target,
+            target_weights,
+            variables=["a"],
+            transformations=None,
+            na_action="add_indicator",
+            keep_sum_of_weights=True,
+            store_fit_metadata=True,
+        )
+
+        np.testing.assert_allclose(
+            rake_result["weight"].to_numpy(), post_result["weight"].to_numpy()
+        )
+        self.assertEqual(rake_result["model"].get("method"), "poststratify")
+
+    def test_rake_single_variable_passthrough_options_match_poststratify(self) -> None:
+        """Single-variable fallback should preserve key poststratify options."""
+        sample = pd.DataFrame({"a": ["x", "x", np.nan, "y", "y"], "b": [1, 2, 3, 4, 5]})
+        target = pd.DataFrame(
+            {"a": ["x", "x", "x", "y", np.nan], "b": [10, 20, 30, 40, 50]}
+        )
+        sample_weights = pd.Series([1.0, 9.0, 2.0, 1.0, 12.0])
+        target_weights = pd.Series([1.0, 1.0, 1.0, 1.0, 1.0])
+
+        rake_result = rake(
+            sample,
+            sample_weights,
+            target,
+            target_weights,
+            variables=["a"],
+            transformations=None,
+            na_action="drop",
+            weight_trimming_mean_ratio=1.2,
+            keep_sum_of_weights=False,
+            store_fit_metadata=True,
+        )
+
+        post_result = poststratify(
+            sample,
+            sample_weights,
+            target,
+            target_weights,
+            variables=["a"],
+            transformations=None,
+            na_action="drop",
+            weight_trimming_mean_ratio=1.2,
+            keep_sum_of_weights=False,
+            store_fit_metadata=True,
+        )
+
+        np.testing.assert_allclose(
+            rake_result["weight"].to_numpy(), post_result["weight"].to_numpy()
+        )
+        self.assertEqual(
+            rake_result["model"].get("method"), post_result["model"].get("method")
+        )
+        self.assertEqual(
+            rake_result["model"].get("keep_sum_of_weights"),
+            post_result["model"].get("keep_sum_of_weights"),
+        )
+        self.assertEqual(
+            sorted(rake_result["model"].keys()),
+            sorted(post_result["model"].keys()),
+        )
+
+    def test_rake_single_variable_ignores_unknown_kwargs_like_rake(self) -> None:
+        """Fallback keeps rake's current behaviour of accepting unknown kwargs."""
+        sample = pd.DataFrame({"a": ["x", "y"]})
+        target = pd.DataFrame({"a": ["x", "y"]})
+        result = rake(
+            sample,
+            pd.Series([1.0, 1.0]),
+            target,
+            pd.Series([1.0, 1.0]),
+            variables=["a"],
+            transformations=None,
+            unknown_kwarg="ignored",
+        )
+        self.assertIn("weight", result)
 
     def test_rake_fails_when_all_na(self) -> None:
         """

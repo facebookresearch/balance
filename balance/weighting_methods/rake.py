@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 from balance import adjustment as balance_adjustment, util as balance_util
 from balance.util import _safe_fillna_and_infer
+from balance.weighting_methods import poststratify as balance_poststratify
 
 logger: logging.Logger = logging.getLogger(__package__)
 
@@ -261,9 +262,26 @@ def rake(
     sample_df = sample_df.loc[:, variables]
     target_df = target_df.loc[:, variables]
 
-    # TODO: When len(variables) == 1, fall back to poststratify instead of
-    # raising, so users can call adjust(method="rake") without worrying about
-    # the variable count.
+    if len(variables) == 1:
+        logger.warning(
+            "rake() received a single adjustment variable (%s); "
+            "delegating to poststratify() instead.",
+            variables[0],
+        )
+        return balance_poststratify.poststratify(
+            sample_df=sample_df,
+            sample_weights=sample_weights,
+            target_df=target_df,
+            target_weights=target_weights,
+            variables=variables,
+            transformations=transformations,
+            na_action=na_action,
+            weight_trimming_mean_ratio=weight_trimming_mean_ratio,
+            weight_trimming_percentile=weight_trimming_percentile,
+            keep_sum_of_weights=keep_sum_of_weights,
+            store_fit_metadata=store_fit_metadata,
+        )
+
     assert len(variables) > 1, (
         "Must weight on at least two variables for raking. "
         f"Currently have variables={variables} only"
