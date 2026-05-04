@@ -525,7 +525,8 @@ class Testrake(
             observed_ratio = w.iloc[idx_heavy] / w.iloc[idx_light]
             self.assertAlmostEqual(observed_ratio, expected_ratio, places=4)
 
-        # Per-cell totals must match fitted joint-cell totals (m_fit).
+        # Per-cell totals must match m_fit after the same global rescaling
+        # induced by trim_weights (m_fit is on the pre-trim sample-sum scale).
         weighted_by_cell = (
             sample_df.assign(final_weight=w)
             .groupby(["a", "b"], observed=False)["final_weight"]
