@@ -88,7 +88,6 @@ class Testrake(
         This test ensures that the rake function correctly identifies and raises
         appropriate errors for various invalid input scenarios:
         - Presence of 'weight' column in input data
-        - Insufficient number of variables (must be at least 2)
         - Missing or invalid weight Series
         - Mismatched lengths between DataFrames and weight Series
         """
