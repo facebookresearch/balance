@@ -183,7 +183,10 @@ def rake(
     this function delegates to :func:`balance.weighting_methods.poststratify.poststratify`.
     In that fallback path, the returned model metadata records
     ``method='poststratify'`` and the returned weight series is renamed to
-    ``rake_weight`` for API consistency.
+    ``rake_weight`` for API consistency. Because
+    ``BalanceFrame.predict_weights(data=...)`` dispatches by
+    ``model['method']``, delegated fits follow poststratify's transfer-scoring
+    capabilities/limitations rather than rake's.
 
     ``BalanceFrame.predict_weights()`` for rake reuses the fitted cell-ratio
     surface from this function (effectively ``m_fit / m_sample`` per joint
