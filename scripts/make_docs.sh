@@ -96,6 +96,8 @@ if [[ $ONLY_DOCUSAURUS == false ]]; then
     --output-dir website/static/html/tutorials
   jupyter nbconvert tutorials/balance_quickstart_new_api.ipynb --execute --to html \
     --output-dir website/static/html/tutorials
+  jupyter nbconvert tutorials/balance_diff_diff_brfss.ipynb --execute --to html \
+    --output-dir website/static/html/tutorials
 fi
 
 echo "-----------------------------------"
