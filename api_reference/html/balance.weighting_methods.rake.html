@@ -134,7 +134,16 @@ When <code class="docutils literal notranslate"><span class="pre">store_fit_meta
 artifacts for <code class="docutils literal notranslate"><span class="pre">BalanceFrame.predict_weights()</span></code> reconstruction.</p>
 </div></blockquote>
 <p>Notes:
-<code class="docutils literal notranslate"><span class="pre">BalanceFrame.predict_weights()</span></code> for rake reuses the fitted cell-ratio
+When exactly one adjustment variable is selected (either explicitly via
+<code class="docutils literal notranslate"><span class="pre">variables=[...]</span></code> or implicitly because only one common variable exists),
+this function delegates to <a class="reference internal" href="balance.weighting_methods.poststratify.html#balance.weighting_methods.poststratify.poststratify" title="balance.weighting_methods.poststratify.poststratify"><code class="xref py py-func docutils literal notranslate"><span class="pre">balance.weighting_methods.poststratify.poststratify()</span></code></a>.
+In that fallback path, the returned model metadata records
+<code class="docutils literal notranslate"><span class="pre">method='poststratify'</span></code> and the returned weight series is renamed to
+<code class="docutils literal notranslate"><span class="pre">rake_weight</span></code> for API consistency. Because
+<code class="docutils literal notranslate"><span class="pre">BalanceFrame.predict_weights(data=...)</span></code> dispatches by
+<code class="docutils literal notranslate"><span class="pre">model['method']</span></code>, delegated fits follow poststratify’s transfer-scoring
+capabilities/limitations rather than rake’s.</p>
+<p><code class="docutils literal notranslate"><span class="pre">BalanceFrame.predict_weights()</span></code> for rake reuses the fitted cell-ratio
 surface from this function (effectively <code class="docutils literal notranslate"><span class="pre">m_fit</span> <span class="pre">/</span> <span class="pre">m_sample</span></code> per joint
 cell) and applies it to design weights in the scoring sample. This is
 exact in-place replay (same sample rows as fit), but for <code class="docutils literal notranslate"><span class="pre">data=...</span></code> it is

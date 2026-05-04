@@ -217,6 +217,16 @@
 <span class="sd">                artifacts for ``BalanceFrame.predict_weights()`` reconstruction.</span>
 
 <span class="sd">    Notes:</span>
+<span class="sd">    When exactly one adjustment variable is selected (either explicitly via</span>
+<span class="sd">    ``variables=[...]`` or implicitly because only one common variable exists),</span>
+<span class="sd">    this function delegates to :func:`balance.weighting_methods.poststratify.poststratify`.</span>
+<span class="sd">    In that fallback path, the returned model metadata records</span>
+<span class="sd">    ``method=&#39;poststratify&#39;`` and the returned weight series is renamed to</span>
+<span class="sd">    ``rake_weight`` for API consistency. Because</span>
+<span class="sd">    ``BalanceFrame.predict_weights(data=...)`` dispatches by</span>
+<span class="sd">    ``model[&#39;method&#39;]``, delegated fits follow poststratify&#39;s transfer-scoring</span>
+<span class="sd">    capabilities/limitations rather than rake&#39;s.</span>
+
 <span class="sd">    ``BalanceFrame.predict_weights()`` for rake reuses the fitted cell-ratio</span>
 <span class="sd">    surface from this function (effectively ``m_fit / m_sample`` per joint</span>
 <span class="sd">    cell) and applies it to design weights in the scoring sample. This is</span>
@@ -271,6 +281,79 @@
     <span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">store_fit_metadata</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;`store_fit_metadata` must be a bool.&quot;</span><span class="p">)</span>
+    <span class="n">variables</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">choose_variables</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Join variables for sample and target: </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
+    <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;No shared weighting variables were found between sample and target. &quot;</span>
+            <span class="s2">&quot;Pass `variables=[...]` with at least one common column present in both.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Keep single-variable fallback behavior aligned with poststratify:</span>
+    <span class="c1"># when variables are explicitly provided, out-of-scope transformation</span>
+    <span class="c1"># entries are ignored.</span>
+    <span class="n">single_variable_transformations</span> <span class="o">=</span> <span class="n">transformations</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">transformations</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">single_variable_transformations</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">transformations</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">variables</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">single_variable_transformations</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">single_variable_transformations</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">transformations_for_pickle</span> <span class="o">=</span> <span class="n">single_variable_transformations</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">transformations</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
+            <span class="n">transformations_for_pickle</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">default_transformations</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">transformations_for_pickle</span> <span class="o">=</span> <span class="n">transformations</span>
+
+    <span class="k">if</span> <span class="n">store_fit_metadata</span><span class="p">:</span>
+        <span class="c1"># Fail fast: persisting non-pickleable callables (e.g. lambdas,</span>
+        <span class="c1"># closures) would break `pickle.dumps(adjusted_bf)` workflows</span>
+        <span class="c1"># downstream. Check here, before long-running fit work. Matches the</span>
+        <span class="c1"># poststratify pattern.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># @lint-ignore PYTHONPICKLEISBAD - serializability check only; no untrusted deserialization</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">transformations_for_pickle</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;`transformations` must be pickleable when &quot;</span>
+                <span class="s2">&quot;store_fit_metadata=True. Pass store_fit_metadata=False to &quot;</span>
+                <span class="s2">&quot;disable fit-artifact persistence for this run.&quot;</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;rake() received a single adjustment variable (</span><span class="si">%s</span><span class="s2">); &quot;</span>
+            <span class="s2">&quot;delegating to poststratify(). Returned model metadata will &quot;</span>
+            <span class="s2">&quot;record method=&#39;poststratify&#39;.&quot;</span><span class="p">,</span>
+            <span class="n">variables</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods.poststratify</span><span class="w"> </span><span class="kn">import</span> <span class="n">poststratify</span>
+
+        <span class="n">poststratified</span> <span class="o">=</span> <span class="n">poststratify</span><span class="p">(</span>
+            <span class="n">sample_df</span><span class="o">=</span><span class="n">sample_df</span><span class="p">,</span>
+            <span class="n">sample_weights</span><span class="o">=</span><span class="n">sample_weights</span><span class="p">,</span>
+            <span class="n">target_df</span><span class="o">=</span><span class="n">target_df</span><span class="p">,</span>
+            <span class="n">target_weights</span><span class="o">=</span><span class="n">target_weights</span><span class="p">,</span>
+            <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
+            <span class="n">transformations</span><span class="o">=</span><span class="n">single_variable_transformations</span><span class="p">,</span>
+            <span class="n">na_action</span><span class="o">=</span><span class="n">na_action</span><span class="p">,</span>
+            <span class="n">weight_trimming_mean_ratio</span><span class="o">=</span><span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
+            <span class="n">weight_trimming_percentile</span><span class="o">=</span><span class="n">weight_trimming_percentile</span><span class="p">,</span>
+            <span class="n">keep_sum_of_weights</span><span class="o">=</span><span class="n">keep_sum_of_weights</span><span class="p">,</span>
+            <span class="n">store_fit_metadata</span><span class="o">=</span><span class="n">store_fit_metadata</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">poststratified</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">poststratified</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;rake_weight&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">poststratified</span>
+
     <span class="k">if</span> <span class="n">store_fit_metadata</span> <span class="ow">and</span> <span class="n">transformations</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
         <span class="c1"># `transformations=&#39;default&#39;` resolves to data-dependent helpers</span>
         <span class="c1"># (`quantize`/`fct_lump`) which recompute bins/levels from the input</span>
@@ -293,42 +376,14 @@
             <span class="s2">&quot;deterministic transformations at fit time to enable transfer.&quot;</span>
         <span class="p">)</span>
 
-    <span class="n">variables</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">choose_variables</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">)</span>
-
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Join variables for sample and target: </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-    <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
-    <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
-
-    <span class="c1"># TODO: When len(variables) == 1, fall back to poststratify instead of</span>
-    <span class="c1"># raising, so users can call adjust(method=&quot;rake&quot;) without worrying about</span>
-    <span class="c1"># the variable count.</span>
-    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">,</span> <span class="p">(</span>
-        <span class="s2">&quot;Must weight on at least two variables for raking. &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;Currently have variables=</span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2"> only&quot;</span>
-    <span class="p">)</span>
-
     <span class="n">transformations_to_apply</span> <span class="o">=</span> <span class="n">transformations</span>
     <span class="k">if</span> <span class="n">transformations</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
-        <span class="n">transformations_to_apply</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">default_transformations</span><span class="p">(</span>
-            <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">)</span>
-        <span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">store_fit_metadata</span><span class="p">:</span>
-        <span class="c1"># Fail fast: persisting non-pickleable callables (e.g. lambdas,</span>
-        <span class="c1"># closures) would break `pickle.dumps(adjusted_bf)` workflows</span>
-        <span class="c1"># downstream. Check here, before the IPF compute, so users don&#39;t</span>
-        <span class="c1"># wait for a long fit only to fail at the end. Matches the</span>
-        <span class="c1"># poststratify pattern.</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># @lint-ignore PYTHONPICKLEISBAD - serializability check only; no untrusted deserialization</span>
-            <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">transformations_to_apply</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;`transformations` must be pickleable when &quot;</span>
-                <span class="s2">&quot;store_fit_metadata=True. Pass store_fit_metadata=False to &quot;</span>
-                <span class="s2">&quot;disable fit-artifact persistence for this run.&quot;</span>
-            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+        <span class="k">if</span> <span class="n">store_fit_metadata</span><span class="p">:</span>
+            <span class="n">transformations_to_apply</span> <span class="o">=</span> <span class="n">transformations_for_pickle</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">transformations_to_apply</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">default_transformations</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">)</span>
+            <span class="p">)</span>
 
     <span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">apply_transformations</span><span class="p">(</span>
         <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">),</span> <span class="n">transformations_to_apply</span>
@@ -691,6 +746,13 @@
             <span class="p">)</span>
     <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
     <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Rake predict_weights() model metadata is missing stored weighting &quot;</span>
+            <span class="s2">&quot;variables. Re-fit the model (with store_fit_metadata=True) before &quot;</span>
+            <span class="s2">&quot;calling predict_weights().&quot;</span>
+        <span class="p">)</span>
 
     <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">sample_weights_full</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">is_transfer</span><span class="p">:</span>
