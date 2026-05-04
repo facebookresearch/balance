@@ -543,6 +543,7 @@ class Testrake(
             target_weights,
             variables=["a", "b"],
             transformations=None,
+            store_fit_metadata=True,
         )
         w = result["weight"]
 
@@ -600,6 +601,7 @@ class Testrake(
             target_weights,
             variables=["a", "b"],
             transformations=None,
+            store_fit_metadata=True,
         )
         w = result["weight"]
 
@@ -618,6 +620,32 @@ class Testrake(
             )
             observed_ratio = w.iloc[idx_heavy] / w.iloc[idx_light]
             self.assertAlmostEqual(observed_ratio, expected_ratio, places=4)
+
+        # Per-cell totals must match m_fit after the same global rescaling
+        # induced by trim_weights (m_fit is on the pre-trim sample-sum scale).
+        weighted_by_cell = (
+            sample_df.assign(final_weight=w)
+            .groupby(["a", "b"], observed=False)["final_weight"]
+            .sum()
+            .sort_index()
+        )
+        model = _assert_type(result["model"])
+        categories = _assert_type(model["categories"])
+        m_fit = _assert_type(model["m_fit"])
+        expected_by_cell = pd.Series(
+            m_fit.flatten(),
+            index=pd.MultiIndex.from_product(categories, names=["a", "b"]),
+            dtype=float,
+        ).sort_index()
+        expected_by_cell *= w.sum() / expected_by_cell.sum()
+        pd.testing.assert_series_equal(
+            weighted_by_cell,
+            expected_by_cell,
+            check_names=False,
+            check_dtype=False,
+            rtol=1e-6,
+            atol=1e-6,
+        )
 
     def test_rake_weights_scale_to_pop(self) -> None:
         """
