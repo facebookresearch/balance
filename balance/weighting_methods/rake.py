@@ -20,7 +20,6 @@ import numpy as np
 import pandas as pd
 from balance import adjustment as balance_adjustment, util as balance_util
 from balance.util import _safe_fillna_and_infer
-from balance.weighting_methods import poststratify as balance_poststratify
 
 logger: logging.Logger = logging.getLogger(__package__)
 
@@ -290,7 +289,9 @@ def rake(
             "record method='poststratify'.",
             variables[0],
         )
-        poststratified = balance_poststratify.poststratify(
+        from balance.weighting_methods.poststratify import poststratify
+
+        poststratified = poststratify(
             sample_df=sample_df,
             sample_weights=sample_weights,
             target_df=target_df,
