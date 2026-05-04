@@ -178,6 +178,13 @@ def rake(
                 artifacts for ``BalanceFrame.predict_weights()`` reconstruction.
 
     Notes:
+    When exactly one adjustment variable is selected (either explicitly via
+    ``variables=[...]`` or implicitly because only one common variable exists),
+    this function delegates to :func:`balance.weighting_methods.poststratify.poststratify`.
+    In that fallback path, the returned model metadata records
+    ``method='poststratify'`` and the returned weight series is renamed to
+    ``rake_weight`` for API consistency.
+
     ``BalanceFrame.predict_weights()`` for rake reuses the fitted cell-ratio
     surface from this function (effectively ``m_fit / m_sample`` per joint
     cell) and applies it to design weights in the scoring sample. This is
@@ -239,12 +246,6 @@ def rake(
     sample_df = sample_df.loc[:, variables]
     target_df = target_df.loc[:, variables]
 
-    transformations_to_apply = transformations
-    if transformations == "default":
-        transformations_to_apply = balance_adjustment.default_transformations(
-            (sample_df, target_df)
-        )
-
     # Keep single-variable fallback behavior aligned with poststratify:
     # when variables are explicitly provided, out-of-scope transformation
     # entries are ignored.
@@ -257,9 +258,7 @@ def rake(
             single_variable_transformations = None
 
     transformations_for_pickle = (
-        single_variable_transformations
-        if len(variables) == 1
-        else transformations_to_apply
+        single_variable_transformations if len(variables) == 1 else transformations
     )
 
     if store_fit_metadata:
@@ -324,10 +323,17 @@ def rake(
             "deterministic transformations at fit time to enable transfer."
         )
 
-    assert len(variables) > 1, (
-        "Must weight on at least two variables for raking. "
-        f"Currently have variables={variables} only"
-    )
+    if len(variables) <= 1:
+        raise ValueError(
+            "Must weight on at least two variables for raking. "
+            f"Currently have variables={variables} only"
+        )
+
+    transformations_to_apply = transformations
+    if transformations == "default":
+        transformations_to_apply = balance_adjustment.default_transformations(
+            (sample_df, target_df)
+        )
 
     sample_df, target_df = balance_adjustment.apply_transformations(
         (sample_df, target_df), transformations_to_apply

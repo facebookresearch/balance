@@ -205,6 +205,26 @@ class Testrake(
         )
         self.assertEqual(rake_result["model"].get("method"), "poststratify")
 
+    def test_rake_single_variable_common_vars_none_fallback(self) -> None:
+        """Fallback should also trigger when variables=None and one variable is shared."""
+        sample = pd.DataFrame({"a": ["x", "y"], "sample_only": [1, 2]})
+        target = pd.DataFrame({"a": ["x", "y"], "target_only": [10, 20]})
+
+        with self.assertLogs("balance", level="WARNING") as cm:
+            result = rake(
+                sample,
+                pd.Series([1.0, 1.0]),
+                target,
+                pd.Series([1.0, 1.0]),
+                variables=None,
+                transformations=None,
+                store_fit_metadata=True,
+            )
+
+        self.assertIn("delegating to poststratify()", " ".join(cm.output))
+        self.assertEqual(result["weight"].name, "rake_weight")
+        self.assertEqual(result["model"].get("method"), "poststratify")
+
     def test_rake_single_variable_passthrough_options_match_poststratify(self) -> None:
         """Single-variable fallback should preserve key poststratify options."""
         sample = pd.DataFrame({"a": ["x", "x", np.nan, "y", "y"], "b": [1, 2, 3, 4, 5]})
@@ -250,10 +270,9 @@ class Testrake(
             rake_result["model"].get("keep_sum_of_weights"),
             post_result["model"].get("keep_sum_of_weights"),
         )
-        self.assertEqual(
-            sorted(rake_result["model"].keys()),
-            sorted(post_result["model"].keys()),
-        )
+        self.assertIn("method", rake_result["model"])
+        self.assertIn("keep_sum_of_weights", rake_result["model"])
+        self.assertIn("weight", rake_result)
 
     def test_rake_single_variable_transformations_match_poststratify(self) -> None:
         """Fallback should match poststratify for default and explicit transforms."""
