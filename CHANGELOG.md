@@ -38,6 +38,9 @@
   for transformations, NA handling, trimming controls, and
   fit-metadata persistence options while making
   `BalanceFrame.fit(method="rake")` more robust for one-variable inputs.
+  In this delegated path, model metadata records `method='poststratify'`
+  (explicitly noted in the warning) while returned weights keep the
+  canonical rake output name (`rake_weight`).
 
 ## New Features
 

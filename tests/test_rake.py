@@ -182,6 +182,8 @@ class Testrake(
             )
 
         self.assertIn("delegating to poststratify()", " ".join(cm.output))
+        self.assertIn("method='poststratify'", " ".join(cm.output))
+        self.assertEqual(rake_result["weight"].name, "rake_weight")
 
         post_result = poststratify(
             sample,
@@ -264,6 +266,21 @@ class Testrake(
             unknown_kwarg="ignored",
         )
         self.assertIn("weight", result)
+
+    def test_rake_single_variable_store_fit_metadata_pickle_validation(self) -> None:
+        """Single-variable fallback should preserve fast pickleability validation."""
+        sample = pd.DataFrame({"a": ["x", "y"]})
+        target = pd.DataFrame({"a": ["x", "y"]})
+        with self.assertRaisesRegex(ValueError, "must be pickleable"):
+            rake(
+                sample,
+                pd.Series([1.0, 1.0]),
+                target,
+                pd.Series([1.0, 1.0]),
+                variables=["a"],
+                transformations={"a": lambda s: s},
+                store_fit_metadata=True,
+            )
 
     def test_rake_fails_when_all_na(self) -> None:
         """

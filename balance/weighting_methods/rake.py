@@ -262,13 +262,35 @@ def rake(
     sample_df = sample_df.loc[:, variables]
     target_df = target_df.loc[:, variables]
 
+    transformations_to_apply = transformations
+    if transformations == "default":
+        transformations_to_apply = balance_adjustment.default_transformations(
+            (sample_df, target_df)
+        )
+
+    if store_fit_metadata:
+        # Fail fast: persisting non-pickleable callables (e.g. lambdas,
+        # closures) would break `pickle.dumps(adjusted_bf)` workflows
+        # downstream. Check here, before long-running fit work. Matches the
+        # poststratify pattern.
+        try:
+            # @lint-ignore PYTHONPICKLEISBAD - serializability check only; no untrusted deserialization
+            pickle.dumps(transformations_to_apply)
+        except Exception as exc:
+            raise ValueError(
+                "`transformations` must be pickleable when "
+                "store_fit_metadata=True. Pass store_fit_metadata=False to "
+                "disable fit-artifact persistence for this run."
+            ) from exc
+
     if len(variables) == 1:
         logger.warning(
             "rake() received a single adjustment variable (%s); "
-            "delegating to poststratify() instead.",
+            "delegating to poststratify(). Returned model metadata will "
+            "record method='poststratify'.",
             variables[0],
         )
-        return balance_poststratify.poststratify(
+        poststratified = balance_poststratify.poststratify(
             sample_df=sample_df,
             sample_weights=sample_weights,
             target_df=target_df,
@@ -281,33 +303,13 @@ def rake(
             keep_sum_of_weights=keep_sum_of_weights,
             store_fit_metadata=store_fit_metadata,
         )
+        poststratified["weight"] = poststratified["weight"].rename("rake_weight")
+        return poststratified
 
     assert len(variables) > 1, (
         "Must weight on at least two variables for raking. "
         f"Currently have variables={variables} only"
     )
-
-    transformations_to_apply = transformations
-    if transformations == "default":
-        transformations_to_apply = balance_adjustment.default_transformations(
-            (sample_df, target_df)
-        )
-
-    if store_fit_metadata:
-        # Fail fast: persisting non-pickleable callables (e.g. lambdas,
-        # closures) would break `pickle.dumps(adjusted_bf)` workflows
-        # downstream. Check here, before the IPF compute, so users don't
-        # wait for a long fit only to fail at the end. Matches the
-        # poststratify pattern.
-        try:
-            # @lint-ignore PYTHONPICKLEISBAD - serializability check only; no untrusted deserialization
-            pickle.dumps(transformations_to_apply)
-        except Exception as exc:
-            raise ValueError(
-                "`transformations` must be pickleable when "
-                "store_fit_metadata=True. Pass store_fit_metadata=False to "
-                "disable fit-artifact persistence for this run."
-            ) from exc
 
     sample_df, target_df = balance_adjustment.apply_transformations(
         (sample_df, target_df), transformations_to_apply
