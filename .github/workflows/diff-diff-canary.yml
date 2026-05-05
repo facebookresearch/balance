@@ -1,0 +1,147 @@
+name: Diff-Diff Canary
+
+# Runs nightly against the LATEST diff-diff from PyPI (NOT the version
+# pinned in pyproject.toml's `did` extra). Failures here indicate that
+# upstream diff-diff has shipped a breaking change relative to balance's
+# interop adapter -- opens a tagged GitHub issue so the maintainer triages
+# within 24 hours instead of waiting for a user report.
+
+on:
+  schedule:
+    # 02:00 EST = 07:00 UTC. Runs after PyPI's nightly index refresh
+    # but well before US working hours so the morning oncall sees the
+    # issue when they start.
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  canary:
+    # IMPORTANT: do NOT set ``continue-on-error: true`` here. With it, the
+    # job's overall ``result`` is forced to ``success`` regardless of step
+    # outcomes, and the dependent ``open-issue-on-failure`` job's
+    # ``if: failure()`` would never fire (silently breaking the canary's
+    # entire purpose). Letting the job fail naturally is what makes
+    # ``needs.canary.result == 'failure'`` propagate correctly.
+    name: Test against latest diff-diff from PyPI
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout balance main
+        uses: actions/checkout@v5
+        with:
+          ref: main
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install balance + LATEST diff-diff (ignore [did] pin)
+        run: |
+          python -m pip install --upgrade pip
+          # Install balance with the dev extras only -- deliberately NOT
+          # `[dev,did]` so the pyproject.toml pin does not constrain us.
+          pip install -e ".[dev]"
+          # Then force the latest diff-diff from PyPI (no pin).
+          pip install --upgrade diff-diff
+
+      - name: Show installed diff-diff version
+        id: show-version
+        run: |
+          VERSION=$(python -c "import diff_diff; print(diff_diff.__version__)")
+          echo "Installed diff-diff: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Run interop tests against latest diff-diff
+        id: interop-tests
+        # The GitHub repo root for facebookresearch/balance is the
+        # ``parent_balance/`` subtree of fbsource/fbcode/core_stats/balance/.
+        # After actions/checkout the working directory IS that root, so the
+        # test file lives at ``tests/test_interop_diff_diff.py`` (NO
+        # ``parent_balance/`` prefix). The earlier path would always hit a
+        # file-not-found error and trigger a false-positive
+        # ``diff-diff-incompatibility`` issue every night.
+        run: |
+          pytest tests/test_interop_diff_diff.py -v \
+            --junit-xml=/tmp/interop-junit.xml
+
+      - name: Upload junit XML for failure reporting
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: interop-junit
+          path: /tmp/interop-junit.xml
+          retention-days: 30
+
+  open-issue-on-failure:
+    name: Open or update GitHub issue on canary failure
+    needs: canary
+    # Explicit `needs.canary.result == 'failure'` is preferred over the
+    # implicit `if: failure()` for job-level conditionals: it makes the
+    # propagation contract explicit (see the comment on the canary job
+    # above) and only fires on a true `failure` outcome -- not on
+    # `cancelled` or `skipped`, which would be inappropriate triggers for
+    # opening a "diff-diff incompatibility" issue.
+    if: ${{ needs.canary.result == 'failure' }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Open or update tracking issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "diff-diff canary failure: latest PyPI release breaks balance interop";
+            const label = "diff-diff-incompatibility";
+            // The body content below is INTENTIONALLY flush-left (no leading
+            // indentation), even though the surrounding YAML/JS scope is
+            // indented. In GitHub-Flavored Markdown, lines with 4+ spaces of
+            // leading whitespace following a blank line render as indented
+            // code blocks -- which would turn the bold labels, numbered
+            // triage steps, and `cc:` line into monospace text in the
+            // created issue. Keeping these lines at column 0 inside the
+            // template literal is what makes the rendered Markdown work.
+            const body = `The nightly diff-diff canary workflow failed against the **latest** \`diff-diff\` release on PyPI. This means the upstream package has shipped a breaking change relative to \`balance.interop.diff_diff\`.
+
+**Failing run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+**Trigger:** ${{ github.event_name }} on ${{ github.workflow }}
+
+**Triage steps:**
+1. Open the failing run above and look for \`AttributeError\`, \`ImportError\`, or \`TypeError\` in the pytest output.
+2. \`pip install --upgrade diff-diff\` locally to reproduce.
+3. If the breakage is intentional upstream (a deprecation or renamed symbol), update \`balance/interop/diff_diff.py\` accordingly and bump the \`did\` extra's lower bound in \`pyproject.toml\`.
+4. If the breakage looks unintentional, file an upstream issue at <https://github.com/igerber/diff-diff/issues> and pin the \`did\` extra's upper bound to the last working version (\`<X.Y.Z\`).
+
+cc: research_platform_data
+`;
+
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: label,
+              state: "open",
+            });
+
+            if (existing.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing[0].number,
+                body: `Canary failed again.\n\n${body}`,
+              });
+              core.info(`Updated existing issue #${existing[0].number}`);
+            } else {
+              const { data: created } = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: [label],
+              });
+              core.info(`Opened new issue #${created.number}`);
+            }
