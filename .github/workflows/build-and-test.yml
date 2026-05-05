@@ -101,6 +101,6 @@ jobs:
           python-version: 3.9
       - name: Install Pkg + Dependencies
         run: |
-          python -m pip install .[dev]
+          python -m pip install .[dev,did]
       - name: Build website
         run: bash ./scripts/make_docs.sh -n
