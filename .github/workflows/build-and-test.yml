@@ -101,6 +101,9 @@ jobs:
           python-version: 3.9
       - name: Install Pkg + Dependencies
         run: |
-          python -m pip install .[dev]
+          # Quote the extras spec so the shell doesn't try to glob-expand
+          # `[dev,did]` against the runner's working directory (matters on
+          # any runner where a file named `dev` or `did` happens to exist).
+          python -m pip install ".[dev,did]"
       - name: Build website
         run: bash ./scripts/make_docs.sh -n
