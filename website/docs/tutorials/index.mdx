@@ -9,6 +9,31 @@ The tutorials here present various examples of applying balance end-to-end. Each
 
 If you are new to balance, we suggest getting started with the [balance Quickstart](./quickstart) tutorial.
 
+:::tip New: Survey-weighted Difference-in-Differences
+
+The new [**Survey-weighted DiD with diff-diff**](https://import-balance.org/docs/tutorials/balance_diff_diff_brfss/)
+tutorial walks through the full workflow combining `balance` (IPW
+reweighting against a target frame) with `diff-diff`
+(Callaway-Sant'Anna doubly-robust DiD plus HonestDiD sensitivity) on a
+BRFSS-shaped public-health panel. It is the recommended starting point
+for any survey-based policy or campaign evaluation. Install the optional
+extra with `pip install balance[did]`.
+
+:::
+
+{/*
+  NOTE: the `:::tip` link above intentionally uses an absolute
+  import-balance.org URL rather than the conventional Docusaurus
+  relative `./balance_diff_diff_brfss` path. The notebook file ships
+  in a separate diff in this stack (the survey-weighted DiD tutorial
+  notebook), and Docusaurus's `onBrokenLinks: 'throw'` guard would
+  fail the per-diff ephemeral build (e.g.
+  `/eph/D<N>/V1/balance/docs/tutorials/balance_diff_diff_brfss/`)
+  before the tutorial-file diff has landed. Absolute external URLs
+  bypass the broken-link check; once both diffs are landed and the
+  site rebuilds, the URL resolves correctly.
+*/}
+
 ## Tutorials list (more tutorials to be added soon):
 1. [**quickstart**](./quickstart) - this is based on a simulated data and presents the simple end-to-end workflow of balance package with default arguments. It demonstrates the process from reading the data, through understanding the biases in the sample, producing weights, evaluating the results and producing the population estimations.
 2. [**quickstart_cbps**](./quickstart_cbps) - like the [**quickstart**](./quickstart) tutorial, but shows how to use the CBPS algorithm and compares the results to IPW (logistic regression with LASSO).
