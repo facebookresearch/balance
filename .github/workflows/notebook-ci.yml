@@ -1,0 +1,112 @@
+name: Tutorial Notebook CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'tutorials/**.ipynb'
+      - 'balance/interop/**.py'
+      - '.github/workflows/notebook-ci.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'tutorials/**.ipynb'
+      - 'balance/interop/**.py'
+      - '.github/workflows/notebook-ci.yml'
+  workflow_dispatch:
+
+jobs:
+  execute-tutorial:
+    name: Execute balance_diff_diff_brfss tutorial
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        python-version: ['3.12']
+      fail-fast: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Pkg + Dependencies (with did extras)
+        run: |
+          python -m pip install --upgrade pip
+          # NOTE: only `dev` and `did` exist in pyproject.toml's
+          # [project.optional-dependencies]. There is no `docs` extra --
+          # listing it here would make pip fail with
+          # "Extra 'docs' is not defined ...". `dev` already pulls in
+          # everything notebook-CI needs to nbconvert-execute the
+          # tutorial; if a documentation-only extra is ever added, it
+          # can be re-included here.
+          pip install -e ".[dev,did]"
+
+      - name: Show installed diff-diff (debugging aid)
+        run: |
+          python -c "import diff_diff; print('diff_diff', diff_diff.__version__)"
+
+      - name: Execute the tutorial notebook
+        run: |
+          # `allow_errors=True` so nbconvert always writes the executed
+          # notebook even when a cell raises. The next step (Sanity-scan)
+          # is the actual gate: it has `if: always()` and walks the
+          # executed notebook's outputs to fail the job on any error cell
+          # that is NOT tagged `ci-allow-error`. Setting
+          # `allow_errors=False` here would make nbconvert exit non-zero
+          # on the first error and produce an incomplete output notebook,
+          # so the scan would either find nothing to read (no executed
+          # notebook) or only see cells executed before the first failure
+          # -- in either case the `ci-allow-error` tag escape hatch
+          # becomes unreachable for cells that come after the first error.
+          jupyter nbconvert --to notebook --execute \
+            --ExecutePreprocessor.timeout=300 \
+            --ExecutePreprocessor.allow_errors=True \
+            --output /tmp/balance_diff_diff_brfss.executed.ipynb \
+            tutorials/balance_diff_diff_brfss.ipynb
+
+      - name: Sanity-scan executed notebook for unexpected error cells
+        # `if: always()` is the correct condition here:
+        # - With `allow_errors=True` above, nbconvert writes the executed
+        #   notebook even when cells raise, so this scan is the actual gate
+        #   on tagged-vs-untagged errors.
+        # - We do NOT pre-check the file exists with `hashFiles(...)`:
+        #   `hashFiles` only resolves paths under `GITHUB_WORKSPACE`, so an
+        #   absolute `/tmp/...` path would always return an empty string and
+        #   the scan would be silently skipped. If the executed notebook is
+        #   somehow missing (e.g. dependency install failed earlier), the
+        #   inline Python will raise a clear `FileNotFoundError`.
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, sys
+          with open("/tmp/balance_diff_diff_brfss.executed.ipynb") as f:
+              nb = json.load(f)
+          failures = 0
+          for idx, cell in enumerate(nb["cells"]):
+              for output in cell.get("outputs", []):
+                  if output.get("output_type") == "error":
+                      ename = output.get("ename", "")
+                      tags = cell.get("metadata", {}).get("tags", [])
+                      if "ci-allow-error" in tags:
+                          print(f"Cell {idx}: allowed error in tagged cell ({ename})")
+                          continue
+                      print(f"FAIL: cell {idx} raised {ename}", file=sys.stderr)
+                      for line in output.get("traceback", []):
+                          print(line, file=sys.stderr)
+                      failures += 1
+          if failures:
+              sys.exit(f"Found {failures} unexpected error cell(s)")
+          print("OK: no unexpected errors in executed notebook")
+          PY
+
+      - name: Upload executed notebook as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: balance_diff_diff_brfss-executed-py${{ matrix.python-version }}
+          path: /tmp/balance_diff_diff_brfss.executed.ipynb
+          retention-days: 14
