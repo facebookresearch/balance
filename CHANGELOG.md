@@ -20,6 +20,9 @@
   `store_fit_metadata=False` if memory footprint matters more than
   the ability to call `predict_weights()` later.
 
+## New Features
+
+- **`balance.interop.diff_diff`** — thin adapter to [diff-diff](https://github.com/igerber/diff-diff) (`>=3.3.0,<4`) for survey-weighted Difference-in-Differences handoff. Provides `to_survey_design()`, `to_panel_for_did()`, `fit_did()`, and `as_balance_diagnostic()`. Install the optional dependency via `pip install balance[did]`. The submodule is lazy-imported, so `import balance` still works cleanly when diff-diff isn't available — the import guard rewrites the `ImportError` to point users at the `balance[did]` extra. Shared adapter helpers (`active_weight_column`, `drop_history_columns`, `validate_row_count`, `attach_balance_provenance`) live in `balance/interop/_common.py` and column-name conventions in `balance/interop/conventions.py` so a future `balance.interop.svy` adapter can reuse them.
 ## Bug Fixes
 
 - **`rake()` now correctly incorporates per-row design weights in final weights.**
