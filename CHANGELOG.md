@@ -43,6 +43,10 @@
     transformations at fit time (e.g. wrappers built around stored
     fit-time bin edges) or re-fit rake on the scoring data.
 
+## Documentation
+
+- **README cross-link to diff-diff.** New "Design-based inference" parent section in [README.md](https://github.com/facebookresearch/balance/blob/main/README.md) introduces the diff-diff integration above the API tour, with a 3-line code snippet and links to the upstream project. Reserves a "Design-consistent variance (svy) — coming soon" subsection for the future svy 1.0 integration. The Docusaurus tutorials index and the website landing page (`HomepageFeatures.js`) gain matching cross-references; `.github/copilot-instructions.md` gets a new review-checklist bullet for changes that touch `balance/interop/diff_diff.py`.
+
 ## Bug Fixes
 
 - **`rake()` now correctly incorporates per-row design weights in final weights.**
