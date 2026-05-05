@@ -13,11 +13,38 @@ on:
 
 jobs:
   tests:
+    # Default matrix: bare-import balance on every OS / python combination —
+    # the regression guard against accidentally hard-depending on diff-diff.
+    # `extras='did'` permutations are layered in via the `include:` block
+    # below so the `diff-diff-pin` axis only multiplies jobs for the `did`
+    # arm (avoids the earlier mistake where two `extras: ''` excludes
+    # silently removed every bare-import job).
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
+        extras: ['']
+        diff-diff-pin: ['']
+        include:
+          # diff-diff [did] integration coverage. Restricted to ubuntu-latest
+          # AND a single Python version (3.12) to keep the matrix small (2
+          # jobs total: one min-pin, one resolved-latest). diff-diff is a
+          # pure-Python adapter dependency, so multi-Python coverage adds
+          # very little signal -- the bare-import balance matrix above
+          # already exercises 3.9 - 3.14 across all three OSes. The weekly
+          # canary in diff-diff-canary.yml additionally tests against the
+          # absolute latest PyPI release (no pin) on 3.12. If you need
+          # macOS/Windows or other-Python coverage of the [did] arm, add
+          # explicit matrix entries here rather than relying on the canary.
+          - os: ubuntu-latest
+            python-version: '3.12'
+            extras: 'did'
+            diff-diff-pin: '==3.3.0'
+          - os: ubuntu-latest
+            python-version: '3.12'
+            extras: 'did'
+            diff-diff-pin: 'resolved-latest'
       fail-fast: false
     steps:
       - name: Checkout
@@ -28,7 +55,31 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Pkg + Dependencies
         run: |
-          python -m pip install .[dev]
+          if [ -z "${{ matrix.extras }}" ]; then
+            python -m pip install -e ".[dev]"
+          else
+            python -m pip install -e ".[dev,${{ matrix.extras }}]"
+          fi
+        shell: bash
+      - name: Verify bare `import balance` works (no diff-diff)
+        if: matrix.extras == ''
+        run: |
+          python -c "import balance; print('balance', balance.__version__)"
+        shell: bash
+      - name: Pin diff-diff to exact minimum (==3.3.0)
+        # NOTE: bracket notation `matrix['diff-diff-pin']` is required because
+        # GitHub Actions parses `-` in expressions as the subtraction operator,
+        # so `matrix.diff-diff-pin` would be evaluated as
+        # `matrix.diff - diff - pin` (arithmetic on undefined identifiers) and
+        # would never match the literal `'==3.3.0'`, silently skipping this
+        # step for every `did` matrix job.
+        if: matrix.extras == 'did' && matrix['diff-diff-pin'] == '==3.3.0'
+        run: |
+          python -m pip install "diff-diff==3.3.0"
+      - name: Show installed diff-diff (debugging aid)
+        if: matrix.extras == 'did'
+        run: |
+          python -c "import diff_diff; print('diff_diff', diff_diff.__version__)"
       - name: Test with pytest
         run: |
           python -m pytest -ra
