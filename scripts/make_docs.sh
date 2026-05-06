@@ -96,6 +96,17 @@ if [[ $ONLY_DOCUSAURUS == false ]]; then
     --output-dir website/static/html/tutorials
   jupyter nbconvert tutorials/balance_quickstart_new_api.ipynb --execute --to html \
     --output-dir website/static/html/tutorials
+  # The balance_diff_diff_brfss tutorial requires the optional `diff_diff`
+  # package (`pip install "balance[did]"`). Fail fast with an actionable
+  # message rather than letting nbconvert raise an `ImportError` deep in
+  # notebook execution if a contributor runs `make_docs.sh` after only a
+  # bare `pip install -e .[dev]`.
+  if ! python -c "import diff_diff" >/dev/null 2>&1; then
+    echo "Error: tutorials/balance_diff_diff_brfss.ipynb requires the optional 'diff-diff' package." >&2
+    echo "Install it before running scripts/make_docs.sh:" >&2
+    echo "    pip install \"balance[did]\"" >&2
+    exit 1
+  fi
   jupyter nbconvert tutorials/balance_diff_diff_brfss.ipynb --execute --to html \
     --output-dir website/static/html/tutorials
 fi
