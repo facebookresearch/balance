@@ -41,11 +41,34 @@ const FeatureList = [
       </>
     ),
   },
+  {
+    title: 'What\'s new: Survey-weighted DiD',
+    Svg: require('../../static/img/fontawesome/chart-line.svg').default,
+    description: (
+      <>
+        balance now pairs with{' '}
+        <a href="https://github.com/igerber/diff-diff">diff-diff</a> for
+        modern Difference-in-Differences (Callaway-Sant'Anna,
+        Sun-Abraham, BJS) with built-in survey-design variance. Install
+        with <code>pip install "balance[did]"</code> and see the{' '}
+        <a href="https://import-balance.org/docs/tutorials/balance_diff_diff_brfss/">
+          BRFSS DiD tutorial
+        </a>{' '}
+        for the end-to-end workflow.
+        {/* NOTE: this link is INTENTIONALLY absolute (mirrors the
+            ``tutorials/index.mdx`` strategy). The tutorial notebook
+            ships in a separate diff in this stack, so a relative
+            ``/docs/tutorials/balance_diff_diff_brfss`` would 404 in the
+            per-diff ephemeral build until that diff lands. Absolute
+            external URLs bypass Docusaurus runtime resolution. */}
+      </>
+    ),
+  },
 ];
 
 function Feature({Svg, title, description}) {
   return (
-    <div className={clsx('col col--4')}>
+    <div className={clsx('col col--3')}>
       <div className="text--center">
         <Svg className={styles.featureSvg} alt={title} />
       </div>
