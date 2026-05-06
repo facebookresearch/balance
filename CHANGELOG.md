@@ -43,6 +43,10 @@
     transformations at fit time (e.g. wrappers built around stored
     fit-time bin edges) or re-fit rake on the scoring data.
 
+## Documentation
+
+- **Survey-weighted DiD tutorial.** New `tutorials/balance_diff_diff_brfss.ipynb` walks through a BRFSS-style staggered-adoption smoking-ban DiD use case end-to-end (the synthetic research question is "did State X's 2020 indoor-smoking ban reduce ER admissions for adult asthma exacerbations relative to bordering states without bans, 2018-2024?"): load synthetic survey microdata via `dd.generate_survey_did_data(seed=20260430)`, reweight to ACS demographic marginals via `balance.ipw`, aggregate to a state-quarter panel via `to_panel_for_did`, fit Callaway-Sant'Anna doubly-robust DiD via `fit_did`, run HonestDiD sensitivity, build a combined diagnostic via `as_balance_diagnostic`, and contrast with the unweighted estimate. 21 cells total (12 markdown + 9 code). References Sant'Anna-Zhao 2020, Callaway-Sant'Anna 2021, Roth-Sant'Anna-Bilinski-Poe 2023, Bruns-Smith 2023, Sarig-Galili-Eilat 2023, Ghandour-Reece 2025. Self-contained and deterministic — CI re-executes via nbconvert. Committed with cleared outputs to keep diff size small; the `deploy-website.yml` workflow re-runs and bakes outputs into the rendered Docusaurus pages.
+
 ## Bug Fixes
 
 - **`rake()` now correctly incorporates per-row design weights in final weights.**
