@@ -9,6 +9,14 @@ from __future__ import annotations
 
 import logging
 
+# Eager re-export of ``balance.diagnostics`` so ``balance.diagnostics.compute_*``
+# is available without an explicit ``import balance.diagnostics`` first. This is
+# different from the lazy pattern used by ``balance.interop`` (where heavy
+# optional dependencies stay deferred): ``balance.diagnostics.standalone`` only
+# imports numpy, pandas, and existing ``balance.stats_and_plots`` modules
+# (matplotlib is loaded lazily inside ``love_plot``), so the import-time cost
+# is negligible and re-export is safe to do eagerly.
+from balance import diagnostics  # noqa
 from balance.balance_frame import BalanceFrame  # noqa
 from balance.balancedf_class import (  # noqa
     BalanceDFCovars,  # noqa
