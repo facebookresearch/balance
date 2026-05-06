@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkparent_balance_docs=globalThis.webpackChunkparent_balance_docs||[]).push([[1715],{53411(a){a.exports=JSON.parse('{"label":"survey-statistics","permalink":"/blog/tags/survey-statistics","allTagsPath":"/blog/tags","count":3}')}}]);

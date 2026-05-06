@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkparent_balance_docs=globalThis.webpackChunkparent_balance_docs||[]).push([[6837],{95742(a){a.exports=JSON.parse('{"label":"python","permalink":"/blog/tags/python","allTagsPath":"/blog/tags","count":3}')}}]);

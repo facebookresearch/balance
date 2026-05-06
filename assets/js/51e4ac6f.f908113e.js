@@ -1,1 +1,0 @@
-"use strict";(globalThis.webpackChunkstaticdocs_starter=globalThis.webpackChunkstaticdocs_starter||[]).push([[4862],{31670(s){s.exports=JSON.parse('{"label":"open-source","permalink":"/blog/tags/open-source","allTagsPath":"/blog/tags","count":3}')}}]);

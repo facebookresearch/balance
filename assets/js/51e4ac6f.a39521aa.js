@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkparent_balance_docs=globalThis.webpackChunkparent_balance_docs||[]).push([[4862],{31670(a){a.exports=JSON.parse('{"label":"open-source","permalink":"/blog/tags/open-source","allTagsPath":"/blog/tags","count":3}')}}]);

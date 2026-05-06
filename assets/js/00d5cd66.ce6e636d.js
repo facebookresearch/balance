@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkparent_balance_docs=globalThis.webpackChunkparent_balance_docs||[]).push([[3263],{48482(a){a.exports=JSON.parse('{"label":"package-update","permalink":"/blog/tags/package-update","allTagsPath":"/blog/tags","count":3}')}}]);
