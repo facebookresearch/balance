@@ -20,6 +20,27 @@
   `store_fit_metadata=False` if memory footprint matters more than
   the ability to call `predict_weights()` later.
 
+## New Features
+
+- **`balance.interop.diff_diff`** — thin adapter to [diff-diff](https://github.com/igerber/diff-diff) (`>=3.3.0,<4`) for survey-weighted Difference-in-Differences handoff. Provides `to_survey_design()`, `to_panel_for_did()`, `fit_did()`, and `as_balance_diagnostic()`. Install the optional dependency via `pip install "balance[did]"`. The submodule is lazy-imported, so `import balance` still works cleanly when diff-diff isn't available — the import guard rewrites the `ImportError` to point users at the `balance[did]` extra. Shared adapter helpers (`active_weight_column`, `drop_history_columns`, `validate_row_count`, `attach_balance_provenance`) live in `balance/interop/_common.py` and column-name conventions in `balance/interop/conventions.py` so a future `balance.interop.svy` adapter can reuse them.
+
+- **Rake now supports fit-time metadata persistence and `predict_weights()` reconstruction.**
+  - `rake(..., store_fit_metadata=True)` now stores contingency-table artifacts
+    and fit-time metadata required to rebuild weights later.
+  - `BalanceFrame.fit(method="rake")` now enables `store_fit_metadata=True` by
+    default so fitted rake models can be reused with
+    `BalanceFrame.predict_weights()` without refitting.
+  - **In-place replay** (`predict_weights()` with no `data=`) works with
+    any transformations, including the rake default
+    `transformations="default"`.
+  - **Transfer scoring** (`predict_weights(data=...)`) requires
+    deterministic transformations: it raises `ValueError` for models
+    fitted with `transformations="default"` and for explicit dicts that
+    directly reference known data-dependent helpers (`quantize`,
+    `fct_lump`). To enable transfer scoring, pass deterministic
+    transformations at fit time (e.g. wrappers built around stored
+    fit-time bin edges) or re-fit rake on the scoring data.
+
 ## Bug Fixes
 
 - **`rake()` now correctly incorporates per-row design weights in final weights.**
@@ -43,25 +64,6 @@
   In this delegated path, model metadata records `method='poststratify'`
   (explicitly noted in the warning) while returned weights keep the
   canonical rake output name (`rake_weight`).
-
-## New Features
-
-- **Rake now supports fit-time metadata persistence and `predict_weights()` reconstruction.**
-  - `rake(..., store_fit_metadata=True)` now stores contingency-table artifacts
-    and fit-time metadata required to rebuild weights later.
-  - `BalanceFrame.fit(method="rake")` now enables `store_fit_metadata=True` by
-    default so fitted rake models can be reused with
-    `BalanceFrame.predict_weights()` without refitting.
-  - **In-place replay** (`predict_weights()` with no `data=`) works with
-    any transformations, including the rake default
-    `transformations="default"`.
-  - **Transfer scoring** (`predict_weights(data=...)`) requires
-    deterministic transformations: it raises `ValueError` for models
-    fitted with `transformations="default"` and for explicit dicts that
-    directly reference known data-dependent helpers (`quantize`,
-    `fct_lump`). To enable transfer scoring, pass deterministic
-    transformations at fit time (e.g. wrappers built around stored
-    fit-time bin edges) or re-fit rake on the scoring data.
 
 ## Code Quality & Refactoring
 
