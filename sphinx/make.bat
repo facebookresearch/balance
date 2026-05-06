@@ -1,7 +1,7 @@
 @REM Copyright (c) Meta Platforms, Inc. and affiliates.
 @REM
-@REM This software may be used and distributed according to the terms of the
-@REM GNU General Public License version 2.
+@REM This source code is licensed under the MIT license found in the
+@REM LICENSE file in the root directory of this source tree.
 
 @ECHO OFF
 
