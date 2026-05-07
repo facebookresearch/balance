@@ -268,6 +268,11 @@ the target population) are:
    1. barplots
    2. density plots (for weights and covariances)
    3. qq-plots
+   4. love plot — per-covariate ASMD before-vs-after on a sorted scatter
+      with a +0.1 reference cutoff (ASMD is non-negative, so only the
+      positive threshold line is drawn), in the spirit of R's
+      [`cobalt::love.plot`](https://cran.r-project.org/web/packages/cobalt/vignettes/cobalt.html#love.plot)
+      (added in v0.21 via `BalanceDFCovars.love_plot()`)
 2. Statistical summaries
    1. Weights distributions
       1. [Kish's design effect](<https://en.wikipedia.org/wiki/Design_effect#Haphazard_weights_with_estimated_ratio-mean_(%7F'%22%60UNIQ--postMath-0000003A-QINU%60%22'%7F)_-_Kish's_design_effect>)
@@ -282,6 +287,60 @@ the target population) are:
 _You can read more on evaluation of the post-adjusted data in the
 [Evaluating and using the adjustment weights](https://import-balance.org/docs/docs/general_framework/evaluation_of_results/)
 page._
+
+## Design-based inference
+
+_balance_ complements an adjacent library that handles the design-based
+inference step _balance_ does not — covering the non-probability → DiD
+half of a survey-based campaign or policy evaluation in Python.
+
+### Survey-weighted Difference-in-Differences (diff-diff)
+
+_balance_ pairs naturally with
+[`diff-diff`](https://github.com/igerber/diff-diff), the open-source Python
+package for modern Difference-in-Differences (Callaway & Sant'Anna 2021,
+Sun & Abraham 2021, Borusyak-Jaravel-Spiess 2024, Synthetic DiD, Continuous
+DiD, Triple Difference) with built-in survey-design variance. The two
+libraries solve adjacent halves of a survey-based campaign or policy
+evaluation:
+
+- _balance_ produces non-probability weights for a sample against a target
+  population frame (IPW, CBPS, rake, post-stratification).
+- _diff-diff_ consumes those weights via its `SurveyDesign` and returns
+  design-consistent ATT(g, t) with HonestDiD sensitivity.
+
+The thin adapter `balance.interop.diff_diff` (added in the upcoming v0.21
+release; see CHANGELOG.md) turns the handoff into a single import. Install
+the optional extra:
+
+```bash
+pip install "balance[did]"
+```
+
+Then the canonical workflow is:
+
+```python
+from balance import Sample
+from balance.interop.diff_diff import fit_did
+
+# `set_target(...)` requires a Sample/SampleFrame, not a raw DataFrame --
+# wrap your target DataFrame with Sample.from_frame(...) first.
+s = (
+    Sample.from_frame(df, ...)
+    .set_target(Sample.from_frame(target_df))
+    .adjust(method="ipw")
+)
+results = fit_did(s, estimator="CallawaySantAnna", outcome="y", time="t",
+                  unit="state", treatment_first="first_treat",
+                  estimation_method="dr")
+```
+
+`fit_did` builds the `SurveyDesign` from the active _balance_ weight
+column, strips _balance_'s history columns, and routes kwargs into the
+chosen diff-diff estimator. For a complete walk-through on a BRFSS-shaped
+public-health panel (including HonestDiD sensitivity), see the tutorial:
+[`tutorials/balance_diff_diff_brfss.ipynb`](https://github.com/facebookresearch/balance/blob/main/tutorials/balance_diff_diff_brfss.ipynb).
+Upstream project: [`github.com/igerber/diff-diff`](https://github.com/igerber/diff-diff).
 
 ## Developer and AI assistant resources
 
