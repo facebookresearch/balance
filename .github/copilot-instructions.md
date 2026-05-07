@@ -25,6 +25,19 @@ For project architecture, build/test commands, and file layout, see `CLAUDE.md` 
 - Confirm assumptions and constraints are handled explicitly (e.g., positivity, normalization, convergence criteria).
 - Check output semantics: shapes, index alignment, column names, and dtype stability.
 - Ensure missingness and invalid inputs have well-defined behavior (error vs. warning vs. coercion).
+- When the diff touches `balance/interop/diff_diff.py`, verify the
+  `weight_type="pweight"` contract is still upheld — diff-diff's
+  staggered estimators (CallawaySantAnna, StackedDiD, ImputationDiD,
+  HeterogeneousAdoptionDiD, TwoStageDiD, WooldridgeDiD, TROP,
+  StaggeredTripleDifference, ChaisemartinDHaultfoeuille,
+  TripleDifference, SyntheticDiD) each inline a `weight_type !=
+  "pweight"` rejection in their `fit()` method (the canonical example
+  is `CallawaySantAnna.fit` in diff-diff's `staggered.py`). The
+  history-column drop in `balance.interop._common.drop_history_columns`
+  must run before any `dd.aggregate_survey()` handoff to avoid leaking
+  `weight_pre_adjust` / `weight_adjusted_*` as covariates. (Symbol-based
+  anchors instead of line numbers — line numbers in cross-repo files
+  rot silently the moment either repo is touched.)
 
 ### 2) Input validation and actionable errors
 - Validate early: required columns exist, dtypes are supported, and parameter ranges are enforced.
