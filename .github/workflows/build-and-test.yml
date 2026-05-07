@@ -98,9 +98,15 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.9
+          # 3.12 matches the brfss tutorial kernel, the canary, the [did]
+          # arm in the test matrix, and the notebook-CI workflow. Earlier
+          # versions used 3.9 — diff-diff supports 3.9-3.14 so [did] would
+          # still install, but consolidating on 3.12 keeps the docs-build
+          # interpreter aligned with the version that actually runs the
+          # tutorial in CI.
+          python-version: "3.12"
       - name: Install Pkg + Dependencies
         run: |
-          python -m pip install .[dev]
+          python -m pip install ".[dev,did]"
       - name: Build website
         run: bash ./scripts/make_docs.sh -n

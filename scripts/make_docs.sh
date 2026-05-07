@@ -96,6 +96,19 @@ if [[ $ONLY_DOCUSAURUS == false ]]; then
     --output-dir website/static/html/tutorials
   jupyter nbconvert tutorials/balance_quickstart_new_api.ipynb --execute --to html \
     --output-dir website/static/html/tutorials
+  # The balance_diff_diff_brfss tutorial requires the optional `diff_diff`
+  # package (`pip install "balance[did]"`). Skip with a clear notice when
+  # diff-diff is not installed so contributors running `make_docs.sh -n`
+  # after a bare `pip install -e .[dev]` can still build the rest of the
+  # docs. CI workflows that need this tutorial are configured to install
+  # the `[did]` extra (see `deploy-website.yml`'s install step and the
+  # corresponding line in this file's docs-job in `build-and-test.yml`).
+  if python -c "import diff_diff" >/dev/null 2>&1; then
+    jupyter nbconvert tutorials/balance_diff_diff_brfss.ipynb --execute --to html \
+      --output-dir website/static/html/tutorials
+  else
+    echo "Skipping tutorials/balance_diff_diff_brfss.ipynb: optional dependency 'diff_diff' is not installed. Install the 'did' extra to build this tutorial: pip install \"balance[did]\""
+  fi
 fi
 
 echo "-----------------------------------"
