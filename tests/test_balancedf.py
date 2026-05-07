@@ -2176,6 +2176,56 @@ class TestBalanceDF_asmd(BalanceTestCase):
 
         self.assertEqual(output.round(6), expected.round(6))
 
+    def test_BalanceDFCovars_love_plot_post_adjust(self) -> None:
+        """``bf.covars().love_plot()`` with linked unadjusted draws before-vs-after.
+
+        Post-adjust: an unadjusted view is linked to ``self``, so the method
+        pulls before/after ASMD off the lineage and delegates to the primitive
+        in two-series mode.
+        """
+        import matplotlib.pyplot as plt
+
+        s3_unadjusted = deepcopy(s3)
+        s3_unadjusted.set_weights(pd.Series([1, 1, 1, 1], index=s3.df.index))
+        s3_with_unadjusted = s3.set_unadjusted(s3_unadjusted)
+        ax = s3_with_unadjusted.covars().love_plot()
+        self.assertIsNotNone(ax)
+        # Two scatter collections: Unweighted + Weighted (post-adjust mode).
+        self.assertEqual(len(ax.collections), 2)
+        plt.close("all")
+
+    def test_BalanceDFCovars_love_plot_pre_adjust(self) -> None:
+        """``bf.covars().love_plot()`` without linked unadjusted is a 1-series scatter.
+
+        Pre-adjust diagnostic: no unadjusted view → plot only the current
+        weighted ASMD as a single-series scatter, mirroring ``asmd()`` rather
+        than ``asmd_improvement()``.
+        """
+        import matplotlib.pyplot as plt
+
+        ax = s3.covars().love_plot()
+        self.assertIsNotNone(ax)
+        # Single scatter collection (single-series mode).
+        self.assertEqual(len(ax.collections), 1)
+        plt.close("all")
+
+    def test_BalanceDFCovars_love_plot_no_target_raises(self) -> None:
+        """``bf.covars().love_plot()`` without a target raises (same as ``asmd``).
+
+        ASMD is by definition computed against a target; the method
+        delegates to ``asmd(on_linked_samples=False)`` which raises when
+        no target is set.
+        """
+        with self.assertRaisesRegex(
+            ValueError, "has no target set, or target has no covars"
+        ):
+            s1.covars().love_plot()
+
+    def test_BalanceDFCovars_love_plot_negative_threshold_raises(self) -> None:
+        """Negative threshold rejected — ASMD is non-negative by construction."""
+        with self.assertRaisesRegex(ValueError, "threshold must be non-negative"):
+            s3.covars().love_plot(threshold=-0.1)
+
     def test_BalanceDF_asmd_improvement(self) -> None:
         with self.assertRaisesRegex(
             ValueError, "has no unadjusted set or unadjusted has no covars"
