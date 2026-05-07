@@ -66,8 +66,12 @@ class TestBalance_weights_stats(
             zero_w = [0, 0, 0]
             _check_weights_are_valid(zero_w, require_positive=True)
 
-        # Zeros are allowed when positive weights are not required
-        self.assertEqual(_check_weights_are_valid([0, 0, 0]), None)
+        # Zeros are allowed when positive weights are not required, but the
+        # canonical seam now warns so the silent-NaN failure mode of
+        # downstream weighted statistics (descriptive_stats -> asmd, etc.) is
+        # surfaced to the caller.
+        with self.assertWarnsRegex(UserWarning, "All weights are zero"):
+            self.assertEqual(_check_weights_are_valid([0, 0, 0]), None)
 
         # Empty weights should fail as non-numeric inputs
         with self.assertRaisesRegex(TypeError, "weights \\(w\\) must be a number.*"):
@@ -116,6 +120,86 @@ class TestBalance_weights_stats(
             ValueError, "weights \\(w\\) must include at least one positive value."
         ):
             design_effect(pd.Series((0, 0, 0)))
+
+    def test_kish_deff_stats(self) -> None:
+        """Bundled Kish diagnostic returns deff/ess/essp from one Deff pass.
+
+        For uniform weights the Kish identities are exactly:
+        ``deff == 1.0``, ``ess == n``, ``essp == 1.0`` -- which is also
+        what ``BalanceFrame._design_effect_diagnostics`` returns for the
+        same weights, so the bundle stays in sync with the BalanceFrame
+        route.
+        """
+        from balance.stats_and_plots.weights_stats import kish_deff_stats, KishStats
+
+        stats = kish_deff_stats(pd.Series((1, 1, 1, 1)))
+        self.assertIsInstance(stats, KishStats)
+        self.assertEqual(stats.deff, 1.0)
+        self.assertEqual(stats.ess, 4.0)
+        self.assertEqual(stats.essp, 1.0)
+
+        # Non-degenerate weights: deff > 1, ess < n, essp < 1.
+        stats_skewed = kish_deff_stats(pd.Series((0, 1, 2, 3)))
+        self.assertAlmostEqual(stats_skewed.deff, 1.555_555_555_555_555_6)
+        self.assertAlmostEqual(stats_skewed.ess, 4 / 1.555_555_555_555_555_6)
+        self.assertAlmostEqual(stats_skewed.essp, 1 / 1.555_555_555_555_555_6)
+
+        # All-zero weights raise (require_positive=True path of design_effect).
+        with self.assertRaisesRegex(
+            ValueError, "weights \\(w\\) must include at least one positive value."
+        ):
+            kish_deff_stats(pd.Series((0, 0, 0)))
+
+    def test_kish_ess(self) -> None:
+        """Singleton Kish ESS matches ``n / Deff``."""
+        from balance.stats_and_plots.weights_stats import kish_ess
+
+        self.assertEqual(kish_ess(pd.Series((1, 1, 1, 1))), 4.0)
+        self.assertAlmostEqual(
+            kish_ess(pd.Series((0, 1, 2, 3))), 4 / 1.555_555_555_555_555_6
+        )
+
+    def test_kish_essp(self) -> None:
+        """Singleton Kish ESSP matches ``1 / Deff`` and lies in ``[0, 1]``."""
+        from balance.stats_and_plots.weights_stats import kish_essp
+
+        self.assertEqual(kish_essp(pd.Series((1, 1, 1, 1))), 1.0)
+        self.assertAlmostEqual(
+            kish_essp(pd.Series((0, 1, 2, 3))), 1 / 1.555_555_555_555_555_6
+        )
+
+    def test_check_weights_warns_on_all_zero(self) -> None:
+        """``_check_weights_series_are_valid(require_positive=False)`` warns on all-zero.
+
+        The warning replaces the previous silent-NaN failure mode: weighted
+        statistics over an all-zero weight vector silently produce NaN/inf
+        (``sum(w*x)/sum(w) = 0/0``). Existing callers that already pass
+        ``require_positive=True`` (e.g. ``design_effect``) keep their
+        historical ``ValueError`` -- only the lenient seam emits a
+        ``UserWarning`` instead.
+        """
+        from balance.stats_and_plots.weights_stats import (
+            _check_weights_series_are_valid,
+        )
+
+        # Lenient seam: warn but do not raise.
+        with self.assertWarnsRegex(UserWarning, "All weights are zero"):
+            self.assertEqual(
+                _check_weights_series_are_valid(pd.Series((0, 0, 0))), None
+            )
+
+        # Strict seam (require_positive=True): raise as before.
+        with self.assertRaisesRegex(
+            ValueError, "weights \\(w\\) must include at least one positive value."
+        ):
+            _check_weights_series_are_valid(pd.Series((0, 0, 0)), require_positive=True)
+
+        # Mixed-sign rejection (negative entry) still wins over the all-zero
+        # path -- no warning is emitted because validation aborts earlier.
+        with self.assertRaisesRegex(
+            ValueError, "weights \\(w\\) must all be non-negative values."
+        ):
+            _check_weights_series_are_valid(pd.Series((-1, 0, 0)))
 
     def test_nonparametric_skew(self) -> None:
         """Test calculation of nonparametric skewness measure.

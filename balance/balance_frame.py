@@ -3008,21 +3008,21 @@ class BalanceFrame:
         if n_rows is None:
             n_rows = len(self._sf_sample)
         try:
-            de = weights_stats.design_effect(self._sf_sample.df_weights.iloc[:, 0])
+            stats = weights_stats.kish_deff_stats(self._sf_sample.df_weights.iloc[:, 0])
         except (TypeError, ValueError, ZeroDivisionError) as exc:
             logger.debug("Unable to compute design effect: %s", exc)
             return None, None, None
 
-        if de is None or not np.isfinite(de):
+        if not np.isfinite(stats.deff):
             return None, None, None
 
-        effective_sample_size = None
-        effective_sample_proportion = None
-        if n_rows and de != 0:
-            effective_sample_size = n_rows / de
-            effective_sample_proportion = effective_sample_size / n_rows
+        if not n_rows or stats.deff == 0:
+            return stats.deff, None, None
 
-        return float(de), effective_sample_size, effective_sample_proportion
+        # Scale ESS against caller-supplied ``n_rows`` (which may differ from
+        # ``len(weights)`` for filtered-subset diagnostics). ESSP is invariant
+        # under that override -- it always equals ``1 / deff``.
+        return stats.deff, float(n_rows / stats.deff), stats.essp
 
     def _quick_adjustment_details(
         self,
