@@ -64,6 +64,12 @@ dev = [
     "nbconvert",
     "pre-commit",
 ]
+# Reserved extra names for a possible future svy 1.0 integration (kept here
+# so the eventual addition is purely additive and does not need to rename
+# the `did` extra below):
+#   survey = ["svy>=1.0,<2"]
+#   interop = ["balance[did,survey]"]   # convenience meta-extra
+did = ["diff-diff>=3.3.0,<4"]
 
 [project.urls]
 homepage = "https://import-balance.org/"
