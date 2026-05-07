@@ -174,10 +174,10 @@ class TestBalance_weights_stats(
     def test_love_plot_returns_axes_with_before_and_after(self) -> None:
         """``love_plot`` returns an Axes and plots two scatter series.
 
-        With both ``asmd_before`` and ``asmd_after`` the canonical
-        before-vs-after view draws two scatter collections plus the
-        positive threshold reference line (ASMD is non-negative, so only
-        ``+threshold`` is drawn).
+        With both ``before`` and ``after`` the canonical before-vs-after
+        view draws two scatter collections plus the positive threshold
+        reference line (the imbalance metric is non-negative by
+        construction, so only ``+threshold`` is drawn).
         """
         import matplotlib.pyplot as plt
         from balance.stats_and_plots.love_plot import love_plot
@@ -191,16 +191,16 @@ class TestBalance_weights_stats(
         plt.close("all")
 
     def test_love_plot_with_after_none_is_single_series(self) -> None:
-        """Pre-adjust diagnostic: ``love_plot(asmd_before)`` is a 1-series scatter.
+        """Pre-adjust diagnostic: ``love_plot(before)`` is a 1-series scatter.
 
         Mirrors the ``asmd()`` rather than ``asmd_improvement()`` framing —
-        when no "after" exists, plot only the current weighted ASMD.
+        when no "after" exists, plot only the current series.
         """
         import matplotlib.pyplot as plt
         from balance.stats_and_plots.love_plot import love_plot
 
         before = pd.Series({"age": 0.42, "income": 0.31})
-        ax = love_plot(before, asmd_after=None)
+        ax = love_plot(before, after=None)
         self.assertIsNotNone(ax)
         # Single scatter collection rather than the two-series view.
         self.assertEqual(len(ax.collections), 1)
@@ -225,10 +225,71 @@ class TestBalance_weights_stats(
 
         before = pd.Series({"age": 0.42})
         after = pd.Series({"income": 0.05})
-        with self.assertRaisesRegex(
-            ValueError, "asmd_before and asmd_after share no covariates"
-        ):
+        with self.assertRaisesRegex(ValueError, "before and after share no covariates"):
             love_plot(before, after)
+
+    def test_love_plot_xlabel_and_legend_match_metric(self) -> None:
+        """Custom ``xlabel`` is used for both the x-axis and the single-series legend.
+
+        Verifies the metric-agnostic behaviour: a caller passing KLD values
+        gets ``"KLD"`` on the x-axis and ``"KLD"`` in the legend, not the
+        default ``"ASMD"``. Critical for the dispatch-by-metric path on
+        ``BalanceDFCovars.love_plot(metric=...)``.
+        """
+        import matplotlib.pyplot as plt
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31})
+        ax = love_plot(before, after=None, xlabel="KLD")
+        self.assertEqual(ax.get_xlabel(), "KLD")
+        legend = _assert_type(ax.get_legend())
+        legend_labels: list[str] = [t.get_text() for t in legend.get_texts()]
+        self.assertIn("KLD", legend_labels)
+        plt.close("all")
+
+    def test_love_plot_threshold_none_skips_reference_line(self) -> None:
+        """Passing ``threshold=None`` draws no vertical reference line.
+
+        The cobalt 0.1 cutoff is ASMD-specific; metrics like KLD / EMD
+        have no canonical default and should not get a misleading line.
+        """
+        import matplotlib.pyplot as plt
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31})
+        after = pd.Series({"age": 0.05, "income": 0.08})
+        ax_no_line = love_plot(before, after, threshold=None)
+        ax_with_line = love_plot(
+            pd.Series({"age": 0.42, "income": 0.31}),
+            pd.Series({"age": 0.05, "income": 0.08}),
+            threshold=0.1,
+        )
+        # ``axvline`` adds a Line2D entry to ``ax.lines``; the
+        # ``threshold=None`` branch must skip that addition.
+        self.assertEqual(
+            len(ax_with_line.lines) - len(ax_no_line.lines),
+            1,
+            "threshold=None should draw exactly one fewer line than threshold=0.1",
+        )
+        plt.close("all")
+
+    def test_love_plot_drops_any_mean_summary_row(self) -> None:
+        """``mean(<metric>)`` summary rows for any metric are dropped.
+
+        Generalised from the ASMD-only check: KLD / EMD / CVMD / KS each
+        emit a ``mean(<metric>)`` summary row in the same convention, and
+        the regex-based drop must catch all of them so the scatter
+        ordering isn't distorted by the summary aggregate.
+        """
+        import matplotlib.pyplot as plt
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31, "mean(kld)": 0.365})
+        after = pd.Series({"age": 0.05, "income": 0.08, "mean(kld)": 0.065})
+        ax = love_plot(before, after, xlabel="KLD")
+        labels: list[str] = [t.get_text() for t in ax.get_yticklabels()]
+        self.assertNotIn("mean(kld)", labels)
+        plt.close("all")
 
     def test_love_plot_uses_existing_axes(self) -> None:
         """Passing ``ax=...`` draws into the supplied Axes (no new figure)."""

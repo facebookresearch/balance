@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Callable, Literal, Protocol, runtime_checkable
+from typing import Any, Callable, get_args, Literal, Protocol, runtime_checkable
 
 import numpy as np
 import numpy.typing as npt
@@ -2840,30 +2840,49 @@ class BalanceDFCovars(BalanceDF):
         df = pd.concat(concat_list, axis=1)
         return Sample.from_frame(df, id_column="id").covars(formula=formula)
 
+    # Single source of truth for the supported love-plot metrics: the
+    # ``Literal`` type drives the static (Pyre) check, and the runtime
+    # tuple is derived from it via ``typing.get_args`` so the two cannot
+    # drift.
+    LovePlotMetric = Literal["asmd", "kld", "emd", "cvmd", "ks"]
+    _LOVE_PLOT_METRICS: tuple[str, ...] = get_args(LovePlotMetric)
+
     def love_plot(
         self: "BalanceDFCovars",
         *,
-        threshold: float = 0.1,
+        metric: LovePlotMetric = "asmd",
+        threshold: float | None = None,
         ax: Any | None = None,
     ) -> Any:
-        """Side-by-side ASMD scatter of unadjusted vs. adjusted covariates.
+        """Side-by-side imbalance scatter of unadjusted vs. adjusted covariates.
 
         A "Love plot" (after Thomas Love) is the canonical visual for
-        showing how much each covariate's ASMD shrinks after applying
+        showing how much each covariate's imbalance shrinks after applying
         weights. Reference: R's ``cobalt::love.plot``.
 
-        Behaviour mirrors :meth:`asmd` rather than :meth:`asmd_improvement`:
-        when no unadjusted view is linked (pre-adjust diagnostic case)
-        the plot shows only the current weighted ASMD as a single-series
-        scatter; when an unadjusted view is linked (post-adjust) the plot
-        shows before-vs-after.
+        Behaviour mirrors :meth:`asmd` (the chosen ``metric`` in general)
+        rather than :meth:`asmd_improvement`: when no unadjusted view is
+        linked (pre-adjust diagnostic case) the plot shows only the
+        current weighted metric as a single-series scatter; when an
+        unadjusted view is linked (post-adjust) the plot shows
+        before-vs-after.
 
         Args:
             self (BalanceDFCovars): The covariates view to plot. Typically
                 obtained via ``sample.covars()`` after ``adjust()``.
-            threshold (float, optional): Vertical reference line, default
-                0.1 — the conventional "balance achieved" cutoff. Must be
-                non-negative.
+            metric (str, optional): Which imbalance metric to plot. One of
+                ``"asmd"`` (default; mean-difference effect size, the
+                cobalt default), ``"kld"`` (Kullback-Leibler divergence),
+                ``"emd"`` (Earth Mover's Distance), ``"cvmd"`` (Cramér-von
+                Mises distance), or ``"ks"`` (Kolmogorov-Smirnov distance).
+                Each dispatches to the corresponding :meth:`BalanceDF`
+                method (``asmd`` / ``kld`` / ``emd`` / ``cvmd`` / ``ks``).
+            threshold (float | None, optional): Vertical reference line at
+                ``+threshold``. ``None`` (the default) means "use a
+                per-metric default": ``0.1`` for ASMD (the cobalt-
+                convention "balance achieved" cutoff) and ``None`` (no
+                line) for the other metrics, since none has a universally
+                accepted cutoff. Pass an explicit float to override.
             ax (Any | None, optional): Optional matplotlib ``Axes`` to draw
                 into. If ``None``, a new figure is created sized to the
                 number of covariates.
@@ -2876,36 +2895,61 @@ class BalanceDFCovars(BalanceDF):
             matplotlib import in this module's type signature.
 
         Raises:
-            ValueError: If ``threshold`` is negative (propagated from the
-                primitive in :mod:`balance.stats_and_plots.love_plot`).
-            ValueError: If no target is set on the sample. Computing ASMD
-                requires a target population to compare against, so
-                ``love_plot()`` propagates the same "no target" error that
-                :meth:`asmd` raises when it cannot locate one in either
-                ``self`` or its linked views.
+            ValueError: If ``metric`` is not one of the supported names;
+                if ``threshold`` is negative (propagated from the
+                primitive in :mod:`balance.stats_and_plots.love_plot`); or
+                if no target is set on the sample. Computing any of the
+                metrics requires a target population to compare against,
+                so ``love_plot()`` propagates the same "no target" error
+                that :meth:`asmd` (and siblings) raises when no target is
+                located in ``self`` or its linked views.
         """
-        asmd_after: pd.Series = self.asmd(on_linked_samples=False).iloc[0]
+        if metric not in self._LOVE_PLOT_METRICS:
+            raise ValueError(
+                f"metric must be one of {self._LOVE_PLOT_METRICS}; got " f"{metric!r}."
+            )
+        # Resolve the threshold default: ASMD has the canonical cobalt
+        # cutoff at 0.1; the other metrics have no universally-accepted
+        # default, so we draw no reference line unless the user supplies
+        # one explicitly.
+        threshold_resolved: float | None
+        if threshold is None:
+            threshold_resolved = 0.1 if metric == "asmd" else None
+        else:
+            threshold_resolved = threshold
+        xlabel: str = metric.upper()
+        # Dispatch to the corresponding ``BalanceDF`` metric method. All
+        # five metrics share the ``(on_linked_samples, target,
+        # aggregate_by_main_covar)`` signature, so a single ``getattr``
+        # works.
+        metric_fn = getattr(self, metric)
+        after_series: pd.Series = metric_fn(on_linked_samples=False).iloc[0]
         linked = self._balancedf_child_from_linked_samples()
         unadjusted = linked.get("unadjusted")
         if unadjusted is None:
-            # Pre-adjust diagnostic: no "before" exists, plot the weighted
-            # ASMD as a single series. Pass it as ``asmd_before`` so the
+            # Pre-adjust diagnostic: no "before" exists, plot the current
+            # series as a single scatter. Pass it as ``before`` so the
             # primitive's single-series branch handles axis labelling and
-            # threshold reference lines.
+            # the (optional) threshold reference line.
             return _love_plot_module.love_plot(
-                asmd_before=asmd_after, asmd_after=None, threshold=threshold, ax=ax
+                before=after_series,
+                after=None,
+                xlabel=xlabel,
+                threshold=threshold_resolved,
+                ax=ax,
             )
         # The ``unadjusted`` view's own ``_balancedf_child_from_linked_samples``
         # does not include the target (it is a sibling, not a child of
         # ``unadjusted``). Pull the target off ``self``'s links and forward
         # it explicitly -- mirrors the pattern used by ``asmd_improvement``.
-        asmd_before: pd.Series = unadjusted.asmd(
+        before_series: pd.Series = getattr(unadjusted, metric)(
             on_linked_samples=False, target=linked.get("target")
         ).iloc[0]
         return _love_plot_module.love_plot(
-            asmd_before=asmd_before,
-            asmd_after=asmd_after,
-            threshold=threshold,
+            before=before_series,
+            after=after_series,
+            xlabel=xlabel,
+            threshold=threshold_resolved,
             ax=ax,
         )
 
