@@ -28,6 +28,8 @@
 
 - **All-zero weight inputs to `_check_weights_series_are_valid` now emit a `UserWarning`** (when `require_positive=False`, the default). Previously, weighted statistics over an all-zero weight vector silently produced `NaN` / `inf` (`sum(w*x)/sum(w) = 0/0`). Existing callers that already passed `require_positive=True` (e.g. `design_effect`, `nonparametric_skew`, `prop_above_and_below`, `weighted_median_breakdown_point`) keep their historical `ValueError` behaviour. This affects internal callers like `descriptive_stats` → `asmd`, which previously masked the failure mode in their output.
 
+- **`balance.stats_and_plots.love_plot.love_plot` and `BalanceDFCovars.love_plot()`** — visual ASMD diagnostic in the spirit of R's `cobalt::love.plot`. The primitive accepts `(asmd_before, asmd_after=None, *, threshold=0.1, ax=None)` and returns a matplotlib `Axes`. With both series it draws the canonical before-vs-after scatter; with only `asmd_before` (the pre-adjust diagnostic case) it draws a single-series scatter with the same threshold reference lines. The `BalanceDFCovars.love_plot()` method pulls before/after ASMD off the `BalanceFrame` lineage and falls back to the single-series mode when no `unadjusted` view is linked (mirroring `asmd()` rather than `asmd_improvement()`).
+
 - **Rake now supports fit-time metadata persistence and `predict_weights()` reconstruction.**
   - `rake(..., store_fit_metadata=True)` now stores contingency-table artifacts
     and fit-time metadata required to rebuild weights later.
