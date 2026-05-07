@@ -19,6 +19,7 @@ from balance.csv_utils import to_csv_with_defaults
 from balance.stats_and_plots import (
     general_stats,
     impact_of_weights_on_outcome,
+    love_plot as _love_plot_module,
     weighted_comparisons_plots,
     weighted_comparisons_stats,
     weighted_stats,
@@ -2838,6 +2839,75 @@ class BalanceDFCovars(BalanceDF):
             concat_list.append(weights)
         df = pd.concat(concat_list, axis=1)
         return Sample.from_frame(df, id_column="id").covars(formula=formula)
+
+    def love_plot(
+        self: "BalanceDFCovars",
+        *,
+        threshold: float = 0.1,
+        ax: Any | None = None,
+    ) -> Any:
+        """Side-by-side ASMD scatter of unadjusted vs. adjusted covariates.
+
+        A "Love plot" (after Thomas Love) is the canonical visual for
+        showing how much each covariate's ASMD shrinks after applying
+        weights. Reference: R's ``cobalt::love.plot``.
+
+        Behaviour mirrors :meth:`asmd` rather than :meth:`asmd_improvement`:
+        when no unadjusted view is linked (pre-adjust diagnostic case)
+        the plot shows only the current weighted ASMD as a single-series
+        scatter; when an unadjusted view is linked (post-adjust) the plot
+        shows before-vs-after.
+
+        Args:
+            self (BalanceDFCovars): The covariates view to plot. Typically
+                obtained via ``sample.covars()`` after ``adjust()``.
+            threshold (float, optional): Vertical reference line, default
+                0.1 — the conventional "balance achieved" cutoff. Must be
+                non-negative.
+            ax (Any | None, optional): Optional matplotlib ``Axes`` to draw
+                into. If ``None``, a new figure is created sized to the
+                number of covariates.
+
+        Returns:
+            matplotlib.axes.Axes: The Axes used, returned for further
+            customization (titles, legend, save, etc.). The ``Any`` return
+            annotation matches balance's convention for plotting helpers
+            (see :meth:`BalanceDFWeights.plot`) and avoids an eager
+            matplotlib import in this module's type signature.
+
+        Raises:
+            ValueError: If ``threshold`` is negative (propagated from the
+                primitive in :mod:`balance.stats_and_plots.love_plot`).
+            ValueError: If no target is set on the sample. Computing ASMD
+                requires a target population to compare against, so
+                ``love_plot()`` propagates the same "no target" error that
+                :meth:`asmd` raises when it cannot locate one in either
+                ``self`` or its linked views.
+        """
+        asmd_after: pd.Series = self.asmd(on_linked_samples=False).iloc[0]
+        linked = self._balancedf_child_from_linked_samples()
+        unadjusted = linked.get("unadjusted")
+        if unadjusted is None:
+            # Pre-adjust diagnostic: no "before" exists, plot the weighted
+            # ASMD as a single series. Pass it as ``asmd_before`` so the
+            # primitive's single-series branch handles axis labelling and
+            # threshold reference lines.
+            return _love_plot_module.love_plot(
+                asmd_before=asmd_after, asmd_after=None, threshold=threshold, ax=ax
+            )
+        # The ``unadjusted`` view's own ``_balancedf_child_from_linked_samples``
+        # does not include the target (it is a sibling, not a child of
+        # ``unadjusted``). Pull the target off ``self``'s links and forward
+        # it explicitly -- mirrors the pattern used by ``asmd_improvement``.
+        asmd_before: pd.Series = unadjusted.asmd(
+            on_linked_samples=False, target=linked.get("target")
+        ).iloc[0]
+        return _love_plot_module.love_plot(
+            asmd_before=asmd_before,
+            asmd_after=asmd_after,
+            threshold=threshold,
+            ax=ax,
+        )
 
 
 class BalanceDFWeights(BalanceDF):
