@@ -1,0 +1,31 @@
+---
+title: Survey-weighted DiD with diff-diff
+sidebar_position: 11
+hide_table_of_contents: true
+hide_title: true
+---
+
+import HTMLLoader from '@site/src/components/HTMLLoader';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+Link to notebook: [balance_diff_diff_brfss.ipynb](https://github.com/facebookresearch/balance/blob/main/tutorials/balance_diff_diff_brfss.ipynb)
+
+:::note Local docs builds: install the `[did]` extra
+
+This page embeds the HTML rendered from the tutorial notebook
+(`tutorials/balance_diff_diff_brfss.ipynb`). The official
+import-balance.org build always has the optional `[did]` extra
+installed, so the embedded notebook below renders normally there.
+**For local docs builds**, `scripts/make_docs.sh` skips the brfss
+tutorial nbconvert step with a notice when `diff_diff` is not
+installed; if the iframe below shows a missing file / 404, install
+the optional dependency and rerun the docs build:
+
+```bash
+pip install "balance[did]"
+bash scripts/make_docs.sh -n
+```
+
+:::
+
+<HTMLLoader docFile={useBaseUrl('html/tutorials/balance_diff_diff_brfss.html')}/>
