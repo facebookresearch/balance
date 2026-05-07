@@ -42,26 +42,29 @@
 
 <span class="c1"># pyre-strict</span>
 
-<span class="sd">&quot;&quot;&quot;Love plot — visual ASMD diagnostic.</span>
+<span class="sd">&quot;&quot;&quot;Love plot — visual covariate-imbalance diagnostic.</span>
 
 <span class="sd">A &quot;Love plot&quot; (after Thomas Love) is the canonical visual for showing how</span>
-<span class="sd">much each covariate&#39;s ASMD shrinks after applying weights. ``balance`` did</span>
-<span class="sd">not previously expose one; this is the first such helper. Reference: R&#39;s</span>
-<span class="sd">``cobalt::love.plot``.</span>
+<span class="sd">much each covariate&#39;s imbalance shrinks after applying weights. ``balance``</span>
+<span class="sd">did not previously expose one; this is the first such helper. Reference:</span>
+<span class="sd">R&#39;s ``cobalt::love.plot``.</span>
 
 <span class="sd">The function is split into a primitive (``love_plot``) operating on raw</span>
-<span class="sd">``pd.Series`` inputs and a method shortcut (``BalanceDFCovars.love_plot``)</span>
-<span class="sd">that pulls before/after ASMD off a fitted ``BalanceFrame``&#39;s lineage.</span>
+<span class="sd">``pd.Series`` inputs of any covariate-keyed imbalance metric and a method</span>
+<span class="sd">shortcut (``BalanceDFCovars.love_plot``) that pulls the chosen metric</span>
+<span class="sd">(``&quot;asmd&quot;`` / ``&quot;kld&quot;`` / ``&quot;emd&quot;`` / ``&quot;cvmd&quot;`` / ``&quot;ks&quot;``) off a fitted</span>
+<span class="sd">``BalanceFrame``&#39;s lineage.</span>
 
-<span class="sd">The primitive accepts a single ``asmd_before`` series for the pre-adjust</span>
+<span class="sd">The primitive accepts a single ``before`` series for the pre-adjust</span>
 <span class="sd">diagnostic case (when no &quot;after&quot; yet exists) and falls back to a single-</span>
-<span class="sd">series scatter then. With both ``asmd_before`` and ``asmd_after`` it</span>
-<span class="sd">draws the canonical before-vs-after view.</span>
+<span class="sd">series scatter then. With both ``before`` and ``after`` it draws the</span>
+<span class="sd">canonical before-vs-after view.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.axes</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
@@ -74,41 +77,70 @@
 <span class="n">_AFTER_COLOR</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;#0072B2&quot;</span>
 <span class="n">_THRESHOLD_COLOR</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;red&quot;</span>
 
+<span class="c1"># Regex for the conventional ``mean(&lt;metric&gt;)`` summary row that</span>
+<span class="c1"># ``BalanceDF.{asmd,kld,emd,cvmd,ks}()`` append to their per-covariate</span>
+<span class="c1"># series. Anchored to the exact metric names ``balance`` actually emits so</span>
+<span class="c1"># we can&#39;t accidentally drop a real covariate that happens to be named</span>
+<span class="c1"># like ``mean(age)``. Drop these before plotting because they are summary</span>
+<span class="c1"># aggregates, not per-covariate values, and would distort scatter ordering.</span>
+<span class="n">_SUMMARY_ROW_PATTERN</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">Pattern</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s2">&quot;^mean\((?:asmd|kld|emd|cvmd|ks)\)$&quot;</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_drop_summary_rows</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Drop any ``mean(&lt;asmd|kld|emd|cvmd|ks&gt;)`` summary row from a metric series.&quot;&quot;&quot;</span>
+    <span class="n">keep_mask</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="o">~</span><span class="n">s</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">to_series</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">_SUMMARY_ROW_PATTERN</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">s</span><span class="p">[</span><span class="n">keep_mask</span><span class="p">]</span>
+
 
 <div class="viewcode-block" id="love_plot">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.love_plot.html#balance.stats_and_plots.love_plot.love_plot">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">love_plot</span><span class="p">(</span>
-    <span class="n">asmd_before</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
-    <span class="n">asmd_after</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">before</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">after</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ASMD&quot;</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
     <span class="n">ax</span><span class="p">:</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">Axes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">Axes</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Side-by-side scatter of per-covariate ASMD before vs. after weighting.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Side-by-side scatter of per-covariate imbalance metric, before vs. after.</span>
 
 <span class="sd">    A &quot;Love plot&quot; (after Thomas Love) is the canonical visual for showing</span>
-<span class="sd">    how much each covariate&#39;s ASMD shrinks after applying weights.</span>
+<span class="sd">    how much each covariate&#39;s imbalance shrinks after applying weights.</span>
 <span class="sd">    Reference: R&#39;s ``cobalt::love.plot``.</span>
 
+<span class="sd">    The primitive is metric-agnostic: callers pass ASMD / KLD / EMD / CVMD</span>
+<span class="sd">    / KS values (or any other covariate-keyed non-negative imbalance</span>
+<span class="sd">    metric) as ``before`` / ``after`` series. The default ``xlabel=&quot;ASMD&quot;``</span>
+<span class="sd">    matches the historical use case; pass an explicit ``xlabel`` for</span>
+<span class="sd">    other metrics. Reference lines are drawn at ``+threshold`` only, since</span>
+<span class="sd">    these metrics are all non-negative by construction.</span>
+
 <span class="sd">    Args:</span>
-<span class="sd">        asmd_before: ASMD per covariate. In two-series mode (when</span>
-<span class="sd">            ``asmd_after`` is supplied) this is the BEFORE-adjustment</span>
-<span class="sd">            ASMD — e.g. the output of the unadjusted view&#39;s</span>
-<span class="sd">            ``BalanceDFCovars.asmd()``. In single-series mode (when</span>
-<span class="sd">            ``asmd_after`` is ``None``) this is the only ASMD plotted —</span>
-<span class="sd">            typically the current / weighted ASMD when no &quot;before&quot; yet</span>
-<span class="sd">            exists (the pre-adjust diagnostic case). The argument name</span>
-<span class="sd">            reflects the canonical two-series usage; the single-series</span>
-<span class="sd">            branch labels the points as &quot;ASMD&quot; rather than &quot;Unweighted&quot;</span>
-<span class="sd">            so a caller passing the weighted ASMD here is not</span>
-<span class="sd">            mis-described in the legend.</span>
-<span class="sd">        asmd_after: ASMD per covariate **with** weights. When ``None`` the</span>
-<span class="sd">            plot shows ``asmd_before`` only as a single-series scatter --</span>
-<span class="sd">            this is the pre-adjust diagnostic case (no &quot;after&quot; yet exists),</span>
-<span class="sd">            conceptually closer to ``asmd()`` than to ``asmd_improvement()``.</span>
-<span class="sd">        threshold: Vertical reference line, default 0.1 — the conventional</span>
-<span class="sd">            &quot;balance achieved&quot; cutoff. Must be non-negative (ASMD itself</span>
-<span class="sd">            is non-negative by construction).</span>
+<span class="sd">        before: Per-covariate metric values. In two-series mode (when</span>
+<span class="sd">            ``after`` is supplied) this is the BEFORE-adjustment metric</span>
+<span class="sd">            (e.g. the output of the unadjusted view&#39;s</span>
+<span class="sd">            ``BalanceDFCovars.asmd() / .kld() / .emd() / .cvmd() / .ks()``).</span>
+<span class="sd">            In single-series mode (when ``after`` is ``None``) this is the</span>
+<span class="sd">            only series plotted — typically the current / weighted metric</span>
+<span class="sd">            when no &quot;before&quot; yet exists (the pre-adjust diagnostic case).</span>
+<span class="sd">        after: Per-covariate metric values **with** weights. When ``None``</span>
+<span class="sd">            the plot shows ``before`` only as a single-series scatter --</span>
+<span class="sd">            this is the pre-adjust diagnostic case (no &quot;after&quot; yet</span>
+<span class="sd">            exists), conceptually closer to ``asmd()`` than to</span>
+<span class="sd">            ``asmd_improvement()``.</span>
+<span class="sd">        xlabel: Label for the x-axis (also used as the legend label in</span>
+<span class="sd">            single-series mode). Defaults to ``&quot;ASMD&quot;``; pass the metric</span>
+<span class="sd">            name explicitly for non-ASMD callers (e.g. ``xlabel=&quot;KLD&quot;``).</span>
+<span class="sd">        threshold: Vertical reference line at ``+threshold``, default 0.1</span>
+<span class="sd">            — the cobalt-convention &quot;balance achieved&quot; cutoff for ASMD.</span>
+<span class="sd">            Pass ``None`` to skip the reference line entirely (recommended</span>
+<span class="sd">            for metrics like KLD / EMD where no canonical cutoff exists).</span>
+<span class="sd">            Must be non-negative if supplied (the metric is non-negative</span>
+<span class="sd">            by construction).</span>
 <span class="sd">        ax: Optional matplotlib ``Axes`` to draw into. If ``None``, a new</span>
 <span class="sd">            figure is created sized to the number of covariates.</span>
 
@@ -117,8 +149,9 @@
 <span class="sd">        customization (titles, legend, save, etc.).</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        ValueError: If ``threshold`` is negative, or if ``asmd_before`` and</span>
-<span class="sd">            ``asmd_after`` (when both supplied) share no covariates.</span>
+<span class="sd">        ValueError: If ``threshold`` is negative; or if ``before`` and</span>
+<span class="sd">            ``after`` (when both supplied) share no covariates; or if all</span>
+<span class="sd">            entries are NaN after summary-row drop / index alignment.</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">        ::</span>
@@ -128,109 +161,113 @@
 <span class="sd">            &gt;&gt;&gt; before = pd.Series({&quot;age&quot;: 0.42, &quot;income&quot;: 0.31})</span>
 <span class="sd">            &gt;&gt;&gt; after = pd.Series({&quot;age&quot;: 0.05, &quot;income&quot;: 0.08})</span>
 <span class="sd">            &gt;&gt;&gt; ax = love_plot(before, after)  # doctest: +SKIP</span>
+<span class="sd">            &gt;&gt;&gt; # KLD with no reference line:</span>
+<span class="sd">            &gt;&gt;&gt; ax = love_plot(  # doctest: +SKIP</span>
+<span class="sd">            ...     before, after, xlabel=&quot;KLD&quot;, threshold=None</span>
+<span class="sd">            ... )</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">threshold</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="c1"># ASMD is non-negative by construction; the canonical 0.1 cutoff</span>
-        <span class="c1"># (cobalt convention) is an upper bound on tolerable imbalance. A</span>
+    <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">threshold</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># The metrics this primitive renders (ASMD, KLD, EMD, CVMD, KS) are</span>
+        <span class="c1"># non-negative by construction; the canonical 0.1 cutoff (cobalt</span>
+        <span class="c1"># convention for ASMD) is an upper bound on tolerable imbalance. A</span>
         <span class="c1"># negative threshold would draw the reference line on the negative</span>
-        <span class="c1"># side of the y-axis, where no ASMD value can ever fall, so the</span>
-        <span class="c1"># line would never visually align with any plotted point and would</span>
-        <span class="c1"># silently mislead readers.</span>
+        <span class="c1"># side of the x-axis (the line is drawn with ``axvline``), where no</span>
+        <span class="c1"># value can ever fall, so the line would never visually align with</span>
+        <span class="c1"># any plotted point and would silently mislead readers.</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;threshold must be non-negative; got </span><span class="si">{</span><span class="n">threshold</span><span class="si">!r}</span><span class="s2">. &quot;</span>
-            <span class="s2">&quot;ASMD is non-negative by construction; use the cobalt-convention &quot;</span>
-            <span class="s2">&quot;default 0.1, or any other non-negative ASMD upper bound.&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;threshold must be non-negative or None; got </span><span class="si">{</span><span class="n">threshold</span><span class="si">!r}</span><span class="s2">. &quot;</span>
+            <span class="s2">&quot;Imbalance metrics are non-negative by construction; pass a &quot;</span>
+            <span class="s2">&quot;non-negative cutoff or ``threshold=None`` to skip the line.&quot;</span>
         <span class="p">)</span>
 
-    <span class="c1"># Drop the conventional &#39;mean(asmd)&#39; summary row if present -- it is</span>
-    <span class="c1"># the per-row mean, not a per-covariate ASMD, and its inclusion would</span>
+    <span class="c1"># Drop any ``mean(&lt;metric&gt;)`` summary row if present -- it is the</span>
+    <span class="c1"># per-row mean, not a per-covariate value, and its inclusion would</span>
     <span class="c1"># distort the scatter ordering.</span>
-    <span class="n">before</span> <span class="o">=</span> <span class="n">asmd_before</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+    <span class="n">before_clean</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">=</span> <span class="n">_drop_summary_rows</span><span class="p">(</span><span class="n">before</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">asmd_after</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># Pre-adjust mode: single-series scatter of weighted ASMD only.</span>
-        <span class="c1"># Drop NaN ASMD entries so we don&#39;t end up with y-axis tick labels</span>
-        <span class="c1"># that have no corresponding scatter point (NaN ASMD is a</span>
-        <span class="c1"># documented outcome for unrepresented categorical levels --</span>
-        <span class="c1"># ``BalanceDFCovars.asmd()`` returns NaN for those columns).</span>
-        <span class="n">before</span> <span class="o">=</span> <span class="n">before</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">before</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">after</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Pre-adjust mode: single-series scatter only.</span>
+        <span class="c1"># Drop NaN entries so we don&#39;t end up with y-axis tick labels that</span>
+        <span class="c1"># have no corresponding scatter point (NaN is a documented outcome</span>
+        <span class="c1"># for unrepresented categorical levels in some metrics).</span>
+        <span class="n">before_clean</span> <span class="o">=</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;love_plot: no covariates to plot — all ASMD entries are NaN &quot;</span>
+                <span class="s2">&quot;love_plot: no covariates to plot — all entries are NaN &quot;</span>
                 <span class="s2">&quot;(this usually means the categorical levels in the sample / &quot;</span>
                 <span class="s2">&quot;target frames are completely disjoint).&quot;</span>
             <span class="p">)</span>
-        <span class="c1"># Sort by absolute ASMD so the largest-imbalance covariate ends up</span>
+        <span class="c1"># Sort by absolute value so the largest-imbalance covariate ends up</span>
         <span class="c1"># at the TOP of the plot (matplotlib y-axis increases upward, so</span>
         <span class="c1"># ``ascending=True`` puts smallest at y=0 / bottom).</span>
-        <span class="n">order</span> <span class="o">=</span> <span class="n">before</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
-        <span class="n">before</span> <span class="o">=</span> <span class="n">before</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+        <span class="n">before_clean</span> <span class="o">=</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">before</span><span class="p">))))</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">before</span><span class="p">))</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">before</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_AFTER_COLOR</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;ASMD&quot;</span><span class="p">)</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">before_clean</span><span class="p">))))</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">before_clean</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">before_clean</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_AFTER_COLOR</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">xlabel</span><span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">(</span><span class="n">before</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-        <span class="c1"># Only draw the +threshold line; ASMD is non-negative by construction,</span>
-        <span class="c1"># so a -threshold reference line would land in negative x territory</span>
-        <span class="c1"># where no point can ever fall.</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">threshold</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_THRESHOLD_COLOR</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;ASMD&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">(</span><span class="n">before_clean</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Only draw the +threshold line; the metric is non-negative.</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">threshold</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_THRESHOLD_COLOR</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">xlabel</span><span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Covariate&quot;</span><span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ax</span>
 
-    <span class="n">after</span> <span class="o">=</span> <span class="n">asmd_after</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+    <span class="n">after_clean</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">=</span> <span class="n">_drop_summary_rows</span><span class="p">(</span><span class="n">after</span><span class="p">)</span>
 
-    <span class="c1"># Align before/after indices. If they don&#39;t match exactly, fall back to</span>
-    <span class="c1"># the intersection and warn (rather than silently dropping rows).</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">before</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">after</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
-        <span class="n">common</span> <span class="o">=</span> <span class="n">before</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">after</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="c1"># Align before/after indices. If they don&#39;t match exactly, fall back</span>
+    <span class="c1"># to the intersection and warn (rather than silently dropping rows).</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">after_clean</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+        <span class="n">common</span> <span class="o">=</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">after_clean</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">common</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;asmd_before and asmd_after share no covariates.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;before and after share no covariates.&quot;</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
             <span class="s2">&quot;love_plot: aligning to </span><span class="si">%d</span><span class="s2"> common covariates (before=</span><span class="si">%d</span><span class="s2">, after=</span><span class="si">%d</span><span class="s2">).&quot;</span><span class="p">,</span>
             <span class="nb">len</span><span class="p">(</span><span class="n">common</span><span class="p">),</span>
-            <span class="nb">len</span><span class="p">(</span><span class="n">before</span><span class="p">),</span>
-            <span class="nb">len</span><span class="p">(</span><span class="n">after</span><span class="p">),</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">before_clean</span><span class="p">),</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">after_clean</span><span class="p">),</span>
         <span class="p">)</span>
-        <span class="n">before</span> <span class="o">=</span> <span class="n">before</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">common</span><span class="p">]</span>
-        <span class="n">after</span> <span class="o">=</span> <span class="n">after</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">common</span><span class="p">]</span>
+        <span class="n">before_clean</span> <span class="o">=</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">common</span><span class="p">]</span>
+        <span class="n">after_clean</span> <span class="o">=</span> <span class="n">after_clean</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">common</span><span class="p">]</span>
 
     <span class="c1"># Drop covariates that are NaN in either series. Otherwise the</span>
     <span class="c1"># surviving series would carry y-axis tick labels with no</span>
     <span class="c1"># corresponding scatter point, and the abs/sort below would produce a</span>
     <span class="c1"># NaN-poisoned ordering.</span>
-    <span class="n">keep</span> <span class="o">=</span> <span class="p">(</span><span class="o">~</span><span class="n">before</span><span class="o">.</span><span class="n">isna</span><span class="p">())</span> <span class="o">&amp;</span> <span class="p">(</span><span class="o">~</span><span class="n">after</span><span class="o">.</span><span class="n">isna</span><span class="p">())</span>
+    <span class="n">keep</span> <span class="o">=</span> <span class="p">(</span><span class="o">~</span><span class="n">before_clean</span><span class="o">.</span><span class="n">isna</span><span class="p">())</span> <span class="o">&amp;</span> <span class="p">(</span><span class="o">~</span><span class="n">after_clean</span><span class="o">.</span><span class="n">isna</span><span class="p">())</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">keep</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="s2">&quot;love_plot: no covariates to plot after dropping NaN entries &quot;</span>
             <span class="s2">&quot;(this usually means the categorical levels in the sample / &quot;</span>
             <span class="s2">&quot;target frames are completely disjoint).&quot;</span>
         <span class="p">)</span>
-    <span class="n">before</span> <span class="o">=</span> <span class="n">before</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span>
-    <span class="n">after</span> <span class="o">=</span> <span class="n">after</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span>
+    <span class="n">before_clean</span> <span class="o">=</span> <span class="n">before_clean</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span>
+    <span class="n">after_clean</span> <span class="o">=</span> <span class="n">after_clean</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span>
 
-    <span class="c1"># Sort by absolute pre-weighting ASMD so the largest-imbalance covariate</span>
-    <span class="c1"># is at the top of the plot.</span>
-    <span class="n">order</span> <span class="o">=</span> <span class="n">before</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
-    <span class="n">before</span> <span class="o">=</span> <span class="n">before</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
-    <span class="n">after</span> <span class="o">=</span> <span class="n">after</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
+    <span class="c1"># Sort by absolute pre-weighting metric so the largest-imbalance</span>
+    <span class="c1"># covariate is at the top of the plot.</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+    <span class="n">before_clean</span> <span class="o">=</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
+    <span class="n">after_clean</span> <span class="o">=</span> <span class="n">after_clean</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">before</span><span class="p">))))</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">before_clean</span><span class="p">))))</span>
 
-    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">before</span><span class="p">))</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">before</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Unweighted&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_BEFORE_COLOR</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">after</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Weighted&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_AFTER_COLOR</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">before_clean</span><span class="p">))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+        <span class="n">before_clean</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Unweighted&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_BEFORE_COLOR</span>
+    <span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">after_clean</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Weighted&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_AFTER_COLOR</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">(</span><span class="n">before</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-    <span class="c1"># Only draw the +threshold line; ASMD is non-negative by construction,</span>
-    <span class="c1"># so a -threshold reference line would land in negative x territory</span>
-    <span class="c1"># where no point can ever fall.</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">threshold</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_THRESHOLD_COLOR</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;ASMD&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">(</span><span class="n">before_clean</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Only draw the +threshold line; the metric is non-negative.</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">threshold</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_THRESHOLD_COLOR</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">xlabel</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Covariate&quot;</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>

@@ -1389,24 +1389,35 @@ covars.df.columns.tolist()
 
 <dl class="py method">
 <dt class="sig sig-object py" id="balance.balancedf_class.BalanceDFCovars.love_plot">
-<span class="sig-name descname"><span class="pre">love_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFCovars.love_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFCovars.love_plot" title="Link to this definition">¶</a></dt>
-<dd><p>Side-by-side ASMD scatter of unadjusted vs. adjusted covariates.</p>
+<span class="sig-name descname"><span class="pre">love_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">LovePlotMetric</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'asmd'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="reference internal" href="_modules/balance/balancedf_class.html#BalanceDFCovars.love_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balancedf_class.BalanceDFCovars.love_plot" title="Link to this definition">¶</a></dt>
+<dd><p>Side-by-side imbalance scatter of unadjusted vs. adjusted covariates.</p>
 <p>A “Love plot” (after Thomas Love) is the canonical visual for
-showing how much each covariate’s ASMD shrinks after applying
+showing how much each covariate’s imbalance shrinks after applying
 weights. Reference: R’s <code class="docutils literal notranslate"><span class="pre">cobalt::love.plot</span></code>.</p>
-<p>Behaviour mirrors <code class="xref py py-meth docutils literal notranslate"><span class="pre">asmd()</span></code> rather than <code class="xref py py-meth docutils literal notranslate"><span class="pre">asmd_improvement()</span></code>:
-when no unadjusted view is linked (pre-adjust diagnostic case)
-the plot shows only the current weighted ASMD as a single-series
-scatter; when an unadjusted view is linked (post-adjust) the plot
-shows before-vs-after.</p>
+<p>Behaviour mirrors <code class="xref py py-meth docutils literal notranslate"><span class="pre">asmd()</span></code> (the chosen <code class="docutils literal notranslate"><span class="pre">metric</span></code> in general)
+rather than <code class="xref py py-meth docutils literal notranslate"><span class="pre">asmd_improvement()</span></code>: when no unadjusted view is
+linked (pre-adjust diagnostic case) the plot shows only the
+current weighted metric as a single-series scatter; when an
+unadjusted view is linked (post-adjust) the plot shows
+before-vs-after.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>self</strong> (<a class="reference internal" href="#balance.balancedf_class.BalanceDFCovars" title="balance.balancedf_class.BalanceDFCovars"><em>BalanceDFCovars</em></a>) – The covariates view to plot. Typically
 obtained via <code class="docutils literal notranslate"><span class="pre">sample.covars()</span></code> after <code class="docutils literal notranslate"><span class="pre">adjust()</span></code>.</p></li>
-<li><p><strong>threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Vertical reference line, default
-0.1 — the conventional “balance achieved” cutoff. Must be
-non-negative.</p></li>
+<li><p><strong>metric</strong> (<em>str</em><em>, </em><em>optional</em>) – Which imbalance metric to plot. One of
+<code class="docutils literal notranslate"><span class="pre">&quot;asmd&quot;</span></code> (default; mean-difference effect size, the
+cobalt default), <code class="docutils literal notranslate"><span class="pre">&quot;kld&quot;</span></code> (Kullback-Leibler divergence),
+<code class="docutils literal notranslate"><span class="pre">&quot;emd&quot;</span></code> (Earth Mover’s Distance), <code class="docutils literal notranslate"><span class="pre">&quot;cvmd&quot;</span></code> (Cramér-von
+Mises distance), or <code class="docutils literal notranslate"><span class="pre">&quot;ks&quot;</span></code> (Kolmogorov-Smirnov distance).
+Each dispatches to the corresponding <a class="reference internal" href="#balance.balancedf_class.BalanceDF" title="balance.balancedf_class.BalanceDF"><code class="xref py py-meth docutils literal notranslate"><span class="pre">BalanceDF()</span></code></a>
+method (<code class="docutils literal notranslate"><span class="pre">asmd</span></code> / <code class="docutils literal notranslate"><span class="pre">kld</span></code> / <code class="docutils literal notranslate"><span class="pre">emd</span></code> / <code class="docutils literal notranslate"><span class="pre">cvmd</span></code> / <code class="docutils literal notranslate"><span class="pre">ks</span></code>).</p></li>
+<li><p><strong>threshold</strong> (<em>float</em><em> | </em><em>None</em><em>, </em><em>optional</em>) – Vertical reference line at
+<code class="docutils literal notranslate"><span class="pre">+threshold</span></code>. <code class="docutils literal notranslate"><span class="pre">None</span></code> (the default) means “use a
+per-metric default”: <code class="docutils literal notranslate"><span class="pre">0.1</span></code> for ASMD (the cobalt-
+convention “balance achieved” cutoff) and <code class="docutils literal notranslate"><span class="pre">None</span></code> (no
+line) for the other metrics, since none has a universally
+accepted cutoff. Pass an explicit float to override.</p></li>
 <li><p><strong>ax</strong> (<em>Any</em><em> | </em><em>None</em><em>, </em><em>optional</em>) – Optional matplotlib <code class="docutils literal notranslate"><span class="pre">Axes</span></code> to draw
 into. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, a new figure is created sized to the
 number of covariates.</p></li>
@@ -1423,15 +1434,14 @@ matplotlib import in this module’s type signature.</p>
 <dd class="field-odd"><p>matplotlib.axes.Axes</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">threshold</span></code> is negative (propagated from the
-    primitive in <a class="reference internal" href="balance.stats_and_plots.love_plot.html#module-balance.stats_and_plots.love_plot" title="balance.stats_and_plots.love_plot"><code class="xref py py-mod docutils literal notranslate"><span class="pre">balance.stats_and_plots.love_plot</span></code></a>).</p></li>
-<li><p><strong>ValueError</strong> – If no target is set on the sample. Computing ASMD
-    requires a target population to compare against, so
-    <code class="docutils literal notranslate"><span class="pre">love_plot()</span></code> propagates the same “no target” error that
-    <code class="xref py py-meth docutils literal notranslate"><span class="pre">asmd()</span></code> raises when it cannot locate one in either
-    <code class="docutils literal notranslate"><span class="pre">self</span></code> or its linked views.</p></li>
-</ul>
+<dd class="field-even"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">metric</span></code> is not one of the supported names;
+    if <code class="docutils literal notranslate"><span class="pre">threshold</span></code> is negative (propagated from the
+    primitive in <a class="reference internal" href="balance.stats_and_plots.love_plot.html#module-balance.stats_and_plots.love_plot" title="balance.stats_and_plots.love_plot"><code class="xref py py-mod docutils literal notranslate"><span class="pre">balance.stats_and_plots.love_plot</span></code></a>); or
+    if no target is set on the sample. Computing any of the
+    metrics requires a target population to compare against,
+    so <code class="docutils literal notranslate"><span class="pre">love_plot()</span></code> propagates the same “no target” error
+    that <code class="xref py py-meth docutils literal notranslate"><span class="pre">asmd()</span></code> (and siblings) raises when no target is
+    located in <code class="docutils literal notranslate"><span class="pre">self</span></code> or its linked views.</p>
 </dd>
 </dl>
 </dd></dl>

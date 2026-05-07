@@ -46,7 +46,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Protocol</span><span class="p">,</span> <span class="n">runtime_checkable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">get_args</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Protocol</span><span class="p">,</span> <span class="n">runtime_checkable</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
@@ -2972,32 +2972,51 @@
         <span class="k">return</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">covars</span><span class="p">(</span><span class="n">formula</span><span class="o">=</span><span class="n">formula</span><span class="p">)</span></div>
 
 
+    <span class="c1"># Single source of truth for the supported love-plot metrics: the</span>
+    <span class="c1"># ``Literal`` type drives the static (Pyre) check, and the runtime</span>
+    <span class="c1"># tuple is derived from it via ``typing.get_args`` so the two cannot</span>
+    <span class="c1"># drift.</span>
+    <span class="n">LovePlotMetric</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;asmd&quot;</span><span class="p">,</span> <span class="s2">&quot;kld&quot;</span><span class="p">,</span> <span class="s2">&quot;emd&quot;</span><span class="p">,</span> <span class="s2">&quot;cvmd&quot;</span><span class="p">,</span> <span class="s2">&quot;ks&quot;</span><span class="p">]</span>
+    <span class="n">_LOVE_PLOT_METRICS</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_args</span><span class="p">(</span><span class="n">LovePlotMetric</span><span class="p">)</span>
+
 <div class="viewcode-block" id="BalanceDFCovars.love_plot">
 <a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFCovars.love_plot">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">love_plot</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFCovars&quot;</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+        <span class="n">metric</span><span class="p">:</span> <span class="n">LovePlotMetric</span> <span class="o">=</span> <span class="s2">&quot;asmd&quot;</span><span class="p">,</span>
+        <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">ax</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Side-by-side ASMD scatter of unadjusted vs. adjusted covariates.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Side-by-side imbalance scatter of unadjusted vs. adjusted covariates.</span>
 
 <span class="sd">        A &quot;Love plot&quot; (after Thomas Love) is the canonical visual for</span>
-<span class="sd">        showing how much each covariate&#39;s ASMD shrinks after applying</span>
+<span class="sd">        showing how much each covariate&#39;s imbalance shrinks after applying</span>
 <span class="sd">        weights. Reference: R&#39;s ``cobalt::love.plot``.</span>
 
-<span class="sd">        Behaviour mirrors :meth:`asmd` rather than :meth:`asmd_improvement`:</span>
-<span class="sd">        when no unadjusted view is linked (pre-adjust diagnostic case)</span>
-<span class="sd">        the plot shows only the current weighted ASMD as a single-series</span>
-<span class="sd">        scatter; when an unadjusted view is linked (post-adjust) the plot</span>
-<span class="sd">        shows before-vs-after.</span>
+<span class="sd">        Behaviour mirrors :meth:`asmd` (the chosen ``metric`` in general)</span>
+<span class="sd">        rather than :meth:`asmd_improvement`: when no unadjusted view is</span>
+<span class="sd">        linked (pre-adjust diagnostic case) the plot shows only the</span>
+<span class="sd">        current weighted metric as a single-series scatter; when an</span>
+<span class="sd">        unadjusted view is linked (post-adjust) the plot shows</span>
+<span class="sd">        before-vs-after.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (BalanceDFCovars): The covariates view to plot. Typically</span>
 <span class="sd">                obtained via ``sample.covars()`` after ``adjust()``.</span>
-<span class="sd">            threshold (float, optional): Vertical reference line, default</span>
-<span class="sd">                0.1 — the conventional &quot;balance achieved&quot; cutoff. Must be</span>
-<span class="sd">                non-negative.</span>
+<span class="sd">            metric (str, optional): Which imbalance metric to plot. One of</span>
+<span class="sd">                ``&quot;asmd&quot;`` (default; mean-difference effect size, the</span>
+<span class="sd">                cobalt default), ``&quot;kld&quot;`` (Kullback-Leibler divergence),</span>
+<span class="sd">                ``&quot;emd&quot;`` (Earth Mover&#39;s Distance), ``&quot;cvmd&quot;`` (Cramér-von</span>
+<span class="sd">                Mises distance), or ``&quot;ks&quot;`` (Kolmogorov-Smirnov distance).</span>
+<span class="sd">                Each dispatches to the corresponding :meth:`BalanceDF`</span>
+<span class="sd">                method (``asmd`` / ``kld`` / ``emd`` / ``cvmd`` / ``ks``).</span>
+<span class="sd">            threshold (float | None, optional): Vertical reference line at</span>
+<span class="sd">                ``+threshold``. ``None`` (the default) means &quot;use a</span>
+<span class="sd">                per-metric default&quot;: ``0.1`` for ASMD (the cobalt-</span>
+<span class="sd">                convention &quot;balance achieved&quot; cutoff) and ``None`` (no</span>
+<span class="sd">                line) for the other metrics, since none has a universally</span>
+<span class="sd">                accepted cutoff. Pass an explicit float to override.</span>
 <span class="sd">            ax (Any | None, optional): Optional matplotlib ``Axes`` to draw</span>
 <span class="sd">                into. If ``None``, a new figure is created sized to the</span>
 <span class="sd">                number of covariates.</span>
@@ -3010,36 +3029,61 @@
 <span class="sd">            matplotlib import in this module&#39;s type signature.</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            ValueError: If ``threshold`` is negative (propagated from the</span>
-<span class="sd">                primitive in :mod:`balance.stats_and_plots.love_plot`).</span>
-<span class="sd">            ValueError: If no target is set on the sample. Computing ASMD</span>
-<span class="sd">                requires a target population to compare against, so</span>
-<span class="sd">                ``love_plot()`` propagates the same &quot;no target&quot; error that</span>
-<span class="sd">                :meth:`asmd` raises when it cannot locate one in either</span>
-<span class="sd">                ``self`` or its linked views.</span>
+<span class="sd">            ValueError: If ``metric`` is not one of the supported names;</span>
+<span class="sd">                if ``threshold`` is negative (propagated from the</span>
+<span class="sd">                primitive in :mod:`balance.stats_and_plots.love_plot`); or</span>
+<span class="sd">                if no target is set on the sample. Computing any of the</span>
+<span class="sd">                metrics requires a target population to compare against,</span>
+<span class="sd">                so ``love_plot()`` propagates the same &quot;no target&quot; error</span>
+<span class="sd">                that :meth:`asmd` (and siblings) raises when no target is</span>
+<span class="sd">                located in ``self`` or its linked views.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">asmd_after</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">asmd</span><span class="p">(</span><span class="n">on_linked_samples</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">metric</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_LOVE_PLOT_METRICS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;metric must be one of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_LOVE_PLOT_METRICS</span><span class="si">}</span><span class="s2">; got &quot;</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">metric</span><span class="si">!r}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+        <span class="c1"># Resolve the threshold default: ASMD has the canonical cobalt</span>
+        <span class="c1"># cutoff at 0.1; the other metrics have no universally-accepted</span>
+        <span class="c1"># default, so we draw no reference line unless the user supplies</span>
+        <span class="c1"># one explicitly.</span>
+        <span class="n">threshold_resolved</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">threshold_resolved</span> <span class="o">=</span> <span class="mf">0.1</span> <span class="k">if</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;asmd&quot;</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">threshold_resolved</span> <span class="o">=</span> <span class="n">threshold</span>
+        <span class="n">xlabel</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="c1"># Dispatch to the corresponding ``BalanceDF`` metric method. All</span>
+        <span class="c1"># five metrics share the ``(on_linked_samples, target,</span>
+        <span class="c1"># aggregate_by_main_covar)`` signature, so a single ``getattr``</span>
+        <span class="c1"># works.</span>
+        <span class="n">metric_fn</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metric</span><span class="p">)</span>
+        <span class="n">after_series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">=</span> <span class="n">metric_fn</span><span class="p">(</span><span class="n">on_linked_samples</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">linked</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_balancedf_child_from_linked_samples</span><span class="p">()</span>
         <span class="n">unadjusted</span> <span class="o">=</span> <span class="n">linked</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;unadjusted&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">unadjusted</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># Pre-adjust diagnostic: no &quot;before&quot; exists, plot the weighted</span>
-            <span class="c1"># ASMD as a single series. Pass it as ``asmd_before`` so the</span>
+            <span class="c1"># Pre-adjust diagnostic: no &quot;before&quot; exists, plot the current</span>
+            <span class="c1"># series as a single scatter. Pass it as ``before`` so the</span>
             <span class="c1"># primitive&#39;s single-series branch handles axis labelling and</span>
-            <span class="c1"># threshold reference lines.</span>
+            <span class="c1"># the (optional) threshold reference line.</span>
             <span class="k">return</span> <span class="n">_love_plot_module</span><span class="o">.</span><span class="n">love_plot</span><span class="p">(</span>
-                <span class="n">asmd_before</span><span class="o">=</span><span class="n">asmd_after</span><span class="p">,</span> <span class="n">asmd_after</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span>
+                <span class="n">before</span><span class="o">=</span><span class="n">after_series</span><span class="p">,</span>
+                <span class="n">after</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">xlabel</span><span class="o">=</span><span class="n">xlabel</span><span class="p">,</span>
+                <span class="n">threshold</span><span class="o">=</span><span class="n">threshold_resolved</span><span class="p">,</span>
+                <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="c1"># The ``unadjusted`` view&#39;s own ``_balancedf_child_from_linked_samples``</span>
         <span class="c1"># does not include the target (it is a sibling, not a child of</span>
         <span class="c1"># ``unadjusted``). Pull the target off ``self``&#39;s links and forward</span>
         <span class="c1"># it explicitly -- mirrors the pattern used by ``asmd_improvement``.</span>
-        <span class="n">asmd_before</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">=</span> <span class="n">unadjusted</span><span class="o">.</span><span class="n">asmd</span><span class="p">(</span>
+        <span class="n">before_series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">unadjusted</span><span class="p">,</span> <span class="n">metric</span><span class="p">)(</span>
             <span class="n">on_linked_samples</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">linked</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
         <span class="p">)</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">_love_plot_module</span><span class="o">.</span><span class="n">love_plot</span><span class="p">(</span>
-            <span class="n">asmd_before</span><span class="o">=</span><span class="n">asmd_before</span><span class="p">,</span>
-            <span class="n">asmd_after</span><span class="o">=</span><span class="n">asmd_after</span><span class="p">,</span>
-            <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span>
+            <span class="n">before</span><span class="o">=</span><span class="n">before_series</span><span class="p">,</span>
+            <span class="n">after</span><span class="o">=</span><span class="n">after_series</span><span class="p">,</span>
+            <span class="n">xlabel</span><span class="o">=</span><span class="n">xlabel</span><span class="p">,</span>
+            <span class="n">threshold</span><span class="o">=</span><span class="n">threshold_resolved</span><span class="p">,</span>
             <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
         <span class="p">)</span></div>
 </div>
