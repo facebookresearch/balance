@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>balance.stats_and_plots.love_plot &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=29da98fa" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../../balance.html" accesskey="U">balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.love_plot</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for balance.stats_and_plots.love_plot</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) Meta Platforms, Inc. and affiliates.</span>
+<span class="c1">#</span>
+<span class="c1"># This source code is licensed under the MIT license found in the</span>
+<span class="c1"># LICENSE file in the root directory of this source tree.</span>
+
+<span class="c1"># pyre-strict</span>
+
+<span class="sd">&quot;&quot;&quot;Love plot — visual ASMD diagnostic.</span>
+
+<span class="sd">A &quot;Love plot&quot; (after Thomas Love) is the canonical visual for showing how</span>
+<span class="sd">much each covariate&#39;s ASMD shrinks after applying weights. ``balance`` did</span>
+<span class="sd">not previously expose one; this is the first such helper. Reference: R&#39;s</span>
+<span class="sd">``cobalt::love.plot``.</span>
+
+<span class="sd">The function is split into a primitive (``love_plot``) operating on raw</span>
+<span class="sd">``pd.Series`` inputs and a method shortcut (``BalanceDFCovars.love_plot``)</span>
+<span class="sd">that pulls before/after ASMD off a fitted ``BalanceFrame``&#39;s lineage.</span>
+
+<span class="sd">The primitive accepts a single ``asmd_before`` series for the pre-adjust</span>
+<span class="sd">diagnostic case (when no &quot;after&quot; yet exists) and falls back to a single-</span>
+<span class="sd">series scatter then. With both ``asmd_before`` and ``asmd_after`` it</span>
+<span class="sd">draws the canonical before-vs-after view.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.axes</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
+
+<span class="n">_BEFORE_COLOR</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;#888888&quot;</span>
+<span class="n">_AFTER_COLOR</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;#0072B2&quot;</span>
+<span class="n">_THRESHOLD_COLOR</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;red&quot;</span>
+
+
+<div class="viewcode-block" id="love_plot">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.love_plot.html#balance.stats_and_plots.love_plot.love_plot">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">love_plot</span><span class="p">(</span>
+    <span class="n">asmd_before</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">asmd_after</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+    <span class="n">ax</span><span class="p">:</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">Axes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">Axes</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Side-by-side scatter of per-covariate ASMD before vs. after weighting.</span>
+
+<span class="sd">    A &quot;Love plot&quot; (after Thomas Love) is the canonical visual for showing</span>
+<span class="sd">    how much each covariate&#39;s ASMD shrinks after applying weights.</span>
+<span class="sd">    Reference: R&#39;s ``cobalt::love.plot``.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        asmd_before: ASMD per covariate. In two-series mode (when</span>
+<span class="sd">            ``asmd_after`` is supplied) this is the BEFORE-adjustment</span>
+<span class="sd">            ASMD — e.g. the output of the unadjusted view&#39;s</span>
+<span class="sd">            ``BalanceDFCovars.asmd()``. In single-series mode (when</span>
+<span class="sd">            ``asmd_after`` is ``None``) this is the only ASMD plotted —</span>
+<span class="sd">            typically the current / weighted ASMD when no &quot;before&quot; yet</span>
+<span class="sd">            exists (the pre-adjust diagnostic case). The argument name</span>
+<span class="sd">            reflects the canonical two-series usage; the single-series</span>
+<span class="sd">            branch labels the points as &quot;ASMD&quot; rather than &quot;Unweighted&quot;</span>
+<span class="sd">            so a caller passing the weighted ASMD here is not</span>
+<span class="sd">            mis-described in the legend.</span>
+<span class="sd">        asmd_after: ASMD per covariate **with** weights. When ``None`` the</span>
+<span class="sd">            plot shows ``asmd_before`` only as a single-series scatter --</span>
+<span class="sd">            this is the pre-adjust diagnostic case (no &quot;after&quot; yet exists),</span>
+<span class="sd">            conceptually closer to ``asmd()`` than to ``asmd_improvement()``.</span>
+<span class="sd">        threshold: Vertical reference line, default 0.1 — the conventional</span>
+<span class="sd">            &quot;balance achieved&quot; cutoff. Must be non-negative (ASMD itself</span>
+<span class="sd">            is non-negative by construction).</span>
+<span class="sd">        ax: Optional matplotlib ``Axes`` to draw into. If ``None``, a new</span>
+<span class="sd">            figure is created sized to the number of covariates.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        matplotlib.axes.Axes: The Axes used, returned for further</span>
+<span class="sd">        customization (titles, legend, save, etc.).</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If ``threshold`` is negative, or if ``asmd_before`` and</span>
+<span class="sd">            ``asmd_after`` (when both supplied) share no covariates.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        ::</span>
+
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.stats_and_plots.love_plot import love_plot</span>
+<span class="sd">            &gt;&gt;&gt; before = pd.Series({&quot;age&quot;: 0.42, &quot;income&quot;: 0.31})</span>
+<span class="sd">            &gt;&gt;&gt; after = pd.Series({&quot;age&quot;: 0.05, &quot;income&quot;: 0.08})</span>
+<span class="sd">            &gt;&gt;&gt; ax = love_plot(before, after)  # doctest: +SKIP</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">threshold</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># ASMD is non-negative by construction; the canonical 0.1 cutoff</span>
+        <span class="c1"># (cobalt convention) is an upper bound on tolerable imbalance. A</span>
+        <span class="c1"># negative threshold would draw the reference line on the negative</span>
+        <span class="c1"># side of the y-axis, where no ASMD value can ever fall, so the</span>
+        <span class="c1"># line would never visually align with any plotted point and would</span>
+        <span class="c1"># silently mislead readers.</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;threshold must be non-negative; got </span><span class="si">{</span><span class="n">threshold</span><span class="si">!r}</span><span class="s2">. &quot;</span>
+            <span class="s2">&quot;ASMD is non-negative by construction; use the cobalt-convention &quot;</span>
+            <span class="s2">&quot;default 0.1, or any other non-negative ASMD upper bound.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Drop the conventional &#39;mean(asmd)&#39; summary row if present -- it is</span>
+    <span class="c1"># the per-row mean, not a per-covariate ASMD, and its inclusion would</span>
+    <span class="c1"># distort the scatter ordering.</span>
+    <span class="n">before</span> <span class="o">=</span> <span class="n">asmd_before</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">asmd_after</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Pre-adjust mode: single-series scatter of weighted ASMD only.</span>
+        <span class="c1"># Drop NaN ASMD entries so we don&#39;t end up with y-axis tick labels</span>
+        <span class="c1"># that have no corresponding scatter point (NaN ASMD is a</span>
+        <span class="c1"># documented outcome for unrepresented categorical levels --</span>
+        <span class="c1"># ``BalanceDFCovars.asmd()`` returns NaN for those columns).</span>
+        <span class="n">before</span> <span class="o">=</span> <span class="n">before</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">before</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;love_plot: no covariates to plot — all ASMD entries are NaN &quot;</span>
+                <span class="s2">&quot;(this usually means the categorical levels in the sample / &quot;</span>
+                <span class="s2">&quot;target frames are completely disjoint).&quot;</span>
+            <span class="p">)</span>
+        <span class="c1"># Sort by absolute ASMD so the largest-imbalance covariate ends up</span>
+        <span class="c1"># at the TOP of the plot (matplotlib y-axis increases upward, so</span>
+        <span class="c1"># ``ascending=True`` puts smallest at y=0 / bottom).</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="n">before</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+        <span class="n">before</span> <span class="o">=</span> <span class="n">before</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">before</span><span class="p">))))</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">before</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">before</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_AFTER_COLOR</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;ASMD&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">(</span><span class="n">before</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="c1"># Only draw the +threshold line; ASMD is non-negative by construction,</span>
+        <span class="c1"># so a -threshold reference line would land in negative x territory</span>
+        <span class="c1"># where no point can ever fall.</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">threshold</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_THRESHOLD_COLOR</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;ASMD&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Covariate&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ax</span>
+
+    <span class="n">after</span> <span class="o">=</span> <span class="n">asmd_after</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Align before/after indices. If they don&#39;t match exactly, fall back to</span>
+    <span class="c1"># the intersection and warn (rather than silently dropping rows).</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">before</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">after</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+        <span class="n">common</span> <span class="o">=</span> <span class="n">before</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">after</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">common</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;asmd_before and asmd_after share no covariates.&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;love_plot: aligning to </span><span class="si">%d</span><span class="s2"> common covariates (before=</span><span class="si">%d</span><span class="s2">, after=</span><span class="si">%d</span><span class="s2">).&quot;</span><span class="p">,</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">common</span><span class="p">),</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">before</span><span class="p">),</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">after</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">before</span> <span class="o">=</span> <span class="n">before</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">common</span><span class="p">]</span>
+        <span class="n">after</span> <span class="o">=</span> <span class="n">after</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">common</span><span class="p">]</span>
+
+    <span class="c1"># Drop covariates that are NaN in either series. Otherwise the</span>
+    <span class="c1"># surviving series would carry y-axis tick labels with no</span>
+    <span class="c1"># corresponding scatter point, and the abs/sort below would produce a</span>
+    <span class="c1"># NaN-poisoned ordering.</span>
+    <span class="n">keep</span> <span class="o">=</span> <span class="p">(</span><span class="o">~</span><span class="n">before</span><span class="o">.</span><span class="n">isna</span><span class="p">())</span> <span class="o">&amp;</span> <span class="p">(</span><span class="o">~</span><span class="n">after</span><span class="o">.</span><span class="n">isna</span><span class="p">())</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">keep</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;love_plot: no covariates to plot after dropping NaN entries &quot;</span>
+            <span class="s2">&quot;(this usually means the categorical levels in the sample / &quot;</span>
+            <span class="s2">&quot;target frames are completely disjoint).&quot;</span>
+        <span class="p">)</span>
+    <span class="n">before</span> <span class="o">=</span> <span class="n">before</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span>
+    <span class="n">after</span> <span class="o">=</span> <span class="n">after</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span>
+
+    <span class="c1"># Sort by absolute pre-weighting ASMD so the largest-imbalance covariate</span>
+    <span class="c1"># is at the top of the plot.</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="n">before</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+    <span class="n">before</span> <span class="o">=</span> <span class="n">before</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
+    <span class="n">after</span> <span class="o">=</span> <span class="n">after</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">before</span><span class="p">))))</span>
+
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">before</span><span class="p">))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">before</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Unweighted&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_BEFORE_COLOR</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">after</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Weighted&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_AFTER_COLOR</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">(</span><span class="n">before</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="c1"># Only draw the +threshold line; ASMD is non-negative by construction,</span>
+    <span class="c1"># so a -threshold reference line would land in negative x territory</span>
+    <span class="c1"># where no point can ever fall.</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">threshold</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_THRESHOLD_COLOR</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;ASMD&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Covariate&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ax</span></div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../../balance.html" >balance</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.love_plot</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

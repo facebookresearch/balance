@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>balance.stats_and_plots.love_plot &#8212; balance  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=29da98fa" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="balance.stats_and_plots.weighted_comparisons_plots" href="balance.stats_and_plots.weighted_comparisons_plots.html" />
+    <link rel="prev" title="balance.stats_and_plots.impact_of_weights_on_outcome" href="balance.stats_and_plots.impact_of_weights_on_outcome.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.weighted_comparisons_plots.html" title="balance.stats_and_plots.weighted_comparisons_plots"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.impact_of_weights_on_outcome.html" title="balance.stats_and_plots.impact_of_weights_on_outcome"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="balance.stats_and_plots.html" accesskey="U">balance.stats_and_plots</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.love_plot</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-balance.stats_and_plots.love_plot">
+<span id="balance-stats-and-plots-love-plot"></span><h1>balance.stats_and_plots.love_plot<a class="headerlink" href="#module-balance.stats_and_plots.love_plot" title="Link to this heading">¶</a></h1>
+<p>Love plot — visual ASMD diagnostic.</p>
+<p>A “Love plot” (after Thomas Love) is the canonical visual for showing how
+much each covariate’s ASMD shrinks after applying weights. <code class="docutils literal notranslate"><span class="pre">balance</span></code> did
+not previously expose one; this is the first such helper. Reference: R’s
+<code class="docutils literal notranslate"><span class="pre">cobalt::love.plot</span></code>.</p>
+<p>The function is split into a primitive (<code class="docutils literal notranslate"><span class="pre">love_plot</span></code>) operating on raw
+<code class="docutils literal notranslate"><span class="pre">pd.Series</span></code> inputs and a method shortcut (<code class="docutils literal notranslate"><span class="pre">BalanceDFCovars.love_plot</span></code>)
+that pulls before/after ASMD off a fitted <code class="docutils literal notranslate"><span class="pre">BalanceFrame</span></code>’s lineage.</p>
+<p>The primitive accepts a single <code class="docutils literal notranslate"><span class="pre">asmd_before</span></code> series for the pre-adjust
+diagnostic case (when no “after” yet exists) and falls back to a single-
+series scatter then. With both <code class="docutils literal notranslate"><span class="pre">asmd_before</span></code> and <code class="docutils literal notranslate"><span class="pre">asmd_after</span></code> it
+draws the canonical before-vs-after view.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.love_plot.love_plot">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.love_plot.</span></span><span class="sig-name descname"><span class="pre">love_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">asmd_before</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asmd_after</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Axes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Axes</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/love_plot.html#love_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.love_plot.love_plot" title="Link to this definition">¶</a></dt>
+<dd><p>Side-by-side scatter of per-covariate ASMD before vs. after weighting.</p>
+<p>A “Love plot” (after Thomas Love) is the canonical visual for showing
+how much each covariate’s ASMD shrinks after applying weights.
+Reference: R’s <code class="docutils literal notranslate"><span class="pre">cobalt::love.plot</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>asmd_before</strong> – ASMD per covariate. In two-series mode (when
+<code class="docutils literal notranslate"><span class="pre">asmd_after</span></code> is supplied) this is the BEFORE-adjustment
+ASMD — e.g. the output of the unadjusted view’s
+<code class="docutils literal notranslate"><span class="pre">BalanceDFCovars.asmd()</span></code>. In single-series mode (when
+<code class="docutils literal notranslate"><span class="pre">asmd_after</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code>) this is the only ASMD plotted —
+typically the current / weighted ASMD when no “before” yet
+exists (the pre-adjust diagnostic case). The argument name
+reflects the canonical two-series usage; the single-series
+branch labels the points as “ASMD” rather than “Unweighted”
+so a caller passing the weighted ASMD here is not
+mis-described in the legend.</p></li>
+<li><p><strong>asmd_after</strong> – ASMD per covariate <strong>with</strong> weights. When <code class="docutils literal notranslate"><span class="pre">None</span></code> the
+plot shows <code class="docutils literal notranslate"><span class="pre">asmd_before</span></code> only as a single-series scatter –
+this is the pre-adjust diagnostic case (no “after” yet exists),
+conceptually closer to <code class="docutils literal notranslate"><span class="pre">asmd()</span></code> than to <code class="docutils literal notranslate"><span class="pre">asmd_improvement()</span></code>.</p></li>
+<li><p><strong>threshold</strong> – Vertical reference line, default 0.1 — the conventional
+“balance achieved” cutoff. Must be non-negative (ASMD itself
+is non-negative by construction).</p></li>
+<li><p><strong>ax</strong> – Optional matplotlib <code class="docutils literal notranslate"><span class="pre">Axes</span></code> to draw into. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, a new
+figure is created sized to the number of covariates.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The Axes used, returned for further
+customization (titles, legend, save, etc.).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib.axes.Axes</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">threshold</span></code> is negative, or if <code class="docutils literal notranslate"><span class="pre">asmd_before</span></code> and
+    <code class="docutils literal notranslate"><span class="pre">asmd_after</span></code> (when both supplied) share no covariates.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.love_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">love_plot</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">before</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">({</span><span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="mf">0.42</span><span class="p">,</span> <span class="s2">&quot;income&quot;</span><span class="p">:</span> <span class="mf">0.31</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">after</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">({</span><span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span> <span class="s2">&quot;income&quot;</span><span class="p">:</span> <span class="mf">0.08</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ax</span> <span class="o">=</span> <span class="n">love_plot</span><span class="p">(</span><span class="n">before</span><span class="p">,</span> <span class="n">after</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">balance.stats_and_plots.love_plot</a><ul>
+<li><a class="reference internal" href="#balance.stats_and_plots.love_plot.love_plot"><code class="docutils literal notranslate"><span class="pre">love_plot()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="balance.stats_and_plots.impact_of_weights_on_outcome.html"
+                          title="previous chapter">balance.stats_and_plots.impact_of_weights_on_outcome</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="balance.stats_and_plots.weighted_comparisons_plots.html"
+                          title="next chapter">balance.stats_and_plots.weighted_comparisons_plots</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/balance.stats_and_plots.love_plot.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.weighted_comparisons_plots.html" title="balance.stats_and_plots.weighted_comparisons_plots"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="balance.stats_and_plots.impact_of_weights_on_outcome.html" title="balance.stats_and_plots.impact_of_weights_on_outcome"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">balance  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="balance.html" >balance</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="balance.stats_and_plots.html" >balance.stats_and_plots</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">balance.stats_and_plots.love_plot</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    </div>
+  </body>
+</html>

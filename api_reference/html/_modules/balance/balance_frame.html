@@ -3086,21 +3086,21 @@
         <span class="k">if</span> <span class="n">n_rows</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">n_rows</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">de</span> <span class="o">=</span> <span class="n">weights_stats</span><span class="o">.</span><span class="n">design_effect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df_weights</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">stats</span> <span class="o">=</span> <span class="n">weights_stats</span><span class="o">.</span><span class="n">kish_deff_stats</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df_weights</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">ZeroDivisionError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Unable to compute design effect: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
-        <span class="k">if</span> <span class="n">de</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">de</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">stats</span><span class="o">.</span><span class="n">deff</span><span class="p">):</span>
             <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
-        <span class="n">effective_sample_size</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">effective_sample_proportion</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="n">n_rows</span> <span class="ow">and</span> <span class="n">de</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">effective_sample_size</span> <span class="o">=</span> <span class="n">n_rows</span> <span class="o">/</span> <span class="n">de</span>
-            <span class="n">effective_sample_proportion</span> <span class="o">=</span> <span class="n">effective_sample_size</span> <span class="o">/</span> <span class="n">n_rows</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">n_rows</span> <span class="ow">or</span> <span class="n">stats</span><span class="o">.</span><span class="n">deff</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">stats</span><span class="o">.</span><span class="n">deff</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
-        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">de</span><span class="p">),</span> <span class="n">effective_sample_size</span><span class="p">,</span> <span class="n">effective_sample_proportion</span>
+        <span class="c1"># Scale ESS against caller-supplied ``n_rows`` (which may differ from</span>
+        <span class="c1"># ``len(weights)`` for filtered-subset diagnostics). ESSP is invariant</span>
+        <span class="c1"># under that override -- it always equals ``1 / deff``.</span>
+        <span class="k">return</span> <span class="n">stats</span><span class="o">.</span><span class="n">deff</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">n_rows</span> <span class="o">/</span> <span class="n">stats</span><span class="o">.</span><span class="n">deff</span><span class="p">),</span> <span class="n">stats</span><span class="o">.</span><span class="n">essp</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_quick_adjustment_details</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>

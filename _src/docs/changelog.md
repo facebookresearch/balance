@@ -30,6 +30,41 @@ hide_title: true
   `store_fit_metadata=False` if memory footprint matters more than
   the ability to call `predict_weights()` later.
 
+## New Features
+
+- **`balance.interop.diff_diff`** — thin adapter to [diff-diff](https://github.com/igerber/diff-diff) (`>=3.3.0,<4`) for survey-weighted Difference-in-Differences handoff. Provides `to_survey_design()`, `to_panel_for_did()`, `fit_did()`, and `as_balance_diagnostic()`. Install the optional dependency via `pip install "balance[did]"`. The submodule is lazy-imported, so `import balance` still works cleanly when diff-diff isn't available — the import guard rewrites the `ImportError` to point users at the `balance[did]` extra. Shared adapter helpers (`active_weight_column`, `drop_history_columns`, `validate_row_count`, `attach_balance_provenance`) live in `balance/interop/_common.py` and column-name conventions in `balance/interop/conventions.py` so a future `balance.interop.svy` adapter can reuse them.
+
+- **`balance.stats_and_plots.weights_stats.kish_deff_stats`** — bundled Kish-design-effect diagnostic returning a `KishStats(deff, ess, essp)` namedtuple. Computes `design_effect` once and derives ESS and ESSP from it, avoiding three separate Deff computations when all three quantities are needed. `kish_ess(w)` and `kish_essp(w)` are also exposed as ergonomic singletons over the existing `design_effect`. `BalanceFrame._design_effect_diagnostics` now routes through `kish_deff_stats` so the canonical Kish identities live in one place.
+
+- **All-zero weight inputs to `_check_weights_series_are_valid` now emit a `UserWarning`** (when `require_positive=False`, the default). Previously, weighted statistics over an all-zero weight vector silently produced `NaN` / `inf` (`sum(w*x)/sum(w) = 0/0`). Existing callers that already passed `require_positive=True` (e.g. `design_effect`, `nonparametric_skew`, `prop_above_and_below`, `weighted_median_breakdown_point`) keep their historical `ValueError` behaviour. This affects internal callers like `descriptive_stats` → `asmd`, which previously masked the failure mode in their output.
+
+- **`balance.stats_and_plots.love_plot.love_plot` and `BalanceDFCovars.love_plot()`** — visual ASMD diagnostic in the spirit of R's `cobalt::love.plot`. The primitive accepts `(asmd_before, asmd_after=None, *, threshold=0.1, ax=None)` and returns a matplotlib `Axes`. With both series it draws the canonical before-vs-after scatter; with only `asmd_before` (the pre-adjust diagnostic case) it draws a single-series scatter with the same threshold reference lines. The `BalanceDFCovars.love_plot()` method pulls before/after ASMD off the `BalanceFrame` lineage and falls back to the single-series mode when no `unadjusted` view is linked (mirroring `asmd()` rather than `asmd_improvement()`).
+
+- **Rake now supports fit-time metadata persistence and `predict_weights()` reconstruction.**
+  - `rake(..., store_fit_metadata=True)` now stores contingency-table artifacts
+    and fit-time metadata required to rebuild weights later.
+  - `BalanceFrame.fit(method="rake")` now enables `store_fit_metadata=True` by
+    default so fitted rake models can be reused with
+    `BalanceFrame.predict_weights()` without refitting.
+  - **In-place replay** (`predict_weights()` with no `data=`) works with
+    any transformations, including the rake default
+    `transformations="default"`.
+  - **Transfer scoring** (`predict_weights(data=...)`) requires
+    deterministic transformations: it raises `ValueError` for models
+    fitted with `transformations="default"` and for explicit dicts that
+    directly reference known data-dependent helpers (`quantize`,
+    `fct_lump`). To enable transfer scoring, pass deterministic
+    transformations at fit time (e.g. wrappers built around stored
+    fit-time bin edges) or re-fit rake on the scoring data.
+
+## Documentation
+
+- **README cross-link to diff-diff.** New "Design-based inference" parent section in [README.md](https://github.com/facebookresearch/balance/blob/main/README.md) introduces the diff-diff integration above the API tour, with a fenced code snippet (canonical `Sample.from_frame` → `set_target` → `adjust` → `fit_did` workflow) and links to the upstream project. The Docusaurus tutorials index and the website landing page (`HomepageFeatures.js`) gain matching cross-references; `.github/copilot-instructions.md` gets a new review-checklist bullet for changes that touch `balance/interop/diff_diff.py`.
+
+- **Survey-weighted DiD tutorial.** New `tutorials/balance_diff_diff_brfss.ipynb` walks through a BRFSS-style staggered-adoption smoking-ban DiD use case end-to-end (the synthetic research question is "did State X's 2020 indoor-smoking ban reduce ER admissions for adult asthma exacerbations relative to bordering states without bans, 2018-2024?"): load synthetic survey microdata via `dd.generate_survey_did_data(seed=20260430)`, reweight to ACS demographic marginals via `balance.ipw`, aggregate to a state-quarter panel via `to_panel_for_did`, fit Callaway-Sant'Anna doubly-robust DiD via `fit_did`, run HonestDiD sensitivity, build a combined diagnostic via `as_balance_diagnostic`, and contrast with the unweighted estimate. 21 cells total (12 markdown + 9 code). References Sant'Anna-Zhao 2020, Callaway-Sant'Anna 2021, Roth-Sant'Anna-Bilinski-Poe 2023, Bruns-Smith 2023, Sarig-Galili-Eilat 2023, Ghandour-Reece 2025. Self-contained and deterministic — CI re-executes via nbconvert. Committed with cleared outputs to keep diff size small; the `deploy-website.yml` workflow re-runs and bakes outputs into the rendered Docusaurus pages.
+
+- **CI matrix entry for diff-diff integration.** The `Build and Test` workflow now exercises `tests/test_interop_diff_diff.py` on Python 3.12 (against both the minimum supported diff-diff pin `==3.3.0` and the resolved-latest within the `>=3.3.0,<4` band), via new `extras` and `diff-diff-pin` matrix axes restricted to `ubuntu-latest` to avoid runner blowup. The bare-import-balance matrix (no `[did]` extra) continues to cover Python 3.9 / 3.10 / 3.11 / 3.12 / 3.13 / 3.14 across `ubuntu-latest` / `macos-latest` / `windows-latest`. A new `notebook-ci.yml` workflow (added in a separate diff so it lands before the tutorial notebook) nbconvert-executes the BRFSS tutorial on every PR that touches `tutorials/**.ipynb` or `balance/interop/**.py`, and a new `diff-diff-canary.yml` workflow runs **weekly on Mondays at 02:00 EST (07:00 UTC)** against the absolute latest diff-diff release from PyPI, opening (or updating) a GitHub issue tagged `diff-diff-incompatibility` on failure. These guards catch breakage from either side — a balance refactor that perturbs the `weight_column` contract, or a diff-diff release that renames a public symbol — before downstream users hit it. The `coverage.yml` workflow installs with the `[did]` extra so the new tests run under coverage (the matching install update on `deploy-website.yml` lands in the tutorial-notebook diff so the docs build can nbconvert-execute the tutorial from the moment it lands). Internal Buck test-matrix targets (`:balance_tests_pss2`, `:balance_tests_pss3`) gain a direct `fbsource//third-party/pypi/diff-diff:diff-diff` dep so the integration tests can `import diff_diff` under buck2 inside fbcode.
+
 ## Bug Fixes
 
 - **`rake()` now correctly incorporates per-row design weights in final weights.**
@@ -53,25 +88,6 @@ hide_title: true
   In this delegated path, model metadata records `method='poststratify'`
   (explicitly noted in the warning) while returned weights keep the
   canonical rake output name (`rake_weight`).
-
-## New Features
-
-- **Rake now supports fit-time metadata persistence and `predict_weights()` reconstruction.**
-  - `rake(..., store_fit_metadata=True)` now stores contingency-table artifacts
-    and fit-time metadata required to rebuild weights later.
-  - `BalanceFrame.fit(method="rake")` now enables `store_fit_metadata=True` by
-    default so fitted rake models can be reused with
-    `BalanceFrame.predict_weights()` without refitting.
-  - **In-place replay** (`predict_weights()` with no `data=`) works with
-    any transformations, including the rake default
-    `transformations="default"`.
-  - **Transfer scoring** (`predict_weights(data=...)`) requires
-    deterministic transformations: it raises `ValueError` for models
-    fitted with `transformations="default"` and for explicit dicts that
-    directly reference known data-dependent helpers (`quantize`,
-    `fct_lump`). To enable transfer scoring, pass deterministic
-    transformations at fit time (e.g. wrappers built around stored
-    fit-time bin edges) or re-fit rake on the scoring data.
 
 ## Code Quality & Refactoring
 

@@ -46,6 +46,70 @@
   <section id="module-balance.stats_and_plots.weights_stats">
 <span id="balance-stats-and-plots-weights-stats"></span><h1>balance.stats_and_plots.weights_stats<a class="headerlink" href="#module-balance.stats_and_plots.weights_stats" title="Link to this heading">¶</a></h1>
 <dl class="py class">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weights_stats.KishStats">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weights_stats.</span></span><span class="sig-name descname"><span class="pre">KishStats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">deff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ess</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">essp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/balance/stats_and_plots/weights_stats.html#KishStats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weights_stats.KishStats" title="Link to this definition">¶</a></dt>
+<dd><p>Kish design-effect diagnostic bundle.</p>
+<p>All three members share a single <code class="docutils literal notranslate"><span class="pre">design_effect</span></code> computation. The
+identities are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">deff</span> <span class="pre">=</span> <span class="pre">E[w^2]</span> <span class="pre">/</span> <span class="pre">E[w]^2</span></code> (&gt;= 1 for non-degenerate weights)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ess</span>&#160; <span class="pre">=</span> <span class="pre">n</span> <span class="pre">/</span> <span class="pre">deff</span></code>        (effective sample size)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">essp</span> <span class="pre">=</span> <span class="pre">1</span> <span class="pre">/</span> <span class="pre">deff</span></code>        (effective sample proportion in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>)</p></li>
+</ul>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weights_stats.KishStats.deff">
+<span class="sig-name descname"><span class="pre">deff</span></span><a class="headerlink" href="#balance.stats_and_plots.weights_stats.KishStats.deff" title="Link to this definition">¶</a></dt>
+<dd><p>Kish’s design effect.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weights_stats.KishStats.ess">
+<span class="sig-name descname"><span class="pre">ess</span></span><a class="headerlink" href="#balance.stats_and_plots.weights_stats.KishStats.ess" title="Link to this definition">¶</a></dt>
+<dd><p>Kish’s effective sample size.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weights_stats.KishStats.essp">
+<span class="sig-name descname"><span class="pre">essp</span></span><a class="headerlink" href="#balance.stats_and_plots.weights_stats.KishStats.essp" title="Link to this definition">¶</a></dt>
+<dd><p>Kish’s effective sample proportion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">deff</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">ess</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#id1" title="Link to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">essp</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#id2" title="Link to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="balance.stats_and_plots.weights_stats.PropAboveBelowResult">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weights_stats.</span></span><span class="sig-name descname"><span class="pre">PropAboveBelowResult</span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weights_stats.html#PropAboveBelowResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weights_stats.PropAboveBelowResult" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -86,6 +150,117 @@ due to application of the weights.</p>
 <span class="n">design_effect</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)))</span>
     <span class="c1"># 2.9880418803112336</span>
     <span class="c1"># As expected. With a single dominating weight - the Deff is almost equal to the sample size.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weights_stats.kish_deff_stats">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weights_stats.</span></span><span class="sig-name descname"><span class="pre">kish_deff_stats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">_ScalarT</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#balance.stats_and_plots.weights_stats.KishStats" title="balance.stats_and_plots.weights_stats.KishStats"><span class="pre">KishStats</span></a></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weights_stats.html#kish_deff_stats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weights_stats.kish_deff_stats" title="Link to this definition">¶</a></dt>
+<dd><p>Bundle Kish’s design effect, effective sample size, and ESS proportion.</p>
+<p>Computes <code class="docutils literal notranslate"><span class="pre">design_effect</span></code> once and derives <code class="docutils literal notranslate"><span class="pre">ess</span></code> and <code class="docutils literal notranslate"><span class="pre">essp</span></code> from
+it, avoiding three separate Deff computations when all three quantities
+are needed. Use <code class="docutils literal notranslate"><span class="pre">kish_ess</span></code> / <code class="docutils literal notranslate"><span class="pre">kish_essp</span></code> only when you need exactly
+one number.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>w</strong> (<em>list</em><em>[</em><em>Any</em><em>] </em><em>| </em><em>pd.Series</em><em> | </em><em>npt.NDArray</em><em> | </em><em>pd.DataFrame</em>) – Weights container with non-negative numeric values. If <code class="docutils literal notranslate"><span class="pre">w</span></code> is a
+DataFrame, only the first column is used.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Namedtuple with <code class="docutils literal notranslate"><span class="pre">deff</span></code>, <code class="docutils literal notranslate"><span class="pre">ess</span></code>, and <code class="docutils literal notranslate"><span class="pre">essp</span></code> fields.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#balance.stats_and_plots.weights_stats.KishStats" title="balance.stats_and_plots.weights_stats.KishStats">KishStats</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>TypeError</strong> – If <code class="docutils literal notranslate"><span class="pre">w</span></code> is not numeric.</p></li>
+<li><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">w</span></code> is empty, contains negative entries, or contains
+    no positive entries (validated through <code class="docutils literal notranslate"><span class="pre">design_effect</span></code> with
+    <code class="docutils literal notranslate"><span class="pre">require_positive=True</span></code>).</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weights_stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">kish_deff_stats</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="n">stats</span> <span class="o">=</span> <span class="n">kish_deff_stats</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+<span class="n">stats</span><span class="o">.</span><span class="n">deff</span>   <span class="c1"># 1.0</span>
+<span class="n">stats</span><span class="o">.</span><span class="n">ess</span>    <span class="c1"># 4.0</span>
+<span class="n">stats</span><span class="o">.</span><span class="n">essp</span>   <span class="c1"># 1.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weights_stats.kish_ess">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weights_stats.</span></span><span class="sig-name descname"><span class="pre">kish_ess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">_ScalarT</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weights_stats.html#kish_ess"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weights_stats.kish_ess" title="Link to this definition">¶</a></dt>
+<dd><p>Kish’s effective sample size: <code class="docutils literal notranslate"><span class="pre">n</span> <span class="pre">/</span> <span class="pre">Deff</span> <span class="pre">=</span> <span class="pre">sum(w)^2</span> <span class="pre">/</span> <span class="pre">sum(w^2)</span></code>.</p>
+<p>Convenience singleton over <code class="docutils literal notranslate"><span class="pre">design_effect</span></code>. Prefer <code class="docutils literal notranslate"><span class="pre">kish_deff_stats</span></code>
+when you need <code class="docutils literal notranslate"><span class="pre">ess</span></code> alongside <code class="docutils literal notranslate"><span class="pre">deff</span></code> or <code class="docutils literal notranslate"><span class="pre">essp</span></code> — that path computes
+<code class="docutils literal notranslate"><span class="pre">design_effect</span></code> once and derives all three.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>w</strong> (<em>list</em><em>[</em><em>Any</em><em>] </em><em>| </em><em>pd.Series</em><em> | </em><em>npt.NDArray</em><em> | </em><em>pd.DataFrame</em>) – Weights container with non-negative numeric values. If <code class="docutils literal notranslate"><span class="pre">w</span></code> is a
+DataFrame, only the first column is used.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>ESS in the same units as <code class="docutils literal notranslate"><span class="pre">len(w)</span></code>. Equals <code class="docutils literal notranslate"><span class="pre">len(w)</span></code> when
+all weights are equal.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>TypeError</strong> – If <code class="docutils literal notranslate"><span class="pre">w</span></code> is not numeric.</p></li>
+<li><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">w</span></code> is empty, contains negative entries, or contains
+    no positive entries.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weights_stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">kish_ess</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="n">kish_ess</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>   <span class="c1"># 4.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weights_stats.kish_essp">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weights_stats.</span></span><span class="sig-name descname"><span class="pre">kish_essp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">_ScalarT</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weights_stats.html#kish_essp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weights_stats.kish_essp" title="Link to this definition">¶</a></dt>
+<dd><p>Kish’s effective sample proportion: <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">/</span> <span class="pre">Deff</span></code> (always in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>).</p>
+<p>Convenience singleton over <code class="docutils literal notranslate"><span class="pre">design_effect</span></code>. Prefer <code class="docutils literal notranslate"><span class="pre">kish_deff_stats</span></code>
+when you need <code class="docutils literal notranslate"><span class="pre">essp</span></code> alongside <code class="docutils literal notranslate"><span class="pre">deff</span></code> or <code class="docutils literal notranslate"><span class="pre">ess</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>w</strong> (<em>list</em><em>[</em><em>Any</em><em>] </em><em>| </em><em>pd.Series</em><em> | </em><em>npt.NDArray</em><em> | </em><em>pd.DataFrame</em>) – Weights container with non-negative numeric values. If <code class="docutils literal notranslate"><span class="pre">w</span></code> is a
+DataFrame, only the first column is used.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A value in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>. Equals <code class="docutils literal notranslate"><span class="pre">1.0</span></code> when all weights are
+equal.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>TypeError</strong> – If <code class="docutils literal notranslate"><span class="pre">w</span></code> is not numeric.</p></li>
+<li><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">w</span></code> is empty, contains negative entries, or contains
+    no positive entries.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weights_stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">kish_essp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="n">kish_essp</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>   <span class="c1"># 1.0</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -262,8 +437,20 @@ DataFrame, only the first column is used.</p>
     <h3><a href="index.html">Table of Contents</a></h3>
     <ul>
 <li><a class="reference internal" href="#">balance.stats_and_plots.weights_stats</a><ul>
+<li><a class="reference internal" href="#balance.stats_and_plots.weights_stats.KishStats"><code class="docutils literal notranslate"><span class="pre">KishStats</span></code></a><ul>
+<li><a class="reference internal" href="#balance.stats_and_plots.weights_stats.KishStats.deff"><code class="docutils literal notranslate"><span class="pre">KishStats.deff</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weights_stats.KishStats.ess"><code class="docutils literal notranslate"><span class="pre">KishStats.ess</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weights_stats.KishStats.essp"><code class="docutils literal notranslate"><span class="pre">KishStats.essp</span></code></a></li>
+<li><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">KishStats.deff</span></code></a></li>
+<li><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">KishStats.ess</span></code></a></li>
+<li><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">KishStats.essp</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#balance.stats_and_plots.weights_stats.PropAboveBelowResult"><code class="docutils literal notranslate"><span class="pre">PropAboveBelowResult</span></code></a></li>
 <li><a class="reference internal" href="#balance.stats_and_plots.weights_stats.design_effect"><code class="docutils literal notranslate"><span class="pre">design_effect()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weights_stats.kish_deff_stats"><code class="docutils literal notranslate"><span class="pre">kish_deff_stats()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weights_stats.kish_ess"><code class="docutils literal notranslate"><span class="pre">kish_ess()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weights_stats.kish_essp"><code class="docutils literal notranslate"><span class="pre">kish_essp()</span></code></a></li>
 <li><a class="reference internal" href="#balance.stats_and_plots.weights_stats.nonparametric_skew"><code class="docutils literal notranslate"><span class="pre">nonparametric_skew()</span></code></a></li>
 <li><a class="reference internal" href="#balance.stats_and_plots.weights_stats.prop_above_and_below"><code class="docutils literal notranslate"><span class="pre">prop_above_and_below()</span></code></a></li>
 <li><a class="reference internal" href="#balance.stats_and_plots.weights_stats.weighted_median_breakdown_point"><code class="docutils literal notranslate"><span class="pre">weighted_median_breakdown_point()</span></code></a></li>
