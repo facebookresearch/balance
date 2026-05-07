@@ -8,7 +8,8 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Literal, overload, TypedDict
+import warnings
+from typing import Any, Literal, NamedTuple, overload, TypedDict
 
 import numpy as np
 import numpy.typing as npt
@@ -65,22 +66,77 @@ def _check_weights_series_are_valid(
 
     Args:
         w (pd.Series): Weights represented as a pandas Series.
-        require_positive (bool, optional): If True, require at least one weight
-            to be strictly positive. Defaults to False.
+        require_positive (bool, optional): If True, raise ``ValueError`` when
+            all weights are zero (or non-positive). If False (default), emit a
+            ``UserWarning`` instead so the silent-NaN failure mode of
+            downstream weighted statistics (e.g. ``descriptive_stats``,
+            ``asmd``) is visible to the caller. Defaults to False.
 
     Raises:
+        ValueError: If ``w`` is empty (zero-length).
         TypeError: If ``w`` is not numeric.
         ValueError: If ``w`` includes any negative value.
         ValueError: If ``require_positive`` is True and all weights are zero.
+
+    Warns:
+        UserWarning: If ``require_positive`` is False and the input has no
+            positive entries. The warning text distinguishes two causes:
+            ``"All N weight entries are NaN"`` when every entry is missing,
+            and ``"All weights are zero (no positive entries)"`` for the
+            all-zero / mixed zero+NaN case. Both shapes silently produce
+            ``NaN`` / ``inf`` downstream (``sum(w*x)/sum(w) = 0/0``); the
+            warning surfaces the failure mode without changing the
+            historical not-a-raise behaviour for the
+            ``require_positive=False`` callers.
     """
+    if len(w) == 0:
+        # Empty inputs are pandas-version-unstable: ``pd.Series([])`` defaults
+        # to ``object`` dtype on older pandas (which would fall into the
+        # ``is_numeric_dtype`` raise) and to ``float64`` on newer pandas
+        # (which would silently fall through to the all-zero branch and
+        # emit a ``UserWarning``). Reject empty inputs deterministically up
+        # front so the contract is stable across supported pandas versions.
+        raise ValueError("weights (w) must be non-empty.")
     if not pd.api.types.is_numeric_dtype(w):
         raise TypeError(
             f"weights (w) must be a number but instead they are of type: {w.dtype}."
         )
-    if any(w < 0):
+    # Use pandas ``.any()`` (not Python's built-in ``any()``) so the
+    # comparison is robust under nullable dtypes: ``Float64`` / ``Int64``
+    # produce ``pd.NA`` from comparisons with ``NA`` entries, and
+    # ``bool(pd.NA)`` raises ``TypeError: boolean value of NA is
+    # ambiguous`` -- which would crash ``any(w < 0)`` before any of the
+    # validation messages could fire. ``Series.any()`` defaults to
+    # ``skipna=True`` and treats NA as False for the boolean reduction.
+    if (w < 0).any():
         raise ValueError("weights (w) must all be non-negative values.")
-    if require_positive and not any(w > 0):
-        raise ValueError("weights (w) must include at least one positive value.")
+    if not (w > 0).any():
+        if require_positive:
+            raise ValueError("weights (w) must include at least one positive value.")
+        # Distinguish all-NaN from all-zero so the UserWarning is not
+        # misleading: ``not (w > 0).any()`` fires for both ``[0, 0, 0]``
+        # and ``[NaN, NaN]``, and the previous "All weights are zero"
+        # wording incorrectly described the NaN case.
+        n_total: int = len(w)
+        n_nan: int = int(w.isna().sum())
+        if n_nan == n_total:
+            warnings.warn(
+                f"All {n_total} weight entries are NaN; weighted statistics "
+                "downstream will yield NaN. This usually indicates a bug in "
+                "the upstream weighting / filtering pipeline (e.g. an empty "
+                "join key or an all-missing column).",
+                UserWarning,
+                stacklevel=3,
+            )
+        else:
+            warnings.warn(
+                "All weights are zero (no positive entries); weighted "
+                "statistics downstream will yield NaN or inf "
+                "(``sum(w*x)/sum(w) = 0/0``). This usually indicates a bug "
+                "in the upstream weighting / filtering pipeline.",
+                UserWarning,
+                stacklevel=3,
+            )
 
 
 def _check_weights_are_valid(
@@ -160,6 +216,137 @@ def design_effect(
 
     # Avoid divide by zero warning
     return _safe_divide_with_zero_handling((w**2).mean(), w.mean() ** 2)
+
+
+class KishStats(NamedTuple):
+    """Kish design-effect diagnostic bundle.
+
+    All three members share a single ``design_effect`` computation. The
+    identities are:
+
+    * ``deff = E[w^2] / E[w]^2`` (>= 1 for non-degenerate weights)
+    * ``ess  = n / deff``        (effective sample size)
+    * ``essp = 1 / deff``        (effective sample proportion in ``[0, 1]``)
+
+    Attributes:
+        deff: Kish's design effect.
+        ess: Kish's effective sample size.
+        essp: Kish's effective sample proportion.
+    """
+
+    deff: float
+    ess: float
+    essp: float
+
+
+def kish_deff_stats(
+    w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame,
+) -> KishStats:
+    """Bundle Kish's design effect, effective sample size, and ESS proportion.
+
+    Computes ``design_effect`` once and derives ``ess`` and ``essp`` from
+    it, avoiding three separate Deff computations when all three quantities
+    are needed. Use ``kish_ess`` / ``kish_essp`` only when you need exactly
+    one number.
+
+    Args:
+        w (list[Any] | pd.Series | npt.NDArray | pd.DataFrame):
+            Weights container with non-negative numeric values. If ``w`` is a
+            DataFrame, only the first column is used.
+
+    Returns:
+        KishStats: Namedtuple with ``deff``, ``ess``, and ``essp`` fields.
+
+    Raises:
+        TypeError: If ``w`` is not numeric.
+        ValueError: If ``w`` is empty, contains negative entries, or contains
+            no positive entries (validated through ``design_effect`` with
+            ``require_positive=True``).
+
+    Examples:
+        ::
+
+            from balance.stats_and_plots.weights_stats import kish_deff_stats
+            import pandas as pd
+
+            stats = kish_deff_stats(pd.Series((1, 1, 1, 1)))
+            stats.deff   # 1.0
+            stats.ess    # 4.0
+            stats.essp   # 1.0
+    """
+    w_series = _weights_to_series(w)
+    deff = float(design_effect(w_series))
+    n = len(w_series)
+    return KishStats(deff=deff, ess=float(n / deff), essp=1.0 / deff)
+
+
+def kish_ess(
+    w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame,
+) -> float:
+    """Kish's effective sample size: ``n / Deff = sum(w)^2 / sum(w^2)``.
+
+    Convenience singleton over ``design_effect``. Prefer ``kish_deff_stats``
+    when you need ``ess`` alongside ``deff`` or ``essp`` — that path computes
+    ``design_effect`` once and derives all three.
+
+    Args:
+        w (list[Any] | pd.Series | npt.NDArray | pd.DataFrame):
+            Weights container with non-negative numeric values. If ``w`` is a
+            DataFrame, only the first column is used.
+
+    Returns:
+        float: ESS in the same units as ``len(w)``. Equals ``len(w)`` when
+        all weights are equal.
+
+    Raises:
+        TypeError: If ``w`` is not numeric.
+        ValueError: If ``w`` is empty, contains negative entries, or contains
+            no positive entries.
+
+    Examples:
+        ::
+
+            from balance.stats_and_plots.weights_stats import kish_ess
+            import pandas as pd
+
+            kish_ess(pd.Series((1, 1, 1, 1)))   # 4.0
+    """
+    w_series = _weights_to_series(w)
+    deff = float(design_effect(w_series))
+    return float(len(w_series) / deff)
+
+
+def kish_essp(
+    w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame,
+) -> float:
+    """Kish's effective sample proportion: ``1 / Deff`` (always in ``[0, 1]``).
+
+    Convenience singleton over ``design_effect``. Prefer ``kish_deff_stats``
+    when you need ``essp`` alongside ``deff`` or ``ess``.
+
+    Args:
+        w (list[Any] | pd.Series | npt.NDArray | pd.DataFrame):
+            Weights container with non-negative numeric values. If ``w`` is a
+            DataFrame, only the first column is used.
+
+    Returns:
+        float: A value in ``[0, 1]``. Equals ``1.0`` when all weights are
+        equal.
+
+    Raises:
+        TypeError: If ``w`` is not numeric.
+        ValueError: If ``w`` is empty, contains negative entries, or contains
+            no positive entries.
+
+    Examples:
+        ::
+
+            from balance.stats_and_plots.weights_stats import kish_essp
+            import pandas as pd
+
+            kish_essp(pd.Series((1, 1, 1, 1)))   # 1.0
+    """
+    return 1.0 / float(design_effect(w))
 
 
 def nonparametric_skew(
