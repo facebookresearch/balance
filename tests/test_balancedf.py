@@ -2222,9 +2222,61 @@ class TestBalanceDF_asmd(BalanceTestCase):
             s1.covars().love_plot()
 
     def test_BalanceDFCovars_love_plot_negative_threshold_raises(self) -> None:
-        """Negative threshold rejected — ASMD is non-negative by construction."""
+        """Negative threshold rejected — the metric is non-negative by construction."""
         with self.assertRaisesRegex(ValueError, "threshold must be non-negative"):
             s3.covars().love_plot(threshold=-0.1)
+
+    def test_BalanceDFCovars_love_plot_metric_kld(self) -> None:
+        """``metric="kld"`` dispatches to the KLD path and labels the axes accordingly.
+
+        Verifies the metric kwarg works end-to-end on a real ``BalanceFrame``
+        lineage (post-adjust, with linked unadjusted): the method calls
+        ``unadjusted.kld()`` / ``self.kld()`` rather than the ASMD methods
+        and forwards ``xlabel="KLD"`` to the primitive.
+        """
+        import matplotlib.pyplot as plt
+
+        s3_unadjusted = deepcopy(s3)
+        s3_unadjusted.set_weights(pd.Series([1, 1, 1, 1], index=s3.df.index))
+        s3_with_unadjusted = s3.set_unadjusted(s3_unadjusted)
+        ax = s3_with_unadjusted.covars().love_plot(metric="kld")
+        self.assertIsNotNone(ax)
+        self.assertEqual(ax.get_xlabel(), "KLD")
+        # Two scatter collections (post-adjust mode).
+        self.assertEqual(len(ax.collections), 2)
+        plt.close("all")
+
+    def test_BalanceDFCovars_love_plot_invalid_metric_raises(self) -> None:
+        """Unknown metric names get a clear error listing the valid set."""
+        with self.assertRaisesRegex(ValueError, "metric must be one of"):
+            s3.covars().love_plot(metric="bogus")  # pyre-ignore[6]
+
+    def test_BalanceDFCovars_love_plot_threshold_default_per_metric(self) -> None:
+        """``threshold=None`` resolves to 0.1 for ASMD and ``None`` for other metrics.
+
+        The cobalt 0.1 cutoff is ASMD-specific; metrics like KLD have no
+        canonical default. The per-metric resolution lets users call
+        ``bf.covars().love_plot(metric="kld")`` without manually
+        suppressing a misleading reference line, and keeps the historical
+        ASMD default for the most common case.
+        """
+        import matplotlib.pyplot as plt
+
+        # ASMD path: default threshold draws the reference line.
+        ax_asmd = s3.covars().love_plot()
+        n_lines_asmd = len(ax_asmd.lines)
+        plt.close("all")
+
+        # KLD path: default threshold (None) draws no reference line.
+        ax_kld = s3.covars().love_plot(metric="kld")
+        n_lines_kld = len(ax_kld.lines)
+        plt.close("all")
+
+        self.assertEqual(
+            n_lines_asmd - n_lines_kld,
+            1,
+            "ASMD default should draw exactly one more line than KLD default",
+        )
 
     def test_BalanceDF_asmd_improvement(self) -> None:
         with self.assertRaisesRegex(
