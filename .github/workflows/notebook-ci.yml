@@ -1,0 +1,169 @@
+name: Tutorial Notebook CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      # Pin to the specific tutorial this workflow actually executes -- the
+      # ``execute-tutorial`` job hard-codes ``tutorials/balance_diff_diff_brfss.ipynb``,
+      # so triggering on every ``tutorials/*.ipynb`` change would just queue
+      # wasted CI runs for unrelated tutorial edits.
+      - 'tutorials/balance_diff_diff_brfss.ipynb'
+      # Watch interop adapter changes: the tutorial uses ``balance.interop.diff_diff``
+      # APIs, so an upstream interop edit can break the executed notebook even
+      # when the .ipynb file itself has not changed. Both globs are listed
+      # because GitHub Actions' filter glob behaviour for ``**.py`` (no
+      # ``/`` before ``**``) is undocumented across edge cases; the explicit
+      # ``*.py`` + ``**/*.py`` pair matches both top-level (``balance/interop/X.py``)
+      # and nested (``balance/interop/sub/X.py``) files unambiguously.
+      - 'balance/interop/*.py'
+      - 'balance/interop/**/*.py'
+      - '.github/workflows/notebook-ci.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      # Pin to the specific tutorial this workflow actually executes -- the
+      # ``execute-tutorial`` job hard-codes ``tutorials/balance_diff_diff_brfss.ipynb``,
+      # so triggering on every ``tutorials/*.ipynb`` change would just queue
+      # wasted CI runs for unrelated tutorial edits.
+      - 'tutorials/balance_diff_diff_brfss.ipynb'
+      # Watch interop adapter changes: the tutorial uses ``balance.interop.diff_diff``
+      # APIs, so an upstream interop edit can break the executed notebook even
+      # when the .ipynb file itself has not changed. Both globs are listed
+      # because GitHub Actions' filter glob behaviour for ``**.py`` (no
+      # ``/`` before ``**``) is undocumented across edge cases; the explicit
+      # ``*.py`` + ``**/*.py`` pair matches both top-level (``balance/interop/X.py``)
+      # and nested (``balance/interop/sub/X.py``) files unambiguously.
+      - 'balance/interop/*.py'
+      - 'balance/interop/**/*.py'
+      - '.github/workflows/notebook-ci.yml'
+  workflow_dispatch:
+
+jobs:
+  execute-tutorial:
+    name: Execute balance_diff_diff_brfss tutorial
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        python-version: ['3.12']
+      fail-fast: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Pkg + Dependencies (with did extras)
+        run: |
+          python -m pip install --upgrade pip
+          # NOTE: only `dev` and `did` exist in pyproject.toml's
+          # [project.optional-dependencies]. There is no `docs` extra --
+          # listing it here would make pip fail with
+          # "Extra 'docs' is not defined ...". `dev` already pulls in
+          # everything notebook-CI needs to nbconvert-execute the
+          # tutorial; if a documentation-only extra is ever added, it
+          # can be re-included here.
+          # Use `python -m pip` (not bare `pip`) so the install lands in
+          # the same interpreter that ran the upgrade above, regardless
+          # of any stray `pip` shim that might be on the runner's PATH.
+          python -m pip install -e ".[dev,did]"
+
+      - name: Show installed diff-diff (debugging aid)
+        run: |
+          # Use ``importlib.metadata.version`` instead of
+          # ``diff_diff.__version__`` -- some packages don't expose a
+          # top-level ``__version__`` attribute, and a missing attribute
+          # would silently break this debug step (false-positive CI
+          # failure even though diff-diff is installed correctly).
+          python -c "from importlib.metadata import version; print('diff-diff', version('diff-diff'))"
+
+      - name: Check tutorial notebook exists
+        # Bootstrapping guard: this workflow file lands in its own diff
+        # before the tutorial notebook diff lands. Between the two
+        # landings (and on this diff's own per-diff ephemeral CI run)
+        # the workflow triggers via the `.github/workflows/notebook-ci.yml`
+        # path filter but the notebook does not exist yet -- nbconvert
+        # would then fail with FileNotFoundError. Detect the missing
+        # file here and emit a notice so the job stays green; once the
+        # notebook lands the subsequent run nbconvert-executes normally.
+        # The guard ALSO covers the brief gap where a `balance/interop/**/*.py`
+        # change triggers this workflow before the notebook diff lands.
+        id: check-notebook
+        run: |
+          if [ -f tutorials/balance_diff_diff_brfss.ipynb ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::tutorials/balance_diff_diff_brfss.ipynb not present yet — skipping execution. Will run once the tutorial notebook diff lands."
+          fi
+        shell: bash
+
+      - name: Execute the tutorial notebook
+        if: steps.check-notebook.outputs.exists == 'true'
+        run: |
+          # `allow_errors=True` so nbconvert always writes the executed
+          # notebook even when a cell raises. The next step (Sanity-scan)
+          # is the actual gate: it has `if: always()` and walks the
+          # executed notebook's outputs to fail the job on any error cell
+          # that is NOT tagged `ci-allow-error`. Setting
+          # `allow_errors=False` here would make nbconvert exit non-zero
+          # on the first error and produce an incomplete output notebook,
+          # so the scan would either find nothing to read (no executed
+          # notebook) or only see cells executed before the first failure
+          # -- in either case the `ci-allow-error` tag escape hatch
+          # becomes unreachable for cells that come after the first error.
+          # `python -m jupyter nbconvert` (not bare `jupyter`) for the
+          # same reason as the install step above — pin the binary to
+          # the matrix-installed interpreter.
+          python -m jupyter nbconvert --to notebook --execute \
+            --ExecutePreprocessor.timeout=300 \
+            --ExecutePreprocessor.allow_errors=True \
+            --output /tmp/balance_diff_diff_brfss.executed.ipynb \
+            tutorials/balance_diff_diff_brfss.ipynb
+
+      - name: Sanity-scan executed notebook for unexpected error cells
+        # `always() && check-notebook.outputs.exists == 'true'` runs the
+        # scan whenever the Execute step ran (regardless of pass/fail),
+        # but skips it when the notebook didn't exist (bootstrapping
+        # window; see `Check tutorial notebook exists` step above). With
+        # `allow_errors=True` in the Execute step, nbconvert writes the
+        # executed notebook even when cells raise, so this scan is the
+        # actual gate on tagged-vs-untagged errors. If the executed
+        # notebook is somehow missing despite the Execute step running
+        # (e.g. dependency install failed earlier), the inline Python
+        # will raise a clear `FileNotFoundError`.
+        if: ${{ always() && steps.check-notebook.outputs.exists == 'true' }}
+        run: |
+          python - <<'PY'
+          import json, sys
+          with open("/tmp/balance_diff_diff_brfss.executed.ipynb") as f:
+              nb = json.load(f)
+          failures = 0
+          for idx, cell in enumerate(nb["cells"]):
+              for output in cell.get("outputs", []):
+                  if output.get("output_type") == "error":
+                      ename = output.get("ename", "")
+                      tags = cell.get("metadata", {}).get("tags", [])
+                      if "ci-allow-error" in tags:
+                          print(f"Cell {idx}: allowed error in tagged cell ({ename})")
+                          continue
+                      print(f"FAIL: cell {idx} raised {ename}", file=sys.stderr)
+                      for line in output.get("traceback", []):
+                          print(line, file=sys.stderr)
+                      failures += 1
+          if failures:
+              sys.exit(f"Found {failures} unexpected error cell(s)")
+          print("OK: no unexpected errors in executed notebook")
+          PY
+
+      - name: Upload executed notebook as artifact
+        if: ${{ always() && steps.check-notebook.outputs.exists == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: balance_diff_diff_brfss-executed-py${{ matrix.python-version }}
+          path: /tmp/balance_diff_diff_brfss.executed.ipynb
+          retention-days: 14
