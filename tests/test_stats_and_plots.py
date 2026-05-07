@@ -171,6 +171,95 @@ class TestBalance_weights_stats(
             kish_essp(pd.Series((0, 1, 2, 3))), 1 / 1.555_555_555_555_555_6
         )
 
+    def test_love_plot_returns_axes_with_before_and_after(self) -> None:
+        """``love_plot`` returns an Axes and plots two scatter series.
+
+        With both ``asmd_before`` and ``asmd_after`` the canonical
+        before-vs-after view draws two scatter collections plus the
+        positive threshold reference line (ASMD is non-negative, so only
+        ``+threshold`` is drawn).
+        """
+        import matplotlib.pyplot as plt
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31})
+        after = pd.Series({"age": 0.05, "income": 0.08})
+        ax = love_plot(before, after)
+        self.assertIsNotNone(ax)
+        # Two scatter collections (Unweighted, Weighted) + the threshold lines.
+        self.assertEqual(len(ax.collections), 2)
+        plt.close("all")
+
+    def test_love_plot_with_after_none_is_single_series(self) -> None:
+        """Pre-adjust diagnostic: ``love_plot(asmd_before)`` is a 1-series scatter.
+
+        Mirrors the ``asmd()`` rather than ``asmd_improvement()`` framing —
+        when no "after" exists, plot only the current weighted ASMD.
+        """
+        import matplotlib.pyplot as plt
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31})
+        ax = love_plot(before, asmd_after=None)
+        self.assertIsNotNone(ax)
+        # Single scatter collection rather than the two-series view.
+        self.assertEqual(len(ax.collections), 1)
+        plt.close("all")
+
+    def test_love_plot_negative_threshold_raises(self) -> None:
+        """Negative threshold rejected — ASMD is non-negative by construction."""
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42})
+        after = pd.Series({"age": 0.05})
+        with self.assertRaisesRegex(ValueError, "threshold must be non-negative"):
+            love_plot(before, after, threshold=-0.1)
+
+    def test_love_plot_no_common_covariates_raises(self) -> None:
+        """Mismatched indices with empty intersection are an error.
+
+        Falling back to an empty plot would silently mislead the caller; we
+        require at least one shared covariate.
+        """
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42})
+        after = pd.Series({"income": 0.05})
+        with self.assertRaisesRegex(
+            ValueError, "asmd_before and asmd_after share no covariates"
+        ):
+            love_plot(before, after)
+
+    def test_love_plot_uses_existing_axes(self) -> None:
+        """Passing ``ax=...`` draws into the supplied Axes (no new figure)."""
+        import matplotlib.pyplot as plt
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31})
+        after = pd.Series({"age": 0.05, "income": 0.08})
+        fig, ax = plt.subplots()
+        returned = love_plot(before, after, ax=ax)
+        self.assertIs(returned, ax)
+        plt.close("all")
+
+    def test_love_plot_drops_mean_asmd_summary_row(self) -> None:
+        """The conventional ``mean(asmd)`` summary row is dropped before plotting.
+
+        Otherwise it would show up as just another covariate dot, distorting
+        the per-covariate scatter ordering.
+        """
+        import matplotlib.pyplot as plt
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31, "mean(asmd)": 0.365})
+        after = pd.Series({"age": 0.05, "income": 0.08, "mean(asmd)": 0.065})
+        ax = love_plot(before, after)
+        # Y-axis tick labels are the covariate names; ``mean(asmd)`` should
+        # not appear among them.
+        labels = [t.get_text() for t in ax.get_yticklabels()]
+        self.assertNotIn("mean(asmd)", labels)
+        plt.close("all")
+
     def test_check_weights_warns_on_all_zero(self) -> None:
         """``_check_weights_series_are_valid(require_positive=False)`` warns on all-zero.
 
