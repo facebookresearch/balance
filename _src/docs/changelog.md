@@ -89,6 +89,11 @@ hide_title: true
   (explicitly noted in the warning) while returned weights keep the
   canonical rake output name (`rake_weight`).
 
+- **CLI `--num_lambdas` now parses as a positive integer argument.**
+  Fractional, zero, negative, and non-numeric values now fail fast during
+  argument parsing instead of being accepted after coercion/truncation or
+  failing later during IPW adjustment.
+
 ## Code Quality & Refactoring
 
 - Diagnostics construction now wires `adjustment_failure` metadata from model
