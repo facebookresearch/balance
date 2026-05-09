@@ -10,7 +10,8 @@ from __future__ import annotations
 import inspect
 import json
 import logging
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser, ArgumentTypeError, Namespace
+from numbers import Integral
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Type
 
@@ -23,6 +24,38 @@ from sklearn.base import ClassifierMixin
 from sklearn.linear_model import LogisticRegression
 
 logger: logging.Logger = logging.getLogger(__package__)
+
+
+def _positive_int_arg(value: Any) -> int:
+    """Parse an argparse value as a strictly positive integer.
+
+    Args:
+        value: Raw argument value supplied by argparse or tests.
+
+    Returns:
+        The parsed positive integer.
+
+    Raises:
+        ArgumentTypeError: If the value is not an integer greater than zero.
+    """
+    if isinstance(value, bool):
+        raise ArgumentTypeError("must be an integer greater than 0")
+
+    if isinstance(value, Integral):
+        parsed = int(value)
+    elif isinstance(value, str):
+        stripped = value.strip()
+        digits = stripped[1:] if stripped.startswith(("+", "-")) else stripped
+        if not digits or not digits.isdecimal():
+            raise ArgumentTypeError("must be an integer greater than 0")
+        parsed = int(stripped)
+    else:
+        raise ArgumentTypeError("must be an integer greater than 0")
+
+    if parsed < 1:
+        raise ArgumentTypeError("must be an integer greater than 0")
+
+    return parsed
 
 
 def _parse_csv_columns_arg(value: Optional[str], arg_name: str) -> List[str]:
@@ -471,7 +504,7 @@ class BalanceCLI:
         """
         if self.args.num_lambdas is None:
             return None
-        return int(self.args.num_lambdas)
+        return _positive_int_arg(self.args.num_lambdas)
 
     def transformations(self) -> str | None:
         """Return the transformations config for adjustment.
@@ -1383,7 +1416,7 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
     )
     parser.add_argument(
         "--num_lambdas",
-        type=float,  # TODO: change to type=int (num_lambdas is an integer count)
+        type=_positive_int_arg,
         required=False,
         default=250,
         help=(

@@ -7,10 +7,12 @@
 
 from __future__ import annotations
 
+import contextlib
+import io
 import os.path
 import tempfile
 import warnings
-from argparse import Namespace
+from argparse import ArgumentTypeError, Namespace
 from typing import Any
 
 import balance.testutil
@@ -1647,13 +1649,56 @@ class TestBalanceCLI_num_lambdas(balance.testutil.BalanceTestCase):
         result = cli.num_lambdas()
         self.assertIsNone(result)
 
-    def test_num_lambdas_returns_int_when_set(self) -> None:
-        """Test num_lambdas returns int when set."""
-        args = Namespace(num_lambdas="250")
-        cli = BalanceCLI(args)
-        result = cli.num_lambdas()
-        self.assertEqual(result, 250)
-        self.assertIsInstance(result, int)
+    def test_num_lambdas_returns_positive_int_when_set(self) -> None:
+        """Test num_lambdas returns a positive int when set."""
+        for value in ("250", "+250", "0250", 250):
+            with self.subTest(value=value):
+                args = Namespace(num_lambdas=value)
+                cli = BalanceCLI(args)
+                result = cli.num_lambdas()
+                self.assertEqual(result, 250)
+                self.assertIsInstance(result, int)
+
+    def test_num_lambdas_rejects_invalid_namespace_values(self) -> None:
+        """Test direct Namespace values use the same validation as argparse."""
+        invalid_values = ("1.5", 1.5, "0", 0, "-1", -1, "abc", True)
+        for value in invalid_values:
+            with self.subTest(value=value):
+                cli = BalanceCLI(Namespace(num_lambdas=value))
+                with self.assertRaises(ArgumentTypeError):
+                    cli.num_lambdas()
+
+    def _parse_num_lambdas_args(self, value: str) -> Namespace:
+        """Parse minimal valid CLI args with the requested num_lambdas value."""
+        return make_parser().parse_args(
+            [
+                "--input_file",
+                "in.csv",
+                "--output_file",
+                "out.csv",
+                "--covariate_columns",
+                "x",
+                f"--num_lambdas={value}",
+            ]
+        )
+
+    def test_parser_accepts_positive_integer_num_lambdas(self) -> None:
+        """Test parser accepts positive integer num_lambdas values."""
+        for value in ("250", "+250", "0250"):
+            with self.subTest(value=value):
+                args = self._parse_num_lambdas_args(value)
+                self.assertEqual(args.num_lambdas, 250)
+                self.assertIsInstance(args.num_lambdas, int)
+
+    def test_parser_rejects_invalid_num_lambdas(self) -> None:
+        """Test parser rejects non-positive and non-integer num_lambdas values."""
+        invalid_values = ("1.5", "1.0", "0", "-1", "abc", "")
+        for value in invalid_values:
+            with self.subTest(value=value):
+                stderr = io.StringIO()
+                with contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit):
+                    self._parse_num_lambdas_args(value)
+                self.assertIn("--num_lambdas", stderr.getvalue())
 
 
 class TestBalanceCLI_ipw_kwargs(balance.testutil.BalanceTestCase):
