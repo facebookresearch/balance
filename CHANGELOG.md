@@ -81,8 +81,8 @@
 
 - **CLI `--num_lambdas` now parses as a positive integer argument.**
   Fractional, zero, negative, and non-numeric values now fail fast during
-  argument parsing instead of being accepted and silently truncated or
-  deferred to IPW adjustment internals.
+  argument parsing instead of being accepted after coercion/truncation or
+  failing later during IPW adjustment.
 
 ## Code Quality & Refactoring
 
