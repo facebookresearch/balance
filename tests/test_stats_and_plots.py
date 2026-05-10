@@ -310,6 +310,9 @@ class TestBalance_weights_stats(
         self.assertIn("Unweighted", ascii_plot)
         self.assertIn("Weighted", ascii_plot)
 
+        long_label_ascii = love_plot(pd.Series({"x" * 60: 0.1}), library="balance")
+        self.assertIn("x" * 40, long_label_ascii)
+
     def test_love_plot_order_by_after(self) -> None:
         """Covariates can be sorted by weighted/after imbalance."""
         import matplotlib.pyplot as plt

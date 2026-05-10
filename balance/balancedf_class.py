@@ -2985,7 +2985,7 @@ class BalanceDFCovars(BalanceDF):
 
     def plot(
         self: "BalanceDFCovars", on_linked_samples: bool = True, **kwargs: Any
-    ) -> list[Any] | npt.NDArray[Any] | dict[str, Figure] | str | Figure | None:
+    ) -> Any:
         """Plot covariates, including ``dist_type="love_plot"`` diagnostics.
 
         The default behaviour is inherited from :meth:`BalanceDF.plot` and

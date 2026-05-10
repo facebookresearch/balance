@@ -301,7 +301,8 @@ def _ascii_love_plot(
     threshold: float | None,
     bar_width: int,
 ) -> str:
-    covar_width = min(max(max(len(str(i)) for i in data.index), len("Covariate")), 40)
+    max_label_width = max(len(str(i)) for i in data.index)
+    covar_width = min(max(max_label_width, len("Covariate")), 40)
     max_value = float(data.abs().max().max())
     threshold_text = "none" if threshold is None else f"{threshold:.3g}"
     lines = [
