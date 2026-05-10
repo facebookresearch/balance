@@ -2987,6 +2987,11 @@
         <span class="n">metric</span><span class="p">:</span> <span class="n">LovePlotMetric</span> <span class="o">=</span> <span class="s2">&quot;asmd&quot;</span><span class="p">,</span>
         <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">ax</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">library</span><span class="p">:</span> <span class="n">_love_plot_module</span><span class="o">.</span><span class="n">LovePlotLibrary</span> <span class="o">=</span> <span class="s2">&quot;plotly&quot;</span><span class="p">,</span>
+        <span class="n">line</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">order_by</span><span class="p">:</span> <span class="n">_love_plot_module</span><span class="o">.</span><span class="n">LovePlotOrderBy</span> <span class="o">=</span> <span class="s2">&quot;diff&quot;</span><span class="p">,</span>
+        <span class="n">show</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Side-by-side imbalance scatter of unadjusted vs. adjusted covariates.</span>
 
@@ -3018,15 +3023,33 @@
 <span class="sd">                line) for the other metrics, since none has a universally</span>
 <span class="sd">                accepted cutoff. Pass an explicit float to override.</span>
 <span class="sd">            ax (Any | None, optional): Optional matplotlib ``Axes`` to draw</span>
-<span class="sd">                into. If ``None``, a new figure is created sized to the</span>
-<span class="sd">                number of covariates.</span>
+<span class="sd">                into for ``library=&quot;seaborn&quot;``. If ``None``, a new figure is</span>
+<span class="sd">                created sized to the number of covariates.</span>
+<span class="sd">            library (str, optional): Plotting backend. ``&quot;plotly&quot;`` (default)</span>
+<span class="sd">                returns an interactive Plotly ``Figure``; ``&quot;seaborn&quot;``</span>
+<span class="sd">                returns a static seaborn/matplotlib ``Axes``; ``&quot;balance&quot;``</span>
+<span class="sd">                returns an ASCII string.</span>
+<span class="sd">            line (bool, optional): If ``True`` and an unadjusted view is</span>
+<span class="sd">                available, connect each unweighted/weighted covariate pair</span>
+<span class="sd">                with a horizontal line, similar to cobalt&#39;s ``line=TRUE``.</span>
+<span class="sd">            order_by (str, optional): Sort covariates by ``&quot;diff&quot;``</span>
+<span class="sd">                (default; signed ``after - before``, so the most-worsened</span>
+<span class="sd">                rise to the top and the most-improved sink to the bottom),</span>
+<span class="sd">                ``&quot;before&quot;``, ``&quot;after&quot;``, ``&quot;alphabetical&quot;``, or ``&quot;none&quot;``.</span>
+<span class="sd">            show (bool, optional): For ``library=&quot;plotly&quot;``, whether to call</span>
+<span class="sd">                ``fig.show()`` before returning the figure.</span>
+<span class="sd">            **kwargs: Forwarded to the underlying</span>
+<span class="sd">                :func:`balance.stats_and_plots.love_plot.love_plot` primitive</span>
+<span class="sd">                (e.g. ``bar_width`` for ``library=&quot;balance&quot;``, or Plotly</span>
+<span class="sd">                layout options like ``title=`` for ``library=&quot;plotly&quot;``).</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            matplotlib.axes.Axes: The Axes used, returned for further</span>
-<span class="sd">            customization (titles, legend, save, etc.). The ``Any`` return</span>
-<span class="sd">            annotation matches balance&#39;s convention for plotting helpers</span>
-<span class="sd">            (see :meth:`BalanceDFWeights.plot`) and avoids an eager</span>
-<span class="sd">            matplotlib import in this module&#39;s type signature.</span>
+<span class="sd">            matplotlib.axes.Axes | plotly.graph_objects.Figure | str: A</span>
+<span class="sd">            seaborn/matplotlib ``Axes`` for ``library=&quot;seaborn&quot;``, a Plotly</span>
+<span class="sd">            figure for ``library=&quot;plotly&quot;``, or ASCII text for</span>
+<span class="sd">            ``library=&quot;balance&quot;``. The ``Any`` return annotation matches</span>
+<span class="sd">            balance&#39;s plotting-helper convention and avoids eager plotting</span>
+<span class="sd">            imports in this module&#39;s type signature.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: If ``metric`` is not one of the supported names;</span>
@@ -3071,6 +3094,11 @@
                 <span class="n">xlabel</span><span class="o">=</span><span class="n">xlabel</span><span class="p">,</span>
                 <span class="n">threshold</span><span class="o">=</span><span class="n">threshold_resolved</span><span class="p">,</span>
                 <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+                <span class="n">library</span><span class="o">=</span><span class="n">library</span><span class="p">,</span>
+                <span class="n">line</span><span class="o">=</span><span class="n">line</span><span class="p">,</span>
+                <span class="n">order_by</span><span class="o">=</span><span class="n">order_by</span><span class="p">,</span>
+                <span class="n">show</span><span class="o">=</span><span class="n">show</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="c1"># The ``unadjusted`` view&#39;s own ``_balancedf_child_from_linked_samples``</span>
         <span class="c1"># does not include the target (it is a sibling, not a child of</span>
@@ -3085,7 +3113,70 @@
             <span class="n">xlabel</span><span class="o">=</span><span class="n">xlabel</span><span class="p">,</span>
             <span class="n">threshold</span><span class="o">=</span><span class="n">threshold_resolved</span><span class="p">,</span>
             <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+            <span class="n">library</span><span class="o">=</span><span class="n">library</span><span class="p">,</span>
+            <span class="n">line</span><span class="o">=</span><span class="n">line</span><span class="p">,</span>
+            <span class="n">order_by</span><span class="o">=</span><span class="n">order_by</span><span class="p">,</span>
+            <span class="n">show</span><span class="o">=</span><span class="n">show</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BalanceDFCovars.plot">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFCovars.plot">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFCovars&quot;</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot covariates, including ``dist_type=&quot;love_plot&quot;`` diagnostics.</span>
+
+<span class="sd">        The default behaviour is inherited from :meth:`BalanceDF.plot` and</span>
+<span class="sd">        draws covariate distributions. Passing ``dist_type=&quot;love_plot&quot;``</span>
+<span class="sd">        (or the ``&quot;love&quot;`` alias) dispatches to :meth:`love_plot`, so calls</span>
+<span class="sd">        such as ``adjusted.covars().plot(dist_type=&quot;love_plot&quot;,</span>
+<span class="sd">        library=&quot;plotly&quot;)`` return the covariate-balance scatter directly.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (BalanceDFCovars): The covariates view to plot.</span>
+<span class="sd">            on_linked_samples (bool, optional): Used by distribution plots.</span>
+<span class="sd">                Love plots use the object&#39;s fitted lineage directly and ignore</span>
+<span class="sd">                this argument.</span>
+<span class="sd">            **kwargs: Passed to :meth:`BalanceDF.plot` for distribution plots</span>
+<span class="sd">                or :meth:`love_plot` for love plots.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dist_type</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dist_type&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dist_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;love&quot;</span><span class="p">,</span> <span class="s2">&quot;love_plot&quot;</span><span class="p">):</span>
+            <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;dist_type&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">return_dict_of_figures</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;return_dict_of_figures&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">return_dict_of_figures</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="s2">&quot;return_dict_of_figures must be a bool when using &quot;</span>
+                    <span class="s2">&quot;dist_type=&#39;love_plot&#39;.&quot;</span>
+                <span class="p">)</span>
+            <span class="c1"># ``plot_it`` is a distribution-plot kwarg (see plot_dist); for</span>
+            <span class="c1"># love plots the equivalent is ``show`` (only meaningful for</span>
+            <span class="c1"># ``library=&quot;plotly&quot;``). Translate to avoid passing ``plot_it``</span>
+            <span class="c1"># through to Plotly&#39;s ``update_layout`` where it is an invalid</span>
+            <span class="c1"># property.</span>
+            <span class="k">if</span> <span class="s2">&quot;plot_it&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="n">plot_it</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;plot_it&quot;</span><span class="p">)</span>
+                <span class="n">library</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;library&quot;</span><span class="p">,</span> <span class="s2">&quot;plotly&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">library</span> <span class="o">==</span> <span class="s2">&quot;plotly&quot;</span><span class="p">:</span>
+                    <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;show&quot;</span><span class="p">,</span> <span class="n">plot_it</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="s2">&quot;plot_it is only meaningful for library=&#39;plotly&#39; &quot;</span>
+                        <span class="s2">&quot;love plots; ignoring for library=</span><span class="si">%r</span><span class="s2">.&quot;</span><span class="p">,</span>
+                        <span class="n">library</span><span class="p">,</span>
+                    <span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">love_plot</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">return_dict_of_figures</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;library&quot;</span><span class="p">,</span> <span class="s2">&quot;plotly&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;plotly&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;love_plot&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">}</span>
+            <span class="k">if</span> <span class="n">return_dict_of_figures</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;return_dict_of_figures=True is only supported for &quot;</span>
+                    <span class="s2">&quot;library=&#39;plotly&#39; love plots; returning the plot object directly.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">on_linked_samples</span><span class="o">=</span><span class="n">on_linked_samples</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 </div>
 
 

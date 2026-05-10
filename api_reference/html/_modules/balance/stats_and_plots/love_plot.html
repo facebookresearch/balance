@@ -46,30 +46,29 @@
 
 <span class="sd">A &quot;Love plot&quot; (after Thomas Love) is the canonical visual for showing how</span>
 <span class="sd">much each covariate&#39;s imbalance shrinks after applying weights. ``balance``</span>
-<span class="sd">did not previously expose one; this is the first such helper. Reference:</span>
-<span class="sd">R&#39;s ``cobalt::love.plot``.</span>
+<span class="sd">exposes a primitive (``love_plot``) operating on raw ``pd.Series`` inputs</span>
+<span class="sd">and a method shortcut (``BalanceDFCovars.love_plot``) that pulls the chosen</span>
+<span class="sd">metric off a fitted ``BalanceFrame``&#39;s lineage.</span>
 
-<span class="sd">The function is split into a primitive (``love_plot``) operating on raw</span>
-<span class="sd">``pd.Series`` inputs of any covariate-keyed imbalance metric and a method</span>
-<span class="sd">shortcut (``BalanceDFCovars.love_plot``) that pulls the chosen metric</span>
-<span class="sd">(``&quot;asmd&quot;`` / ``&quot;kld&quot;`` / ``&quot;emd&quot;`` / ``&quot;cvmd&quot;`` / ``&quot;ks&quot;``) off a fitted</span>
-<span class="sd">``BalanceFrame``&#39;s lineage.</span>
-
-<span class="sd">The primitive accepts a single ``before`` series for the pre-adjust</span>
-<span class="sd">diagnostic case (when no &quot;after&quot; yet exists) and falls back to a single-</span>
-<span class="sd">series scatter then. With both ``before`` and ``after`` it draws the</span>
-<span class="sd">canonical before-vs-after view.</span>
+<span class="sd">The primitive supports static seaborn output, plotly output, and ASCII text</span>
+<span class="sd">output. With both ``before`` and ``after`` it draws the canonical</span>
+<span class="sd">before-vs-after view; with only ``before`` it draws a single-series</span>
+<span class="sd">pre-adjust diagnostic.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numbers</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">get_args</span><span class="p">,</span> <span class="n">Literal</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.axes</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
 
@@ -77,15 +76,13 @@
 <span class="n">_AFTER_COLOR</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;#0072B2&quot;</span>
 <span class="n">_THRESHOLD_COLOR</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;red&quot;</span>
 
-<span class="c1"># Regex for the conventional ``mean(&lt;metric&gt;)`` summary row that</span>
-<span class="c1"># ``BalanceDF.{asmd,kld,emd,cvmd,ks}()`` append to their per-covariate</span>
-<span class="c1"># series. Anchored to the exact metric names ``balance`` actually emits so</span>
-<span class="c1"># we can&#39;t accidentally drop a real covariate that happens to be named</span>
-<span class="c1"># like ``mean(age)``. Drop these before plotting because they are summary</span>
-<span class="c1"># aggregates, not per-covariate values, and would distort scatter ordering.</span>
 <span class="n">_SUMMARY_ROW_PATTERN</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">Pattern</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
     <span class="sa">r</span><span class="s2">&quot;^mean\((?:asmd|kld|emd|cvmd|ks)\)$&quot;</span>
 <span class="p">)</span>
+<span class="n">LovePlotLibrary</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;plotly&quot;</span><span class="p">,</span> <span class="s2">&quot;seaborn&quot;</span><span class="p">,</span> <span class="s2">&quot;balance&quot;</span><span class="p">]</span>
+<span class="n">LovePlotOrderBy</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;before&quot;</span><span class="p">,</span> <span class="s2">&quot;after&quot;</span><span class="p">,</span> <span class="s2">&quot;diff&quot;</span><span class="p">,</span> <span class="s2">&quot;alphabetical&quot;</span><span class="p">,</span> <span class="s2">&quot;none&quot;</span><span class="p">]</span>
+<span class="n">_LOVE_PLOT_LIBRARIES</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">get_args</span><span class="p">(</span><span class="n">LovePlotLibrary</span><span class="p">))</span>
+<span class="n">_LOVE_PLOT_ORDER_BY</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">get_args</span><span class="p">(</span><span class="n">LovePlotOrderBy</span><span class="p">))</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_drop_summary_rows</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
@@ -94,6 +91,335 @@
         <span class="o">~</span><span class="n">s</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">to_series</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">_SUMMARY_ROW_PATTERN</span><span class="p">)</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">s</span><span class="p">[</span><span class="n">keep_mask</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_validate_metric_series</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate and coerce a love-plot metric series to finite numeric values.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> must be a pandas Series; got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">series</span><span class="p">)</span><span class="si">!r}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+    <span class="n">clean</span> <span class="o">=</span> <span class="n">_drop_summary_rows</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">clean</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">has_duplicates</span><span class="p">:</span>
+        <span class="n">duplicated</span> <span class="o">=</span> <span class="n">clean</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">clean</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">duplicated</span><span class="p">()]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> contains duplicate covariate labels after summary-row drop: &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">duplicated</span><span class="si">}</span><span class="s2">. Love plots require one metric value per covariate.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">numeric</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">clean</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;raise&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> must contain numeric imbalance metric values.&quot;</span>
+        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+
+    <span class="n">finite_or_na</span> <span class="o">=</span> <span class="n">numeric</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">numeric</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">finite_or_na</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+        <span class="n">bad_labels</span> <span class="o">=</span> <span class="n">numeric</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="o">~</span><span class="n">finite_or_na</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> contains non-finite imbalance values for covariates: &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">bad_labels</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">numeric</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_prepare_love_plot_data</span><span class="p">(</span>
+    <span class="n">before</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">after</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">order_by</span><span class="p">:</span> <span class="n">LovePlotOrderBy</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Clean, align, and sort love-plot input series.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">order_by</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_LOVE_PLOT_ORDER_BY</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;order_by must be one of </span><span class="si">{</span><span class="n">_LOVE_PLOT_ORDER_BY</span><span class="si">}</span><span class="s2">; got </span><span class="si">{</span><span class="n">order_by</span><span class="si">!r}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">before_clean</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">=</span> <span class="n">_validate_metric_series</span><span class="p">(</span><span class="n">before</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;before&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">after</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">before_clean</span> <span class="o">=</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;love_plot: no covariates to plot — all entries are NaN &quot;</span>
+                <span class="s2">&quot;(this usually means the categorical levels in the sample / &quot;</span>
+                <span class="s2">&quot;target frames are completely disjoint).&quot;</span>
+            <span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">before_clean</span><span class="p">})</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">after_clean</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">=</span> <span class="n">_validate_metric_series</span><span class="p">(</span><span class="n">after</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">after_clean</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+            <span class="n">common</span> <span class="o">=</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">after_clean</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">common</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;before and after share no covariates.&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;love_plot: aligning to </span><span class="si">%d</span><span class="s2"> common covariates (before=</span><span class="si">%d</span><span class="s2">, after=</span><span class="si">%d</span><span class="s2">).&quot;</span><span class="p">,</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">common</span><span class="p">),</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">before_clean</span><span class="p">),</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">after_clean</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="n">before_clean</span> <span class="o">=</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">common</span><span class="p">]</span>
+            <span class="n">after_clean</span> <span class="o">=</span> <span class="n">after_clean</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">common</span><span class="p">]</span>
+
+        <span class="n">keep</span> <span class="o">=</span> <span class="p">(</span><span class="o">~</span><span class="n">before_clean</span><span class="o">.</span><span class="n">isna</span><span class="p">())</span> <span class="o">&amp;</span> <span class="p">(</span><span class="o">~</span><span class="n">after_clean</span><span class="o">.</span><span class="n">isna</span><span class="p">())</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">keep</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;love_plot: no covariates to plot after dropping NaN entries &quot;</span>
+                <span class="s2">&quot;(this usually means the categorical levels in the sample / &quot;</span>
+                <span class="s2">&quot;target frames are completely disjoint).&quot;</span>
+            <span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span><span class="s2">&quot;Unweighted&quot;</span><span class="p">:</span> <span class="n">before_clean</span><span class="p">[</span><span class="n">keep</span><span class="p">],</span> <span class="s2">&quot;Weighted&quot;</span><span class="p">:</span> <span class="n">after_clean</span><span class="p">[</span><span class="n">keep</span><span class="p">]}</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">order_by</span> <span class="o">==</span> <span class="s2">&quot;alphabetical&quot;</span><span class="p">:</span>
+        <span class="c1"># Keep the internal bottom-to-top order used by seaborn/plotly,</span>
+        <span class="c1"># but sort labels by their string representation so mixed-type</span>
+        <span class="c1"># covariate labels (e.g. ints and strings) do not raise in pandas.</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">order_by</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">data</span>
+    <span class="k">if</span> <span class="n">order_by</span> <span class="o">==</span> <span class="s2">&quot;after&quot;</span> <span class="ow">and</span> <span class="s2">&quot;Weighted&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">order_values</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Weighted&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">order_by</span> <span class="o">==</span> <span class="s2">&quot;diff&quot;</span> <span class="ow">and</span> <span class="s2">&quot;Weighted&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="c1"># Signed difference (after - before): negative = improvement,</span>
+        <span class="c1"># positive = worsening. ascending=True puts the smallest (most-</span>
+        <span class="c1"># improved) at y=0 (bottom) and the most-worsened at the top, so</span>
+        <span class="c1"># regressions float to the top of the plot.</span>
+        <span class="n">order_values</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Weighted&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Unweighted&quot;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">order_values</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="n">order_values</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+    <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_seaborn_love_plot</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">ax</span><span class="p">:</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">Axes</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">line</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">Axes</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))))</span>
+
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]:</span>
+        <span class="n">sns</span><span class="o">.</span><span class="n">scatterplot</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
+            <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">_AFTER_COLOR</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="n">xlabel</span><span class="p">,</span>
+            <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">line</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">hlines</span><span class="p">(</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
+                <span class="n">xmin</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;Unweighted&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                <span class="n">xmax</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;Weighted&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                <span class="n">colors</span><span class="o">=</span><span class="s2">&quot;#BBBBBB&quot;</span><span class="p">,</span>
+                <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">sns</span><span class="o">.</span><span class="n">scatterplot</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;Unweighted&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
+            <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Unweighted&quot;</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">_BEFORE_COLOR</span><span class="p">,</span>
+            <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+            <span class="n">zorder</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">sns</span><span class="o">.</span><span class="n">scatterplot</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;Weighted&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
+            <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Weighted&quot;</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">_AFTER_COLOR</span><span class="p">,</span>
+            <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+            <span class="n">zorder</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">threshold</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_THRESHOLD_COLOR</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">xlabel</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Covariate&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ax</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_safe_plotly_show</span><span class="p">(</span><span class="n">fig</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Display a Plotly figure, tolerating missing notebook mime renderers.</span>
+
+<span class="sd">    ``fig.show()`` raises ``ValueError`` in CLI/test environments where Plotly&#39;s</span>
+<span class="sd">    mime renderer cannot import ``nbformat``. Mirrors the guard used by</span>
+<span class="sd">    :func:`weighted_comparisons_plots._safe_plotly_iplot`: log a warning and</span>
+<span class="sd">    return the figure rather than crashing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weighted_comparisons_plots</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">_is_nbformat_mime_error</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_nbformat_mime_error</span><span class="p">(</span><span class="n">error</span><span class="p">):</span>
+            <span class="k">raise</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;Plotly notebook mime rendering unavailable; returning figure &quot;</span>
+            <span class="s2">&quot;without displaying it. Original error: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">error</span><span class="p">,</span>
+        <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_plotly_love_plot</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">line</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">show</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">layout_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
+
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+    <span class="c1"># Use numeric y positions with explicit tick labels rather than a</span>
+    <span class="c1"># categorical y-axis. Distinct index values that stringify to the same</span>
+    <span class="c1"># text (e.g. ``1`` and ``&quot;1&quot;``) would otherwise collapse onto the same</span>
+    <span class="c1"># categorical row in Plotly, overlapping markers and connector lines.</span>
+    <span class="n">y_positions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
+    <span class="n">y_tick_labels</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+            <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">y_positions</span><span class="p">,</span>
+                <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;markers&quot;</span><span class="p">,</span>
+                <span class="n">marker</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;symbol&quot;</span><span class="p">:</span> <span class="s2">&quot;circle&quot;</span><span class="p">,</span> <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">_AFTER_COLOR</span><span class="p">},</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">xlabel</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">line</span><span class="p">:</span>
+            <span class="n">x_values</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">y_values</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">y_pos</span><span class="p">,</span> <span class="p">(</span><span class="n">_covar</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">y_positions</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()):</span>
+                <span class="n">x_values</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                    <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;Unweighted&quot;</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;Weighted&quot;</span><span class="p">]),</span> <span class="kc">None</span><span class="p">]</span>
+                <span class="p">)</span>
+                <span class="n">y_values</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">y_pos</span><span class="p">,</span> <span class="n">y_pos</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+                <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+                    <span class="n">x</span><span class="o">=</span><span class="n">x_values</span><span class="p">,</span>
+                    <span class="n">y</span><span class="o">=</span><span class="n">y_values</span><span class="p">,</span>
+                    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span>
+                    <span class="n">line</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;#BBBBBB&quot;</span><span class="p">,</span> <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+                    <span class="n">hoverinfo</span><span class="o">=</span><span class="s2">&quot;skip&quot;</span><span class="p">,</span>
+                    <span class="n">showlegend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Change&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+            <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;Unweighted&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">y_positions</span><span class="p">,</span>
+                <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;markers&quot;</span><span class="p">,</span>
+                <span class="n">marker</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;symbol&quot;</span><span class="p">:</span> <span class="s2">&quot;circle&quot;</span><span class="p">,</span> <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">_BEFORE_COLOR</span><span class="p">},</span>
+                <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Unweighted&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+            <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;Weighted&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">y_positions</span><span class="p">,</span>
+                <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;markers&quot;</span><span class="p">,</span>
+                <span class="n">marker</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;symbol&quot;</span><span class="p">:</span> <span class="s2">&quot;square&quot;</span><span class="p">,</span> <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">_AFTER_COLOR</span><span class="p">},</span>
+                <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Weighted&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_shape</span><span class="p">(</span>
+            <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;line&quot;</span><span class="p">,</span>
+            <span class="n">x0</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span>
+            <span class="n">x1</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span>
+            <span class="n">xref</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span>
+            <span class="n">y0</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">y1</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">yref</span><span class="o">=</span><span class="s2">&quot;paper&quot;</span><span class="p">,</span>
+            <span class="n">line</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">_THRESHOLD_COLOR</span><span class="p">,</span> <span class="s2">&quot;dash&quot;</span><span class="p">:</span> <span class="s2">&quot;dash&quot;</span><span class="p">},</span>
+            <span class="n">opacity</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+        <span class="n">xaxis_title</span><span class="o">=</span><span class="n">xlabel</span><span class="p">,</span>
+        <span class="n">yaxis_title</span><span class="o">=</span><span class="s2">&quot;Covariate&quot;</span><span class="p">,</span>
+        <span class="n">yaxis</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;tickmode&quot;</span><span class="p">:</span> <span class="s2">&quot;array&quot;</span><span class="p">,</span> <span class="s2">&quot;tickvals&quot;</span><span class="p">:</span> <span class="n">y_positions</span><span class="p">,</span> <span class="s2">&quot;ticktext&quot;</span><span class="p">:</span> <span class="n">y_tick_labels</span><span class="p">},</span>
+        <span class="n">height</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="mi">30</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)),</span>
+        <span class="n">template</span><span class="o">=</span><span class="s2">&quot;plotly_white&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">layout_kwargs</span><span class="p">:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="o">**</span><span class="n">layout_kwargs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">show</span><span class="p">:</span>
+        <span class="n">_safe_plotly_show</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fig</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_ascii_bar</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">max_value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">char</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">max_value</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">n_chars</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">((</span><span class="nb">abs</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">/</span> <span class="n">max_value</span><span class="p">)</span> <span class="o">*</span> <span class="n">width</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">n_chars</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">n_chars</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">char</span> <span class="o">*</span> <span class="n">n_chars</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_ascii_love_plot</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">bar_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">max_label_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="n">covar_width</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">max_label_width</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="s2">&quot;Covariate&quot;</span><span class="p">)),</span> <span class="mi">40</span><span class="p">)</span>
+    <span class="n">max_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+    <span class="n">threshold_text</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span> <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">threshold</span><span class="si">:</span><span class="s2">.3g</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s2">&quot;Love plot (</span><span class="si">{</span><span class="n">xlabel</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;Threshold: </span><span class="si">{</span><span class="n">threshold_text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">display_data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]:</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;Covariate&#39;</span><span class="si">:</span><span class="s2">&lt;</span><span class="si">{</span><span class="n">covar_width</span><span class="si">}}</span><span class="s2"> | </span><span class="si">{</span><span class="n">xlabel</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2"> | Plot&quot;</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="p">(</span><span class="n">covar_width</span> <span class="o">+</span> <span class="n">bar_width</span> <span class="o">+</span> <span class="mi">18</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">covar</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">display_data</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">])</span>
+            <span class="n">bar</span> <span class="o">=</span> <span class="n">_ascii_bar</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">max_value</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">bar_width</span><span class="p">,</span> <span class="n">char</span><span class="o">=</span><span class="s2">&quot;#&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">covar</span><span class="p">)</span><span class="si">:</span><span class="s2">&lt;</span><span class="si">{</span><span class="n">covar_width</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">covar_width</span><span class="si">}}</span><span class="s2"> | </span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">&gt;10.4g</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">bar</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;Covariate&#39;</span><span class="si">:</span><span class="s2">&lt;</span><span class="si">{</span><span class="n">covar_width</span><span class="si">}}</span><span class="s2"> | </span><span class="si">{</span><span class="s1">&#39;Unweighted&#39;</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="s1">&#39;Weighted&#39;</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2"> | Change&quot;</span>
+        <span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="p">(</span><span class="n">covar_width</span> <span class="o">+</span> <span class="n">bar_width</span> <span class="o">+</span> <span class="mi">40</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">covar</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">display_data</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="n">before_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;Unweighted&quot;</span><span class="p">])</span>
+            <span class="n">after_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;Weighted&quot;</span><span class="p">])</span>
+            <span class="n">before_bar</span> <span class="o">=</span> <span class="n">_ascii_bar</span><span class="p">(</span><span class="n">before_value</span><span class="p">,</span> <span class="n">max_value</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">bar_width</span><span class="p">,</span> <span class="n">char</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+            <span class="n">after_bar</span> <span class="o">=</span> <span class="n">_ascii_bar</span><span class="p">(</span><span class="n">after_value</span><span class="p">,</span> <span class="n">max_value</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">bar_width</span><span class="p">,</span> <span class="n">char</span><span class="o">=</span><span class="s2">&quot;#&quot;</span><span class="p">)</span>
+            <span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;improved&quot;</span> <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">after_value</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">before_value</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;worse&quot;</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">covar</span><span class="p">)</span><span class="si">:</span><span class="s2">&lt;</span><span class="si">{</span><span class="n">covar_width</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">covar_width</span><span class="si">}}</span><span class="s2"> | &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">before_value</span><span class="si">:</span><span class="s2">&gt;10.4g</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">after_value</span><span class="si">:</span><span class="s2">&gt;10.4g</span><span class="si">}</span><span class="s2"> | &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">before_bar</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">after_bar</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="love_plot">
@@ -105,53 +431,41 @@
     <span class="n">xlabel</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ASMD&quot;</span><span class="p">,</span>
     <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
     <span class="n">ax</span><span class="p">:</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">Axes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">Axes</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Side-by-side scatter of per-covariate imbalance metric, before vs. after.</span>
-
-<span class="sd">    A &quot;Love plot&quot; (after Thomas Love) is the canonical visual for showing</span>
-<span class="sd">    how much each covariate&#39;s imbalance shrinks after applying weights.</span>
-<span class="sd">    Reference: R&#39;s ``cobalt::love.plot``.</span>
-
-<span class="sd">    The primitive is metric-agnostic: callers pass ASMD / KLD / EMD / CVMD</span>
-<span class="sd">    / KS values (or any other covariate-keyed non-negative imbalance</span>
-<span class="sd">    metric) as ``before`` / ``after`` series. The default ``xlabel=&quot;ASMD&quot;``</span>
-<span class="sd">    matches the historical use case; pass an explicit ``xlabel`` for</span>
-<span class="sd">    other metrics. Reference lines are drawn at ``+threshold`` only, since</span>
-<span class="sd">    these metrics are all non-negative by construction.</span>
+    <span class="n">library</span><span class="p">:</span> <span class="n">LovePlotLibrary</span> <span class="o">=</span> <span class="s2">&quot;plotly&quot;</span><span class="p">,</span>
+    <span class="n">line</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">order_by</span><span class="p">:</span> <span class="n">LovePlotOrderBy</span> <span class="o">=</span> <span class="s2">&quot;diff&quot;</span><span class="p">,</span>
+    <span class="n">show</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">bar_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">layout_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot per-covariate imbalance, before vs. after weighting.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        before: Per-covariate metric values. In two-series mode (when</span>
-<span class="sd">            ``after`` is supplied) this is the BEFORE-adjustment metric</span>
-<span class="sd">            (e.g. the output of the unadjusted view&#39;s</span>
-<span class="sd">            ``BalanceDFCovars.asmd() / .kld() / .emd() / .cvmd() / .ks()``).</span>
-<span class="sd">            In single-series mode (when ``after`` is ``None``) this is the</span>
-<span class="sd">            only series plotted — typically the current / weighted metric</span>
-<span class="sd">            when no &quot;before&quot; yet exists (the pre-adjust diagnostic case).</span>
-<span class="sd">        after: Per-covariate metric values **with** weights. When ``None``</span>
-<span class="sd">            the plot shows ``before`` only as a single-series scatter --</span>
-<span class="sd">            this is the pre-adjust diagnostic case (no &quot;after&quot; yet</span>
-<span class="sd">            exists), conceptually closer to ``asmd()`` than to</span>
-<span class="sd">            ``asmd_improvement()``.</span>
-<span class="sd">        xlabel: Label for the x-axis (also used as the legend label in</span>
-<span class="sd">            single-series mode). Defaults to ``&quot;ASMD&quot;``; pass the metric</span>
-<span class="sd">            name explicitly for non-ASMD callers (e.g. ``xlabel=&quot;KLD&quot;``).</span>
-<span class="sd">        threshold: Vertical reference line at ``+threshold``, default 0.1</span>
-<span class="sd">            — the cobalt-convention &quot;balance achieved&quot; cutoff for ASMD.</span>
-<span class="sd">            Pass ``None`` to skip the reference line entirely (recommended</span>
-<span class="sd">            for metrics like KLD / EMD where no canonical cutoff exists).</span>
-<span class="sd">            Must be non-negative if supplied (the metric is non-negative</span>
-<span class="sd">            by construction).</span>
-<span class="sd">        ax: Optional matplotlib ``Axes`` to draw into. If ``None``, a new</span>
-<span class="sd">            figure is created sized to the number of covariates.</span>
+<span class="sd">        before: Per-covariate metric values before adjustment, or the only</span>
+<span class="sd">            series to plot when ``after`` is ``None``.</span>
+<span class="sd">        after: Per-covariate metric values after adjustment.</span>
+<span class="sd">        xlabel: Metric label for the x-axis and ASCII header.</span>
+<span class="sd">        threshold: Optional non-negative vertical/reference threshold. Pass</span>
+<span class="sd">            ``None`` to skip it.</span>
+<span class="sd">        ax: Optional matplotlib ``Axes`` for ``library=&quot;seaborn&quot;``.</span>
+<span class="sd">        library: One of ``&quot;plotly&quot;`` (default; interactive</span>
+<span class="sd">            ``plotly.graph_objects.Figure``), ``&quot;seaborn&quot;`` (static</span>
+<span class="sd">            seaborn/matplotlib axes), or ``&quot;balance&quot;`` (ASCII string).</span>
+<span class="sd">        line: If ``True`` and both series are supplied, connect each</span>
+<span class="sd">            before/after pair with a horizontal line.</span>
+<span class="sd">        order_by: Covariate sorting. ``&quot;diff&quot;`` (default) orders by signed</span>
+<span class="sd">            ``after - before`` so the most-improved covariates are at the</span>
+<span class="sd">            bottom and the most-worsened are at the top; ``&quot;before&quot;`` /</span>
+<span class="sd">            ``&quot;after&quot;`` order by absolute pre / post values; ``&quot;alphabetical&quot;``</span>
+<span class="sd">            sorts by covariate name; ``&quot;none&quot;`` keeps input order.</span>
+<span class="sd">        show: For ``library=&quot;plotly&quot;``, whether to call ``fig.show()``.</span>
+<span class="sd">        bar_width: Width of ASCII bars for ``library=&quot;balance&quot;``.</span>
+<span class="sd">        **layout_kwargs: Additional Plotly layout options when</span>
+<span class="sd">            ``library=&quot;plotly&quot;``.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        matplotlib.axes.Axes: The Axes used, returned for further</span>
-<span class="sd">        customization (titles, legend, save, etc.).</span>
-
-<span class="sd">    Raises:</span>
-<span class="sd">        ValueError: If ``threshold`` is negative; or if ``before`` and</span>
-<span class="sd">            ``after`` (when both supplied) share no covariates; or if all</span>
-<span class="sd">            entries are NaN after summary-row drop / index alignment.</span>
+<span class="sd">        ``matplotlib.axes.Axes`` for static output, ``plotly`` ``Figure`` for</span>
+<span class="sd">        plotly output, or ``str`` for ASCII output.</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">        ::</span>
@@ -160,118 +474,57 @@
 <span class="sd">            &gt;&gt;&gt; from balance.stats_and_plots.love_plot import love_plot</span>
 <span class="sd">            &gt;&gt;&gt; before = pd.Series({&quot;age&quot;: 0.42, &quot;income&quot;: 0.31})</span>
 <span class="sd">            &gt;&gt;&gt; after = pd.Series({&quot;age&quot;: 0.05, &quot;income&quot;: 0.08})</span>
-<span class="sd">            &gt;&gt;&gt; ax = love_plot(before, after)  # doctest: +SKIP</span>
-<span class="sd">            &gt;&gt;&gt; # KLD with no reference line:</span>
+<span class="sd">            &gt;&gt;&gt; fig = love_plot(before, after)  # doctest: +SKIP</span>
 <span class="sd">            &gt;&gt;&gt; ax = love_plot(  # doctest: +SKIP</span>
-<span class="sd">            ...     before, after, xlabel=&quot;KLD&quot;, threshold=None</span>
+<span class="sd">            ...     before, after, library=&quot;seaborn&quot;, line=True</span>
+<span class="sd">            ... )</span>
+<span class="sd">            &gt;&gt;&gt; text = love_plot(  # doctest: +SKIP</span>
+<span class="sd">            ...     before, after, library=&quot;balance&quot;, line=True</span>
 <span class="sd">            ... )</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">threshold</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="c1"># The metrics this primitive renders (ASMD, KLD, EMD, CVMD, KS) are</span>
-        <span class="c1"># non-negative by construction; the canonical 0.1 cutoff (cobalt</span>
-        <span class="c1"># convention for ASMD) is an upper bound on tolerable imbalance. A</span>
-        <span class="c1"># negative threshold would draw the reference line on the negative</span>
-        <span class="c1"># side of the x-axis (the line is drawn with ``axvline``), where no</span>
-        <span class="c1"># value can ever fall, so the line would never visually align with</span>
-        <span class="c1"># any plotted point and would silently mislead readers.</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;threshold must be non-negative or None; got </span><span class="si">{</span><span class="n">threshold</span><span class="si">!r}</span><span class="s2">. &quot;</span>
-            <span class="s2">&quot;Imbalance metrics are non-negative by construction; pass a &quot;</span>
-            <span class="s2">&quot;non-negative cutoff or ``threshold=None`` to skip the line.&quot;</span>
-        <span class="p">)</span>
-
-    <span class="c1"># Drop any ``mean(&lt;metric&gt;)`` summary row if present -- it is the</span>
-    <span class="c1"># per-row mean, not a per-covariate value, and its inclusion would</span>
-    <span class="c1"># distort the scatter ordering.</span>
-    <span class="n">before_clean</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">=</span> <span class="n">_drop_summary_rows</span><span class="p">(</span><span class="n">before</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">after</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># Pre-adjust mode: single-series scatter only.</span>
-        <span class="c1"># Drop NaN entries so we don&#39;t end up with y-axis tick labels that</span>
-        <span class="c1"># have no corresponding scatter point (NaN is a documented outcome</span>
-        <span class="c1"># for unrepresented categorical levels in some metrics).</span>
-        <span class="n">before_clean</span> <span class="o">=</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;love_plot: no covariates to plot — all entries are NaN &quot;</span>
-                <span class="s2">&quot;(this usually means the categorical levels in the sample / &quot;</span>
-                <span class="s2">&quot;target frames are completely disjoint).&quot;</span>
-            <span class="p">)</span>
-        <span class="c1"># Sort by absolute value so the largest-imbalance covariate ends up</span>
-        <span class="c1"># at the TOP of the plot (matplotlib y-axis increases upward, so</span>
-        <span class="c1"># ``ascending=True`` puts smallest at y=0 / bottom).</span>
-        <span class="n">order</span> <span class="o">=</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
-        <span class="n">before_clean</span> <span class="o">=</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">before_clean</span><span class="p">))))</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">before_clean</span><span class="p">))</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">before_clean</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_AFTER_COLOR</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">xlabel</span><span class="p">)</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">(</span><span class="n">before_clean</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># Only draw the +threshold line; the metric is non-negative.</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">threshold</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_THRESHOLD_COLOR</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">xlabel</span><span class="p">)</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Covariate&quot;</span><span class="p">)</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">)</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">ax</span>
-
-    <span class="n">after_clean</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">=</span> <span class="n">_drop_summary_rows</span><span class="p">(</span><span class="n">after</span><span class="p">)</span>
-
-    <span class="c1"># Align before/after indices. If they don&#39;t match exactly, fall back</span>
-    <span class="c1"># to the intersection and warn (rather than silently dropping rows).</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">after_clean</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
-        <span class="n">common</span> <span class="o">=</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">after_clean</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">common</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;before and after share no covariates.&quot;</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;love_plot: aligning to </span><span class="si">%d</span><span class="s2"> common covariates (before=</span><span class="si">%d</span><span class="s2">, after=</span><span class="si">%d</span><span class="s2">).&quot;</span><span class="p">,</span>
-            <span class="nb">len</span><span class="p">(</span><span class="n">common</span><span class="p">),</span>
-            <span class="nb">len</span><span class="p">(</span><span class="n">before_clean</span><span class="p">),</span>
-            <span class="nb">len</span><span class="p">(</span><span class="n">after_clean</span><span class="p">),</span>
-        <span class="p">)</span>
-        <span class="n">before_clean</span> <span class="o">=</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">common</span><span class="p">]</span>
-        <span class="n">after_clean</span> <span class="o">=</span> <span class="n">after_clean</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">common</span><span class="p">]</span>
-
-    <span class="c1"># Drop covariates that are NaN in either series. Otherwise the</span>
-    <span class="c1"># surviving series would carry y-axis tick labels with no</span>
-    <span class="c1"># corresponding scatter point, and the abs/sort below would produce a</span>
-    <span class="c1"># NaN-poisoned ordering.</span>
-    <span class="n">keep</span> <span class="o">=</span> <span class="p">(</span><span class="o">~</span><span class="n">before_clean</span><span class="o">.</span><span class="n">isna</span><span class="p">())</span> <span class="o">&amp;</span> <span class="p">(</span><span class="o">~</span><span class="n">after_clean</span><span class="o">.</span><span class="n">isna</span><span class="p">())</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">keep</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;love_plot: no covariates to plot after dropping NaN entries &quot;</span>
-            <span class="s2">&quot;(this usually means the categorical levels in the sample / &quot;</span>
-            <span class="s2">&quot;target frames are completely disjoint).&quot;</span>
-        <span class="p">)</span>
-    <span class="n">before_clean</span> <span class="o">=</span> <span class="n">before_clean</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span>
-    <span class="n">after_clean</span> <span class="o">=</span> <span class="n">after_clean</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span>
-
-    <span class="c1"># Sort by absolute pre-weighting metric so the largest-imbalance</span>
-    <span class="c1"># covariate is at the top of the plot.</span>
-    <span class="n">order</span> <span class="o">=</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
-    <span class="n">before_clean</span> <span class="o">=</span> <span class="n">before_clean</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
-    <span class="n">after_clean</span> <span class="o">=</span> <span class="n">after_clean</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
-
-    <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">before_clean</span><span class="p">))))</span>
-
-    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">before_clean</span><span class="p">))</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
-        <span class="n">before_clean</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Unweighted&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_BEFORE_COLOR</span>
-    <span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">after_clean</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Weighted&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_AFTER_COLOR</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">(</span><span class="n">before_clean</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># Only draw the +threshold line; the metric is non-negative.</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">threshold</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_THRESHOLD_COLOR</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">xlabel</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Covariate&quot;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">ax</span></div>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">threshold</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Real</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">threshold</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;threshold must be a non-negative finite number or None; got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">threshold</span><span class="p">)</span><span class="si">!r}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">math</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">threshold</span><span class="p">))</span> <span class="ow">or</span> <span class="n">threshold</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;threshold must be non-negative and finite, or None.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">library</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_LOVE_PLOT_LIBRARIES</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;library must be one of </span><span class="si">{</span><span class="n">_LOVE_PLOT_LIBRARIES</span><span class="si">}</span><span class="s2">; got </span><span class="si">{</span><span class="n">library</span><span class="si">!r}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;line must be a bool; got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">line</span><span class="p">)</span><span class="si">!r}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">show</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;show must be a bool; got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">show</span><span class="p">)</span><span class="si">!r}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bar_width</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bar_width</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">or</span> <span class="n">bar_width</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;bar_width must be a positive integer.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">library</span> <span class="o">!=</span> <span class="s2">&quot;seaborn&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ax can only be used with library=&#39;seaborn&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">_prepare_love_plot_data</span><span class="p">(</span><span class="n">before</span><span class="p">,</span> <span class="n">after</span><span class="p">,</span> <span class="n">order_by</span><span class="o">=</span><span class="n">order_by</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">library</span> <span class="o">==</span> <span class="s2">&quot;seaborn&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">layout_kwargs</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Ignoring plotly layout kwargs for library=</span><span class="si">%r</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">library</span><span class="p">,</span>
+                <span class="nb">sorted</span><span class="p">(</span><span class="n">layout_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">_seaborn_love_plot</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="n">xlabel</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">line</span><span class="o">=</span><span class="n">line</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">library</span> <span class="o">==</span> <span class="s2">&quot;plotly&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_plotly_love_plot</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">,</span>
+            <span class="n">xlabel</span><span class="o">=</span><span class="n">xlabel</span><span class="p">,</span>
+            <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span>
+            <span class="n">line</span><span class="o">=</span><span class="n">line</span><span class="p">,</span>
+            <span class="n">show</span><span class="o">=</span><span class="n">show</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">layout_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">_ascii_love_plot</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="n">xlabel</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span> <span class="n">bar_width</span><span class="o">=</span><span class="n">bar_width</span>
+    <span class="p">)</span></div>
 
 </pre></div>
 
