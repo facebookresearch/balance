@@ -303,15 +303,33 @@ class TestBalance_weights_stats(
         self.assertIsInstance(fig, go.Figure)
         self.assertEqual(fig.layout.xaxis.title.text, "ASMD")
         self.assertGreaterEqual(len(fig.data), 3)
+        self.assertEqual(len(fig.layout.shapes), 1)
 
         ascii_plot = love_plot(before, after, library="balance", order_by="max")
         self.assertIsInstance(ascii_plot, str)
         self.assertIn("Love plot (ASMD)", ascii_plot)
         self.assertIn("Unweighted", ascii_plot)
         self.assertIn("Weighted", ascii_plot)
+        self.assertLess(ascii_plot.index("age"), ascii_plot.index("income"))
 
         long_label_ascii = love_plot(pd.Series({"x" * 60: 0.1}), library="balance")
         self.assertIn("x" * 40, long_label_ascii)
+
+    def test_love_plot_matplotlib_connectors_use_single_collection(self) -> None:
+        """Matplotlib connector lines use a vectorized collection, not one Line2D per row."""
+        import matplotlib.pyplot as plt
+        from balance.stats_and_plots.love_plot import love_plot
+        from matplotlib.collections import LineCollection
+
+        before = pd.Series({f"covar_{i}": float(i) / 10 for i in range(1, 6)})
+        after = before / 2
+        ax = love_plot(before, after, line=True, threshold=None)
+
+        self.assertEqual(len(ax.lines), 0)
+        self.assertTrue(
+            any(isinstance(collection, LineCollection) for collection in ax.collections)
+        )
+        plt.close("all")
 
     def test_love_plot_order_by_after(self) -> None:
         """Covariates can be sorted by weighted/after imbalance."""

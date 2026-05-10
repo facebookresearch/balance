@@ -3007,9 +3007,15 @@ class BalanceDFCovars(BalanceDF):
         if dist_type in ("love", "love_plot") or plot_type in ("love", "love_plot"):
             kwargs.pop("dist_type", None)
             return_dict_of_figures = bool(kwargs.pop("return_dict_of_figures", False))
+            library = kwargs.get("library", "seaborn")
             result = self.love_plot(**kwargs)
-            if return_dict_of_figures:
+            if return_dict_of_figures and library == "plotly":
                 return {"love_plot": result}
+            if return_dict_of_figures:
+                logger.warning(
+                    "return_dict_of_figures=True is only supported for "
+                    "library='plotly' love plots; returning the plot object directly."
+                )
             return result
         return super().plot(on_linked_samples=on_linked_samples, **kwargs)
 

@@ -2306,6 +2306,11 @@ class TestBalanceDF_asmd(BalanceTestCase):
         self.assertIsInstance(dispatched_dict, dict)
         self.assertIsInstance(dispatched_dict["love_plot"], go.Figure)
 
+        non_plotly_dict_request = s3_with_unadjusted.covars().plot(
+            dist_type="love_plot", library="balance", return_dict_of_figures=True
+        )
+        self.assertIsInstance(non_plotly_dict_request, str)
+
     def test_BalanceDFCovars_plot_love_plot_accepts_plot_type_alias(self) -> None:
         """``plot_type="love_plot"`` is an alias for the love-plot dispatch."""
         result = s3.covars().plot(plot_type="love_plot", library="balance")

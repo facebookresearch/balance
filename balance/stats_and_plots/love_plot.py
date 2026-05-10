@@ -171,14 +171,14 @@ def _matplotlib_love_plot(
         )
     else:
         if line:
-            for i, (_, row) in enumerate(data.iterrows()):
-                ax.plot(
-                    [row["Unweighted"], row["Weighted"]],
-                    [i, i],
-                    color="#BBBBBB",
-                    linewidth=1,
-                    zorder=1,
-                )
+            ax.hlines(
+                y=y,
+                xmin=data["Unweighted"].values,
+                xmax=data["Weighted"].values,
+                colors="#BBBBBB",
+                linewidth=1,
+                zorder=1,
+            )
         ax.scatter(
             data["Unweighted"].values,
             y,
@@ -269,8 +269,16 @@ def _plotly_love_plot(
             )
         )
     if threshold is not None:
-        fig.add_vline(
-            x=threshold, line_dash="dash", line_color=_THRESHOLD_COLOR, opacity=0.5
+        fig.add_shape(
+            type="line",
+            x0=threshold,
+            x1=threshold,
+            xref="x",
+            y0=0,
+            y1=1,
+            yref="paper",
+            line={"color": _THRESHOLD_COLOR, "dash": "dash"},
+            opacity=0.5,
         )
     fig.update_layout(
         xaxis_title=xlabel,
@@ -309,10 +317,11 @@ def _ascii_love_plot(
         f"Love plot ({xlabel})",
         f"Threshold: {threshold_text}",
     ]
+    display_data = data.iloc[::-1]
     if list(data.columns) == ["value"]:
         lines.append(f"{'Covariate':<{covar_width}} | {xlabel:>10} | Plot")
         lines.append("-" * (covar_width + bar_width + 18))
-        for covar, row in data.iterrows():
+        for covar, row in display_data.iterrows():
             value = float(row["value"])
             bar = _ascii_bar(value, max_value, width=bar_width, char="█")
             lines.append(
@@ -323,7 +332,7 @@ def _ascii_love_plot(
             f"{'Covariate':<{covar_width}} | {'Unweighted':>10} | {'Weighted':>10} | Change"
         )
         lines.append("-" * (covar_width + bar_width + 40))
-        for covar, row in data.iterrows():
+        for covar, row in display_data.iterrows():
             before_value = float(row["Unweighted"])
             after_value = float(row["Weighted"])
             before_bar = _ascii_bar(before_value, max_value, width=bar_width, char="░")
