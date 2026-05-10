@@ -43,14 +43,8 @@ _SUMMARY_ROW_PATTERN: re.Pattern[str] = re.compile(
 )
 LovePlotLibrary = Literal["seaborn", "matplotlib", "plotly", "balance"]
 LovePlotOrderBy = Literal["before", "after", "max", "alphabetical", "none"]
-_LOVE_PLOT_LIBRARIES: tuple[str, ...] = ("seaborn", "matplotlib", "plotly", "balance")
-_LOVE_PLOT_ORDER_BY: tuple[str, ...] = (
-    "before",
-    "after",
-    "max",
-    "alphabetical",
-    "none",
-)
+_LOVE_PLOT_LIBRARIES: tuple[str, ...] = cast(tuple[str, ...], get_args(LovePlotLibrary))
+_LOVE_PLOT_ORDER_BY: tuple[str, ...] = cast(tuple[str, ...], get_args(LovePlotOrderBy))
 
 
 def _drop_summary_rows(s: pd.Series) -> pd.Series:
@@ -140,7 +134,11 @@ def _prepare_love_plot_data(
         )
 
     if order_by == "alphabetical":
-        return data.sort_index(ascending=False)
+        # Keep the internal bottom-to-top order used by matplotlib/plotly,
+        # but sort labels by their string representation so mixed-type
+        # covariate labels (e.g. ints and strings) do not raise in pandas.
+        order = sorted(data.index, key=lambda x: str(x), reverse=True)
+        return data.loc[order]
     if order_by == "none":
         return data
     if order_by == "after" and "Weighted" in data.columns:

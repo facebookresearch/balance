@@ -333,6 +333,16 @@ class TestBalance_weights_stats(
         )
         plt.close("all")
 
+    def test_love_plot_alphabetical_order_handles_mixed_label_types(self) -> None:
+        """Alphabetical ordering uses string labels, so mixed index types are robust."""
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series([0.1, 0.2, 0.3], index=[1, "age", "2"])
+        ascii_plot = love_plot(before, library="balance", order_by="alphabetical")
+
+        self.assertLess(ascii_plot.index("1"), ascii_plot.index("2"))
+        self.assertLess(ascii_plot.index("2"), ascii_plot.index("age"))
+
     def test_love_plot_order_by_after(self) -> None:
         """Covariates can be sorted by weighted/after imbalance."""
         import matplotlib.pyplot as plt
