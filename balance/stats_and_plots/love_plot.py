@@ -323,7 +323,7 @@ def _ascii_love_plot(
         lines.append("-" * (covar_width + bar_width + 18))
         for covar, row in display_data.iterrows():
             value = float(row["value"])
-            bar = _ascii_bar(value, max_value, width=bar_width, char="█")
+            bar = _ascii_bar(value, max_value, width=bar_width, char="#")
             lines.append(
                 f"{str(covar):<{covar_width}.{covar_width}} | {value:>10.4g} | {bar}"
             )
@@ -335,13 +335,13 @@ def _ascii_love_plot(
         for covar, row in display_data.iterrows():
             before_value = float(row["Unweighted"])
             after_value = float(row["Weighted"])
-            before_bar = _ascii_bar(before_value, max_value, width=bar_width, char="░")
-            after_bar = _ascii_bar(after_value, max_value, width=bar_width, char="█")
+            before_bar = _ascii_bar(before_value, max_value, width=bar_width, char=".")
+            after_bar = _ascii_bar(after_value, max_value, width=bar_width, char="#")
             direction = "improved" if after_value <= before_value else "worse"
             lines.append(
                 f"{str(covar):<{covar_width}.{covar_width}} | "
                 f"{before_value:>10.4g} | {after_value:>10.4g} | "
-                f"{before_bar} → {after_bar} ({direction})"
+                f"{before_bar} -> {after_bar} ({direction})"
             )
     return "\n".join(lines)
 

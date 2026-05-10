@@ -310,6 +310,8 @@ class TestBalance_weights_stats(
         self.assertIn("Love plot (ASMD)", ascii_plot)
         self.assertIn("Unweighted", ascii_plot)
         self.assertIn("Weighted", ascii_plot)
+        self.assertIn("->", ascii_plot)
+        ascii_plot.encode("ascii")
         self.assertLess(ascii_plot.index("age"), ascii_plot.index("income"))
 
         long_label_ascii = love_plot(pd.Series({"x" * 60: 0.1}), library="balance")

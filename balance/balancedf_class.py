@@ -3006,7 +3006,12 @@ class BalanceDFCovars(BalanceDF):
         plot_type = kwargs.pop("plot_type", None)
         if dist_type in ("love", "love_plot") or plot_type in ("love", "love_plot"):
             kwargs.pop("dist_type", None)
-            return_dict_of_figures = bool(kwargs.pop("return_dict_of_figures", False))
+            return_dict_of_figures = kwargs.pop("return_dict_of_figures", False)
+            if not isinstance(return_dict_of_figures, bool):
+                raise TypeError(
+                    "return_dict_of_figures must be a bool when using "
+                    "dist_type='love_plot' or plot_type='love_plot'."
+                )
             library = kwargs.get("library", "seaborn")
             result = self.love_plot(**kwargs)
             if return_dict_of_figures and library == "plotly":
