@@ -186,8 +186,8 @@ class TestBalance_weights_stats(
         after = pd.Series({"age": 0.05, "income": 0.08})
         ax = love_plot(before, after, library="seaborn")
         self.assertIsNotNone(ax)
-        # Two scatter collections (Unweighted, Weighted) + the threshold lines.
-        self.assertEqual(len(ax.collections), 2)
+        # Connector collection + two scatter collections (Unweighted, Weighted).
+        self.assertEqual(len(ax.collections), 3)
         plt.close("all")
 
     def test_love_plot_with_after_none_is_single_series(self) -> None:
@@ -304,6 +304,7 @@ class TestBalance_weights_stats(
         self.assertIsInstance(fig, go.Figure)
         self.assertEqual(fig.layout.xaxis.title.text, "ASMD")
         self.assertEqual(fig.layout.title.text, "Love")
+        self.assertEqual(fig.layout.width, 900)
         self.assertGreaterEqual(len(fig.data), 3)
         self.assertEqual(len(fig.layout.shapes), 1)
 
@@ -312,12 +313,39 @@ class TestBalance_weights_stats(
         self.assertIn("Love plot (ASMD)", ascii_plot)
         self.assertIn("Unweighted", ascii_plot)
         self.assertIn("Weighted", ascii_plot)
-        self.assertIn("->", ascii_plot)
+        self.assertIn("<----- improved", ascii_plot)
         ascii_plot.encode("ascii")
         self.assertLess(ascii_plot.index("age"), ascii_plot.index("income"))
 
         long_label_ascii = love_plot(pd.Series({"x" * 60: 0.1}), library="balance")
         self.assertIn("x" * 40, long_label_ascii)
+
+    def test_love_plot_line_false_disables_connectors(self) -> None:
+        """``line=False`` disables connector marks across graphical and ASCII output."""
+        import matplotlib.pyplot as plt
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31})
+        after = pd.Series({"age": 0.05, "income": 0.40})
+
+        fig = love_plot(before, after, library="plotly", line=False)
+        self.assertEqual(len(fig.data), 2)
+
+        ax = love_plot(before, after, library="seaborn", line=False)
+        # Two scatter collections only; the connector LineCollection is absent.
+        self.assertEqual(len(ax.collections), 2)
+        plt.close("all")
+
+        ascii_plot = love_plot(
+            before, after, library="balance", line=False, threshold=None, bar_width=6
+        )
+        self.assertIn("(improved)", ascii_plot)
+        self.assertIn("(worse)", ascii_plot)
+        self.assertIn("Legend: o = unweighted", ascii_plot)
+        self.assertNotIn("<----- improved", ascii_plot)
+        self.assertNotIn("-----> worse", ascii_plot)
+        self.assertNotIn("| = threshold", ascii_plot)
+        ascii_plot.encode("ascii")
 
     def test_love_plot_matplotlib_connectors_use_single_collection(self) -> None:
         """Matplotlib connector lines use a vectorized collection, not one Line2D per row."""

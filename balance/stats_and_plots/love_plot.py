@@ -165,7 +165,7 @@ def _seaborn_love_plot(
     line: bool,
 ) -> matplotlib.axes.Axes:
     if ax is None:
-        _, ax = plt.subplots(figsize=(6, max(3, 0.3 * len(data))))
+        _, ax = plt.subplots(figsize=(8, max(3.5, 0.45 * len(data) + 1.0)))
 
     y = np.arange(len(data))
     if list(data.columns) == ["value"]:
@@ -322,7 +322,9 @@ def _plotly_love_plot(
         xaxis_title=xlabel,
         yaxis_title="Covariate",
         yaxis={"tickmode": "array", "tickvals": y_positions, "ticktext": y_tick_labels},
-        height=max(300, 30 * len(data)),
+        width=900,
+        height=max(360, 45 * len(data) + 120),
+        margin={"l": 120, "r": 40, "t": 60, "b": 60},
         template="plotly_white",
     )
     if layout_kwargs:
@@ -332,13 +334,80 @@ def _plotly_love_plot(
     return fig
 
 
-def _ascii_bar(value: float, max_value: float, *, width: int, char: str) -> str:
-    if max_value <= 0:
-        return ""
-    n_chars = int(round((abs(value) / max_value) * width))
-    if value != 0 and n_chars == 0:
-        n_chars = 1
-    return char * n_chars
+def _ascii_scale_max(max_value: float, threshold: float | None) -> float:
+    """Return a readable positive x-axis maximum for ASCII love plots."""
+    candidates = [max_value]
+    if threshold is not None:
+        candidates.append(float(threshold))
+    raw_max = max(candidates)
+    if raw_max <= 0:
+        return 1.0
+    # Love plots are easiest to scan with tenths when values are small; keep
+    # enough headroom so markers at the maximum do not run into annotations.
+    step = 0.1 if raw_max <= 1 else 0.5
+    return math.ceil((raw_max * 1.05) / step) * step
+
+
+def _ascii_position(value: float, axis_max: float, *, width: int) -> int:
+    if axis_max <= 0:
+        return 0
+    clipped = min(max(abs(value), 0.0), axis_max)
+    return int(round((clipped / axis_max) * width))
+
+
+def _ascii_axis(
+    width: int, axis_max: float, threshold: float | None
+) -> tuple[str, str]:
+    """Build compact tick-label and threshold-guide rows for ASCII output."""
+    if axis_max <= 1:
+        tick_values = np.arange(0, axis_max + 0.0001, 0.1)
+    else:
+        tick_values = np.linspace(0, axis_max, 6)
+    label_chars = [" "] * (width + 1)
+    guide_chars = [" "] * (width + 1)
+    for tick_value in tick_values:
+        pos = _ascii_position(float(tick_value), axis_max, width=width)
+        label = f"{tick_value:.1f}" if axis_max <= 1 else f"{tick_value:.2g}"
+        if tick_value == 0:
+            label = "0"
+        start = min(pos, max(0, width + 1 - len(label)))
+        for offset, char in enumerate(label):
+            label_chars[start + offset] = char
+    if threshold is not None:
+        pos = _ascii_position(float(threshold), axis_max, width=width)
+        guide_chars[pos] = "|"
+    guide_chars[0] = "|"
+    return "".join(label_chars).rstrip(), "".join(guide_chars).rstrip()
+
+
+def _ascii_change_plot(
+    before_value: float,
+    after_value: float,
+    *,
+    axis_max: float,
+    width: int,
+    threshold: float | None,
+    line: bool,
+) -> str:
+    """Render one before/after row on a shared ASCII x-axis."""
+    before_pos = _ascii_position(before_value, axis_max, width=width)
+    after_pos = _ascii_position(after_value, axis_max, width=width)
+    chars = [" "] * (width + 1)
+    if threshold is not None:
+        chars[_ascii_position(float(threshold), axis_max, width=width)] = "|"
+    if line and after_pos < before_pos:
+        for pos in range(after_pos + 1, before_pos):
+            chars[pos] = "-"
+        if after_pos + 1 < before_pos:
+            chars[after_pos + 1] = "<"
+    elif line and after_pos > before_pos:
+        for pos in range(before_pos + 1, after_pos):
+            chars[pos] = "-"
+        if before_pos + 1 < after_pos:
+            chars[after_pos - 1] = ">"
+    chars[before_pos] = "o"
+    chars[after_pos] = "*" if chars[after_pos] != "o" else "@"
+    return "".join(chars).rstrip()
 
 
 def _ascii_love_plot(
@@ -346,42 +415,79 @@ def _ascii_love_plot(
     *,
     xlabel: str,
     threshold: float | None,
+    line: bool,
     bar_width: int,
 ) -> str:
     max_label_width = max(len(str(i)) for i in data.index)
     covar_width = min(max(max_label_width, len("Covariate")), 40)
     max_value = float(data.abs().max().max())
+    axis_max = _ascii_scale_max(max_value, threshold)
     threshold_text = "none" if threshold is None else f"{threshold:.3g}"
-    lines = [
-        f"Love plot ({xlabel})",
-        f"Threshold: {threshold_text}",
-    ]
     display_data = data.iloc[::-1]
+    lines = [f"Love plot ({xlabel}) - Threshold = {threshold_text}"]
+
     if list(data.columns) == ["value"]:
+        axis_labels, threshold_guide = _ascii_axis(bar_width, axis_max, threshold)
         lines.append(f"{'Covariate':<{covar_width}} | {xlabel:>10} | Plot")
-        lines.append("-" * (covar_width + bar_width + 18))
+        lines.append("-" * (covar_width + bar_width + 17))
+        lines.append(f"{'':<{covar_width}} | {'':>10} | {axis_labels}")
+        if threshold is not None:
+            lines.append(f"{'':<{covar_width}} | {'':>10} | {threshold_guide}")
         for covar, row in display_data.iterrows():
             value = float(row["value"])
-            bar = _ascii_bar(value, max_value, width=bar_width, char="#")
+            marker_pos = _ascii_position(value, axis_max, width=bar_width)
+            chars = [" "] * (bar_width + 1)
+            if threshold is not None:
+                chars[_ascii_position(float(threshold), axis_max, width=bar_width)] = (
+                    "|"
+                )
+            chars[marker_pos] = "*"
             lines.append(
-                f"{str(covar):<{covar_width}.{covar_width}} | {value:>10.4g} | {bar}"
+                f"{str(covar):<{covar_width}.{covar_width}} | "
+                f"{value:>10.4g} | {''.join(chars).rstrip()}"
             )
+        lines.extend(["", "Legend: * = value"])
+        if threshold is not None:
+            lines.append("        | = threshold")
     else:
+        axis_labels, threshold_guide = _ascii_axis(bar_width, axis_max, threshold)
         lines.append(
-            f"{'Covariate':<{covar_width}} | {'Unweighted':>10} | {'Weighted':>10} | Change"
+            f"{'Covariate':<{covar_width}} | {'Unweighted':>10} | "
+            f"{'Weighted':>10} | Change"
         )
         lines.append("-" * (covar_width + bar_width + 40))
+        lines.append(f"{'':<{covar_width}} | {'':>10} | {'':>10} | {axis_labels}")
+        if threshold is not None:
+            lines.append(
+                f"{'':<{covar_width}} | {'':>10} | {'':>10} | {threshold_guide}"
+            )
         for covar, row in display_data.iterrows():
             before_value = float(row["Unweighted"])
             after_value = float(row["Weighted"])
-            before_bar = _ascii_bar(before_value, max_value, width=bar_width, char=".")
-            after_bar = _ascii_bar(after_value, max_value, width=bar_width, char="#")
             direction = "improved" if abs(after_value) <= abs(before_value) else "worse"
+            change_plot = _ascii_change_plot(
+                before_value,
+                after_value,
+                axis_max=axis_max,
+                width=bar_width,
+                threshold=threshold,
+                line=line,
+            )
             lines.append(
                 f"{str(covar):<{covar_width}.{covar_width}} | "
                 f"{before_value:>10.4g} | {after_value:>10.4g} | "
-                f"{before_bar} -> {after_bar} ({direction})"
+                f"{change_plot:<{bar_width + 1}} ({direction})"
             )
+        lines.extend(["", "Legend: o = unweighted, * = weighted, @ = overlap"])
+        if line:
+            lines.extend(
+                [
+                    "        <----- improved (moving toward 0)",
+                    "        -----> worse (moving away from 0)",
+                ]
+            )
+        if threshold is not None:
+            lines.append("        | = threshold")
     return "\n".join(lines)
 
 
@@ -393,10 +499,10 @@ def love_plot(
     threshold: float | None = 0.1,
     ax: matplotlib.axes.Axes | None = None,
     library: LovePlotLibrary = "plotly",
-    line: bool = False,
+    line: bool = True,
     order_by: LovePlotOrderBy = "diff",
     show: bool = False,
-    bar_width: int = 30,
+    bar_width: int = 50,
     **layout_kwargs: Any,
 ) -> Any:
     """Plot per-covariate imbalance, before vs. after weighting.
@@ -412,8 +518,8 @@ def love_plot(
         library: One of ``"plotly"`` (default; interactive
             ``plotly.graph_objects.Figure``), ``"seaborn"`` (static
             seaborn/matplotlib axes), or ``"balance"`` (ASCII string).
-        line: If ``True`` and both series are supplied, connect each
-            before/after pair with a horizontal line.
+        line: If ``True`` (the default) and both series are supplied,
+            connect each before/after pair with a horizontal line.
         order_by: Covariate sorting. ``"diff"`` (default) orders by signed
             ``after - before`` so the most-improved covariates are at the
             bottom and the most-worsened are at the top; ``"before"`` /
@@ -484,5 +590,5 @@ def love_plot(
             **layout_kwargs,
         )
     return _ascii_love_plot(
-        data, xlabel=xlabel, threshold=threshold, bar_width=bar_width
+        data, xlabel=xlabel, threshold=threshold, line=line, bar_width=bar_width
     )
