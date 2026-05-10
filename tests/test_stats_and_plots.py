@@ -184,7 +184,7 @@ class TestBalance_weights_stats(
 
         before = pd.Series({"age": 0.42, "income": 0.31})
         after = pd.Series({"age": 0.05, "income": 0.08})
-        ax = love_plot(before, after)
+        ax = love_plot(before, after, library="seaborn")
         self.assertIsNotNone(ax)
         # Two scatter collections (Unweighted, Weighted) + the threshold lines.
         self.assertEqual(len(ax.collections), 2)
@@ -200,7 +200,7 @@ class TestBalance_weights_stats(
         from balance.stats_and_plots.love_plot import love_plot
 
         before = pd.Series({"age": 0.42, "income": 0.31})
-        ax = love_plot(before, after=None)
+        ax = love_plot(before, after=None, library="seaborn")
         self.assertIsNotNone(ax)
         # Single scatter collection rather than the two-series view.
         self.assertEqual(len(ax.collections), 1)
@@ -240,7 +240,7 @@ class TestBalance_weights_stats(
         from balance.stats_and_plots.love_plot import love_plot
 
         before = pd.Series({"age": 0.42, "income": 0.31})
-        ax = love_plot(before, after=None, xlabel="KLD")
+        ax = love_plot(before, after=None, xlabel="KLD", library="seaborn")
         self.assertEqual(ax.get_xlabel(), "KLD")
         legend = _assert_type(ax.get_legend())
         legend_labels: list[str] = [t.get_text() for t in legend.get_texts()]
@@ -258,10 +258,11 @@ class TestBalance_weights_stats(
 
         before = pd.Series({"age": 0.42, "income": 0.31})
         after = pd.Series({"age": 0.05, "income": 0.08})
-        ax_no_line = love_plot(before, after, threshold=None)
+        ax_no_line = love_plot(before, after, library="seaborn", threshold=None)
         ax_with_line = love_plot(
             pd.Series({"age": 0.42, "income": 0.31}),
             pd.Series({"age": 0.05, "income": 0.08}),
+            library="seaborn",
             threshold=0.1,
         )
         # ``axvline`` adds a Line2D entry to ``ax.lines``; the
@@ -286,9 +287,231 @@ class TestBalance_weights_stats(
 
         before = pd.Series({"age": 0.42, "income": 0.31, "mean(kld)": 0.365})
         after = pd.Series({"age": 0.05, "income": 0.08, "mean(kld)": 0.065})
-        ax = love_plot(before, after, xlabel="KLD")
+        ax = love_plot(before, after, library="seaborn", xlabel="KLD")
         labels: list[str] = [t.get_text() for t in ax.get_yticklabels()]
         self.assertNotIn("mean(kld)", labels)
+        plt.close("all")
+
+    def test_love_plot_plotly_and_ascii_outputs(self) -> None:
+        """``love_plot`` supports Plotly figures and ASCII text output."""
+        import plotly.graph_objects as go
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31})
+        after = pd.Series({"age": 0.05, "income": 0.08})
+
+        fig = love_plot(before, after, library="plotly", line=True, title="Love")
+        self.assertIsInstance(fig, go.Figure)
+        self.assertEqual(fig.layout.xaxis.title.text, "ASMD")
+        self.assertEqual(fig.layout.title.text, "Love")
+        self.assertGreaterEqual(len(fig.data), 3)
+        self.assertEqual(len(fig.layout.shapes), 1)
+
+        ascii_plot = love_plot(before, after, library="balance", order_by="before")
+        self.assertIsInstance(ascii_plot, str)
+        self.assertIn("Love plot (ASMD)", ascii_plot)
+        self.assertIn("Unweighted", ascii_plot)
+        self.assertIn("Weighted", ascii_plot)
+        self.assertIn("->", ascii_plot)
+        ascii_plot.encode("ascii")
+        self.assertLess(ascii_plot.index("age"), ascii_plot.index("income"))
+
+        long_label_ascii = love_plot(pd.Series({"x" * 60: 0.1}), library="balance")
+        self.assertIn("x" * 40, long_label_ascii)
+
+    def test_love_plot_matplotlib_connectors_use_single_collection(self) -> None:
+        """Matplotlib connector lines use a vectorized collection, not one Line2D per row."""
+        import matplotlib.pyplot as plt
+        from balance.stats_and_plots.love_plot import love_plot
+        from matplotlib.collections import LineCollection
+
+        before = pd.Series({f"covar_{i}": float(i) / 10 for i in range(1, 6)})
+        after = before / 2
+        ax = love_plot(before, after, library="seaborn", line=True, threshold=None)
+
+        self.assertEqual(len(ax.lines), 0)
+        self.assertTrue(
+            any(isinstance(collection, LineCollection) for collection in ax.collections)
+        )
+        plt.close("all")
+
+    def test_love_plot_alphabetical_order_handles_mixed_label_types(self) -> None:
+        """Alphabetical ordering uses string labels, so mixed index types are robust."""
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series([0.1, 0.2, 0.3], index=[1, "age", "2"])
+        ascii_plot = love_plot(before, library="balance", order_by="alphabetical")
+
+        self.assertLess(ascii_plot.index("1"), ascii_plot.index("2"))
+        self.assertLess(ascii_plot.index("2"), ascii_plot.index("age"))
+
+    def test_love_plot_order_by_after(self) -> None:
+        """Covariates can be sorted by weighted/after imbalance."""
+        import matplotlib.pyplot as plt
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31})
+        after = pd.Series({"age": 0.05, "income": 0.20})
+        ax = love_plot(before, after, library="seaborn", order_by="after")
+        labels: list[str] = [t.get_text() for t in ax.get_yticklabels()]
+        self.assertEqual(labels, ["age", "income"])
+        plt.close("all")
+
+    def test_love_plot_order_by_diff_is_signed(self) -> None:
+        """``order_by="diff"`` uses signed ``after - before`` (improvement at bottom)."""
+        import matplotlib.pyplot as plt
+        from balance.stats_and_plots.love_plot import love_plot
+
+        # ``age`` improves (-0.37); ``income`` worsens (+0.09). With signed
+        # diff and ascending sort, the most-improved (age) is at y=0
+        # (bottom) and the worsened covariate (income) is at the top.
+        before = pd.Series({"age": 0.42, "income": 0.31})
+        after = pd.Series({"age": 0.05, "income": 0.40})
+        ax = love_plot(before, after, library="seaborn", order_by="diff")
+        labels: list[str] = [t.get_text() for t in ax.get_yticklabels()]
+        self.assertEqual(labels, ["age", "income"])
+        plt.close("all")
+
+    def test_love_plot_max_is_no_longer_accepted(self) -> None:
+        """``order_by="max"`` was removed in favour of signed ``"diff"``."""
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31})
+        after = pd.Series({"age": 0.05, "income": 0.20})
+        with self.assertRaisesRegex(ValueError, "order_by must be one of"):
+            love_plot(before, after, order_by="max")  # pyre-ignore[6]
+
+    def test_love_plot_plotly_uses_numeric_y_with_explicit_tick_labels(self) -> None:
+        """Plotly backend must use numeric y positions with ticktext labels.
+
+        A categorical y-axis would collapse distinct index values that
+        stringify to the same text (e.g. ``1`` and ``"1"``), overlapping
+        markers and connector lines. Numeric positions + ticktext keep
+        the rows distinct even when their string forms collide.
+        """
+        from balance.stats_and_plots.love_plot import love_plot
+
+        # Two distinct index values that stringify to the same text.
+        before = pd.Series([0.1, 0.2], index=[1, "1"])
+        after = pd.Series([0.05, 0.15], index=[1, "1"])
+        fig = love_plot(before, after, library="plotly")
+
+        marker_traces = [trace for trace in fig.data if trace.mode == "markers"]
+        self.assertEqual(len(marker_traces), 2)
+        for trace in marker_traces:
+            y_values = list(trace.y)
+            self.assertEqual(
+                y_values,
+                [0, 1],
+                "Plotly love plot should place each row at a distinct numeric "
+                "y position rather than relying on a categorical y-axis.",
+            )
+
+        yaxis = fig.layout.yaxis
+        self.assertEqual(yaxis.tickmode, "array")
+        self.assertEqual(list(yaxis.tickvals), [0, 1])
+        self.assertEqual(list(yaxis.ticktext), ["1", "1"])
+
+    def test_love_plot_plotly_show_tolerates_missing_nbformat(self) -> None:
+        """``show=True`` must not crash when Plotly's mime renderer can't import nbformat."""
+        from unittest.mock import patch
+
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31})
+        after = pd.Series({"age": 0.05, "income": 0.08})
+
+        nbformat_error = ValueError(
+            "Mime type rendering requires nbformat>=4.2.0 but it is not installed"
+        )
+        with patch(
+            "plotly.graph_objects.Figure.show", side_effect=nbformat_error
+        ) as mock_show:
+            with self.assertLogs(
+                "balance.stats_and_plots", level="WARNING"
+            ) as captured:
+                fig = love_plot(before, after, library="plotly", show=True)
+
+        mock_show.assert_called_once()
+        self.assertIsNotNone(fig)
+        self.assertTrue(
+            any("notebook mime rendering unavailable" in msg for msg in captured.output)
+        )
+
+    def test_love_plot_plotly_show_reraises_unexpected_value_errors(self) -> None:
+        """Non-nbformat ValueErrors from ``fig.show`` must still propagate."""
+        from unittest.mock import patch
+
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31})
+        after = pd.Series({"age": 0.05, "income": 0.08})
+
+        with patch(
+            "plotly.graph_objects.Figure.show",
+            side_effect=ValueError("something else went wrong"),
+        ):
+            with self.assertRaisesRegex(ValueError, "something else went wrong"):
+                love_plot(before, after, library="plotly", show=True)
+
+    def test_love_plot_rejects_unknown_library(self) -> None:
+        """``library`` outside the supported set raises ``ValueError``."""
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31})
+        after = pd.Series({"age": 0.05, "income": 0.08})
+        with self.assertRaisesRegex(ValueError, "library must be one of"):
+            love_plot(before, after, library="bogus")  # pyre-ignore[6]
+
+    def test_love_plot_rejects_unknown_order_by(self) -> None:
+        """``order_by`` outside the supported set raises ``ValueError``."""
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31})
+        after = pd.Series({"age": 0.05, "income": 0.08})
+        with self.assertRaisesRegex(ValueError, "order_by must be one of"):
+            love_plot(before, after, order_by="bogus")  # pyre-ignore[6]
+
+    def test_love_plot_rejects_non_positive_bar_width(self) -> None:
+        """``bar_width`` must be a positive integer."""
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31})
+        after = pd.Series({"age": 0.05, "income": 0.08})
+        with self.assertRaisesRegex(ValueError, "bar_width must be a positive integer"):
+            love_plot(before, after, library="balance", bar_width=0)
+
+    def test_love_plot_rejects_non_finite_metric(self) -> None:
+        """Non-finite (``inf``/``-inf``) metric values raise ``ValueError``."""
+        from balance.stats_and_plots.love_plot import love_plot
+
+        with self.assertRaisesRegex(ValueError, "non-finite imbalance values"):
+            love_plot(pd.Series({"age": float("inf")}), after=None)
+
+    def test_love_plot_rejects_non_numeric_metric(self) -> None:
+        """Non-numeric (e.g. string) metric values raise ``ValueError``."""
+        from balance.stats_and_plots.love_plot import love_plot
+
+        with self.assertRaisesRegex(ValueError, "numeric imbalance metric values"):
+            love_plot(pd.Series({"age": "not numeric"}), after=None)
+
+    def test_love_plot_rejects_duplicate_covariate_labels(self) -> None:
+        """Duplicate covariate labels raise ``ValueError``."""
+        from balance.stats_and_plots.love_plot import love_plot
+
+        with self.assertRaisesRegex(ValueError, "duplicate covariate labels"):
+            love_plot(pd.Series([0.1, 0.2], index=["age", "age"]), after=None)
+
+    def test_love_plot_rejects_ax_with_non_seaborn_library(self) -> None:
+        """``ax`` is only valid with ``library="seaborn"``."""
+        import matplotlib.pyplot as plt
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31})
+        after = pd.Series({"age": 0.05, "income": 0.08})
+        _, ax = plt.subplots()
+        with self.assertRaisesRegex(ValueError, "ax can only be used"):
+            love_plot(before, after, library="plotly", ax=ax)
         plt.close("all")
 
     def test_love_plot_uses_existing_axes(self) -> None:
@@ -299,7 +522,7 @@ class TestBalance_weights_stats(
         before = pd.Series({"age": 0.42, "income": 0.31})
         after = pd.Series({"age": 0.05, "income": 0.08})
         fig, ax = plt.subplots()
-        returned = love_plot(before, after, ax=ax)
+        returned = love_plot(before, after, library="seaborn", ax=ax)
         self.assertIs(returned, ax)
         plt.close("all")
 
@@ -314,7 +537,7 @@ class TestBalance_weights_stats(
 
         before = pd.Series({"age": 0.42, "income": 0.31, "mean(asmd)": 0.365})
         after = pd.Series({"age": 0.05, "income": 0.08, "mean(asmd)": 0.065})
-        ax = love_plot(before, after)
+        ax = love_plot(before, after, library="seaborn")
         # Y-axis tick labels are the covariate names; ``mean(asmd)`` should
         # not appear among them.
         labels = [t.get_text() for t in ax.get_yticklabels()]

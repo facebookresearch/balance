@@ -19,6 +19,7 @@ For project architecture, build/test commands, and file layout, see `CLAUDE.md` 
   - list the distinct concerns or ideas present in the PR
   - suggest a logical split (e.g., "Consider separating the refactoring into its own PR")
   - explain how splitting will improve reviewability and testability
+- **For externally-authored PRs imported from `facebookresearch/balance`, do not assume open-source review covered API consistency** — run §5.5 explicitly even if the GitHub PR is already approved. CI does not flag taste/consistency drift.
 
 ### 1) Correctness and statistical soundness
 - Verify the implementation matches the intended method (IPW / CBPS / rake / poststratification).
@@ -78,9 +79,33 @@ For project architecture, build/test commands, and file layout, see `CLAUDE.md` 
   - document timeline and replacement usage
   - update changelog accordingly
 
+### 5.5) API surface consistency and parameter naming
+
+For **every new public default, parameter name, or string-literal option** the PR introduces, do the following — and quote evidence in your review comment, not just a verdict:
+
+**A. Default-value alignment.** For each new keyword default (`library=`, `threshold=`, `order_by=`, `line=`, `show=`, `bar_width=`, etc.):
+1. Grep the package for the same parameter name on neighbouring methods (start with `BalanceDF.plot`, `BalanceDFCovars.*`, `BalanceDFOutcomes.*`, `BalanceDFWeights.*`, and `stats_and_plots/`).
+2. Quote both defaults: "`BalanceDF.plot` defaults to `library='plotly'`, this PR introduces `library='seaborn'` on `BalanceDFCovars.love_plot`."
+3. If they differ, require either (a) the new default is changed to match, or (b) the PR summary documents why divergence is correct.
+
+**B. Parallel-parameter detection.** When a PR adds a new parameter to a method that already has a similar dispatch parameter:
+1. Identify the existing dispatch parameter (e.g. `dist_type` on `BalanceDF.plot`).
+2. Check whether the new parameter's accept-list could be expressed as additional values on the existing parameter's `Literal`.
+3. If yes, **request removal of the new parameter and extension of the existing `Literal` instead.** Example: `plot_type="love_plot"` next to `dist_type="love_plot"` — pick `dist_type`, drop `plot_type`. One spelling per concept.
+
+**C. Option-name truthfulness.** For each new string-literal accept value (e.g. `order_by="max"`, `library="balance"`, `metric="kld"`):
+1. Read the name literally and write down what you'd expect the implementation to do.
+2. Read the implementation.
+3. If the name's natural reading does not match the implementation, flag it — propose either a rename or a different implementation. Example: `order_by="max"` implemented as `data.abs().max(axis=1)` is "max of `|before|` and `|after|`" — the name doesn't disambiguate signed/absolute or pre/post; rename to something explicit (`"max_abs"`, `"diff"`, etc.) or change the semantics.
+
+**D. Type-system reach.** For each new `Literal[...]` introduced (e.g. `LovePlotLibrary`, `LovePlotOrderBy`):
+1. Verify it's exported from a stable location and reused in any sibling method that takes the same parameter.
+2. If a sibling method's signature uses `str` or a different `Literal`, flag the divergence.
+
 ### 6) Changelog discipline
 - User-visible fixes/features MUST include an entry in `CHANGELOG.md`.
 - Breaking changes MUST be explicitly labeled and include migration notes.
+- **Tutorial framing for interpretive defaults.** When the PR changes (or adds) a default that controls how a tutorial output is *read* — sort order, axis direction, scale, sign convention, baseline — verify the **first** tutorial cell that exercises the default has a markdown sentence motivating it, not just the option-list cell that comes later. Concrete check: open the relevant `.ipynb` cell, find the markdown immediately above (or referencing) the new-default call, and confirm a reader running only that one cell can answer "what does the visual order/scale/sign mean here?". If they can't, request a one-sentence framing in that markdown.
 
 ### 7) Dependencies and packaging
 - New dependencies should be rare, lightweight, and justified.
