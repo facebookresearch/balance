@@ -2188,7 +2188,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
         s3_unadjusted = deepcopy(s3)
         s3_unadjusted.set_weights(pd.Series([1, 1, 1, 1], index=s3.df.index))
         s3_with_unadjusted = s3.set_unadjusted(s3_unadjusted)
-        ax = s3_with_unadjusted.covars().love_plot()
+        ax = s3_with_unadjusted.covars().love_plot(library="seaborn")
         self.assertIsNotNone(ax)
         # Two scatter collections: Unweighted + Weighted (post-adjust mode).
         self.assertEqual(len(ax.collections), 2)
@@ -2203,7 +2203,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
         """
         import matplotlib.pyplot as plt
 
-        ax = s3.covars().love_plot()
+        ax = s3.covars().love_plot(library="seaborn")
         self.assertIsNotNone(ax)
         # Single scatter collection (single-series mode).
         self.assertEqual(len(ax.collections), 1)
@@ -2239,7 +2239,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
         s3_unadjusted = deepcopy(s3)
         s3_unadjusted.set_weights(pd.Series([1, 1, 1, 1], index=s3.df.index))
         s3_with_unadjusted = s3.set_unadjusted(s3_unadjusted)
-        ax = s3_with_unadjusted.covars().love_plot(metric="kld")
+        ax = s3_with_unadjusted.covars().love_plot(library="seaborn", metric="kld")
         self.assertIsNotNone(ax)
         self.assertEqual(ax.get_xlabel(), "KLD")
         # Two scatter collections (post-adjust mode).
@@ -2263,12 +2263,12 @@ class TestBalanceDF_asmd(BalanceTestCase):
         import matplotlib.pyplot as plt
 
         # ASMD path: default threshold draws the reference line.
-        ax_asmd = s3.covars().love_plot()
+        ax_asmd = s3.covars().love_plot(library="seaborn")
         n_lines_asmd = len(ax_asmd.lines)
         plt.close("all")
 
         # KLD path: default threshold (None) draws no reference line.
-        ax_kld = s3.covars().love_plot(metric="kld")
+        ax_kld = s3.covars().love_plot(library="seaborn", metric="kld")
         n_lines_kld = len(ax_kld.lines)
         plt.close("all")
 
@@ -2277,6 +2277,52 @@ class TestBalanceDF_asmd(BalanceTestCase):
             1,
             "ASMD default should draw exactly one more line than KLD default",
         )
+
+    def test_BalanceDFCovars_love_plot_plotly_ascii_and_plot_dispatch(self) -> None:
+        """``covars().love_plot`` and ``covars().plot`` expose Plotly/ASCII love plots."""
+        import plotly.graph_objects as go
+
+        s3_unadjusted = deepcopy(s3)
+        s3_unadjusted.set_weights(pd.Series([1, 1, 1, 1], index=s3.df.index))
+        s3_with_unadjusted = s3.set_unadjusted(s3_unadjusted)
+
+        fig = s3_with_unadjusted.covars().love_plot(library="plotly", line=True)
+        self.assertIsInstance(fig, go.Figure)
+        self.assertEqual(fig.layout.xaxis.title.text, "ASMD")
+
+        ascii_plot = s3_with_unadjusted.covars().love_plot(library="balance")
+        self.assertIsInstance(ascii_plot, str)
+        self.assertIn("Love plot (ASMD)", ascii_plot)
+
+        dispatched = s3_with_unadjusted.covars().plot(
+            dist_type="love_plot", library="balance"
+        )
+        self.assertIsInstance(dispatched, str)
+        self.assertIn("Unweighted", dispatched)
+
+        dispatched_dict = s3_with_unadjusted.covars().plot(
+            dist_type="love_plot", library="plotly", return_dict_of_figures=True
+        )
+        self.assertIsInstance(dispatched_dict, dict)
+        self.assertIsInstance(dispatched_dict["love_plot"], go.Figure)
+
+        non_plotly_dict_request = s3_with_unadjusted.covars().plot(
+            dist_type="love_plot", library="balance", return_dict_of_figures=True
+        )
+        self.assertIsInstance(non_plotly_dict_request, str)
+
+        with self.assertRaisesRegex(TypeError, "return_dict_of_figures must be a bool"):
+            s3_with_unadjusted.covars().plot(
+                dist_type="love_plot",
+                library="plotly",
+                return_dict_of_figures="False",
+            )
+
+    def test_BalanceDFCovars_plot_love_alias(self) -> None:
+        """``dist_type="love"`` is an alias for ``"love_plot"``."""
+        result = s3.covars().plot(dist_type="love", library="balance")
+        self.assertIsInstance(result, str)
+        self.assertIn("Love plot (ASMD)", result)
 
     def test_BalanceDF_asmd_improvement(self) -> None:
         with self.assertRaisesRegex(

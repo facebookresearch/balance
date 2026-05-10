@@ -57,6 +57,21 @@ class DataFrameWithWeight(TypedDict, total=False):
     weight: Optional[pd.Series]
 
 
+def _is_nbformat_mime_error(error: ValueError) -> bool:
+    """True if ``error`` is Plotly's "nbformat-not-installed" mime renderer error.
+
+    Plotly's mime renderer raises ``ValueError`` when ``nbformat`` is not
+    importable in the current environment (CLI / test runs / minimal envs).
+    Identifying this specific shape lets callers downgrade it to a warning
+    rather than letting an unrelated ``ValueError`` slip through silently.
+    """
+    error_message = str(error).lower()
+    return "nbformat" in error_message and (
+        "mime type rendering requires" in error_message
+        or "mime rendering requires" in error_message
+    )
+
+
 def _safe_plotly_iplot(fig: Any) -> None:
     """Render Plotly figure in a way that is resilient to missing notebook deps.
 
@@ -68,13 +83,7 @@ def _safe_plotly_iplot(fig: Any) -> None:
     try:
         offline.iplot(fig)
     except ValueError as error:
-        error_message = str(error).lower()
-        is_nbformat_mime_error = "nbformat" in error_message and (
-            "mime type rendering requires" in error_message
-            or "mime rendering requires" in error_message
-            or "not installed" in error_message
-        )
-        if not is_nbformat_mime_error:
+        if not _is_nbformat_mime_error(error):
             raise
         logger.warning(
             "Plotly notebook mime rendering unavailable; skipping interactive plot. Original error: %s",

@@ -2853,6 +2853,11 @@ class BalanceDFCovars(BalanceDF):
         metric: LovePlotMetric = "asmd",
         threshold: float | None = None,
         ax: Any | None = None,
+        library: _love_plot_module.LovePlotLibrary = "plotly",
+        line: bool = False,
+        order_by: _love_plot_module.LovePlotOrderBy = "diff",
+        show: bool = False,
+        **kwargs: Any,
     ) -> Any:
         """Side-by-side imbalance scatter of unadjusted vs. adjusted covariates.
 
@@ -2884,15 +2889,33 @@ class BalanceDFCovars(BalanceDF):
                 line) for the other metrics, since none has a universally
                 accepted cutoff. Pass an explicit float to override.
             ax (Any | None, optional): Optional matplotlib ``Axes`` to draw
-                into. If ``None``, a new figure is created sized to the
-                number of covariates.
+                into for ``library="seaborn"``. If ``None``, a new figure is
+                created sized to the number of covariates.
+            library (str, optional): Plotting backend. ``"plotly"`` (default)
+                returns an interactive Plotly ``Figure``; ``"seaborn"``
+                returns a static seaborn/matplotlib ``Axes``; ``"balance"``
+                returns an ASCII string.
+            line (bool, optional): If ``True`` and an unadjusted view is
+                available, connect each unweighted/weighted covariate pair
+                with a horizontal line, similar to cobalt's ``line=TRUE``.
+            order_by (str, optional): Sort covariates by ``"diff"``
+                (default; signed ``after - before``, so the most-worsened
+                rise to the top and the most-improved sink to the bottom),
+                ``"before"``, ``"after"``, ``"alphabetical"``, or ``"none"``.
+            show (bool, optional): For ``library="plotly"``, whether to call
+                ``fig.show()`` before returning the figure.
+            **kwargs: Forwarded to the underlying
+                :func:`balance.stats_and_plots.love_plot.love_plot` primitive
+                (e.g. ``bar_width`` for ``library="balance"``, or Plotly
+                layout options like ``title=`` for ``library="plotly"``).
 
         Returns:
-            matplotlib.axes.Axes: The Axes used, returned for further
-            customization (titles, legend, save, etc.). The ``Any`` return
-            annotation matches balance's convention for plotting helpers
-            (see :meth:`BalanceDFWeights.plot`) and avoids an eager
-            matplotlib import in this module's type signature.
+            matplotlib.axes.Axes | plotly.graph_objects.Figure | str: A
+            seaborn/matplotlib ``Axes`` for ``library="seaborn"``, a Plotly
+            figure for ``library="plotly"``, or ASCII text for
+            ``library="balance"``. The ``Any`` return annotation matches
+            balance's plotting-helper convention and avoids eager plotting
+            imports in this module's type signature.
 
         Raises:
             ValueError: If ``metric`` is not one of the supported names;
@@ -2937,6 +2960,11 @@ class BalanceDFCovars(BalanceDF):
                 xlabel=xlabel,
                 threshold=threshold_resolved,
                 ax=ax,
+                library=library,
+                line=line,
+                order_by=order_by,
+                show=show,
+                **kwargs,
             )
         # The ``unadjusted`` view's own ``_balancedf_child_from_linked_samples``
         # does not include the target (it is a sibling, not a child of
@@ -2951,7 +2979,51 @@ class BalanceDFCovars(BalanceDF):
             xlabel=xlabel,
             threshold=threshold_resolved,
             ax=ax,
+            library=library,
+            line=line,
+            order_by=order_by,
+            show=show,
+            **kwargs,
         )
+
+    def plot(
+        self: "BalanceDFCovars", on_linked_samples: bool = True, **kwargs: Any
+    ) -> Any:
+        """Plot covariates, including ``dist_type="love_plot"`` diagnostics.
+
+        The default behaviour is inherited from :meth:`BalanceDF.plot` and
+        draws covariate distributions. Passing ``dist_type="love_plot"``
+        (or the ``"love"`` alias) dispatches to :meth:`love_plot`, so calls
+        such as ``adjusted.covars().plot(dist_type="love_plot",
+        library="plotly")`` return the covariate-balance scatter directly.
+
+        Args:
+            self (BalanceDFCovars): The covariates view to plot.
+            on_linked_samples (bool, optional): Used by distribution plots.
+                Love plots use the object's fitted lineage directly and ignore
+                this argument.
+            **kwargs: Passed to :meth:`BalanceDF.plot` for distribution plots
+                or :meth:`love_plot` for love plots.
+        """
+        dist_type = kwargs.get("dist_type")
+        if dist_type in ("love", "love_plot"):
+            kwargs.pop("dist_type", None)
+            return_dict_of_figures = kwargs.pop("return_dict_of_figures", False)
+            if not isinstance(return_dict_of_figures, bool):
+                raise TypeError(
+                    "return_dict_of_figures must be a bool when using "
+                    "dist_type='love_plot'."
+                )
+            result = self.love_plot(**kwargs)
+            if return_dict_of_figures and kwargs.get("library", "plotly") == "plotly":
+                return {"love_plot": result}
+            if return_dict_of_figures:
+                logger.warning(
+                    "return_dict_of_figures=True is only supported for "
+                    "library='plotly' love plots; returning the plot object directly."
+                )
+            return result
+        return super().plot(on_linked_samples=on_linked_samples, **kwargs)
 
 
 class BalanceDFWeights(BalanceDF):
