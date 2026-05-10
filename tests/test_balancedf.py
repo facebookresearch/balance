@@ -2278,6 +2278,40 @@ class TestBalanceDF_asmd(BalanceTestCase):
             "ASMD default should draw exactly one more line than KLD default",
         )
 
+    def test_BalanceDFCovars_love_plot_plotly_ascii_and_plot_dispatch(self) -> None:
+        """``covars().love_plot`` and ``covars().plot`` expose Plotly/ASCII love plots."""
+        import plotly.graph_objects as go
+
+        s3_unadjusted = deepcopy(s3)
+        s3_unadjusted.set_weights(pd.Series([1, 1, 1, 1], index=s3.df.index))
+        s3_with_unadjusted = s3.set_unadjusted(s3_unadjusted)
+
+        fig = s3_with_unadjusted.covars().love_plot(library="plotly", line=True)
+        self.assertIsInstance(fig, go.Figure)
+        self.assertEqual(fig.layout.xaxis.title.text, "ASMD")
+
+        ascii_plot = s3_with_unadjusted.covars().love_plot(library="balance")
+        self.assertIsInstance(ascii_plot, str)
+        self.assertIn("Love plot (ASMD)", ascii_plot)
+
+        dispatched = s3_with_unadjusted.covars().plot(
+            dist_type="love_plot", library="balance"
+        )
+        self.assertIsInstance(dispatched, str)
+        self.assertIn("Unweighted", dispatched)
+
+        dispatched_dict = s3_with_unadjusted.covars().plot(
+            dist_type="love_plot", library="plotly", return_dict_of_figures=True
+        )
+        self.assertIsInstance(dispatched_dict, dict)
+        self.assertIsInstance(dispatched_dict["love_plot"], go.Figure)
+
+    def test_BalanceDFCovars_plot_love_plot_accepts_plot_type_alias(self) -> None:
+        """``plot_type="love_plot"`` is an alias for the love-plot dispatch."""
+        result = s3.covars().plot(plot_type="love_plot", library="balance")
+        self.assertIsInstance(result, str)
+        self.assertIn("Love plot (ASMD)", result)
+
     def test_BalanceDF_asmd_improvement(self) -> None:
         with self.assertRaisesRegex(
             ValueError, "has no unadjusted set or unadjusted has no covars"

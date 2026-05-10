@@ -291,6 +291,68 @@ class TestBalance_weights_stats(
         self.assertNotIn("mean(kld)", labels)
         plt.close("all")
 
+    def test_love_plot_plotly_and_ascii_outputs(self) -> None:
+        """``love_plot`` supports Plotly figures and ASCII text output."""
+        import plotly.graph_objects as go
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31})
+        after = pd.Series({"age": 0.05, "income": 0.08})
+
+        fig = love_plot(before, after, library="plotly", line=True, title="Love")
+        self.assertIsInstance(fig, go.Figure)
+        self.assertEqual(fig.layout.xaxis.title.text, "ASMD")
+        self.assertGreaterEqual(len(fig.data), 3)
+
+        ascii_plot = love_plot(before, after, library="balance", order_by="max")
+        self.assertIsInstance(ascii_plot, str)
+        self.assertIn("Love plot (ASMD)", ascii_plot)
+        self.assertIn("Unweighted", ascii_plot)
+        self.assertIn("Weighted", ascii_plot)
+
+    def test_love_plot_order_by_after(self) -> None:
+        """Covariates can be sorted by weighted/after imbalance."""
+        import matplotlib.pyplot as plt
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31})
+        after = pd.Series({"age": 0.05, "income": 0.20})
+        ax = love_plot(before, after, order_by="after")
+        labels: list[str] = [t.get_text() for t in ax.get_yticklabels()]
+        self.assertEqual(labels, ["age", "income"])
+        plt.close("all")
+
+    def test_love_plot_validates_runtime_options_and_inputs(self) -> None:
+        """Runtime validation catches invalid love-plot options and metric inputs."""
+        import matplotlib.pyplot as plt
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31})
+        after = pd.Series({"age": 0.05, "income": 0.08})
+
+        with self.assertRaisesRegex(ValueError, "library must be one of"):
+            love_plot(before, after, library="bogus")  # pyre-ignore[6]
+
+        with self.assertRaisesRegex(ValueError, "order_by must be one of"):
+            love_plot(before, after, order_by="bogus")  # pyre-ignore[6]
+
+        with self.assertRaisesRegex(ValueError, "bar_width must be a positive integer"):
+            love_plot(before, after, library="balance", bar_width=0)
+
+        with self.assertRaisesRegex(ValueError, "non-finite imbalance values"):
+            love_plot(pd.Series({"age": float("inf")}), after=None)
+
+        with self.assertRaisesRegex(ValueError, "numeric imbalance metric values"):
+            love_plot(pd.Series({"age": "not numeric"}), after=None)
+
+        with self.assertRaisesRegex(ValueError, "duplicate covariate labels"):
+            love_plot(pd.Series([0.1, 0.2], index=["age", "age"]), after=None)
+
+        _, ax = plt.subplots()
+        with self.assertRaisesRegex(ValueError, "ax can only be used"):
+            love_plot(before, after, library="plotly", ax=ax)
+        plt.close("all")
+
     def test_love_plot_uses_existing_axes(self) -> None:
         """Passing ``ax=...`` draws into the supplied Axes (no new figure)."""
         import matplotlib.pyplot as plt
