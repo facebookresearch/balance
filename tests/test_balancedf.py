@@ -2324,6 +2324,11 @@ class TestBalanceDF_asmd(BalanceTestCase):
         self.assertIsInstance(result, str)
         self.assertIn("Love plot (ASMD)", result)
 
+    def test_BalanceDFCovars_plot_rejects_unknown_plot_type(self) -> None:
+        """Unknown ``plot_type`` values should not be silently ignored."""
+        with self.assertRaisesRegex(ValueError, "plot_type must be one of"):
+            s3.covars().plot(plot_type="not_a_plot_type")
+
     def test_BalanceDF_asmd_improvement(self) -> None:
         with self.assertRaisesRegex(
             ValueError, "has no unadjusted set or unadjusted has no covars"

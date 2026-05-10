@@ -3004,6 +3004,12 @@ class BalanceDFCovars(BalanceDF):
         """
         dist_type = kwargs.get("dist_type")
         plot_type = kwargs.pop("plot_type", None)
+        if plot_type is not None and plot_type not in ("love", "love_plot"):
+            raise ValueError(
+                "plot_type must be one of ('love', 'love_plot') when supplied "
+                "to BalanceDFCovars.plot(); got "
+                f"{plot_type!r}."
+            )
         if dist_type in ("love", "love_plot") or plot_type in ("love", "love_plot"):
             kwargs.pop("dist_type", None)
             return_dict_of_figures = kwargs.pop("return_dict_of_figures", False)

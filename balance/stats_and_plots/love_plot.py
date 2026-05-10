@@ -386,6 +386,21 @@ def love_plot(
     Returns:
         ``matplotlib.axes.Axes`` for static output, ``plotly`` ``Figure`` for
         plotly output, or ``str`` for ASCII output.
+
+    Examples:
+        ::
+
+            >>> import pandas as pd
+            >>> from balance.stats_and_plots.love_plot import love_plot
+            >>> before = pd.Series({"age": 0.42, "income": 0.31})
+            >>> after = pd.Series({"age": 0.05, "income": 0.08})
+            >>> ax = love_plot(before, after)  # doctest: +SKIP
+            >>> fig = love_plot(  # doctest: +SKIP
+            ...     before, after, library="plotly", line=True, order_by="max"
+            ... )
+            >>> text = love_plot(  # doctest: +SKIP
+            ...     before, after, library="balance", line=True
+            ... )
     """
     if threshold is not None:
         if not isinstance(threshold, numbers.Real) or isinstance(threshold, bool):
