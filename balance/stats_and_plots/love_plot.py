@@ -365,18 +365,22 @@ def _ascii_axis(
         tick_values = np.linspace(0, axis_max, 6)
     label_chars = [" "] * (width + 1)
     guide_chars = [" "] * (width + 1)
+    last_label_end = -1
     for tick_value in tick_values:
         pos = _ascii_position(float(tick_value), axis_max, width=width)
         label = f"{tick_value:.1f}" if axis_max <= 1 else f"{tick_value:.2g}"
         if tick_value == 0:
             label = "0"
         start = min(pos, max(0, width + 1 - len(label)))
+        end = start + len(label) - 1
+        if start <= last_label_end:
+            continue
         for offset, char in enumerate(label):
             label_chars[start + offset] = char
+        last_label_end = end
     if threshold is not None:
         pos = _ascii_position(float(threshold), axis_max, width=width)
         guide_chars[pos] = "|"
-    guide_chars[0] = "|"
     return "".join(label_chars).rstrip(), "".join(guide_chars).rstrip()
 
 

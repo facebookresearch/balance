@@ -320,6 +320,18 @@ class TestBalance_weights_stats(
         long_label_ascii = love_plot(pd.Series({"x" * 60: 0.1}), library="balance")
         self.assertIn("x" * 40, long_label_ascii)
 
+    def test_love_plot_ascii_threshold_guide_marks_only_threshold(self) -> None:
+        """ASCII threshold guide should not label the origin as a threshold."""
+        from balance.stats_and_plots.love_plot import _ascii_axis
+
+        _axis_labels, threshold_guide = _ascii_axis(10, 0.5, 0.1)
+        self.assertFalse(threshold_guide.startswith("|"))
+        self.assertEqual(threshold_guide.count("|"), 1)
+
+        _axis_labels, zero_threshold_guide = _ascii_axis(10, 0.5, 0.0)
+        self.assertTrue(zero_threshold_guide.startswith("|"))
+        self.assertEqual(zero_threshold_guide.count("|"), 1)
+
     def test_love_plot_line_false_disables_connectors(self) -> None:
         """``line=False`` disables connector marks across graphical and ASCII output."""
         import matplotlib.pyplot as plt
