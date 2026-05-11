@@ -371,7 +371,9 @@ def _ascii_axis(
         label = f"{tick_value:.1f}" if axis_max <= 1 else f"{tick_value:.2g}"
         if tick_value == 0:
             label = "0"
-        start = min(pos, max(0, width + 1 - len(label)))
+        if len(label) > len(label_chars):
+            continue
+        start = min(pos, len(label_chars) - len(label))
         end = start + len(label) - 1
         if start <= last_label_end:
             continue

@@ -332,6 +332,10 @@ class TestBalance_weights_stats(
         self.assertTrue(zero_threshold_guide.startswith("|"))
         self.assertEqual(zero_threshold_guide.count("|"), 1)
 
+        narrow_axis_labels, narrow_threshold_guide = _ascii_axis(1, 0.5, 0.1)
+        self.assertLessEqual(len(narrow_axis_labels), 2)
+        self.assertLessEqual(len(narrow_threshold_guide), 2)
+
     def test_love_plot_line_false_disables_connectors(self) -> None:
         """``line=False`` disables connector marks across graphical and ASCII output."""
         import matplotlib.pyplot as plt
