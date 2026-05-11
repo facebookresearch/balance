@@ -131,11 +131,13 @@ class TestUtil(
             sample_df,
             sample_weights,
         ) = drop_na_rows(sample_df, sample_weights, "sample")
-        self.assertEqual(sample_df, pd.DataFrame({"a": (2.0), "b": ("c")}, index=[2]))
+        self.assertEqual(
+            sample_df, pd.DataFrame({"a": (2.0), "b": ("c")}, index=pd.Index([2]))
+        )
         self.assertEqual(sample_weights, pd.Series([3], index=[2]))
 
         # check exceptions
-        sample_df = pd.DataFrame({"a": (None), "b": ("b")}, index=[1])
+        sample_df = pd.DataFrame({"a": (None), "b": ("b")}, index=pd.Index([1]))
         sample_weights = pd.Series([1])
         self.assertRaisesRegex(
             ValueError,
@@ -241,7 +243,7 @@ class TestUtil(
         # Create a metaclass that makes pd.Series return NotASeriesOrDataFrame
         # but keeps it as a type for isinstance checks
         class SeriesMeta(type):
-            def __call__(cls, *args, **kwargs):
+            def __call__(cls, *args: object, **kwargs: object) -> object:
                 return NotASeriesOrDataFrame()
 
         class FakeSeries(metaclass=SeriesMeta):
