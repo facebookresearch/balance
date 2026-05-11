@@ -14,6 +14,7 @@ from __future__ import (
 )
 
 import unittest
+from typing import Any
 
 import balance.testutil
 import numpy as np
@@ -696,7 +697,7 @@ class TestIPW(
         """Custom models must be trained on labels containing both 0 and 1."""
 
         class InvalidClassLabelModel(LogisticRegression):
-            def fit(self, X, y, sample_weight=None):  # type: ignore[override]
+            def fit(self, X: Any, y: Any, sample_weight: Any = None) -> "InvalidClassLabelModel":  # type: ignore[override]
                 super().fit(X, y + 2, sample_weight=sample_weight)
                 return self
 
@@ -725,7 +726,7 @@ class TestIPW(
                 self.classes_ = self.classes_[::-1]
                 return self
 
-            def predict_proba(self, X):  # type: ignore[override]
+            def predict_proba(self, X: Any) -> np.ndarray:  # type: ignore[override]
                 proba = super().predict_proba(X)
                 return proba[:, ::-1]
 
