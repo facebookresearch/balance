@@ -386,6 +386,11 @@ def _ascii_axis(
     return "".join(label_chars).rstrip(), "".join(guide_chars).rstrip()
 
 
+def _ascii_overlay_threshold(chars: list[str], position: int) -> None:
+    """Overlay a threshold marker without hiding occupied marker/connector cells."""
+    chars[position] = "|" if chars[position] == " " else "!"
+
+
 def _ascii_change_plot(
     before_value: float,
     after_value: float,
@@ -399,8 +404,6 @@ def _ascii_change_plot(
     before_pos = _ascii_position(before_value, axis_max, width=width)
     after_pos = _ascii_position(after_value, axis_max, width=width)
     chars = [" "] * (width + 1)
-    if threshold is not None:
-        chars[_ascii_position(float(threshold), axis_max, width=width)] = "|"
     if line and after_pos < before_pos:
         for pos in range(after_pos + 1, before_pos):
             chars[pos] = "-"
@@ -413,6 +416,10 @@ def _ascii_change_plot(
             chars[after_pos - 1] = ">"
     chars[before_pos] = "o"
     chars[after_pos] = "*" if chars[after_pos] != "o" else "@"
+    if threshold is not None:
+        _ascii_overlay_threshold(
+            chars, _ascii_position(float(threshold), axis_max, width=width)
+        )
     return "".join(chars).rstrip()
 
 
@@ -443,18 +450,19 @@ def _ascii_love_plot(
             value = float(row["value"])
             marker_pos = _ascii_position(value, axis_max, width=bar_width)
             chars = [" "] * (bar_width + 1)
-            if threshold is not None:
-                chars[_ascii_position(float(threshold), axis_max, width=bar_width)] = (
-                    "|"
-                )
             chars[marker_pos] = "*"
+            if threshold is not None:
+                _ascii_overlay_threshold(
+                    chars,
+                    _ascii_position(float(threshold), axis_max, width=bar_width),
+                )
             lines.append(
                 f"{str(covar):<{covar_width}.{covar_width}} | "
                 f"{value:>10.4g} | {''.join(chars).rstrip()}"
             )
         lines.extend(["", "Legend: * = value"])
         if threshold is not None:
-            lines.append("        | = threshold")
+            lines.append("        | = threshold, ! = threshold overlap")
     else:
         axis_labels, threshold_guide = _ascii_axis(bar_width, axis_max, threshold)
         lines.append(
@@ -493,7 +501,7 @@ def _ascii_love_plot(
                 ]
             )
         if threshold is not None:
-            lines.append("        | = threshold")
+            lines.append("        | = threshold, ! = threshold overlap")
     return "\n".join(lines)
 
 

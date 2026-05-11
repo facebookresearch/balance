@@ -336,6 +336,27 @@ class TestBalance_weights_stats(
         self.assertLessEqual(len(narrow_axis_labels), 2)
         self.assertLessEqual(len(narrow_threshold_guide), 2)
 
+    def test_love_plot_ascii_threshold_remains_visible_in_data_rows(self) -> None:
+        """ASCII threshold markers remain visible on connectors and data markers."""
+        from balance.stats_and_plots.love_plot import _ascii_change_plot, love_plot
+
+        connector_intersection = _ascii_change_plot(
+            0.8, 0.2, axis_max=1.0, width=10, threshold=0.5, line=True
+        )
+        self.assertIn("!", connector_intersection)
+
+        marker_intersection = _ascii_change_plot(
+            0.5, 0.2, axis_max=1.0, width=10, threshold=0.5, line=True
+        )
+        self.assertIn("!", marker_intersection)
+
+        single_series = love_plot(
+            pd.Series({"x": 0.1}), library="balance", threshold=0.1, bar_width=10
+        )
+        self.assertIn("!", single_series)
+        self.assertIn("! = threshold overlap", single_series)
+        single_series.encode("ascii")
+
     def test_love_plot_line_false_disables_connectors(self) -> None:
         """``line=False`` disables connector marks across graphical and ASCII output."""
         import matplotlib.pyplot as plt
