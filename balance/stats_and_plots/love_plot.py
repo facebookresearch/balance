@@ -352,7 +352,10 @@ def _ascii_position(value: float, axis_max: float, *, width: int) -> int:
     if axis_max <= 0:
         return 0
     clipped = min(max(abs(value), 0.0), axis_max)
-    return int(round((clipped / axis_max) * width))
+    position = int(math.floor((clipped / axis_max) * width + 0.5))
+    if clipped > 0 and position == 0:
+        return 1
+    return position
 
 
 def _ascii_axis(

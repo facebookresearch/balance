@@ -322,11 +322,17 @@ class TestBalance_weights_stats(
 
     def test_love_plot_ascii_threshold_guide_marks_only_threshold(self) -> None:
         """ASCII threshold guide should not label the origin as a threshold."""
-        from balance.stats_and_plots.love_plot import _ascii_axis
+        from balance.stats_and_plots.love_plot import _ascii_axis, _ascii_position
+
+        self.assertEqual(_ascii_position(0.1, 10.0, width=50), 1)
 
         _axis_labels, threshold_guide = _ascii_axis(10, 0.5, 0.1)
         self.assertFalse(threshold_guide.startswith("|"))
         self.assertEqual(threshold_guide.count("|"), 1)
+
+        _axis_labels, small_threshold_guide = _ascii_axis(50, 10.0, 0.1)
+        self.assertFalse(small_threshold_guide.startswith("|"))
+        self.assertEqual(small_threshold_guide.count("|"), 1)
 
         _axis_labels, zero_threshold_guide = _ascii_axis(10, 0.5, 0.0)
         self.assertTrue(zero_threshold_guide.startswith("|"))
