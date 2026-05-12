@@ -2988,7 +2988,7 @@
         <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">ax</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">library</span><span class="p">:</span> <span class="n">_love_plot_module</span><span class="o">.</span><span class="n">LovePlotLibrary</span> <span class="o">=</span> <span class="s2">&quot;plotly&quot;</span><span class="p">,</span>
-        <span class="n">line</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">line</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">order_by</span><span class="p">:</span> <span class="n">_love_plot_module</span><span class="o">.</span><span class="n">LovePlotOrderBy</span> <span class="o">=</span> <span class="s2">&quot;diff&quot;</span><span class="p">,</span>
         <span class="n">show</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -3029,9 +3029,10 @@
 <span class="sd">                returns an interactive Plotly ``Figure``; ``&quot;seaborn&quot;``</span>
 <span class="sd">                returns a static seaborn/matplotlib ``Axes``; ``&quot;balance&quot;``</span>
 <span class="sd">                returns an ASCII string.</span>
-<span class="sd">            line (bool, optional): If ``True`` and an unadjusted view is</span>
-<span class="sd">                available, connect each unweighted/weighted covariate pair</span>
-<span class="sd">                with a horizontal line, similar to cobalt&#39;s ``line=TRUE``.</span>
+<span class="sd">            line (bool, optional): If ``True`` (the default) and an</span>
+<span class="sd">                unadjusted view is available, connect each unweighted/weighted</span>
+<span class="sd">                covariate pair with a horizontal line, similar to cobalt&#39;s</span>
+<span class="sd">                ``line=TRUE``.</span>
 <span class="sd">            order_by (str, optional): Sort covariates by ``&quot;diff&quot;``</span>
 <span class="sd">                (default; signed ``after - before``, so the most-worsened</span>
 <span class="sd">                rise to the top and the most-improved sink to the bottom),</span>
