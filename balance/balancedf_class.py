@@ -2854,7 +2854,7 @@ class BalanceDFCovars(BalanceDF):
         threshold: float | None = None,
         ax: Any | None = None,
         library: _love_plot_module.LovePlotLibrary = "plotly",
-        line: bool = False,
+        line: bool = True,
         order_by: _love_plot_module.LovePlotOrderBy = "diff",
         show: bool = False,
         **kwargs: Any,
@@ -2895,9 +2895,10 @@ class BalanceDFCovars(BalanceDF):
                 returns an interactive Plotly ``Figure``; ``"seaborn"``
                 returns a static seaborn/matplotlib ``Axes``; ``"balance"``
                 returns an ASCII string.
-            line (bool, optional): If ``True`` and an unadjusted view is
-                available, connect each unweighted/weighted covariate pair
-                with a horizontal line, similar to cobalt's ``line=TRUE``.
+            line (bool, optional): If ``True`` (the default) and an
+                unadjusted view is available, connect each unweighted/weighted
+                covariate pair with a horizontal line, similar to cobalt's
+                ``line=TRUE``.
             order_by (str, optional): Sort covariates by ``"diff"``
                 (default; signed ``after - before``, so the most-worsened
                 rise to the top and the most-improved sink to the bottom),
