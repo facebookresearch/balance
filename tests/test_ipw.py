@@ -721,7 +721,7 @@ class TestIPW(
         """Stored target_probability follows class-index lookup for custom models."""
 
         class ReversedClassOrderLR(LogisticRegression):
-            def fit(self, X, y, sample_weight=None):  # type: ignore[override]
+            def fit(self, X: Any, y: Any, sample_weight: Any = None) -> "ReversedClassOrderLR":  # type: ignore[override]
                 super().fit(X, y, sample_weight=sample_weight)
                 self.classes_ = self.classes_[::-1]
                 return self
