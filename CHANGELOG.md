@@ -57,6 +57,16 @@
     transformations at fit time (e.g. wrappers built around stored
     fit-time bin edges) or re-fit rake on the scoring data.
 
+- **Poststratify now supports transfer scoring with `predict_weights(data=...)`.**
+  `BalanceFrame.fit(method="poststratify", store_fit_metadata=True)` stores the
+  transformation origin needed to safely replay fitted cell ratios on a new
+  sample/target pair. `predict_weights(data=holdout_bf)` now applies those
+  stored ratios to the holdout sample's design weights and rescales to the
+  holdout target's total weight. As with rake transfer scoring, models fitted
+  with `transformations="default"` or direct data-dependent helpers such as
+  `quantize` / `fct_lump` are rejected for transfer; pass deterministic
+  transformations explicitly or re-fit poststratify on the scoring data.
+
 ## Documentation
 
 - **README cross-link to diff-diff.** New "Design-based inference" parent section in [README.md](https://github.com/facebookresearch/balance/blob/main/README.md) introduces the diff-diff integration above the API tour, with a fenced code snippet (canonical `Sample.from_frame` → `set_target` → `adjust` → `fit_did` workflow) and links to the upstream project. The Docusaurus tutorials index and the website landing page (`HomepageFeatures.js`) gain matching cross-references; `.github/copilot-instructions.md` gets a new review-checklist bullet for changes that touch `balance/interop/diff_diff.py`.

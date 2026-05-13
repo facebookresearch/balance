@@ -10,6 +10,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import io
 import os
 import textwrap
+import warnings
 from typing import List
 from unittest.mock import patch
 
@@ -1112,8 +1113,13 @@ class TestAsciiComparativeHistEdgeCases(balance.testutil.BalanceTestCase):
             {"df": df, "weight": pd.Series([0.0, 0.0])},
             {"df": df, "weight": pd.Series([0.0, 0.0])},
         ]
-        result = ascii_comparative_hist(
-            dfs, names=["Target", "Sample"], column="v", n_bins=2, bar_width=10
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always", UserWarning)
+            result = ascii_comparative_hist(
+                dfs, names=["Target", "Sample"], column="v", n_bins=2, bar_width=10
+            )
+        self.assertTrue(
+            any("All weights are zero" in str(item.message) for item in caught)
         )
         # All bins should show 0.0, totals should be 0.0
         self.assertIn("0.0", result)

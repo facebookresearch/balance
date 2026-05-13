@@ -205,6 +205,7 @@ class Testpoststratify(
         self.assertIn("training_sample_weights", model)
         self.assertIn("training_target_weights", model)
         self.assertIn("variables", model)
+        self.assertIsNone(model.get("transformations_origin"))
         self.assertTrue(bool(model.get("store_fit_metadata")))
 
     def test_poststratify_stores_resolved_default_transformations_in_metadata(
@@ -227,6 +228,7 @@ class Testpoststratify(
         model = result["model"]
         assert isinstance(model, dict)
         self.assertIsInstance(model.get("transformations"), dict)
+        self.assertEqual(model.get("transformations_origin"), "default")
         self.assertEqual(set(model["transformations"].keys()), {"a", "b"})
 
     def test_poststratify_defaults_to_minimal_model_payload(self) -> None:

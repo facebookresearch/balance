@@ -12,6 +12,7 @@ import pickle
 import re
 from typing import Any, Callable, Dict, List, Optional, Union
 
+import numpy as np
 import pandas as pd
 from balance import adjustment as balance_adjustment, util as balance_util
 from balance.util import _safe_fillna_and_infer
@@ -309,6 +310,7 @@ def poststratify(
                 "na_action": na_action,
                 "strict_matching": strict_matching,
                 "transformations": transformations_to_apply,
+                "transformations_origin": transformations,
                 "transformations_drop": transformations_drop,
                 "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
                 "weight_trimming_percentile": weight_trimming_percentile,
@@ -326,6 +328,235 @@ def poststratify(
         "weight": w,
         "model": model,
     }
+
+
+# Private to ``balance``: callers should reach this through
+# ``BalanceFrame.predict_weights()`` rather than importing it directly.
+def _predict_weights_from_model(
+    model: Dict[str, Any],
+    sample_df: pd.DataFrame,
+    sample_weights_full: pd.Series,
+    target_df: pd.DataFrame,
+    target_weights_full: pd.Series,
+    is_transfer: bool,
+) -> pd.Series:
+    """Reconstruct poststratification weights from stored fit metadata.
+
+    ``is_transfer=False`` replays the fit on the original rows and therefore
+    requires compatible fit-time sample and target design weights.  ``is_transfer=True``
+    applies the stored fit-time cell ratios to a new sample/target pair, then
+    rescales the scored sample to the new target's total weight.  Transfer mode
+    intentionally warns because it reuses the training cell-ratio surface rather
+    than fitting exact ratios from the scoring target's cell distribution.
+    """
+    required = (
+        "variables",
+        "variables_before_transformations",
+        "na_action",
+        "strict_matching",
+        "transformations",
+        "transformations_drop",
+        "weight_trimming_mean_ratio",
+        "weight_trimming_percentile",
+        "keep_sum_of_weights",
+        "cell_weight_ratio",
+    )
+    missing = [key for key in required if key not in model]
+    if missing:
+        raise ValueError(
+            "Poststratify model is missing fit-time metadata "
+            f"({missing}) for predict_weights(). "
+            "Call BalanceFrame.fit(method='poststratify') or run "
+            "poststratify(..., store_fit_metadata=True)."
+        )
+
+    variables = model.get("variables")
+    input_variables = model.get("variables_before_transformations")
+    if not isinstance(variables, list) or not all(
+        isinstance(v, str) for v in variables
+    ):
+        raise ValueError(
+            "Poststratify model has invalid 'variables' metadata for "
+            "predict_weights()."
+        )
+    if not isinstance(input_variables, list) or not all(
+        isinstance(v, str) for v in input_variables
+    ):
+        raise ValueError(
+            "Poststratify model has invalid "
+            "'variables_before_transformations' metadata for predict_weights()."
+        )
+
+    ratio_series = model.get("cell_weight_ratio")
+    if not isinstance(ratio_series, pd.Series):
+        raise ValueError(
+            "Poststratify model is missing cell-weight ratio metadata for "
+            "predict_weights()."
+        )
+
+    sample_weights = sample_weights_full
+    target_weights = target_weights_full
+    if not is_transfer:
+        training_sample_weights = model.get("training_sample_weights")
+        if (
+            not isinstance(training_sample_weights, pd.Series)
+            or len(training_sample_weights) != len(sample_weights_full)
+            or not training_sample_weights.index.equals(sample_weights_full.index)
+        ):
+            raise ValueError(
+                "Poststratify predict_weights() requires compatible "
+                "fit-time sample design weights in model['training_sample_weights']. "
+                "Re-fit with BalanceFrame.fit(method='poststratify') and "
+                "store_fit_metadata=True."
+            )
+        sample_weights = training_sample_weights
+
+        training_target_weights = model.get("training_target_weights")
+        if (
+            not isinstance(training_target_weights, pd.Series)
+            or len(training_target_weights) != len(target_weights_full)
+            or not training_target_weights.index.equals(target_weights_full.index)
+        ):
+            raise ValueError(
+                "Poststratify predict_weights() requires compatible "
+                "fit-time target design weights in model['training_target_weights']. "
+                "Re-fit with BalanceFrame.fit(method='poststratify') and "
+                "store_fit_metadata=True."
+            )
+        target_weights = training_target_weights
+    else:
+        if "transformations_origin" not in model:
+            raise ValueError(
+                "Poststratify predict_weights(data=...) requires "
+                "transformations_origin metadata to determine whether fitted "
+                "transformations are safe to replay. Re-fit with "
+                "BalanceFrame.fit(method='poststratify')."
+            )
+        transformations_origin = model.get("transformations_origin")
+        if transformations_origin == "default":
+            raise ValueError(
+                "Poststratify predict_weights(data=...) is unsupported for "
+                "models fitted with transformations='default' because those "
+                "transformations are data-dependent and not replayable across "
+                "new samples. Pass deterministic transformations explicitly "
+                "at fit time or re-fit poststratify on the scoring data."
+            )
+        if isinstance(transformations_origin, dict):
+            from balance.utils.data_transformation import fct_lump, quantize
+
+            data_dependent_helpers = {quantize, fct_lump}
+            offenders = sorted(
+                {
+                    getattr(fn, "__name__", repr(fn))
+                    for fn in transformations_origin.values()
+                    if fn in data_dependent_helpers
+                }
+            )
+            if offenders:
+                raise ValueError(
+                    "Poststratify predict_weights(data=...) is unsupported for "
+                    "models fitted with data-dependent transformations "
+                    f"({', '.join(offenders)}). Replace each helper with a "
+                    "deterministic wrapper that closes over fit-time "
+                    "parameters, or re-fit poststratify on the scoring data."
+                )
+        logger.warning(
+            "Poststratify predict_weights(data=...): replaying fitted "
+            "poststratification cell ratios on a different sample is a "
+            "transfer operation, not an exact fit. The stored cell ratios "
+            "encode the training target's joint cell distribution; the "
+            "result is rescaled to the scoring target's total weight but "
+            "does not re-fit to the scoring target's cell distribution."
+        )
+
+    for column in input_variables:
+        if column not in sample_df.columns or column not in target_df.columns:
+            raise ValueError(
+                "Poststratify predict_weights() cannot find required covariate "
+                f"'{column}' in both sample and target."
+            )
+    sample_df = sample_df.loc[:, input_variables]
+    target_df = target_df.loc[:, input_variables]
+
+    na_action = str(model.get("na_action", "add_indicator"))
+    if na_action == "drop":
+        sample_df, sample_weights = balance_util.drop_na_rows(
+            sample_df, sample_weights, "sample"
+        )
+        target_df, target_weights = balance_util.drop_na_rows(
+            target_df, target_weights, "target"
+        )
+    elif na_action == "add_indicator":
+        sample_df = pd.DataFrame(_safe_fillna_and_infer(sample_df, "__NaN__"))
+        target_df = pd.DataFrame(_safe_fillna_and_infer(target_df, "__NaN__"))
+    else:
+        raise ValueError(
+            "Poststratify model has invalid na_action metadata "
+            f"'{na_action}' for predict_weights()."
+        )
+
+    sample_df, _target_df = balance_adjustment.apply_transformations(
+        (sample_df, target_df),
+        transformations=model["transformations"],
+        drop=bool(model["transformations_drop"]),
+    )
+    for column in variables:
+        if column not in sample_df.columns:
+            raise ValueError(
+                "Poststratify transform output is missing stored variable "
+                f"'{column}' required for predict_weights()."
+            )
+    sample_df = sample_df.loc[:, variables]
+
+    ratio_name = "_cell_ratio"
+    while ratio_name in sample_df.columns:
+        ratio_name = f"{ratio_name}_tmp"
+    sample_with_ratio = sample_df.join(ratio_series.rename(ratio_name), on=variables)
+    missing_ratio = sample_with_ratio[ratio_name].isna()
+    if bool(missing_ratio.any()):
+        if bool(model.get("strict_matching", True)):
+            raise ValueError(
+                "Poststratify predict_weights() found sample cells missing from "
+                "stored fit-time cell ratios. Re-fit with compatible cells or "
+                "fit with strict_matching=False."
+            )
+        logger.warning(
+            "Poststratify predict_weights() encountered sample cells missing from "
+            "stored fit-time cell ratios; assigning zero weights to those rows."
+        )
+        sample_with_ratio[ratio_name] = _safe_fillna_and_infer(
+            sample_with_ratio[ratio_name], 0
+        )
+
+    raw_weights = sample_with_ratio[ratio_name] * sample_weights
+    raw_total = float(raw_weights.sum())
+    target_total = float(target_weights.sum()) if is_transfer else raw_total
+    if not np.isfinite(target_total):
+        raise ValueError(
+            "Poststratify predict_weights() cannot normalize to a non-finite "
+            "target weight total."
+        )
+    if np.isclose(raw_total, 0.0) and not np.isclose(target_total, 0.0):
+        raise ValueError(
+            "Poststratify predict_weights() produced zero total raw weights, "
+            "so it cannot normalize to the requested target total. This usually "
+            "means every scoring row fell in a missing or zero-mass fit-time cell."
+        )
+
+    trimmed = balance_adjustment.trim_weights(
+        raw_weights,
+        target_sum_weights=target_total,
+        weight_trimming_mean_ratio=model["weight_trimming_mean_ratio"],
+        weight_trimming_percentile=model["weight_trimming_percentile"],
+        keep_sum_of_weights=bool(model["keep_sum_of_weights"]),
+    )
+    if na_action == "drop":
+        predicted_full = pd.Series(
+            np.nan, index=sample_weights_full.index, dtype=float
+        ).rename(trimmed.name)
+        predicted_full.loc[trimmed.index] = trimmed.to_numpy()
+        trimmed = predicted_full
+    return trimmed
 
 
 def _variables_from_formula(

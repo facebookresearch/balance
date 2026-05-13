@@ -3055,7 +3055,8 @@ class TestBalanceDF_edge_cases(BalanceTestCase):
         sample_with_zero_weights.set_weights(pd.Series([0, 0, 0, 0]))
 
         # Act
-        result = sample_with_zero_weights.covars().mean(on_linked_samples=False)
+        with self.assertWarnsRegex(UserWarning, "All weights are zero"):
+            result = sample_with_zero_weights.covars().mean(on_linked_samples=False)
 
         # Assert
         # With zero weights, the weighted mean should return NaN values
