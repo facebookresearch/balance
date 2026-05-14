@@ -540,6 +540,12 @@ def rake(
 # transfer-rejection branch and its breaking-change burden on users. The
 # helper should live alongside ``apply_transformations`` so all four
 # weighting methods (rake/cbps/poststratify/ipw) can share it.
+#
+# NOTE: this guard logic is now duplicated in
+# ``weighting_methods/poststratify.py::_predict_weights_from_model``
+# (D105128469). CBPS and IPW will need the same guard when they gain
+# transfer-mode support. Extracting the shared helper is increasingly
+# load-bearing as the duplication grows.
 def _predict_weights_from_model(
     model: dict[str, Any],
     sample_df: pd.DataFrame,
