@@ -11,6 +11,9 @@ on:
   # allow this to be scheduled manually in addition to cron
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   tests:
     # Default matrix: bare-import balance on every OS / python combination —
