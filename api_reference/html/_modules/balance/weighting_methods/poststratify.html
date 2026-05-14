@@ -518,61 +518,11 @@
                 <span class="s2">&quot;BalanceFrame.fit(method=&#39;poststratify&#39;).&quot;</span>
             <span class="p">)</span>
         <span class="n">transformations_origin</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;transformations_origin&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">transformations_origin</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Poststratify predict_weights(data=...) is unsupported for &quot;</span>
-                <span class="s2">&quot;models fitted with transformations=&#39;default&#39; because those &quot;</span>
-                <span class="s2">&quot;transformations are data-dependent and not replayable across &quot;</span>
-                <span class="s2">&quot;new samples. BalanceFrame.fit(method=&#39;poststratify&#39;) uses &quot;</span>
-                <span class="s2">&quot;transformations=&#39;default&#39; out of the box; to enable transfer &quot;</span>
-                <span class="s2">&quot;scoring, pass deterministic transformations explicitly at fit &quot;</span>
-                <span class="s2">&quot;time (for example transformations={&#39;age&#39;: partial(&quot;</span>
-                <span class="s2">&quot;quantize_with_edges, edges=...)} where the wrapper closes &quot;</span>
-                <span class="s2">&quot;over fit-time bin edges) or re-fit poststratify on the &quot;</span>
-                <span class="s2">&quot;scoring data.&quot;</span>
-            <span class="p">)</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">transformations_origin</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="c1"># Best-effort guard: reject explicit dicts that directly</span>
-            <span class="c1"># reference balance&#39;s known data-dependent helpers</span>
-            <span class="c1"># (quantize, fct_lump). These recompute bins/levels from the</span>
-            <span class="c1"># scoring data, so stored cell ratios no longer line up with</span>
-            <span class="c1"># the transformed scoring cells and transfer would silently</span>
-            <span class="c1"># return incorrect weights.</span>
-            <span class="c1">#</span>
-            <span class="c1"># This guard does NOT catch indirect uses such as</span>
-            <span class="c1"># ``functools.partial(fct_lump, prop=0.1)``, top-level wrapper</span>
-            <span class="c1"># functions, or user-defined data-dependent transformations.</span>
-            <span class="c1"># The general invariant is: any callable whose output for a</span>
-            <span class="c1"># row depends on other rows in the input is unsafe to replay</span>
-            <span class="c1"># on a different sample. Users supplying such transformations</span>
-            <span class="c1"># are responsible for either (a) wrapping them as</span>
-            <span class="c1"># deterministic functions of stored fit-time parameters or</span>
-            <span class="c1"># (b) re-fitting poststratify on the scoring data.</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.data_transformation</span><span class="w"> </span><span class="kn">import</span> <span class="n">fct_lump</span><span class="p">,</span> <span class="n">quantize</span>
-
-            <span class="n">data_dependent_helpers</span> <span class="o">=</span> <span class="p">{</span><span class="n">quantize</span><span class="p">,</span> <span class="n">fct_lump</span><span class="p">}</span>
-            <span class="n">offenders</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
-                <span class="p">{</span>
-                    <span class="nb">getattr</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">&quot;__name__&quot;</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="n">fn</span><span class="p">))</span>
-                    <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">transformations_origin</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
-                    <span class="k">if</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">data_dependent_helpers</span>
-                <span class="p">}</span>
-            <span class="p">)</span>
-            <span class="k">if</span> <span class="n">offenders</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Poststratify predict_weights(data=...) is unsupported &quot;</span>
-                    <span class="s2">&quot;for models fitted with data-dependent transformations &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">offenders</span><span class="p">)</span><span class="si">}</span><span class="s2">). These recompute bins/levels &quot;</span>
-                    <span class="s2">&quot;from the scoring data, so stored cell ratios no longer &quot;</span>
-                    <span class="s2">&quot;line up with the transformed scoring cells. To enable &quot;</span>
-                    <span class="s2">&quot;transfer scoring, replace each data-dependent helper &quot;</span>
-                    <span class="s2">&quot;with a deterministic wrapper that closes over fit-time &quot;</span>
-                    <span class="s2">&quot;parameters (e.g. partial(quantize, edges=fit_time_edges)&quot;</span>
-                    <span class="s2">&quot; or partial(fct_lump, kept_levels=fit_time_levels)) — &quot;</span>
-                    <span class="s2">&quot;the wrappers must depend only on the stored fit-time &quot;</span>
-                    <span class="s2">&quot;state, not on the scoring data — or re-fit poststratify &quot;</span>
-                    <span class="s2">&quot;on the scoring data.&quot;</span>
-                <span class="p">)</span>
+        <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">_reject_data_dependent_transfer</span><span class="p">(</span>
+            <span class="n">transformations_origin</span><span class="p">,</span>
+            <span class="n">method_name</span><span class="o">=</span><span class="s2">&quot;poststratify&quot;</span><span class="p">,</span>
+            <span class="n">transformations_effective</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;transformations&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
             <span class="s2">&quot;Poststratify predict_weights(data=...): replaying fitted &quot;</span>
             <span class="s2">&quot;poststratification cell ratios on a different sample is a &quot;</span>

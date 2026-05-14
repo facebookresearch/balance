@@ -530,6 +530,128 @@
 
 
 
+<span class="c1"># Sentinel for ``_reject_data_dependent_transfer`` to distinguish</span>
+<span class="c1"># &quot;caller did not supply transformations_effective&quot; from &quot;caller</span>
+<span class="c1"># explicitly passed None&quot; (the latter is a valid value: it means the</span>
+<span class="c1"># fit-time effective transformations dict was filtered down to an empty</span>
+<span class="c1"># dict and stored as None, e.g. when every user-supplied transform key</span>
+<span class="c1"># was out of scope for the selected variables).</span>
+<span class="n">_UNSET_EFFECTIVE_TRANSFORMATIONS</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_reject_data_dependent_transfer</span><span class="p">(</span>
+    <span class="n">transformations_origin</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">method_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">transformations_effective</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">_UNSET_EFFECTIVE_TRANSFORMATIONS</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Guard ``predict_weights(data=...)`` against unsafe transformation replay.</span>
+
+<span class="sd">    Shared by ``rake._predict_weights_from_model`` and</span>
+<span class="sd">    ``poststratify._predict_weights_from_model``. ``cbps`` and ``ipw``</span>
+<span class="sd">    have their own ``predict_weights(data=...)`` paths in</span>
+<span class="sd">    :class:`BalanceFrame` but do not currently persist</span>
+<span class="sd">    ``transformations_origin`` or invoke this guard; they may adopt both</span>
+<span class="sd">    if they need protection against replaying fit-time data-dependent</span>
+<span class="sd">    transformations on a different scoring sample.</span>
+
+<span class="sd">    Raises if the fitted model&#39;s ``transformations`` argument is</span>
+<span class="sd">    data-dependent and therefore unsafe to replay across a different</span>
+<span class="sd">    scoring sample, namely:</span>
+
+<span class="sd">    - ``transformations=&#39;default&#39;``: the default-transformations dispatcher</span>
+<span class="sd">      computes bin edges / kept levels from the fit-time data, so the</span>
+<span class="sd">      stored transformed cells do not generalize.</span>
+<span class="sd">    - An explicit ``dict`` whose values include direct references to</span>
+<span class="sd">      balance&#39;s known data-dependent helpers (``quantize`` or</span>
+<span class="sd">      ``fct_lump``): same hazard, just user-supplied.</span>
+
+<span class="sd">    Offender detection runs against ``transformations_effective`` (the</span>
+<span class="sd">    filtered dict actually applied at fit time, ``model[&#39;transformations&#39;]``)</span>
+<span class="sd">    when callers supply it, so a ``quantize`` / ``fct_lump`` reference</span>
+<span class="sd">    for an out-of-scope variable that was filtered out at fit time does</span>
+<span class="sd">    not falsely block transfer scoring. ``None`` is a valid value here</span>
+<span class="sd">    (it means the filtered effective dict was empty) and yields no</span>
+<span class="sd">    rejection. The ``&#39;default&#39;`` check still runs against</span>
+<span class="sd">    ``transformations_origin`` so the user&#39;s literal intent is what gets</span>
+<span class="sd">    rejected.</span>
+
+<span class="sd">    Best-effort: this guard does NOT catch indirect uses such as</span>
+<span class="sd">    ``functools.partial(fct_lump, prop=0.1)``, top-level wrapper</span>
+<span class="sd">    functions, or user-defined data-dependent transformations. The</span>
+<span class="sd">    general invariant is: any callable whose output for a row depends on</span>
+<span class="sd">    other rows in the input is unsafe to replay on a different sample.</span>
+<span class="sd">    Users supplying such transformations are responsible for either (a)</span>
+<span class="sd">    wrapping them as deterministic functions of stored fit-time</span>
+<span class="sd">    parameters (e.g. a wrapper that closes over pre-computed bin edges</span>
+<span class="sd">    or kept-level lists, not over the input frame) or (b) re-fitting the</span>
+<span class="sd">    method on the scoring data.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        transformations_origin: The ``transformations`` argument the user</span>
+<span class="sd">            passed at fit time, stored in ``model[&#39;transformations_origin&#39;]``.</span>
+<span class="sd">            Used for the ``&#39;default&#39;`` rejection.</span>
+<span class="sd">        method_name: Weighting-method name for the error messages (e.g.</span>
+<span class="sd">            ``&#39;rake&#39;``, ``&#39;poststratify&#39;``).</span>
+<span class="sd">        transformations_effective: The effective ``transformations`` dict</span>
+<span class="sd">            actually applied at fit time (typically ``model[&#39;transformations&#39;]``).</span>
+<span class="sd">            Used for the data-dependent-helper rejection. Passing</span>
+<span class="sd">            ``None`` is meaningful (the empty/filtered case and yields</span>
+<span class="sd">            no rejection); omitting the argument entirely falls back to</span>
+<span class="sd">            inspecting ``transformations_origin`` so direct unit tests</span>
+<span class="sd">            can supply a single dict.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If ``transformations_origin`` is ``&#39;default&#39;`` or</span>
+<span class="sd">            the effective transformations dict references</span>
+<span class="sd">            ``quantize``/``fct_lump`` directly.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">method_label</span> <span class="o">=</span> <span class="n">method_name</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span>
+    <span class="n">fit_call_hint</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;BalanceFrame.fit(method=&#39;</span><span class="si">{</span><span class="n">method_name</span><span class="si">}</span><span class="s2">&#39;)&quot;</span>
+
+    <span class="k">if</span> <span class="n">transformations_origin</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">method_label</span><span class="si">}</span><span class="s2"> predict_weights(data=...) is unsupported for &quot;</span>
+            <span class="s2">&quot;models fitted with transformations=&#39;default&#39; because those &quot;</span>
+            <span class="s2">&quot;transformations are data-dependent and not replayable across &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;new samples. </span><span class="si">{</span><span class="n">fit_call_hint</span><span class="si">}</span><span class="s2"> uses transformations=&#39;default&#39; &quot;</span>
+            <span class="s2">&quot;out of the box; to enable transfer scoring, pass deterministic &quot;</span>
+            <span class="s2">&quot;transformations explicitly at fit time (a custom function that &quot;</span>
+            <span class="s2">&quot;closes over fit-time-computed parameters such as bin edges or &quot;</span>
+            <span class="s2">&quot;kept-level lists, not over the input frame) or re-fit &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">method_name</span><span class="si">}</span><span class="s2"> on the scoring data.&quot;</span>
+        <span class="p">)</span>
+    <span class="n">inspect</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">transformations_effective</span>
+        <span class="k">if</span> <span class="n">transformations_effective</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_UNSET_EFFECTIVE_TRANSFORMATIONS</span>
+        <span class="k">else</span> <span class="n">transformations_origin</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inspect</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.data_transformation</span><span class="w"> </span><span class="kn">import</span> <span class="n">fct_lump</span><span class="p">,</span> <span class="n">quantize</span>
+
+        <span class="n">data_dependent_helpers</span> <span class="o">=</span> <span class="p">{</span><span class="n">quantize</span><span class="p">,</span> <span class="n">fct_lump</span><span class="p">}</span>
+        <span class="n">offenders</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="nb">getattr</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">&quot;__name__&quot;</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="n">fn</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">data_dependent_helpers</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">offenders</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">method_label</span><span class="si">}</span><span class="s2"> predict_weights(data=...) is unsupported &quot;</span>
+                <span class="s2">&quot;for models fitted with data-dependent transformations &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">offenders</span><span class="p">)</span><span class="si">}</span><span class="s2">). These recompute bins/levels &quot;</span>
+                <span class="s2">&quot;from the scoring data, so stored cell ratios no longer &quot;</span>
+                <span class="s2">&quot;line up with the transformed scoring cells. To enable &quot;</span>
+                <span class="s2">&quot;transfer scoring, replace each data-dependent helper with &quot;</span>
+                <span class="s2">&quot;a deterministic wrapper that closes over fit-time-computed &quot;</span>
+                <span class="s2">&quot;parameters (e.g. pre-computed bin edges or kept-level &quot;</span>
+                <span class="s2">&quot;lists), not over the input frame — or re-fit &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">method_name</span><span class="si">}</span><span class="s2"> on the scoring data.&quot;</span>
+            <span class="p">)</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_find_adjustment_method</span><span class="p">(</span>
     <span class="n">method</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;cbps&quot;</span><span class="p">,</span> <span class="s2">&quot;ipw&quot;</span><span class="p">,</span> <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;poststratify&quot;</span><span class="p">,</span> <span class="s2">&quot;rake&quot;</span><span class="p">],</span>
     <span class="n">WEIGHTING_METHODS</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="n">BALANCE_WEIGHTING_METHODS</span><span class="p">,</span>

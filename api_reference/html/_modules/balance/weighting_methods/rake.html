@@ -568,8 +568,15 @@
 <span class="c1"># the cbps / poststratify / ipw extractions, where the same helpers can be</span>
 <span class="c1"># shared across all four methods to reduce duplication.</span>
 <span class="c1">#</span>
-<span class="c1"># TODO: replace the ``transformations=&#39;default&#39;`` and explicit</span>
-<span class="c1"># data-dependent-dict transfer guards (below) with a shared helper</span>
+<span class="c1"># The shared transfer-rejection guard lives alongside</span>
+<span class="c1"># ``apply_transformations`` as ``adjustment._reject_data_dependent_transfer``</span>
+<span class="c1"># (extracted from rake + poststratify duplication). It is invoked below</span>
+<span class="c1"># under ``is_transfer``. ``cbps`` and ``ipw`` already have</span>
+<span class="c1"># ``predict_weights(data=...)`` paths in ``BalanceFrame`` but do not yet</span>
+<span class="c1"># persist ``transformations_origin`` or invoke this guard; applying it</span>
+<span class="c1"># there is a follow-up to keep transfer behavior aligned across methods.</span>
+<span class="c1">#</span>
+<span class="c1"># TODO: replace that rejection guard with a *constructive* helper</span>
 <span class="c1"># ``_freeze_data_dependent_transformations(transformations, dfs) -&gt; dict[str, Callable]``</span>
 <span class="c1"># that captures fit-time parameters (bin edges for ``quantize``, kept</span>
 <span class="c1"># levels for ``fct_lump``) and replays them as deterministic closures.</span>
@@ -577,15 +584,7 @@
 <span class="c1"># ``transformations=&#39;default&#39;`` and for explicit dicts containing</span>
 <span class="c1"># ``quantize``/``fct_lump`` (or wrappers thereof such as</span>
 <span class="c1"># ``functools.partial(fct_lump, prop=0.1)``), removing the entire</span>
-<span class="c1"># transfer-rejection branch and its breaking-change burden on users. The</span>
-<span class="c1"># helper should live alongside ``apply_transformations`` so all four</span>
-<span class="c1"># weighting methods (rake/cbps/poststratify/ipw) can share it.</span>
-<span class="c1">#</span>
-<span class="c1"># NOTE: this guard logic is now duplicated in</span>
-<span class="c1"># ``weighting_methods/poststratify.py::_predict_weights_from_model``</span>
-<span class="c1"># (D105128469). CBPS and IPW will need the same guard when they gain</span>
-<span class="c1"># transfer-mode support. Extracting the shared helper is increasingly</span>
-<span class="c1"># load-bearing as the duplication grows.</span>
+<span class="c1"># transfer-rejection branch and its breaking-change burden on users.</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_predict_weights_from_model</span><span class="p">(</span>
     <span class="n">model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
     <span class="n">sample_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
@@ -676,59 +675,12 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Rake model metadata is malformed for predict_weights().&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m_fit</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m_sample</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Rake model is missing stored contingency tables.&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">is_transfer</span> <span class="ow">and</span> <span class="n">transformations_origin</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;Rake predict_weights(data=...) is unsupported for models fitted &quot;</span>
-            <span class="s2">&quot;with transformations=&#39;default&#39; because those transformations are &quot;</span>
-            <span class="s2">&quot;data-dependent and not replayable across new samples. &quot;</span>
-            <span class="s2">&quot;BalanceFrame.fit(method=&#39;rake&#39;) uses transformations=&#39;default&#39; &quot;</span>
-            <span class="s2">&quot;out of the box; to enable transfer scoring, pass deterministic &quot;</span>
-            <span class="s2">&quot;transformations explicitly at fit time (for example &quot;</span>
-            <span class="s2">&quot;transformations={&#39;age&#39;: partial(quantize_with_edges, edges=...)} &quot;</span>
-            <span class="s2">&quot;where the wrapper closes over fit-time bin edges) or re-fit rake &quot;</span>
-            <span class="s2">&quot;on the scoring data.&quot;</span>
+    <span class="k">if</span> <span class="n">is_transfer</span><span class="p">:</span>
+        <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">_reject_data_dependent_transfer</span><span class="p">(</span>
+            <span class="n">transformations_origin</span><span class="p">,</span>
+            <span class="n">method_name</span><span class="o">=</span><span class="s2">&quot;rake&quot;</span><span class="p">,</span>
+            <span class="n">transformations_effective</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;transformations&quot;</span><span class="p">),</span>
         <span class="p">)</span>
-    <span class="k">if</span> <span class="n">is_transfer</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">transformations_origin</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-        <span class="c1"># Best-effort guard: reject explicit dicts that directly</span>
-        <span class="c1"># reference balance&#39;s known data-dependent helpers</span>
-        <span class="c1"># (quantize, fct_lump). These recompute bins/levels from the</span>
-        <span class="c1"># scoring data, so stored cell ratios no longer line up with</span>
-        <span class="c1"># the transformed scoring cells and transfer would silently</span>
-        <span class="c1"># return incorrect weights.</span>
-        <span class="c1">#</span>
-        <span class="c1"># This guard does NOT catch indirect uses such as</span>
-        <span class="c1"># ``functools.partial(fct_lump, prop=0.1)``, top-level wrapper</span>
-        <span class="c1"># functions, or user-defined data-dependent transformations.</span>
-        <span class="c1"># The general invariant is: any callable whose output for a</span>
-        <span class="c1"># row depends on other rows in the input is unsafe to replay</span>
-        <span class="c1"># on a different sample. Users supplying such transformations</span>
-        <span class="c1"># are responsible for either (a) wrapping them as</span>
-        <span class="c1"># deterministic functions of stored fit-time parameters or</span>
-        <span class="c1"># (b) re-fitting rake on the scoring data.</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.data_transformation</span><span class="w"> </span><span class="kn">import</span> <span class="n">fct_lump</span><span class="p">,</span> <span class="n">quantize</span>
-
-        <span class="n">data_dependent_helpers</span> <span class="o">=</span> <span class="p">{</span><span class="n">quantize</span><span class="p">,</span> <span class="n">fct_lump</span><span class="p">}</span>
-        <span class="n">offenders</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
-            <span class="p">{</span>
-                <span class="nb">getattr</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">&quot;__name__&quot;</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="n">fn</span><span class="p">))</span>
-                <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">transformations_origin</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
-                <span class="k">if</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">data_dependent_helpers</span>
-            <span class="p">}</span>
-        <span class="p">)</span>
-        <span class="k">if</span> <span class="n">offenders</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Rake predict_weights(data=...) is unsupported for models &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;fitted with data-dependent transformations (</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">offenders</span><span class="p">)</span><span class="si">}</span><span class="s2">). &quot;</span>
-                <span class="s2">&quot;These recompute bins/levels from the scoring data, so &quot;</span>
-                <span class="s2">&quot;stored cell ratios no longer line up with the transformed &quot;</span>
-                <span class="s2">&quot;cells. To enable transfer scoring, replace each &quot;</span>
-                <span class="s2">&quot;data-dependent helper with a deterministic wrapper that &quot;</span>
-                <span class="s2">&quot;closes over fit-time parameters (e.g. partial(quantize, &quot;</span>
-                <span class="s2">&quot;edges=fit_time_edges) or partial(fct_lump, kept_levels=&quot;</span>
-                <span class="s2">&quot;fit_time_levels)) — the wrappers must depend only on the &quot;</span>
-                <span class="s2">&quot;stored fit-time state, not on the scoring data — or re-fit &quot;</span>
-                <span class="s2">&quot;rake on the scoring data.&quot;</span>
-            <span class="p">)</span>
 
     <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">input_variables</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">column</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span> <span class="ow">or</span> <span class="n">column</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
