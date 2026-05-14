@@ -834,9 +834,13 @@ alternative to the <code class="docutils literal notranslate"><span class="pre">
 trimming, and design weights) to reproduce fitted responder weights.</p></li>
 <li><p><strong>CBPS</strong>: rebuilds the CBPS scoring artifacts from stored metadata
 and supports both in-place and <code class="docutils literal notranslate"><span class="pre">data=...</span></code> holdout scoring.</p></li>
-<li><p><strong>Poststratify</strong>: reconstructs in-place responder weights from
-stored cell-ratio metadata; <code class="docutils literal notranslate"><span class="pre">data=...</span></code> holdout scoring is not yet
-supported for poststratify.</p></li>
+<li><p><strong>Poststratify</strong>: replays fitted cell-ratio metadata in-place and
+supports <code class="docutils literal notranslate"><span class="pre">data=...</span></code> transfer scoring. Models fitted with
+<code class="docutils literal notranslate"><span class="pre">transformations='default'</span></code> or direct data-dependent helpers
+such as <code class="xref py py-func docutils literal notranslate"><span class="pre">balance.utils.data_transformation.quantize()</span></code> /
+<code class="xref py py-func docutils literal notranslate"><span class="pre">balance.utils.data_transformation.fct_lump()</span></code> are rejected
+for transfer; pass deterministic transformations explicitly or
+re-fit poststratify on the scoring data.</p></li>
 <li><p><strong>Rake</strong>: replays fitted cell-ratio artifacts in-place and supports
 <code class="docutils literal notranslate"><span class="pre">data=...</span></code> transfer scoring. See <a class="reference internal" href="balance.weighting_methods.rake.html#balance.weighting_methods.rake.rake" title="balance.weighting_methods.rake.rake"><code class="xref py py-func docutils literal notranslate"><span class="pre">balance.weighting_methods.rake.rake()</span></code></a>
 Notes for validity constraints and interpretation.</p></li>
@@ -846,9 +850,8 @@ Notes for validity constraints and interpretation.</p></li>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>data</strong> – An optional BalanceFrame whose sample covariates are scored
 using this object’s stored model.  Must have matching covariate
-column names and a target set. Supported for IPW, CBPS, and
-rake. Poststratify is supported only for in-place scoring
-(<code class="docutils literal notranslate"><span class="pre">data=None</span></code>).</p>
+column names and a target set. Supported for IPW, CBPS, rake,
+and poststratify.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A Series of predicted responder weights.</p>
