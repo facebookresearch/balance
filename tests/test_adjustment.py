@@ -1011,3 +1011,188 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
             any("Winsorizing weights to" in msg for msg in cm.output),
             f"Expected 'Winsorizing weights to' in logs, got: {cm.output}",
         )
+
+
+class TestRejectDataDependentTransfer(balance.testutil.BalanceTestCase):
+    """Tests for ``adjustment._reject_data_dependent_transfer``.
+
+    The helper is shared by rake and poststratify (and reserved for
+    cbps/ipw) to guard ``predict_weights(data=...)`` against silently
+    incorrect transfer scoring when the fitted transformations cannot
+    be replayed on a different sample.
+    """
+
+    def test_default_origin_raises(self) -> None:
+        from balance.adjustment import _reject_data_dependent_transfer
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "Rake predict_weights\\(data=\\.\\.\\.\\) is unsupported for "
+            "models fitted with transformations='default'",
+        ):
+            _reject_data_dependent_transfer("default", method_name="rake")
+
+    def test_dict_with_quantize_raises(self) -> None:
+        from balance.adjustment import _reject_data_dependent_transfer
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "Rake predict_weights\\(data=\\.\\.\\.\\) is unsupported for "
+            "models fitted with data-dependent transformations \\(quantize\\)",
+        ):
+            _reject_data_dependent_transfer({"x": quantize}, method_name="rake")
+
+    def test_dict_with_fct_lump_raises(self) -> None:
+        from balance.adjustment import _reject_data_dependent_transfer
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "Rake predict_weights\\(data=\\.\\.\\.\\) is unsupported for "
+            "models fitted with data-dependent transformations \\(fct_lump\\)",
+        ):
+            _reject_data_dependent_transfer({"x": fct_lump}, method_name="rake")
+
+    def test_dict_with_both_helpers_lists_both_offenders(self) -> None:
+        from balance.adjustment import _reject_data_dependent_transfer
+
+        with self.assertRaisesRegex(
+            ValueError,
+            r"data-dependent transformations \(fct_lump, quantize\)",
+        ):
+            _reject_data_dependent_transfer(
+                {"x": quantize, "y": fct_lump}, method_name="rake"
+            )
+
+    def test_dict_with_deterministic_callables_passes(self) -> None:
+        from balance.adjustment import _reject_data_dependent_transfer
+
+        def _passthrough(s: pd.Series) -> pd.Series:
+            return s
+
+        # Should not raise.
+        _reject_data_dependent_transfer({"x": _passthrough}, method_name="rake")
+
+    def test_none_origin_passes(self) -> None:
+        from balance.adjustment import _reject_data_dependent_transfer
+
+        # ``transformations=None`` stores None in transformations_origin
+        # (no transforms applied at fit time → safe to replay).
+        _reject_data_dependent_transfer(None, method_name="rake")
+
+    def test_indirect_partial_passes_documented_limitation(self) -> None:
+        # Documented best-effort limitation: functools.partial wrappers
+        # around data-dependent helpers are NOT caught — they slip
+        # through silently. Users supplying such wrappers are
+        # responsible for either making them deterministic or re-fitting
+        # on the scoring data. This test pins the current behavior so
+        # any future tightening (or breakage) is visible.
+        import functools
+
+        from balance.adjustment import _reject_data_dependent_transfer
+
+        # Should not raise (documented limitation).
+        _reject_data_dependent_transfer(
+            {"x": functools.partial(fct_lump, prop=0.1)},
+            method_name="rake",
+        )
+
+    def test_method_name_is_interpolated_into_message(self) -> None:
+        from balance.adjustment import _reject_data_dependent_transfer
+
+        # rake → "Rake", poststratify → "Poststratify".
+        with self.assertRaisesRegex(
+            ValueError,
+            "Poststratify predict_weights\\(data=\\.\\.\\.\\) is unsupported",
+        ):
+            _reject_data_dependent_transfer("default", method_name="poststratify")
+
+        with self.assertRaisesRegex(
+            ValueError, "re-fit poststratify on the scoring data"
+        ):
+            _reject_data_dependent_transfer("default", method_name="poststratify")
+
+    def test_dict_without_offenders_passes(self) -> None:
+        from balance.adjustment import _reject_data_dependent_transfer
+
+        # Empty dict is a valid "no-op transforms" fit and must pass.
+        _reject_data_dependent_transfer({}, method_name="rake")
+
+    def test_effective_overrides_origin_for_offender_check(self) -> None:
+        # When the user-supplied dict contains a data-dependent helper
+        # for a variable that was filtered out at fit time, the offender
+        # check must run against the EFFECTIVE (filtered) dict, not the
+        # ORIGINAL one. Otherwise transfer scoring rejects a model for
+        # a transformation that was never actually applied.
+        from balance.adjustment import _reject_data_dependent_transfer
+
+        # Should not raise: origin has quantize for "unused_var", but
+        # effective (filtered) only has the safe callable for "used_var".
+        _reject_data_dependent_transfer(
+            {"unused_var": quantize, "used_var": str.upper},
+            method_name="rake",
+            transformations_effective={"used_var": str.upper},
+        )
+
+    def test_effective_still_raises_when_in_scope_offender(self) -> None:
+        # The complement to the above: when the effective dict actually
+        # contains a data-dependent helper, the guard MUST raise.
+        from balance.adjustment import _reject_data_dependent_transfer
+
+        with self.assertRaisesRegex(
+            ValueError,
+            r"data-dependent transformations \(quantize\)",
+        ):
+            _reject_data_dependent_transfer(
+                {"used_var": quantize},
+                method_name="rake",
+                transformations_effective={"used_var": quantize},
+            )
+
+    def test_default_origin_raises_regardless_of_effective(self) -> None:
+        # ``transformations='default'`` is the user's literal intent; the
+        # guard must reject it even though the effective dict is a
+        # resolved (and possibly safe-looking) value.
+        from balance.adjustment import _reject_data_dependent_transfer
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "transformations='default'",
+        ):
+            _reject_data_dependent_transfer(
+                "default",
+                method_name="rake",
+                transformations_effective={"x": str.upper},
+            )
+
+    def test_effective_none_means_empty_not_fallback(self) -> None:
+        # When the caller explicitly passes ``transformations_effective=None``,
+        # the helper must treat it as "no effective transformations" (no
+        # rejection) and MUST NOT fall back to inspecting
+        # ``transformations_origin``. Poststratify hits this when every
+        # user-supplied transform key is out of scope for the selected
+        # variables: ``transformations_to_apply`` collapses to ``None``
+        # and gets stored as ``model['transformations']``. Without the
+        # explicit-None semantics, the helper would re-inspect the
+        # unfiltered ``transformations_origin`` and falsely reject a
+        # ``quantize`` that was never applied.
+        from balance.adjustment import _reject_data_dependent_transfer
+
+        # Should not raise.
+        _reject_data_dependent_transfer(
+            {"unused_var": quantize, "another": fct_lump},
+            method_name="rake",
+            transformations_effective=None,
+        )
+
+    def test_omitted_effective_falls_back_to_origin(self) -> None:
+        # Distinct from the explicit-None case above: when the caller
+        # OMITS ``transformations_effective`` entirely, the helper falls
+        # back to inspecting ``transformations_origin``. This keeps the
+        # single-arg call site (used by direct unit tests) terse.
+        from balance.adjustment import _reject_data_dependent_transfer
+
+        with self.assertRaisesRegex(
+            ValueError,
+            r"data-dependent transformations \(quantize\)",
+        ):
+            _reject_data_dependent_transfer({"x": quantize}, method_name="rake")

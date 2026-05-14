@@ -528,8 +528,15 @@ def rake(
 # the cbps / poststratify / ipw extractions, where the same helpers can be
 # shared across all four methods to reduce duplication.
 #
-# TODO: replace the ``transformations='default'`` and explicit
-# data-dependent-dict transfer guards (below) with a shared helper
+# The shared transfer-rejection guard lives alongside
+# ``apply_transformations`` as ``adjustment._reject_data_dependent_transfer``
+# (extracted from rake + poststratify duplication). It is invoked below
+# under ``is_transfer``. ``cbps`` and ``ipw`` already have
+# ``predict_weights(data=...)`` paths in ``BalanceFrame`` but do not yet
+# persist ``transformations_origin`` or invoke this guard; applying it
+# there is a follow-up to keep transfer behavior aligned across methods.
+#
+# TODO: replace that rejection guard with a *constructive* helper
 # ``_freeze_data_dependent_transformations(transformations, dfs) -> dict[str, Callable]``
 # that captures fit-time parameters (bin edges for ``quantize``, kept
 # levels for ``fct_lump``) and replays them as deterministic closures.
@@ -537,15 +544,7 @@ def rake(
 # ``transformations='default'`` and for explicit dicts containing
 # ``quantize``/``fct_lump`` (or wrappers thereof such as
 # ``functools.partial(fct_lump, prop=0.1)``), removing the entire
-# transfer-rejection branch and its breaking-change burden on users. The
-# helper should live alongside ``apply_transformations`` so all four
-# weighting methods (rake/cbps/poststratify/ipw) can share it.
-#
-# NOTE: this guard logic is now duplicated in
-# ``weighting_methods/poststratify.py::_predict_weights_from_model``
-# (D105128469). CBPS and IPW will need the same guard when they gain
-# transfer-mode support. Extracting the shared helper is increasingly
-# load-bearing as the duplication grows.
+# transfer-rejection branch and its breaking-change burden on users.
 def _predict_weights_from_model(
     model: dict[str, Any],
     sample_df: pd.DataFrame,
@@ -636,59 +635,12 @@ def _predict_weights_from_model(
         raise ValueError("Rake model metadata is malformed for predict_weights().")
     if not isinstance(m_fit, np.ndarray) or not isinstance(m_sample, np.ndarray):
         raise ValueError("Rake model is missing stored contingency tables.")
-    if is_transfer and transformations_origin == "default":
-        raise ValueError(
-            "Rake predict_weights(data=...) is unsupported for models fitted "
-            "with transformations='default' because those transformations are "
-            "data-dependent and not replayable across new samples. "
-            "BalanceFrame.fit(method='rake') uses transformations='default' "
-            "out of the box; to enable transfer scoring, pass deterministic "
-            "transformations explicitly at fit time (for example "
-            "transformations={'age': partial(quantize_with_edges, edges=...)} "
-            "where the wrapper closes over fit-time bin edges) or re-fit rake "
-            "on the scoring data."
+    if is_transfer:
+        balance_adjustment._reject_data_dependent_transfer(
+            transformations_origin,
+            method_name="rake",
+            transformations_effective=model.get("transformations"),
         )
-    if is_transfer and isinstance(transformations_origin, dict):
-        # Best-effort guard: reject explicit dicts that directly
-        # reference balance's known data-dependent helpers
-        # (quantize, fct_lump). These recompute bins/levels from the
-        # scoring data, so stored cell ratios no longer line up with
-        # the transformed scoring cells and transfer would silently
-        # return incorrect weights.
-        #
-        # This guard does NOT catch indirect uses such as
-        # ``functools.partial(fct_lump, prop=0.1)``, top-level wrapper
-        # functions, or user-defined data-dependent transformations.
-        # The general invariant is: any callable whose output for a
-        # row depends on other rows in the input is unsafe to replay
-        # on a different sample. Users supplying such transformations
-        # are responsible for either (a) wrapping them as
-        # deterministic functions of stored fit-time parameters or
-        # (b) re-fitting rake on the scoring data.
-        from balance.utils.data_transformation import fct_lump, quantize
-
-        data_dependent_helpers = {quantize, fct_lump}
-        offenders = sorted(
-            {
-                getattr(fn, "__name__", repr(fn))
-                for fn in transformations_origin.values()
-                if fn in data_dependent_helpers
-            }
-        )
-        if offenders:
-            raise ValueError(
-                "Rake predict_weights(data=...) is unsupported for models "
-                f"fitted with data-dependent transformations ({', '.join(offenders)}). "
-                "These recompute bins/levels from the scoring data, so "
-                "stored cell ratios no longer line up with the transformed "
-                "cells. To enable transfer scoring, replace each "
-                "data-dependent helper with a deterministic wrapper that "
-                "closes over fit-time parameters (e.g. partial(quantize, "
-                "edges=fit_time_edges) or partial(fct_lump, kept_levels="
-                "fit_time_levels)) — the wrappers must depend only on the "
-                "stored fit-time state, not on the scoring data — or re-fit "
-                "rake on the scoring data."
-            )
 
     for column in input_variables:
         if column not in sample_df.columns or column not in target_df.columns:
