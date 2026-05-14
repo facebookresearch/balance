@@ -484,6 +484,115 @@ def apply_transformations(
     return res
 
 
+def _reject_data_dependent_transfer(
+    transformations_origin: Any,
+    *,
+    method_name: str,
+    transformations_effective: Any = None,
+) -> None:
+    """Guard ``predict_weights(data=...)`` against unsafe transformation replay.
+
+    Shared by ``rake._predict_weights_from_model`` and
+    ``poststratify._predict_weights_from_model``. ``cbps`` and ``ipw``
+    have their own ``predict_weights(data=...)`` paths in
+    :class:`BalanceFrame` but do not currently persist
+    ``transformations_origin`` or invoke this guard; they may adopt both
+    if they need protection against replaying fit-time data-dependent
+    transformations on a different scoring sample.
+
+    Raises if the fitted model's ``transformations`` argument is
+    data-dependent and therefore unsafe to replay across a different
+    scoring sample, namely:
+
+    - ``transformations='default'``: the default-transformations dispatcher
+      computes bin edges / kept levels from the fit-time data, so the
+      stored transformed cells do not generalize.
+    - An explicit ``dict`` whose values include direct references to
+      balance's known data-dependent helpers (``quantize`` or
+      ``fct_lump``): same hazard, just user-supplied.
+
+    Offender detection runs against ``transformations_effective`` (the
+    filtered dict actually applied at fit time, ``model['transformations']``)
+    when callers supply it, so a ``quantize`` / ``fct_lump`` reference
+    for an out-of-scope variable that was filtered out at fit time does
+    not falsely block transfer scoring. The ``'default'`` check still
+    runs against ``transformations_origin`` so the user's literal intent
+    is what gets rejected.
+
+    Best-effort: this guard does NOT catch indirect uses such as
+    ``functools.partial(fct_lump, prop=0.1)``, top-level wrapper
+    functions, or user-defined data-dependent transformations. The
+    general invariant is: any callable whose output for a row depends on
+    other rows in the input is unsafe to replay on a different sample.
+    Users supplying such transformations are responsible for either (a)
+    wrapping them as deterministic functions of stored fit-time
+    parameters (e.g. a wrapper that closes over pre-computed bin edges
+    or kept-level lists, not over the input frame) or (b) re-fitting the
+    method on the scoring data.
+
+    Args:
+        transformations_origin: The ``transformations`` argument the user
+            passed at fit time, stored in ``model['transformations_origin']``.
+            Used for the ``'default'`` rejection.
+        method_name: Weighting-method name for the error messages (e.g.
+            ``'rake'``, ``'poststratify'``).
+        transformations_effective: The effective ``transformations`` dict
+            actually applied at fit time (typically ``model['transformations']``).
+            Used for the data-dependent-helper rejection. Falls back to
+            ``transformations_origin`` when omitted, so direct unit
+            tests can supply a single dict.
+
+    Raises:
+        ValueError: If ``transformations_origin`` is ``'default'`` or
+            the effective transformations dict references
+            ``quantize``/``fct_lump`` directly.
+    """
+    method_label = method_name.capitalize()
+    fit_call_hint = f"BalanceFrame.fit(method='{method_name}')"
+
+    if transformations_origin == "default":
+        raise ValueError(
+            f"{method_label} predict_weights(data=...) is unsupported for "
+            "models fitted with transformations='default' because those "
+            "transformations are data-dependent and not replayable across "
+            f"new samples. {fit_call_hint} uses transformations='default' "
+            "out of the box; to enable transfer scoring, pass deterministic "
+            "transformations explicitly at fit time (a custom function that "
+            "closes over fit-time-computed parameters such as bin edges or "
+            "kept-level lists, not over the input frame) or re-fit "
+            f"{method_name} on the scoring data."
+        )
+    inspect = (
+        transformations_effective
+        if transformations_effective is not None
+        else transformations_origin
+    )
+    if isinstance(inspect, dict):
+        from balance.utils.data_transformation import fct_lump, quantize
+
+        data_dependent_helpers = {quantize, fct_lump}
+        offenders = sorted(
+            {
+                getattr(fn, "__name__", repr(fn))
+                for fn in inspect.values()
+                if fn in data_dependent_helpers
+            }
+        )
+        if offenders:
+            raise ValueError(
+                f"{method_label} predict_weights(data=...) is unsupported "
+                "for models fitted with data-dependent transformations "
+                f"({', '.join(offenders)}). These recompute bins/levels "
+                "from the scoring data, so stored cell ratios no longer "
+                "line up with the transformed scoring cells. To enable "
+                "transfer scoring, replace each data-dependent helper with "
+                "a deterministic wrapper that closes over fit-time-computed "
+                "parameters (e.g. pre-computed bin edges or kept-level "
+                "lists), not over the input frame — or re-fit "
+                f"{method_name} on the scoring data."
+            )
+
+
 def _find_adjustment_method(
     method: Literal["cbps", "ipw", "null", "poststratify", "rake"],
     WEIGHTING_METHODS: Dict[str, Callable[..., Any]] = BALANCE_WEIGHTING_METHODS,

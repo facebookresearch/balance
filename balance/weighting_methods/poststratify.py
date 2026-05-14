@@ -478,61 +478,11 @@ def _predict_weights_from_model(
                 "BalanceFrame.fit(method='poststratify')."
             )
         transformations_origin = model.get("transformations_origin")
-        if transformations_origin == "default":
-            raise ValueError(
-                "Poststratify predict_weights(data=...) is unsupported for "
-                "models fitted with transformations='default' because those "
-                "transformations are data-dependent and not replayable across "
-                "new samples. BalanceFrame.fit(method='poststratify') uses "
-                "transformations='default' out of the box; to enable transfer "
-                "scoring, pass deterministic transformations explicitly at fit "
-                "time (for example transformations={'age': partial("
-                "quantize_with_edges, edges=...)} where the wrapper closes "
-                "over fit-time bin edges) or re-fit poststratify on the "
-                "scoring data."
-            )
-        if isinstance(transformations_origin, dict):
-            # Best-effort guard: reject explicit dicts that directly
-            # reference balance's known data-dependent helpers
-            # (quantize, fct_lump). These recompute bins/levels from the
-            # scoring data, so stored cell ratios no longer line up with
-            # the transformed scoring cells and transfer would silently
-            # return incorrect weights.
-            #
-            # This guard does NOT catch indirect uses such as
-            # ``functools.partial(fct_lump, prop=0.1)``, top-level wrapper
-            # functions, or user-defined data-dependent transformations.
-            # The general invariant is: any callable whose output for a
-            # row depends on other rows in the input is unsafe to replay
-            # on a different sample. Users supplying such transformations
-            # are responsible for either (a) wrapping them as
-            # deterministic functions of stored fit-time parameters or
-            # (b) re-fitting poststratify on the scoring data.
-            from balance.utils.data_transformation import fct_lump, quantize
-
-            data_dependent_helpers = {quantize, fct_lump}
-            offenders = sorted(
-                {
-                    getattr(fn, "__name__", repr(fn))
-                    for fn in transformations_origin.values()
-                    if fn in data_dependent_helpers
-                }
-            )
-            if offenders:
-                raise ValueError(
-                    "Poststratify predict_weights(data=...) is unsupported "
-                    "for models fitted with data-dependent transformations "
-                    f"({', '.join(offenders)}). These recompute bins/levels "
-                    "from the scoring data, so stored cell ratios no longer "
-                    "line up with the transformed scoring cells. To enable "
-                    "transfer scoring, replace each data-dependent helper "
-                    "with a deterministic wrapper that closes over fit-time "
-                    "parameters (e.g. partial(quantize, edges=fit_time_edges)"
-                    " or partial(fct_lump, kept_levels=fit_time_levels)) — "
-                    "the wrappers must depend only on the stored fit-time "
-                    "state, not on the scoring data — or re-fit poststratify "
-                    "on the scoring data."
-                )
+        balance_adjustment._reject_data_dependent_transfer(
+            transformations_origin,
+            method_name="poststratify",
+            transformations_effective=model.get("transformations"),
+        )
         logger.warning(
             "Poststratify predict_weights(data=...): replaying fitted "
             "poststratification cell ratios on a different sample is a "
