@@ -22,6 +22,10 @@ from balance.util import _assert_type
 from balance.weighting_methods.poststratify import poststratify
 
 
+def _astype_str(s: pd.Series) -> pd.Series:
+    return s.astype(str)
+
+
 class Testpoststratify(
     balance.testutil.BalanceTestCase,
 ):
@@ -205,6 +209,7 @@ class Testpoststratify(
         self.assertIn("training_sample_weights", model)
         self.assertIn("training_target_weights", model)
         self.assertIn("variables", model)
+        self.assertIsNone(model.get("transformations_origin"))
         self.assertTrue(bool(model.get("store_fit_metadata")))
 
     def test_poststratify_stores_resolved_default_transformations_in_metadata(
@@ -227,6 +232,7 @@ class Testpoststratify(
         model = result["model"]
         assert isinstance(model, dict)
         self.assertIsInstance(model.get("transformations"), dict)
+        self.assertEqual(model.get("transformations_origin"), "default")
         self.assertEqual(set(model["transformations"].keys()), {"a", "b"})
 
     def test_poststratify_defaults_to_minimal_model_payload(self) -> None:
@@ -1268,3 +1274,123 @@ class Testpoststratify(
                 transformations="default",
                 strict_matching=False,
             )
+
+    def test_poststratify_stores_explicit_dict_in_transformations_origin(
+        self,
+    ) -> None:
+        # Pins the contract that transformations_origin stores the
+        # user-supplied dict verbatim — downstream transfer guards rely
+        # on this to detect data-dependent helpers (quantize / fct_lump).
+        sample_df = pd.DataFrame({"a": ["x", "y", "x"], "b": ["p", "q", "p"]})
+        target_df = pd.DataFrame({"a": ["x", "y", "x"], "b": ["p", "q", "p"]})
+        s_weights = pd.Series([1.0, 1.0, 1.0])
+        t_weights = pd.Series([1.0, 1.0, 1.0])
+        transformations = {"a": _astype_str, "b": _astype_str}
+
+        result = poststratify(
+            sample_df=sample_df,
+            sample_weights=s_weights,
+            target_df=target_df,
+            target_weights=t_weights,
+            variables=["a", "b"],
+            transformations=transformations,
+            store_fit_metadata=True,
+        )
+        model = result["model"]
+        assert isinstance(model, dict)
+        self.assertEqual(model.get("transformations_origin"), transformations)
+
+    def test_predict_weights_from_model_direct_call_in_place_replay(self) -> None:
+        # Direct-call coverage for _predict_weights_from_model with
+        # is_transfer=False — pins the helper's public contract
+        # independently of the BalanceFrame wrapper.
+        from balance.weighting_methods.poststratify import _predict_weights_from_model
+
+        sample_df = pd.DataFrame(
+            {"age_group": ["young", "young", "old", "old"]},
+            index=pd.Index(["s0", "s1", "s2", "s3"]),
+        )
+        target_df = pd.DataFrame(
+            {"age_group": ["young", "old", "old", "old"]},
+            index=pd.Index(["t0", "t1", "t2", "t3"]),
+        )
+        s_weights = pd.Series([1.0, 1.0, 1.0, 1.0], index=sample_df.index)
+        t_weights = pd.Series([1.0, 1.0, 1.0, 1.0], index=target_df.index)
+        result = poststratify(
+            sample_df=sample_df,
+            sample_weights=s_weights,
+            target_df=target_df,
+            target_weights=t_weights,
+            variables=["age_group"],
+            transformations=None,
+            store_fit_metadata=True,
+        )
+        model = result["model"]
+        assert isinstance(model, dict)
+
+        predicted = _predict_weights_from_model(
+            model=model,
+            sample_df=sample_df,
+            sample_weights_full=s_weights,
+            target_df=target_df,
+            target_weights=t_weights,
+            is_transfer=False,
+        )
+
+        self.assertEqual(list(predicted.index), list(sample_df.index))
+        # Cell ratios: young=1/2, old=3/2. Raw=[0.5, 0.5, 1.5, 1.5],
+        # sum=4.0; in-place replay normalizes to raw sum (no rescale).
+        np.testing.assert_allclose(predicted.to_numpy(), [0.5, 0.5, 1.5, 1.5])
+
+    def test_predict_weights_from_model_direct_call_transfer(self) -> None:
+        # Direct-call coverage for _predict_weights_from_model with
+        # is_transfer=True — verifies the rescale-to-target-sum
+        # contract independently of the BalanceFrame wrapper.
+        from balance.weighting_methods.poststratify import _predict_weights_from_model
+
+        train_sample_df = pd.DataFrame(
+            {"age_group": ["young", "young", "old", "old"]},
+            index=pd.Index(["s0", "s1", "s2", "s3"]),
+        )
+        train_target_df = pd.DataFrame(
+            {"age_group": ["young", "old", "old", "old"]},
+            index=pd.Index(["t0", "t1", "t2", "t3"]),
+        )
+        train_s = pd.Series([1.0, 1.0, 1.0, 1.0], index=train_sample_df.index)
+        train_t = pd.Series([1.0, 1.0, 1.0, 1.0], index=train_target_df.index)
+        result = poststratify(
+            sample_df=train_sample_df,
+            sample_weights=train_s,
+            target_df=train_target_df,
+            target_weights=train_t,
+            variables=["age_group"],
+            transformations=None,
+            store_fit_metadata=True,
+        )
+        model = result["model"]
+        assert isinstance(model, dict)
+
+        score_sample_df = pd.DataFrame(
+            {"age_group": ["young", "old", "old", "young"]},
+            index=pd.Index(["h0", "h1", "h2", "h3"]),
+        )
+        score_target_df = pd.DataFrame(
+            {"age_group": ["young", "young", "old", "old", "old"]},
+            index=pd.Index(["u0", "u1", "u2", "u3", "u4"]),
+        )
+        score_s = pd.Series([2.0, 1.0, 1.0, 2.0], index=score_sample_df.index)
+        score_t = pd.Series([2.0, 2.0, 2.0, 2.0, 2.0], index=score_target_df.index)
+
+        predicted = _predict_weights_from_model(
+            model=model,
+            sample_df=score_sample_df,
+            sample_weights_full=score_s,
+            target_df=score_target_df,
+            target_weights=score_t,
+            is_transfer=True,
+        )
+
+        # Raw = [0.5*2, 1.5*1, 1.5*1, 0.5*2] = [1, 1.5, 1.5, 1] sum=5;
+        # rescaled to target sum 10: [2, 3, 3, 2].
+        np.testing.assert_allclose(predicted.to_numpy(), [2.0, 3.0, 3.0, 2.0])
+        self.assertAlmostEqual(float(predicted.sum()), 10.0, places=6)

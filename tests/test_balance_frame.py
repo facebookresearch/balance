@@ -3599,6 +3599,336 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             atol=1e-8,
         )
 
+    def test_predict_weights_poststratify_data_argument_scores_holdout(self) -> None:
+        train_df = pd.DataFrame(
+            {
+                "id": ["s1", "s2", "s3", "s4"],
+                "weight": [1.0, 1.0, 1.0, 1.0],
+                "age_group": ["young", "young", "old", "old"],
+            }
+        )
+        train_target_df = pd.DataFrame(
+            {
+                "id": ["t1", "t2", "t3", "t4"],
+                "weight": [1.0, 1.0, 1.0, 1.0],
+                "age_group": ["young", "old", "old", "old"],
+            }
+        )
+        holdout_df = pd.DataFrame(
+            {
+                "id": ["h1", "h2", "h3", "h4"],
+                "weight": [2.0, 1.0, 1.0, 2.0],
+                "age_group": ["young", "old", "old", "young"],
+            }
+        )
+        holdout_target_df = pd.DataFrame(
+            {
+                "id": ["u1", "u2", "u3", "u4", "u5"],
+                "weight": [2.0, 2.0, 2.0, 2.0, 2.0],
+                "age_group": ["young", "young", "old", "old", "old"],
+            }
+        )
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(train_df),
+            target=SampleFrame.from_frame(train_target_df),
+        ).fit(
+            method="poststratify",
+            variables=["age_group"],
+            transformations=None,
+        )
+        holdout = BalanceFrame(
+            sample=SampleFrame.from_frame(holdout_df),
+            target=SampleFrame.from_frame(holdout_target_df),
+        )
+
+        with self.assertLogs("balance", level="WARNING") as cm:
+            weights = fitted.predict_weights(data=holdout)
+
+        self.assertIn("transfer operation", " ".join(cm.output))
+        self.assertEqual(list(weights.index), list(holdout._sf_sample.df.index))
+        self.assertAlmostEqual(float(weights.sum()), 10.0, places=6)
+        np.testing.assert_allclose(weights.to_numpy(), [2.0, 3.0, 3.0, 2.0])
+
+    def test_predict_weights_poststratify_data_requires_target(self) -> None:
+        df = pd.DataFrame(
+            {
+                "id": ["s1", "s2"],
+                "weight": [1.0, 1.0],
+                "age_group": ["young", "old"],
+            }
+        )
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(df.copy()),
+            target=SampleFrame.from_frame(df.copy()),
+        ).fit(
+            method="poststratify",
+            variables=["age_group"],
+            transformations=None,
+        )
+        no_target = BalanceFrame(sample=SampleFrame.from_frame(df.copy()))
+
+        with self.assertRaisesRegex(ValueError, "data must have a target set"):
+            fitted.predict_weights(data=no_target)
+
+    def test_predict_weights_poststratify_data_deterministic_transform_allowed(
+        self,
+    ) -> None:
+        df = pd.DataFrame(
+            {
+                "id": [f"i{i}" for i in range(6)],
+                "weight": np.ones(6),
+                "age_group": ["young", "old", "young", "old", "young", "old"],
+            }
+        )
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(df.copy()),
+            target=SampleFrame.from_frame(df.copy()),
+        ).fit(
+            method="poststratify",
+            variables=["age_group"],
+            transformations={"age_group": _astype_str},
+        )
+        holdout = BalanceFrame(
+            sample=SampleFrame.from_frame(df.copy()),
+            target=SampleFrame.from_frame(df.copy()),
+        )
+
+        with self.assertLogs("balance", level="WARNING") as cm:
+            weights = fitted.predict_weights(data=holdout)
+
+        self.assertIn("transfer operation", " ".join(cm.output))
+        np.testing.assert_allclose(weights.to_numpy(), np.ones(6))
+
+    def test_predict_weights_poststratify_default_transformations_transfer_rejected(
+        self,
+    ) -> None:
+        df = pd.DataFrame(
+            {
+                "id": [f"i{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "age_group": ["young", "old"] * 4,
+            }
+        )
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(df.copy()),
+            target=SampleFrame.from_frame(df.copy()),
+        ).fit(method="poststratify", variables=["age_group"])
+        holdout = BalanceFrame(
+            sample=SampleFrame.from_frame(df.copy()),
+            target=SampleFrame.from_frame(df.copy()),
+        )
+
+        with self.assertRaisesRegex(ValueError, "transformations='default'"):
+            fitted.predict_weights(data=holdout)
+
+    def test_predict_weights_poststratify_data_dependent_transform_rejected(
+        self,
+    ) -> None:
+        from balance.utils.data_transformation import quantize
+
+        df = pd.DataFrame(
+            {
+                "id": [f"i{i}" for i in range(8)],
+                "weight": np.ones(8),
+                "age": np.linspace(20.0, 80.0, 8),
+            }
+        )
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(df.copy()),
+            target=SampleFrame.from_frame(df.copy()),
+        ).fit(
+            method="poststratify",
+            variables=["age"],
+            transformations={"age": quantize},
+        )
+        holdout = BalanceFrame(
+            sample=SampleFrame.from_frame(df.copy()),
+            target=SampleFrame.from_frame(df.copy()),
+        )
+
+        with self.assertRaisesRegex(ValueError, "data-dependent transformations"):
+            fitted.predict_weights(data=holdout)
+
+    def test_predict_weights_poststratify_data_requires_transform_origin(
+        self,
+    ) -> None:
+        df = pd.DataFrame(
+            {
+                "id": ["s1", "s2"],
+                "weight": [1.0, 1.0],
+                "age_group": ["young", "old"],
+            }
+        )
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(df.copy()),
+            target=SampleFrame.from_frame(df.copy()),
+        ).fit(
+            method="poststratify",
+            variables=["age_group"],
+            transformations=None,
+        )
+        model = _assert_type(fitted.model)
+        model.pop("transformations_origin", None)
+        holdout = BalanceFrame(
+            sample=SampleFrame.from_frame(df.copy()),
+            target=SampleFrame.from_frame(df.copy()),
+        )
+
+        with self.assertRaisesRegex(ValueError, "transformations_origin metadata"):
+            fitted.predict_weights(data=holdout)
+
+    def test_predict_weights_poststratify_data_all_missing_cells_raises(
+        self,
+    ) -> None:
+        train_df = pd.DataFrame(
+            {
+                "id": ["s1", "s2"],
+                "weight": [1.0, 1.0],
+                "age_group": ["young", "old"],
+            }
+        )
+        holdout_df = pd.DataFrame(
+            {
+                "id": ["h1", "h2"],
+                "weight": [1.0, 1.0],
+                "age_group": ["new", "new"],
+            }
+        )
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(train_df.copy()),
+            target=SampleFrame.from_frame(train_df.copy()),
+        ).fit(
+            method="poststratify",
+            variables=["age_group"],
+            transformations=None,
+            strict_matching=False,
+        )
+        holdout = BalanceFrame(
+            sample=SampleFrame.from_frame(holdout_df),
+            target=SampleFrame.from_frame(train_df.copy()),
+        )
+
+        with self.assertRaisesRegex(ValueError, "zero total raw weights"):
+            fitted.predict_weights(data=holdout)
+
+    def test_predict_weights_poststratify_data_na_drop_reconstructs(self) -> None:
+        # Transfer-mode coverage for na_action='drop': rows with NaN
+        # covariates in the holdout must come back as NaN at the
+        # original positions; non-NaN rows must be scored normally and
+        # rescaled to the holdout target's total weight.
+        train_df = pd.DataFrame(
+            {
+                "id": ["s1", "s2", "s3", "s4"],
+                "weight": [1.0, 1.0, 1.0, 1.0],
+                "age_group": ["young", "young", "old", "old"],
+            }
+        )
+        train_target_df = pd.DataFrame(
+            {
+                "id": ["t1", "t2", "t3", "t4"],
+                "weight": [1.0, 1.0, 1.0, 1.0],
+                "age_group": ["young", "old", "old", "old"],
+            }
+        )
+        holdout_df = pd.DataFrame(
+            {
+                "id": ["h1", "h2", "h3", "h4"],
+                "weight": [2.0, 1.0, 1.0, 2.0],
+                "age_group": ["young", None, "old", "young"],
+            }
+        )
+        holdout_target_df = pd.DataFrame(
+            {
+                "id": ["u1", "u2", "u3"],
+                "weight": [2.0, 2.0, 2.0],
+                "age_group": ["young", "old", "old"],
+            }
+        )
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(train_df),
+            target=SampleFrame.from_frame(train_target_df),
+        ).fit(
+            method="poststratify",
+            variables=["age_group"],
+            transformations=None,
+            na_action="drop",
+        )
+        holdout = BalanceFrame(
+            sample=SampleFrame.from_frame(holdout_df),
+            target=SampleFrame.from_frame(holdout_target_df),
+        )
+
+        with self.assertLogs("balance", level="WARNING"):
+            weights = fitted.predict_weights(data=holdout)
+
+        self.assertEqual(list(weights.index), list(holdout._sf_sample.df.index))
+        # The NaN holdout row (h2) should drop and come back as NaN at
+        # its original position; non-NaN rows should sum to the holdout
+        # target's total weight (6.0).
+        self.assertTrue(bool(np.isnan(weights.iloc[1])))
+        non_nan = weights.dropna()
+        self.assertAlmostEqual(float(non_nan.sum()), 6.0, places=6)
+
+    def test_predict_weights_poststratify_data_strict_matching_false_partial_missing(
+        self,
+    ) -> None:
+        # Transfer-mode coverage for the strict_matching=False + partial
+        # missing cells path: rows in cells absent from the stored ratio
+        # surface should receive zero weight (with a logged warning),
+        # while rows in present cells should be scored and rescaled.
+        train_df = pd.DataFrame(
+            {
+                "id": ["s1", "s2", "s3", "s4"],
+                "weight": [1.0, 1.0, 1.0, 1.0],
+                "age_group": ["young", "young", "old", "old"],
+            }
+        )
+        train_target_df = pd.DataFrame(
+            {
+                "id": ["t1", "t2", "t3", "t4"],
+                "weight": [1.0, 1.0, 1.0, 1.0],
+                "age_group": ["young", "old", "old", "old"],
+            }
+        )
+        holdout_df = pd.DataFrame(
+            {
+                "id": ["h1", "h2", "h3", "h4"],
+                "weight": [1.0, 1.0, 1.0, 1.0],
+                "age_group": ["young", "new_cell", "old", "old"],
+            }
+        )
+        holdout_target_df = pd.DataFrame(
+            {
+                "id": ["u1", "u2", "u3"],
+                "weight": [2.0, 2.0, 2.0],
+                "age_group": ["young", "old", "old"],
+            }
+        )
+        fitted = BalanceFrame(
+            sample=SampleFrame.from_frame(train_df),
+            target=SampleFrame.from_frame(train_target_df),
+        ).fit(
+            method="poststratify",
+            variables=["age_group"],
+            transformations=None,
+            strict_matching=False,
+        )
+        holdout = BalanceFrame(
+            sample=SampleFrame.from_frame(holdout_df),
+            target=SampleFrame.from_frame(holdout_target_df),
+        )
+
+        with self.assertLogs("balance", level="WARNING") as cm:
+            weights = fitted.predict_weights(data=holdout)
+
+        joined = " ".join(cm.output)
+        self.assertIn("assigning zero weights", joined)
+        self.assertIn("transfer operation", joined)
+        # The 'new_cell' row (h2) gets zero weight; the rest are scored
+        # and rescaled to the holdout target's total weight (6.0).
+        self.assertAlmostEqual(float(weights.iloc[1]), 0.0, places=6)
+        self.assertAlmostEqual(float(weights.sum()), 6.0, places=6)
+
     def test_predict_weights_poststratify_requires_fit_metadata(self) -> None:
         sample_df = pd.DataFrame(
             {
