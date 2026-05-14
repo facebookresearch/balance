@@ -39,6 +39,9 @@ on:
       - '.github/workflows/notebook-ci.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   execute-tutorial:
     name: Execute balance_diff_diff_brfss tutorial
