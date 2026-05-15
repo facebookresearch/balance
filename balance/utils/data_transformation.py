@@ -201,6 +201,7 @@ def qcut(
         logger.warning("Not quantizing, too few values")
         return s
     else:
+        # pyrefly: ignore [missing-attribute]
         return pd.qcut(s, q, duplicates=duplicates, **kwargs).astype("O")
 
 

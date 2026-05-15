@@ -2148,6 +2148,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
 
         # Apply NA indicators the same way _apply_comparison_stat_to_BalanceDF does
         combined_self_target = add_na_indicator_to_combined(
+            # pyrefly: ignore [bad-argument-type]
             pd.concat([self_df, target_df], axis=0)
         )
         n_self = self_df.shape[0]
@@ -2155,6 +2156,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
         target_df_na_for_self = combined_self_target.iloc[n_self:]
 
         combined_unadj_target = add_na_indicator_to_combined(
+            # pyrefly: ignore [bad-argument-type]
             pd.concat([unadj_df, target_df], axis=0)
         )
         n_unadj = unadj_df.shape[0]
@@ -2432,6 +2434,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
         d = d.rename(columns={i: "abc"[i] for i in range(0, 3)})
         # make 'a' a categorical column in d
         # d = d.assign(a=lambda x: pd.cut(x.a,[0,.25,.5,.75,1]))
+        # pyrefly: ignore [missing-attribute]
         d["a"] = pd.cut(d["a"], [0, 0.25, 0.5, 0.75, 1]).astype(str)
         # make b "interesting" (so that the model would have something to do)
         d["b"] = np.sqrt(d["b"])
@@ -2442,6 +2445,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
         d = d.rename(columns={i: "abc"[i] for i in range(0, 3)})
         # make 'a' a categorical column in d
         # d = d.assign(a=lambda x: pd.cut(x.a,[0,.25,.5,.75,1]))
+        # pyrefly: ignore [missing-attribute]
         d["a"] = pd.cut(d["a"], [0, 0.25, 0.5, 0.75, 1]).astype(str)
         t = Sample.from_frame(d)
 

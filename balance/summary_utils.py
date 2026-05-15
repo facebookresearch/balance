@@ -612,6 +612,7 @@ def _build_diagnostics(
     ) = _resolve_adjustment_failure_metadata(model_dict)
 
     diagnostics = _concat_metric_val_var(
+        # pyrefly: ignore [bad-argument-type]
         diagnostics,
         "adjustment_failure",
         [resolved_adjustment_failure],

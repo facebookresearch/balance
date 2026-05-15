@@ -483,6 +483,7 @@ def choose_variables(
 
     if len(set(union_variables).symmetric_difference(intersection_variables)) > 0:
         logger.warning(
+            # pyrefly: ignore [missing-attribute]
             f"Ignoring variables not present in all Samples: {union_variables.difference(intersection_variables)}"
         )
 

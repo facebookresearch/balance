@@ -1530,6 +1530,7 @@ class Testrake(
             pd.concat([target_df, target_weights.rename("weight")], axis=1)
             .groupby("b")["weight"]
             .sum()
+            # pyrefly: ignore [no-matching-overload]
             .rename("rake_weight")
         )
 

@@ -476,6 +476,7 @@ class BalanceDF:
                     )
                 output.append(v_att_method.assign(source=k).set_index("source"))
 
+        # pyrefly: ignore [bad-return]
         return pd.concat(output)
 
         # return pd.concat(
