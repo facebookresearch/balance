@@ -528,6 +528,7 @@
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">union_variables</span><span class="p">)</span><span class="o">.</span><span class="n">symmetric_difference</span><span class="p">(</span><span class="n">intersection_variables</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="c1"># pyrefly: ignore [missing-attribute]</span>
             <span class="sa">f</span><span class="s2">&quot;Ignoring variables not present in all Samples: </span><span class="si">{</span><span class="n">union_variables</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">intersection_variables</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
 

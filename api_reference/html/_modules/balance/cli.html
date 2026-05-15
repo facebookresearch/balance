@@ -1370,9 +1370,11 @@
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done fitting the model, writing output&quot;</span><span class="p">)</span>
         <span class="c1"># Remove unneeded rows and columns</span>
+        <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
         <span class="n">output_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adapt_output</span><span class="p">(</span><span class="n">output_df</span><span class="p">)</span>
 
         <span class="c1"># Write output</span>
+        <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write_outputs</span><span class="p">(</span><span class="n">output_df</span><span class="p">,</span> <span class="n">diagnostics_df</span><span class="p">)</span></div>
 </div>
 
