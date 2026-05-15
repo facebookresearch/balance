@@ -1566,7 +1566,7 @@
     "@docusaurus/theme-search-algolia" "2.4.3"
     "@docusaurus/types" "2.4.3"
 
-"@docusaurus/react-loadable@5.5.2":
+"@docusaurus/react-loadable@5.5.2", "react-loadable@npm:@docusaurus/react-loadable@5.5.2":
   version "5.5.2"
   resolved "https://registry.facebook.net/@docusaurus/react-loadable/-/react-loadable-5.5.2.tgz#81aae0db81ecafbdaee3651f12804580868fa6ce"
   integrity sha512-A3dYjdBGuy0IGT+wyLIGIKLRE+sAk1iNk0f1HjNDysO7u8lhL4N3VEm+FAubmJbAztn94F7MxBTPmnixbiyFdQ==
@@ -1626,6 +1626,20 @@
     tslib "^2.4.0"
     use-sync-external-store "^1.2.0"
     utility-types "^3.10.0"
+
+"@docusaurus/theme-mermaid@2.4.3":
+  version "2.4.3"
+  resolved "https://registry.facebook.net/@docusaurus/theme-mermaid/-/theme-mermaid-2.4.3.tgz#b40194fb4f46813a18d1350a188d43b68a8192dd"
+  integrity sha512-S1tZ3xpowtFiTrpTKmvVbRHUYGOlEG5CnPzWlO4huJT1sAwLR+pD6f9DYUlPv2+9NezF3EfUrUyW9xLH0UP58w==
+  dependencies:
+    "@docusaurus/core" "2.4.3"
+    "@docusaurus/module-type-aliases" "2.4.3"
+    "@docusaurus/theme-common" "2.4.3"
+    "@docusaurus/types" "2.4.3"
+    "@docusaurus/utils-validation" "2.4.3"
+    "@mdx-js/react" "^1.6.22"
+    mermaid "^9.2.2"
+    tslib "^2.4.0"
 
 "@docusaurus/theme-search-algolia@2.4.3":
   version "2.4.3"
@@ -4260,10 +4274,10 @@ cytoscape-fcose@^2.2.0:
   dependencies:
     cose-base "^2.2.0"
 
-cytoscape@^3.33.1:
-  version "3.33.3"
-  resolved "https://registry.facebook.net/cytoscape/-/cytoscape-3.33.3.tgz#6c885823cb088eb8c31087c35d978661dcde5eae"
-  integrity sha512-Gej7U+OKR+LZ8kvX7rb2HhCYJ0IhvEFsnkud4SB1PR+BUY/TsSO0dmOW59WEVLu51b1Rm+gQRKoz4bLYxGSZ2g==
+cytoscape@3.31.2, cytoscape@^3.33.1:
+  version "3.31.2"
+  resolved "https://registry.facebook.net/cytoscape/-/cytoscape-3.31.2.tgz#94d5b86d142599a2d6e750f6b2f3102518c7d48e"
+  integrity sha512-/eOXg2uGdMdpGlEes5Sf6zE+jUG+05f3htFNQIxLxduOH/SsaUZiPBfAwP1btVIVzsnhiNOdi+hvDRLYfMZjGw==
 
 "d3-array@1 - 2":
   version "2.12.1"
@@ -4763,11 +4777,12 @@ docusaurus-lunr-search@^2.3.2:
     unified "^9.0.0"
     unist-util-is "^4.0.2"
 
-docusaurus-plugin-internaldocs-fb@^1.19.3:
-  version "1.19.3"
-  resolved "https://registry.facebook.net/docusaurus-plugin-internaldocs-fb/-/docusaurus-plugin-internaldocs-fb-1.19.3.tgz#fe6e1b630b7a8c5651ebf40226435e9ee5c56a5a"
-  integrity sha512-lEo5bar6tXZrGI0wUD5epgbLawUfeHbn8xX83YzS80rc7nMi8zixoqhhx4E4YNknhoVZTWjWcYfEoWdPlKt+Bw==
+docusaurus-plugin-internaldocs-fb@1.20.0:
+  version "1.20.0"
+  resolved "https://registry.facebook.net/docusaurus-plugin-internaldocs-fb/-/docusaurus-plugin-internaldocs-fb-1.20.0.tgz#8770d5d07bbbdbdd43bd1e180e69a1cad058c30c"
+  integrity sha512-KFyyGcanppOxGaXasavHNwlQiU8d5WkzOkpNNZHsSJd7c3xyTlSg5C+xE7X7cRWnFZj7Qns9+pUOynlZ/cSnXA==
   dependencies:
+    "@docusaurus/theme-mermaid" "2.4.3"
     "@mdx-js/mdx" "^3.0.0"
     "@mdx-js/react" "^3.0.0"
     "@types/lodash.debounce" "4.0.7"
@@ -4781,7 +4796,6 @@ docusaurus-plugin-internaldocs-fb@^1.19.3:
     fs-extra "^10.1.0"
     lodash.debounce "^4.0.8"
     lodash.escape "^4.0.0"
-    mermaid "^11.5.0"
     node-fetch "2.6.7"
     path-browserify "^1.0.1"
     react-live "^2.2.3"
@@ -7189,7 +7203,7 @@ merge2@^1.3.0, merge2@^1.4.1:
   resolved "https://registry.facebook.net/merge2/-/merge2-1.4.1.tgz#4368892f885e907455a6fd7dc55c0c9d404990ae"
   integrity sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==
 
-mermaid@^11.0.0, mermaid@^11.5.0:
+mermaid@^11.0.0, mermaid@^9.2.2:
   version "11.14.0"
   resolved "https://registry.yarnpkg.com/mermaid/-/mermaid-11.14.0.tgz#ce81b22bc10f3117ef7737406ef2d10ee1741769"
   integrity sha512-GSGloRsBs+JINmmhl0JDwjpuezCsHB4WGI4NASHxL3fHo3o/BRXTxhDLKnln8/Q0lRFRyDdEjmk1/d5Sn1Xz8g==
@@ -8956,14 +8970,6 @@ react-loadable-ssr-addon-v5-slorber@^1.0.1:
   integrity sha512-GXfh9VLwB5ERaCsU6RULh7tkemeX15aNh6wuMEBtfdyMa7fFG8TXrhXlx1SoEK2Ty/l6XIkzzYIQmyaWW3JgdQ==
   dependencies:
     "@babel/runtime" "^7.10.3"
-
-"react-loadable@npm:@docusaurus/react-loadable@5.5.2":
-  version "5.5.2"
-  resolved "https://registry.facebook.net/@docusaurus/react-loadable/-/react-loadable-5.5.2.tgz#81aae0db81ecafbdaee3651f12804580868fa6ce"
-  integrity sha512-A3dYjdBGuy0IGT+wyLIGIKLRE+sAk1iNk0f1HjNDysO7u8lhL4N3VEm+FAubmJbAztn94F7MxBTPmnixbiyFdQ==
-  dependencies:
-    "@types/react" "*"
-    prop-types "^15.6.2"
 
 react-modal@3.15.1:
   version "3.15.1"
