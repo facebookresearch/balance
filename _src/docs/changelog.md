@@ -90,6 +90,10 @@ hide_title: true
 
 ## Bug Fixes
 
+- **Security: `ws` updated from 8.20.0 to 8.20.1 in website dependencies.**
+  Fixes CVE-2026-45736 (GHSA-58qx-3vcg-4xpx): uninitialized memory disclosure
+  in `websocket.close()` when a `TypedArray` is passed as the reason argument.
+
 - **`rake()` now correctly incorporates per-row design weights in final weights.**
   Previously, every unit in the same raking cell received the same weight
   `m_fit[c] / m_sample[c]`, ignoring its own design weight. The correct formula
