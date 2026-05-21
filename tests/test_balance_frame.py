@@ -480,6 +480,31 @@ class TestBalanceFrameAdjust(BalanceTestCase):
         self.assertEqual(reset.adjustment_history, [])
         self.assertIsNone(reset.model)
 
+    def test_adjustment_history_handles_non_deepcopyable_model_artifact(self) -> None:
+        class NoDeepcopy:
+            def __deepcopy__(self, memo: dict[int, object]) -> object:
+                raise RuntimeError("no deepcopy")
+
+        sentinel = NoDeepcopy()
+
+        def custom_method(
+            sample_df: pd.DataFrame,
+            sample_weights: pd.Series,
+            target_df: pd.DataFrame,
+            target_weights: pd.Series,
+        ) -> dict[str, Any]:
+            return {
+                "weight": pd.Series(sample_weights.to_numpy(), index=sample_df.index),
+                "model": {"method": "custom_unsafe", "artifact": sentinel},
+            }
+
+        adjusted = self.bf.adjust(method=custom_method)
+        self.assertIs(adjusted.model.get("artifact"), sentinel)
+
+        history = adjusted.adjustment_history
+        self.assertEqual(history[-1]["method"], "custom_unsafe")
+        self.assertIs(history[-1]["model"].get("artifact"), sentinel)
+
     def test_adjustment_history_missing_private_attr_is_empty(self) -> None:
         legacy_like = copy.deepcopy(self.bf)
         del legacy_like._adjustment_history
