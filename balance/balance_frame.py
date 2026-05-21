@@ -215,7 +215,15 @@ class BalanceFrame:
                     copied.append(cast(dict[str, Any], copy.deepcopy(entry)))
                     continue
                 except Exception:
-                    pass
+                    # Best-effort fallback: copy the entry dict and also
+                    # copy nested model mappings to keep caller mutations
+                    # from leaking back into internal state.
+                    fallback = dict(entry)
+                    model_obj = fallback.get("model")
+                    if isinstance(model_obj, dict):
+                        fallback["model"] = dict(model_obj)
+                    copied.append(fallback)
+                    continue
             copied.append(dict(entry))
         return copied
 
@@ -2673,10 +2681,26 @@ class BalanceFrame:
     def adjustment_history(self) -> list[dict[str, Any]]:
         """Chronological adjustment model history.
 
-        Returns a deep copy of each recorded adjustment step so callers can
-        inspect compound reweighting workflows without mutating internal
-        state. The :attr:`model` property remains the latest adjustment model
-        for backward compatibility.
+        Returns a best-effort read-only copy of each recorded adjustment step
+        so callers can inspect compound reweighting workflows without mutating
+        internal state. The :attr:`model` property remains the latest
+        adjustment model for backward compatibility.
+
+        Deep-copy is attempted per entry; when a payload is not deepcopy-safe,
+        the method falls back to copying the step dictionary and nested model
+        mapping (when present).
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [1.0, 2.0], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [1.5, 2.5], "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame(sample=resp, target=tgt).adjust(method="null")
+            >>> len(bf.adjustment_history)
+            1
         """
         return self._copy_adjustment_history_from(self, deep=True)
 

@@ -72,7 +72,7 @@
 
 - **`BalanceFrame.adjustment_history` records compound adjustment steps.**
   Sequential `adjust()` / `set_fitted_model()` workflows now keep a chronological,
-  read-only copy of each adjustment step while preserving `model` as the latest
+  best-effort read-only copy of each adjustment step while preserving `model` as the latest
   fitted model for backwards compatibility. Baseline resets such as
   `set_as_pre_adjust()` clear the history together with the current model.
 
