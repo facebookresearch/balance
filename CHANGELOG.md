@@ -70,6 +70,12 @@
   metadata and must be re-fit to use transfer scoring; in-place
   `predict_weights()` continues to work on older pickles.
 
+- **`BalanceFrame.adjustment_history` records compound adjustment steps.**
+  Sequential `adjust()` / `set_fitted_model()` workflows now keep a chronological,
+  best-effort read-only copy of each adjustment step while preserving `model` as the latest
+  fitted model for backwards compatibility. Baseline resets such as
+  `set_as_pre_adjust()` clear the history together with the current model.
+
 ## Documentation
 
 - **README cross-link to diff-diff.** New "Design-based inference" parent section in [README.md](https://github.com/facebookresearch/balance/blob/main/README.md) introduces the diff-diff integration above the API tour, with a fenced code snippet (canonical `Sample.from_frame` → `set_target` → `adjust` → `fit_did` workflow) and links to the upstream project. The Docusaurus tutorials index and the website landing page (`HomepageFeatures.js`) gain matching cross-references; `.github/copilot-instructions.md` gets a new review-checklist bullet for changes that touch `balance/interop/diff_diff.py`.

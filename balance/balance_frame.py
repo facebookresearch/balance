@@ -153,6 +153,8 @@ class BalanceFrame:
     _sf_target: SampleFrame | None
     # pyre-fixme[13]: Attributes are initialized in _create() / from_frame()
     _adjustment_model: dict[str, Any] | None
+    # pyre-fixme[13]: Attributes are initialized in _create() / from_frame()
+    _adjustment_history: list[dict[str, Any]]
     # pyre-fixme[4]: Attributes are initialized in from_frame() / _create()
     # _links is a defaultdict(list) but by convention stores single objects
     # (not lists) for the "target" and "unadjusted" keys.  The defaultdict
@@ -181,6 +183,67 @@ class BalanceFrame:
             self._weight_metadata = responder._weight_metadata
             # pyrefly: ignore [missing-attribute]
             self._df_dtypes = responder._df_dtypes
+
+    @staticmethod
+    def _copy_adjustment_history_from(
+        source: Any, *, deep: bool = False
+    ) -> list[dict[str, Any]]:
+        """Return adjustment history copied from *source*.
+
+        Older objects, tests, or deserialized instances may not have the
+        private attribute yet; those are treated as having no history.
+
+        ``deep=False`` (default) performs an inexpensive structural copy of the
+        history list and per-entry dictionaries while preserving model object
+        references. This is suitable for internal object construction paths and
+        avoids eagerly duplicating large fitted artifacts.
+
+        ``deep=True`` is intended for public read boundaries. It tries to deep
+        copy each entry, but gracefully falls back to a shallow per-entry copy
+        when model artifacts are not deepcopy-safe.
+        """
+        history = getattr(source, "_adjustment_history", [])
+        if not isinstance(history, list):
+            return []
+
+        copied: list[dict[str, Any]] = []
+        for entry in history:
+            if not isinstance(entry, dict):
+                continue
+            if deep:
+                try:
+                    copied.append(cast(dict[str, Any], copy.deepcopy(entry)))
+                    continue
+                except (TypeError, RuntimeError, copy.Error):
+                    # Best-effort fallback: copy the entry dict and also
+                    # copy nested model mappings to keep caller mutations
+                    # from leaking back into internal state.
+                    fallback = dict(entry)
+                    model_obj = fallback.get("model")
+                    if isinstance(model_obj, dict):
+                        fallback["model"] = dict(model_obj)
+                    copied.append(fallback)
+                    continue
+            copied.append(dict(entry))
+        return copied
+
+    def _clear_adjustment_state(self) -> None:
+        """Clear fitted adjustment state and its chronological history."""
+        self._adjustment_model = None
+        self._adjustment_history = []
+        # pyrefly: ignore [missing-attribute]
+        self._links.pop("unadjusted", None)
+
+    def _append_adjustment_history_entry(self, method: str, model: Any) -> None:
+        """Append one adjustment-history entry.
+
+        The model payload is stored by reference to avoid expensive deep copies
+        of large fitted artifacts (estimators/matrices). Public callers should
+        use :attr:`adjustment_history`, which returns a copied view.
+        """
+        if not hasattr(self, "_adjustment_history"):
+            self._adjustment_history = []
+        self._adjustment_history.append({"method": method, "model": model})
 
     @property
     def _df_dtypes(self) -> pd.Series | None:
@@ -365,6 +428,7 @@ class BalanceFrame:
         instance._sf_sample = sample  # same object initially
         instance._sf_target = target
         instance._adjustment_model = None
+        instance._adjustment_history = []
         instance._links = collections.defaultdict(list)
         if target is not None:
             # pyrefly: ignore [unsupported-operation]
@@ -523,12 +587,21 @@ class BalanceFrame:
         if isinstance(target, BalanceFrame):
             # BalanceFrame / Sample path: return a deep copy (immutable)
             new_copy = deepcopy(self)
+            BalanceFrame._validate_covariate_overlap(
+                new_copy._sf_sample_pre_adjust, target._sf_sample
+            )
+            if new_copy.is_adjusted:
+                logger.warning(
+                    "Replacing target on an adjusted object resets responder "
+                    "weights to pre-adjust values and discards current "
+                    "adjustment results on the returned copy."
+                )
+                new_copy._sf_sample = new_copy._sf_sample_pre_adjust
+                new_copy._clear_adjustment_state()
             # pyrefly: ignore [unsupported-operation]
             new_copy._links["target"] = target
-            BalanceFrame._validate_covariate_overlap(
-                new_copy._sf_sample, target._sf_sample
-            )
             new_copy._sf_target = target._sf_sample
+            new_copy._sync_sampleframe_state_from_responder(new_copy._sf_sample)
             return new_copy
 
         if isinstance(target, SampleFrame):
@@ -551,9 +624,7 @@ class BalanceFrame:
                 self._links["target"] = target
                 # Reset adjustment state — old adjustment is no longer valid.
                 self._sf_sample = self._sf_sample_pre_adjust
-                self._adjustment_model = None
-                # pyrefly: ignore [missing-attribute]
-                self._links.pop("unadjusted", None)
+                self._clear_adjustment_state()
                 self._sync_sampleframe_state_from_responder(self._sf_sample)
                 return self
             else:
@@ -615,9 +686,7 @@ class BalanceFrame:
                 bf._links["target"] = self._links["target"]
         bf._sf_sample_pre_adjust = frozen
         bf._sf_sample = frozen
-        bf._adjustment_model = None
-        # pyrefly: ignore [missing-attribute]
-        bf._links.pop("unadjusted", None)
+        bf._clear_adjustment_state()
         bf._sync_sampleframe_state_from_responder(frozen)
         return bf
 
@@ -774,9 +843,6 @@ class BalanceFrame:
         raw_model = result.get("model")
         # Defensive copy: the weighting function may retain a reference to the
         # dict it returned, so mutating it here could cause surprising side effects.
-        # TODO: Track adjustment history — currently only the latest model is
-        # stored. A future enhancement should maintain a list of
-        # (method, model_dict) tuples for each adjustment step.
         new_bf._adjustment_model = (
             dict(raw_model) if isinstance(raw_model, dict) else raw_model
         )
@@ -801,6 +867,15 @@ class BalanceFrame:
                             "training_target_weights",
                             fit_target_weights,
                         )
+        effective_method_name = (
+            str(adj_model.get("method")) if isinstance(adj_model, dict) else method_name
+        )
+        new_bf._adjustment_history = self._copy_adjustment_history_from(
+            self, deep=False
+        )
+        new_bf._append_adjustment_history_entry(
+            effective_method_name, new_bf._adjustment_model
+        )
         return new_bf
 
     def adjust(
@@ -1145,6 +1220,9 @@ class BalanceFrame:
         self._sf_sample_pre_adjust = result._sf_sample_pre_adjust
         self._sf_target = result._sf_target
         self._adjustment_model = result._adjustment_model
+        self._adjustment_history = self._copy_adjustment_history_from(
+            result, deep=False
+        )
         self._links = result._links
         self._sync_sampleframe_state_from_responder(self._sf_sample)
         return self
@@ -1310,6 +1388,9 @@ class BalanceFrame:
 
         # Store the model and set adjustment state
         bf._adjustment_model = dict(model)
+        method_name = str(model.get("method", "set_fitted_model"))
+        bf._adjustment_history = self._copy_adjustment_history_from(self, deep=False)
+        bf._append_adjustment_history_entry(method_name, bf._adjustment_model)
         # pyrefly: ignore [unsupported-operation]
         bf._links["unadjusted"] = type(self)._create(
             sample=bf._sf_sample_pre_adjust,
@@ -2592,6 +2673,33 @@ class BalanceFrame:
         """
         return self._adjustment_model
 
+    @property
+    def adjustment_history(self) -> list[dict[str, Any]]:
+        """Chronological adjustment model history.
+
+        Returns a best-effort read-only copy of each recorded adjustment step
+        so callers can inspect compound reweighting workflows without mutating
+        internal state. The :attr:`model` property remains the latest
+        adjustment model for backward compatibility.
+
+        Deep-copy is attempted per entry; when a payload is not deepcopy-safe,
+        the method falls back to copying the step dictionary and nested model
+        mapping (when present).
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [1.0, 2.0], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [1.5, 2.5], "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame(sample=resp, target=tgt).adjust(method="null")
+            >>> len(bf.adjustment_history)
+            1
+        """
+        return self._copy_adjustment_history_from(self, deep=True)
+
     # --- Conversion ---
 
     @classmethod
@@ -2652,6 +2760,9 @@ class BalanceFrame:
                 sample._links["unadjusted"]
             )
             bf._adjustment_model = sample.model
+            bf._adjustment_history = cls._copy_adjustment_history_from(
+                sample, deep=False
+            )
 
         return bf
 
@@ -2723,6 +2834,9 @@ class BalanceFrame:
             # pyrefly: ignore [unsupported-operation]
             result._links["unadjusted"] = unadj_sf
             result._adjustment_model = self._adjustment_model
+            result._adjustment_history = self._copy_adjustment_history_from(
+                self, deep=False
+            )
 
         return result
 
@@ -3506,6 +3620,9 @@ class BalanceFrame:
         )
         new_bf._sf_sample_pre_adjust = self._sf_sample_pre_adjust
         new_bf._adjustment_model = self._adjustment_model
+        new_bf._adjustment_history = self._copy_adjustment_history_from(
+            self, deep=False
+        )
         # Preserve existing links (target, unadjusted).
         # pyrefly: ignore [missing-attribute]
         for key, val in self._links.items():

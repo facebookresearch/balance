@@ -439,6 +439,128 @@ class TestBalanceFrameAdjust(BalanceTestCase):
         # Should reflect IPW, not null
         self.assertIn("ipw", model["method"])
 
+    def test_adjustment_history_tracks_compound_adjustments(self) -> None:
+        """adjustment_history records every adjustment while model stays latest."""
+
+        def dummy_method(
+            sample_df: pd.DataFrame,
+            sample_weights: pd.Series,
+            target_df: pd.DataFrame,
+            target_weights: pd.Series,
+        ) -> dict[str, Any]:
+            return {
+                "weight": pd.Series(sample_weights.to_numpy(), index=sample_df.index),
+                "model": {"method": "dummy"},
+            }
+
+        adj1 = self.bf.adjust(method="null")
+        adj2 = adj1.adjust(method=dummy_method)
+
+        self.assertEqual(
+            [step["method"] for step in adj1.adjustment_history],
+            ["null_adjustment"],
+        )
+        self.assertEqual(
+            [step["method"] for step in adj2.adjustment_history],
+            ["null_adjustment", "dummy"],
+        )
+        latest_history_model = adj2.adjustment_history[-1]["model"]
+        self.assertEqual(
+            latest_history_model.get("method"),
+            _assert_type(adj2.model).get("method"),
+        )
+
+        returned_history = adj2.adjustment_history
+        returned_history[-1]["model"]["method"] = "mutated"
+        self.assertNotEqual(
+            adj2.adjustment_history[-1]["model"].get("method"), "mutated"
+        )
+
+    def test_adjustment_history_resets_with_pre_adjust_baseline(self) -> None:
+        adjusted = self.bf.adjust(method="null")
+        reset = adjusted.set_as_pre_adjust()
+
+        self.assertEqual(reset.adjustment_history, [])
+        self.assertIsNone(reset.model)
+
+    def test_adjustment_history_handles_non_deepcopyable_model_artifact(self) -> None:
+        class NoDeepcopy:
+            def __deepcopy__(self, memo: dict[int, object]) -> object:
+                raise RuntimeError("no deepcopy")
+
+        sentinel = NoDeepcopy()
+
+        def custom_method(
+            sample_df: pd.DataFrame,
+            sample_weights: pd.Series,
+            target_df: pd.DataFrame,
+            target_weights: pd.Series,
+        ) -> dict[str, Any]:
+            return {
+                "weight": pd.Series(sample_weights.to_numpy(), index=sample_df.index),
+                "model": {"method": "custom_unsafe", "artifact": sentinel},
+            }
+
+        adjusted = self.bf.adjust(method=custom_method)
+        self.assertIs(_assert_type(adjusted.model).get("artifact"), sentinel)
+
+        history = adjusted.adjustment_history
+        self.assertEqual(history[-1]["method"], "custom_unsafe")
+        self.assertIs(history[-1]["model"].get("artifact"), sentinel)
+
+        history[-1]["model"]["method"] = "mutated"
+        self.assertEqual(_assert_type(adjusted.model).get("method"), "custom_unsafe")
+
+    def test_adjustment_history_missing_private_attr_is_empty(self) -> None:
+        legacy_like = copy.deepcopy(self.bf)
+        del legacy_like._adjustment_history
+
+        self.assertEqual(legacy_like.adjustment_history, [])
+
+    def test_adjustment_history_ipw_then_poststratify(self) -> None:
+        """History tracks real method combinations: ipw followed by poststratify."""
+        adj1 = self.bf.adjust(method="ipw")
+        adj2 = adj1.adjust(method="poststratify")
+
+        self.assertEqual(len(adj2.adjustment_history), 2)
+        self.assertEqual(
+            [step["method"] for step in adj2.adjustment_history],
+            ["ipw", "poststratify"],
+        )
+        self.assertEqual(_assert_type(adj2.model).get("method"), "poststratify")
+        self.assertTrue(adj2.is_adjusted)
+        self.assertIs(adj2._sf_sample_pre_adjust, self.resp_sf)
+
+    def test_adjustment_history_ipw_then_rake(self) -> None:
+        """History tracks ipw followed by rake.
+
+        With a single covariate, rake delegates to poststratify and records
+        method='poststratify' in the model dict.
+        """
+        adj1 = self.bf.adjust(method="ipw")
+        adj2 = adj1.adjust(method="rake")
+
+        self.assertEqual(len(adj2.adjustment_history), 2)
+        methods = [step["method"] for step in adj2.adjustment_history]
+        self.assertEqual(methods[0], "ipw")
+        # rake delegates to poststratify for single-variable data
+        self.assertEqual(methods[1], "poststratify")
+
+    def test_adjustment_history_three_real_methods(self) -> None:
+        """History accumulates across three real adjustment methods."""
+        adj1 = self.bf.adjust(method="ipw")
+        adj2 = adj1.adjust(method="poststratify")
+        adj3 = adj2.adjust(method="cbps")
+
+        self.assertEqual(len(adj3.adjustment_history), 3)
+        self.assertEqual(
+            [step["method"] for step in adj3.adjustment_history],
+            ["ipw", "poststratify", "cbps"],
+        )
+        self.assertEqual(_assert_type(adj3.model).get("method"), "cbps")
+        self.assertIs(adj3._sf_sample_pre_adjust, self.resp_sf)
+        adj3.summary()
+
     def test_adjust_compound_three_steps(self) -> None:
         """Three sequential adjustments maintain all invariants."""
         adj1 = self.bf.adjust(method="null")
@@ -538,6 +660,7 @@ class TestBalanceFrameAdjust(BalanceTestCase):
         self.assertTrue(adjusted_copy.is_adjusted)
         self.assertIsNotNone(adjusted_copy.unadjusted)
         self.assertIsNotNone(adjusted_copy.model)
+        self.assertEqual(adjusted_copy.adjustment_history, adjusted.adjustment_history)
         # The copy's weights should match
         pd.testing.assert_series_equal(
             adjusted_copy.responders.df_weights.iloc[:, 0],
@@ -626,6 +749,56 @@ class TestBalanceFrameSetTarget(BalanceTestCase):
         self.assertIsNone(retargeted.model)
         # pyrefly: ignore [bad-argument-type]
         self.assertNotIn("unadjusted", retargeted._links)
+
+    def test_set_target_resets_adjustment_history(self) -> None:
+        bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
+        adjusted = bf.adjust(method="null")
+        self.assertTrue(adjusted.adjustment_history)
+
+        tgt2_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["7", "8"],
+                    "x1": [50.0, 60.0],
+                    "x2": [5.0, 6.0],
+                    "weight": [1.0, 1.0],
+                }
+            )
+        )
+
+        retargeted = adjusted.set_target(tgt2_sf)
+        self.assertEqual(retargeted.adjustment_history, [])
+
+    def test_set_target_balanceframe_resets_adjustment_on_returned_copy(self) -> None:
+        bf = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf)
+        adjusted = bf.adjust(method="null")
+        new_target_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["7", "8"],
+                    "x1": [50.0, 60.0],
+                    "x2": [5.0, 6.0],
+                    "weight": [1.0, 1.0],
+                }
+            )
+        )
+        new_target_bf = BalanceFrame(sample=new_target_sf)
+
+        with self.assertLogs("balance", level="WARNING") as cm:
+            retargeted = adjusted.set_target(new_target_bf)
+
+        self.assertIsNot(retargeted, adjusted)
+        self.assertTrue(adjusted.is_adjusted)
+        self.assertTrue(adjusted.adjustment_history)
+        self.assertFalse(retargeted.is_adjusted)
+        self.assertIsNone(retargeted.model)
+        self.assertEqual(retargeted.adjustment_history, [])
+        self.assertIs(retargeted.target, new_target_sf)
+        # pyrefly: ignore [bad-argument-type]
+        self.assertNotIn("unadjusted", retargeted._links)
+        self.assertTrue(
+            any("discards current adjustment results" in line for line in cm.output)
+        )
 
     def test_set_target_on_adjusted_logs_reset_warning(self) -> None:
         adjusted = BalanceFrame(sample=self.resp_sf, target=self.tgt_sf).adjust(
@@ -2219,6 +2392,7 @@ class TestTrimInPlaceFalsePreservesFitArtifacts(BalanceTestCase):
         trimmed = adjusted.trim(ratio=2)
         self.assertIsNotNone(trimmed._adjustment_model)
         self.assertEqual(trimmed._adjustment_model, adjusted._adjustment_model)
+        self.assertEqual(trimmed.adjustment_history, adjusted.adjustment_history)
 
 
 class TestSetWeightsDocstringWarnsAboutFitInconsistency(BalanceTestCase):
