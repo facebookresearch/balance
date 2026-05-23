@@ -218,6 +218,32 @@ function (e.g. <code class="docutils literal notranslate"><span class="pre">max_
 </div>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.adjustment_history">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">adjustment_history</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#balance.balance_frame.BalanceFrame.adjustment_history" title="Link to this definition">¶</a></dt>
+<dd><p>Chronological adjustment model history.</p>
+<p>Returns a best-effort read-only copy of each recorded adjustment step
+so callers can inspect compound reweighting workflows without mutating
+internal state. The <a class="reference internal" href="#balance.balance_frame.BalanceFrame.model" title="balance.balance_frame.BalanceFrame.model"><code class="xref py py-attr docutils literal notranslate"><span class="pre">model</span></code></a> property remains the latest
+adjustment model for backward compatibility.</p>
+<p>Deep-copy is attempted per entry; when a payload is not deepcopy-safe,
+the method falls back to copying the step dictionary and nested model
+mapping (when present).</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.balance_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resp</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tgt</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bf</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">)</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;null&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">adjustment_history</span><span class="p">)</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.covars">
 <span class="sig-name descname"><span class="pre">covars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">formula</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.covars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.covars" title="Link to this definition">¶</a></dt>
@@ -1331,6 +1357,7 @@ adjusted) views for comparative weight analysis.</p>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.target"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.target</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.is_adjusted"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.is_adjusted</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.adjust"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.adjust()</span></code></a></li>
+<li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.adjustment_history"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.adjustment_history</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.covars"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.covars()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.design_matrix"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.design_matrix()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.df"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.df</span></code></a></li>
