@@ -406,7 +406,7 @@ class TestAssertNotPrintsRegexp(balance.testutil.BalanceTestCase):
         real_import = __import__
 
         def fake_import(name, *args, **kwargs):
-            if name == "sklearn":
+            if name == "sklearn" or name.startswith("sklearn."):
                 raise ImportError("boom")
             return real_import(name, *args, **kwargs)
 
