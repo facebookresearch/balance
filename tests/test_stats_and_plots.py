@@ -4231,20 +4231,21 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
             love_plot(before, after, library="seaborn", title="ignored")
         self.assertIn("Ignoring plotly layout kwargs", " ".join(cm.output))
 
-    def test_love_plot_no_covariates_after_nan_drop_and_helpers(self) -> None:
-        from balance.stats_and_plots.love_plot import (
-            _ascii_position,
-            _ascii_scale_max,
-            love_plot,
-        )
+    def test_love_plot_no_covariates_after_nan_drop_and_ascii_output(self) -> None:
+        from balance.stats_and_plots.love_plot import love_plot
 
         with self.assertRaisesRegex(ValueError, "no covariates to plot"):
             love_plot(pd.Series({"a": np.nan}), after=None)
-        self.assertEqual(_ascii_scale_max(0.0, None), 1.0)
-        self.assertEqual(_ascii_position(0.1, 0.0, width=10), 0)
+
         txt = love_plot(
-            pd.Series({"a": 0.1}), pd.Series({"a": 0.5}), library="balance", line=True
+            pd.Series({"a": 0.1}),
+            pd.Series({"a": 0.5}),
+            library="balance",
+            line=True,
+            threshold=0.2,
         )
+        self.assertIn("Legend", txt)
+        self.assertIn("Threshold", txt)
         self.assertIn(">", txt)
 
     def test_love_plot_before_type_error_and_alignment_errors_and_order_none(

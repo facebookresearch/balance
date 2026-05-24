@@ -2241,14 +2241,24 @@ class TestPredictWeightsFromModelDirect(balance.testutil.BalanceTestCase):
         )
 
     def test_predict_weights_from_model_drop_na_and_shape_and_cell_paths(self) -> None:
-        m = dict(self.model)
-        m["na_action"] = "drop"
+        # Fit an actual na_action='drop' model (instead of mutating metadata)
+        # so the model fixture remains internally consistent.
         sample_df = self.sample_df.copy()
         sample_df.loc[sample_df.index[0], "a"] = None
         target_df = self.target_df.copy()
         target_df.loc[target_df.index[0], "a"] = None
+        model_drop = rake(
+            sample_df,
+            self.sample_w,
+            target_df,
+            self.target_w,
+            transformations=None,
+            na_action="drop",
+            store_fit_metadata=True,
+        )["model"]
+
         pred = _predict_weights_from_model(
-            model=m,
+            model=model_drop,
             sample_df=sample_df,
             sample_weights_full=self.sample_w,
             target_df=target_df,
@@ -2379,15 +2389,19 @@ class TestPredictWeightsFromModelDirect(balance.testutil.BalanceTestCase):
                 is_transfer=False,
             )
 
-        m = dict(self.model)
-        m["na_action"] = "drop"
-        m["training_target_weights"] = pd.Series(
-            [1.0] * len(self.target_df), index=self.target_df.index
-        )
+        model_drop = rake(
+            self.sample_df,
+            self.sample_w,
+            self.target_df,
+            self.target_w,
+            transformations=None,
+            na_action="drop",
+            store_fit_metadata=True,
+        )["model"]
         score_target = self.target_df.copy()
         score_target.iloc[0, 0] = None
         pred = _predict_weights_from_model(
-            model=m,
+            model=model_drop,
             sample_df=self.sample_df,
             sample_weights_full=self.sample_w,
             target_df=score_target,

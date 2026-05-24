@@ -1629,3 +1629,35 @@ class Testpoststratify(
         pred = _predict_weights_from_model(model, sample_df, sw, target_df, tw, False)
         self.assertEqual(len(pred), 2)
         self.assertTrue(np.isfinite(pred.to_numpy()).all())
+
+    def test_predict_weights_from_model_ratio_name_collision_loop_on_selected_variable(
+        self,
+    ) -> None:
+        """Cover ratio-name collision loop when `_cell_ratio*` survives variable slice."""
+        from balance.weighting_methods.poststratify import _predict_weights_from_model
+
+        sample_df = pd.DataFrame(
+            {
+                "_cell_ratio": ["x", "y"],
+                "_cell_ratio_tmp": ["x", "y"],
+                "_cell_ratio_tmp2": ["x", "y"],
+            },
+            index=["s0", "s1"],
+        )
+        target_df = pd.DataFrame({"_cell_ratio": ["x", "y"]}, index=["t0", "t1"])
+        sw = pd.Series([1.0, 1.0], index=sample_df.index)
+        tw = pd.Series([1.0, 1.0], index=target_df.index)
+
+        model = poststratify(
+            sample_df[["_cell_ratio"]],
+            sw,
+            target_df,
+            tw,
+            variables=["_cell_ratio"],
+            transformations=None,
+            store_fit_metadata=True,
+        )["model"]
+
+        pred = _predict_weights_from_model(model, sample_df, sw, target_df, tw, False)
+        self.assertEqual(len(pred), len(sw))
+        self.assertTrue(np.isfinite(pred.to_numpy()).all())
