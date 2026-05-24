@@ -779,7 +779,8 @@ def _predict_weights_from_model(
         else:
             target_sum = float(target_weights.sum())
     else:
-        target_sum = float(training_target_weights.sum())
+        training_target_weights_series = cast(pd.Series, training_target_weights)
+        target_sum = float(training_target_weights_series.sum())
 
     predicted = balance_adjustment.trim_weights(
         raw,
