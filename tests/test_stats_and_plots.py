@@ -7,23 +7,8 @@
 
 from __future__ import annotations
 
+import importlib.util
 import unittest
-
-try:
-    import seaborn  # noqa: F401
-
-    HAS_SEABORN = True
-except (ImportError, ModuleNotFoundError):
-    HAS_SEABORN = False
-
-try:
-    import plotly  # noqa: F401
-
-    HAS_PLOTLY = True
-except (ImportError, ModuleNotFoundError):
-    HAS_PLOTLY = False
-
-
 import warnings
 from typing import Any, cast
 
@@ -33,6 +18,9 @@ import pandas as pd
 from balance.sample_class import Sample
 from balance.stats_and_plots import weighted_comparisons_stats
 from balance.util import _assert_type
+
+HAS_SEABORN = importlib.util.find_spec("seaborn") is not None
+HAS_PLOTLY = importlib.util.find_spec("plotly") is not None
 
 
 class TestBalance_weights_stats(
