@@ -289,8 +289,6 @@ def poststratify(
 
     model: Dict[str, Any] = {"method": "poststratify"}
     if store_fit_metadata:
-        if original_sample_weights is None or original_target_weights is None:
-            raise RuntimeError("Unexpected missing stored training weights.")
         # Persisting non-pickleable callables (e.g., lambdas/closures) breaks
         # serialization workflows for fitted objects. Require picklable
         # transformations when fit metadata storage is enabled.
@@ -539,9 +537,9 @@ def _predict_weights_from_model(
             )
     sample_df = sample_df.loc[:, variables]
 
-    ratio_name = "_cell_ratio"
-    while ratio_name in sample_df.columns:
-        ratio_name = f"{ratio_name}_tmp"
+    ratio_name = (
+        "_cell_ratio_tmp" if "_cell_ratio" in sample_df.columns else "_cell_ratio"
+    )
     sample_with_ratio = sample_df.join(ratio_series.rename(ratio_name), on=variables)
     missing_ratio = sample_with_ratio[ratio_name].isna()
     if bool(missing_ratio.any()):

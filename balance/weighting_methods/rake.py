@@ -778,12 +778,8 @@ def _predict_weights_from_model(
             target_sum = float(dropped_target_weights.sum())
         else:
             target_sum = float(target_weights.sum())
-    elif isinstance(training_target_weights, pd.Series):
-        target_sum = float(training_target_weights.sum())
-    elif na_action == "drop" and isinstance(dropped_target_weights, pd.Series):
-        target_sum = float(dropped_target_weights.sum())
     else:
-        target_sum = float(target_weights.sum())
+        target_sum = float(training_target_weights.sum())
 
     predicted = balance_adjustment.trim_weights(
         raw,

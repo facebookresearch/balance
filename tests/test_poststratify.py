@@ -1394,3 +1394,200 @@ class Testpoststratify(
         # rescaled to target sum 10: [2, 3, 3, 2].
         np.testing.assert_allclose(predicted.to_numpy(), [2.0, 3.0, 3.0, 2.0])
         self.assertAlmostEqual(float(predicted.sum()), 10.0, places=6)
+
+    def test_predict_weights_from_model_validation_branches(self) -> None:
+        from balance.weighting_methods.poststratify import _predict_weights_from_model
+
+        sample_df = pd.DataFrame({"a": ["x", "y", "x"]})
+        target_df = pd.DataFrame({"a": ["x", "y", "x"]})
+        sample_w = pd.Series([1.0, 1.0, 1.0])
+        target_w = pd.Series([1.0, 1.0, 1.0])
+
+        fitted = poststratify(
+            sample_df=sample_df,
+            sample_weights=sample_w,
+            target_df=target_df,
+            target_weights=target_w,
+            transformations=None,
+            store_fit_metadata=True,
+        )["model"]
+
+        with self.assertRaisesRegex(ValueError, "missing fit-time metadata"):
+            _predict_weights_from_model({}, sample_df, sample_w, target_df, target_w, False)  # type: ignore[arg-type]
+
+        bad = dict(fitted)
+        bad["variables"] = "a"
+        with self.assertRaisesRegex(ValueError, "invalid 'variables'"):
+            _predict_weights_from_model(
+                bad, sample_df, sample_w, target_df, target_w, False
+            )
+
+        bad = dict(fitted)
+        bad["na_action"] = "weird"
+        with self.assertRaisesRegex(ValueError, "invalid na_action"):
+            _predict_weights_from_model(
+                bad, sample_df, sample_w, target_df, target_w, False
+            )
+
+    def test_predict_weights_from_model_remaining_error_paths(self) -> None:
+        from balance.weighting_methods.poststratify import _predict_weights_from_model
+
+        sample_df = pd.DataFrame({"a": ["x", "y"]}, index=["s0", "s1"])
+        target_df = pd.DataFrame({"a": ["x", "y"]}, index=["t0", "t1"])
+        sw = pd.Series([1.0, 1.0], index=sample_df.index)
+        tw = pd.Series([1.0, 1.0], index=target_df.index)
+        model = poststratify(
+            sample_df, sw, target_df, tw, transformations=None, store_fit_metadata=True
+        )["model"]
+
+        m = dict(model)
+        m["variables_before_transformations"] = [1]
+        with self.assertRaisesRegex(ValueError, "variables_before_transformations"):
+            _predict_weights_from_model(m, sample_df, sw, target_df, tw, False)
+
+        m = dict(model)
+        m["cell_weight_ratio"] = 1
+        with self.assertRaisesRegex(ValueError, "missing cell-weight ratio"):
+            _predict_weights_from_model(m, sample_df, sw, target_df, tw, False)
+
+        m = dict(model)
+        m["training_sample_weights"] = pd.Series([1.0])
+        with self.assertRaisesRegex(ValueError, "fit-time sample design weights"):
+            _predict_weights_from_model(m, sample_df, sw, target_df, tw, False)
+
+        m = dict(model)
+        m["training_target_weights"] = pd.Series([1.0])
+        with self.assertRaisesRegex(ValueError, "fit-time target design weights"):
+            _predict_weights_from_model(m, sample_df, sw, target_df, tw, False)
+
+        m = dict(model)
+        m.pop("transformations_origin", None)
+        with self.assertRaisesRegex(ValueError, "transformations_origin"):
+            _predict_weights_from_model(m, sample_df, sw, target_df, tw, True)
+
+    def test_predict_weights_from_model_drop_na_and_missing_ratio_paths(self) -> None:
+        from balance.weighting_methods.poststratify import _predict_weights_from_model
+
+        sample_df = pd.DataFrame({"a": ["x", None, "z"]}, index=["s0", "s1", "s2"])
+        target_df = pd.DataFrame({"a": ["x", None, "y"]}, index=["t0", "t1", "t2"])
+        sw = pd.Series([1.0, 1.0, 1.0], index=sample_df.index)
+        tw = pd.Series([1.0, 1.0, 1.0], index=target_df.index)
+        m = poststratify(
+            sample_df,
+            sw,
+            target_df.assign(a=["x", None, "z"]),
+            tw,
+            transformations=None,
+            na_action="drop",
+            strict_matching=False,
+            store_fit_metadata=True,
+        )["model"]
+        m["strict_matching"] = False
+        with self.assertLogs("balance", level="WARNING") as cm:
+            pred = _predict_weights_from_model(m, sample_df, sw, target_df, tw, False)
+        self.assertIn("Dropped 1/3 rows of sample", " ".join(cm.output))
+        self.assertEqual(len(pred), len(sw))
+        self.assertTrue(pred.isna().any())
+
+    def test_predict_weights_from_model_more_branches(self) -> None:
+        from balance.weighting_methods.poststratify import _predict_weights_from_model
+
+        sample_df = pd.DataFrame({"a": ["x", "y"]}, index=["s0", "s1"])
+        target_df = pd.DataFrame({"a": ["x", "y"]}, index=["t0", "t1"])
+        sw = pd.Series([1.0, 1.0], index=sample_df.index)
+        tw = pd.Series([1.0, 1.0], index=target_df.index)
+        model = poststratify(
+            sample_df, sw, target_df, tw, transformations=None, store_fit_metadata=True
+        )["model"]
+
+        with self.assertRaisesRegex(ValueError, "cannot find required covariate"):
+            _predict_weights_from_model(
+                model, sample_df.rename(columns={"a": "aa"}), sw, target_df, tw, False
+            )
+
+        m = dict(model)
+        m["variables"] = ["missing_after_transform"]
+        with self.assertRaisesRegex(
+            ValueError, "transform output is missing stored variable"
+        ):
+            _predict_weights_from_model(m, sample_df, sw, target_df, tw, False)
+
+        m = dict(model)
+        m["cell_weight_ratio"] = pd.Series(
+            [1.0], index=pd.MultiIndex.from_tuples([("x",)], names=["a"])
+        )
+        m["strict_matching"] = False
+        with self.assertLogs("balance", level="WARNING") as cm:
+            _predict_weights_from_model(m, sample_df, sw, target_df, tw, False)
+        self.assertIn("missing from stored fit-time cell ratios", " ".join(cm.output))
+
+        m = dict(model)
+        m["cell_weight_ratio"] = pd.Series(
+            [0.0, 0.0], index=pd.MultiIndex.from_tuples([("x",), ("y",)], names=["a"])
+        )
+        with self.assertRaisesRegex(ValueError, "zero total raw weights"):
+            _predict_weights_from_model(
+                m, sample_df, sw, target_df.assign(a=["x", "z"]), tw, True
+            )
+
+    def test_variables_from_formula_error_branches(self) -> None:
+        from balance.weighting_methods.poststratify import _variables_from_formula
+
+        s = pd.DataFrame({"a": [1], "b": [2]})
+        t = pd.DataFrame({"c": [1]})
+        with self.assertRaisesRegex(ValueError, "Could not resolve"):
+            _variables_from_formula(s, t, ".")
+        with self.assertRaisesRegex(ValueError, "Could not resolve"):
+            _variables_from_formula(
+                pd.DataFrame({"a": [1]}), pd.DataFrame({"b": [1]}), "~1"
+            )
+
+    def test_predict_weights_from_model_ratio_name_collision_and_strict_matching_and_nonfinite_target(
+        self,
+    ) -> None:
+        from balance.weighting_methods.poststratify import _predict_weights_from_model
+
+        sample_df = pd.DataFrame(
+            {"a": ["x", "y"], "_cell_ratio": [1, 2]}, index=["s0", "s1"]
+        )
+        target_df = pd.DataFrame(
+            {"a": ["x", "y"], "_cell_ratio": [3, 4]}, index=["t0", "t1"]
+        )
+        sw = pd.Series([1.0, 1.0], index=sample_df.index)
+        tw = pd.Series([1.0, 1.0], index=target_df.index)
+        model = poststratify(
+            sample_df,
+            sw,
+            target_df,
+            tw,
+            variables=["a"],
+            transformations=None,
+            store_fit_metadata=True,
+        )["model"]
+
+        m = dict(model)
+        m["cell_weight_ratio"] = pd.Series(
+            [1.0], index=pd.MultiIndex.from_tuples([("x",)], names=["a"])
+        )
+        with self.assertRaisesRegex(ValueError, "missing from"):
+            _predict_weights_from_model(m, sample_df, sw, target_df, tw, False)
+
+        with self.assertRaisesRegex(ValueError, "non-finite"):
+            _predict_weights_from_model(
+                model,
+                sample_df,
+                sw,
+                target_df,
+                pd.Series([float("inf"), 1.0], index=target_df.index),
+                True,
+            )
+
+    def test_variables_from_formula_dot_expansion_no_common_columns_branch(
+        self,
+    ) -> None:
+        from balance.weighting_methods.poststratify import _variables_from_formula
+
+        s = pd.DataFrame({"a": [1]})
+        t = pd.DataFrame({"b": [1]})
+        with self.assertRaisesRegex(ValueError, "Cannot expand '\\.'"):
+            _variables_from_formula(s, t, "x:.")

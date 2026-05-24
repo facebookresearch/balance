@@ -2174,3 +2174,224 @@ class TestPredictWeightsFromModelDirect(balance.testutil.BalanceTestCase):
                 target_weights=self.target_w,
                 is_transfer=False,
             )
+
+    def test_predict_weights_from_model_validation_branches(self) -> None:
+        bad_model = dict(self.model)
+        bad_model["variables"] = "a"
+        with self.assertRaisesRegex(ValueError, "metadata is malformed"):
+            _predict_weights_from_model(
+                model=bad_model,
+                sample_df=self.sample_df,
+                sample_weights_full=self.sample_w,
+                target_df=self.target_df,
+                target_weights=self.target_w,
+                is_transfer=False,
+            )
+
+        bad_model = dict(self.model)
+        bad_model["na_action"] = "bogus"
+        with self.assertRaisesRegex(ValueError, "invalid na_action"):
+            _predict_weights_from_model(
+                model=bad_model,
+                sample_df=self.sample_df,
+                sample_weights_full=self.sample_w,
+                target_df=self.target_df,
+                target_weights=self.target_w,
+                is_transfer=False,
+            )
+
+    def test_predict_weights_from_model_remaining_error_paths(self) -> None:
+        m = dict(self.model)
+        m["m_fit"] = 1
+        with self.assertRaisesRegex(ValueError, "missing stored contingency tables"):
+            _predict_weights_from_model(
+                model=m,
+                sample_df=self.sample_df,
+                sample_weights_full=self.sample_w,
+                target_df=self.target_df,
+                target_weights=self.target_w,
+                is_transfer=False,
+            )
+
+        m = dict(self.model)
+        bad_sample = self.sample_df.rename(columns={"a": "aa"})
+        with self.assertRaisesRegex(ValueError, "cannot find required covariate"):
+            _predict_weights_from_model(
+                model=m,
+                sample_df=bad_sample,
+                sample_weights_full=self.sample_w,
+                target_df=self.target_df,
+                target_weights=self.target_w,
+                is_transfer=False,
+            )
+
+    def test_rake_store_fit_metadata_default_transformations_warns(self) -> None:
+        with self.assertLogs("balance", level="WARNING") as cm:
+            rake(
+                self.sample_df,
+                self.sample_w,
+                self.target_df,
+                self.target_w,
+                transformations="default",
+                store_fit_metadata=True,
+            )
+        self.assertIn(
+            "transfer scoring via predict_weights(data=...) will raise",
+            " ".join(cm.output),
+        )
+
+    def test_predict_weights_from_model_drop_na_and_shape_and_cell_paths(self) -> None:
+        m = dict(self.model)
+        m["na_action"] = "drop"
+        sample_df = self.sample_df.copy()
+        sample_df.loc[sample_df.index[0], "a"] = None
+        target_df = self.target_df.copy()
+        target_df.loc[target_df.index[0], "a"] = None
+        pred = _predict_weights_from_model(
+            model=m,
+            sample_df=sample_df,
+            sample_weights_full=self.sample_w,
+            target_df=target_df,
+            target_weights=self.target_w,
+            is_transfer=False,
+        )
+        self.assertEqual(len(pred), len(self.sample_w))
+        self.assertTrue(pred.isna().any())
+
+    def test_predict_weights_from_model_additional_error_paths(self) -> None:
+        m = dict(self.model)
+        m["variables"] = ["missing"]
+        with self.assertRaisesRegex(
+            ValueError, "transform output is missing stored variable"
+        ):
+            _predict_weights_from_model(
+                model=m,
+                sample_df=self.sample_df,
+                sample_weights_full=self.sample_w,
+                target_df=self.target_df,
+                target_weights=self.target_w,
+                is_transfer=False,
+            )
+
+        m = dict(self.model)
+        m["variables"] = []
+        with self.assertRaisesRegex(ValueError, "missing stored weighting variables"):
+            _predict_weights_from_model(
+                model=m,
+                sample_df=self.sample_df,
+                sample_weights_full=self.sample_w,
+                target_df=self.target_df,
+                target_weights=self.target_w,
+                is_transfer=False,
+            )
+
+        m = dict(self.model)
+        m["training_sample_weights"] = pd.Series([1.0], index=[0])
+        with self.assertRaisesRegex(
+            ValueError, "requires compatible fit-time sample design"
+        ):
+            _predict_weights_from_model(
+                model=m,
+                sample_df=self.sample_df,
+                sample_weights_full=self.sample_w,
+                target_df=self.target_df,
+                target_weights=self.target_w,
+                is_transfer=False,
+            )
+
+        m = dict(self.model)
+        m["m_sample"] = np.zeros_like(m["m_sample"])
+        with self.assertRaisesRegex(ValueError, "zero fit-time sample mass"):
+            _predict_weights_from_model(
+                model=m,
+                sample_df=self.sample_df,
+                sample_weights_full=self.sample_w,
+                target_df=self.target_df,
+                target_weights=self.target_w,
+                is_transfer=False,
+            )
+
+        m = dict(self.model)
+        m.pop("training_target_weights", None)
+        with self.assertRaisesRegex(ValueError, "missing fit-time metadata"):
+            _predict_weights_from_model(
+                model=m,
+                sample_df=self.sample_df,
+                sample_weights_full=self.sample_w,
+                target_df=self.target_df,
+                target_weights=self.target_w,
+                is_transfer=False,
+            )
+
+    def test_predict_weights_from_model_remaining_rake_branches(self) -> None:
+        m = dict(self.model)
+        m["training_sample_weights"] = None
+        with self.assertRaisesRegex(
+            ValueError, "requires compatible fit-time sample design"
+        ):
+            _predict_weights_from_model(
+                model=m,
+                sample_df=self.sample_df,
+                sample_weights_full=self.sample_w,
+                target_df=self.target_df,
+                target_weights=self.target_w,
+                is_transfer=False,
+            )
+
+        m = dict(self.model)
+        m["m_sample"] = np.zeros((1, 1))
+        with self.assertRaisesRegex(
+            ValueError, "incompatible fitted and sample table shapes"
+        ):
+            _predict_weights_from_model(
+                model=m,
+                sample_df=self.sample_df,
+                sample_weights_full=self.sample_w,
+                target_df=self.target_df,
+                target_weights=self.target_w,
+                is_transfer=False,
+            )
+
+        m = dict(self.model)
+        bad = self.sample_df.copy()
+        bad.iloc[0, 0] = "NEW"
+        with self.assertRaisesRegex(
+            ValueError, "do not map to stored fit-time categories"
+        ):
+            _predict_weights_from_model(
+                model=m,
+                sample_df=bad,
+                sample_weights_full=self.sample_w,
+                target_df=self.target_df,
+                target_weights=self.target_w,
+                is_transfer=False,
+            )
+
+        m = dict(self.model)
+        m["training_target_weights"] = None
+        with self.assertRaisesRegex(ValueError, "fit-time target design"):
+            _predict_weights_from_model(
+                model=m,
+                sample_df=self.sample_df,
+                sample_weights_full=self.sample_w,
+                target_df=self.target_df,
+                target_weights=self.target_w,
+                is_transfer=False,
+            )
+
+        m = dict(self.model)
+        m["na_action"] = "drop"
+        m["training_target_weights"] = pd.Series(
+            [1.0] * len(self.target_df), index=self.target_df.index
+        )
+        score_target = self.target_df.copy()
+        score_target.iloc[0, 0] = None
+        pred = _predict_weights_from_model(
+            model=m,
+            sample_df=self.sample_df,
+            sample_weights_full=self.sample_w,
+            target_df=score_target,
+            target_weights=self.target_w,
+            is_transfer=True,
+        )
+        self.assertEqual(len(pred), len(self.sample_w))

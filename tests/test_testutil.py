@@ -397,3 +397,23 @@ class TestAssertNotPrintsRegexp(balance.testutil.BalanceTestCase):
             "abc",
             lambda: print("abcde"),
         )
+
+    def test_has_sklearn_1_4_import_failure_returns_false(self) -> None:
+        from unittest.mock import patch
+
+        import balance.testutil as t
+
+        real_import = __import__
+
+        def fake_import(name, *args, **kwargs):
+            if name == "sklearn":
+                raise ImportError("boom")
+            return real_import(name, *args, **kwargs)
+
+        with patch("builtins.__import__", side_effect=fake_import):
+            self.assertFalse(t._has_sklearn_1_4())
+
+    def test_assertEqual_with_extension_array(self) -> None:
+        arr1 = pd.array([1, 2, 3], dtype="Int64")
+        arr2 = pd.array([1, 2, 3], dtype="Int64")
+        self.assertEqual(arr1, arr2)
