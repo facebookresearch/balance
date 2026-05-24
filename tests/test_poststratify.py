@@ -1413,7 +1413,14 @@ class Testpoststratify(
         )["model"]
 
         with self.assertRaisesRegex(ValueError, "missing fit-time metadata"):
-            _predict_weights_from_model({}, sample_df, sample_w, target_df, target_w, False)  # type: ignore[arg-type]
+            _predict_weights_from_model(
+                {},
+                sample_df,
+                sample_w,
+                target_df,
+                target_w,
+                False,
+            )  # type: ignore[arg-type]
 
         bad = dict(fitted)
         bad["variables"] = "a"
@@ -1591,3 +1598,34 @@ class Testpoststratify(
         t = pd.DataFrame({"b": [1]})
         with self.assertRaisesRegex(ValueError, "Cannot expand '\\.'"):
             _variables_from_formula(s, t, "x:.")
+
+    def test_predict_weights_from_model_ratio_name_multi_collision_is_safe(
+        self,
+    ) -> None:
+        from balance.weighting_methods.poststratify import _predict_weights_from_model
+
+        sample_df = pd.DataFrame(
+            {
+                "a": ["x", "y"],
+                "_cell_ratio": [1, 2],
+                "_cell_ratio_tmp": [3, 4],
+            },
+            index=["s0", "s1"],
+        )
+        target_df = pd.DataFrame({"a": ["x", "y"]}, index=["t0", "t1"])
+        sw = pd.Series([1.0, 1.0], index=sample_df.index)
+        tw = pd.Series([1.0, 1.0], index=target_df.index)
+
+        model = poststratify(
+            sample_df[["a"]],
+            sw,
+            target_df,
+            tw,
+            variables=["a"],
+            transformations=None,
+            store_fit_metadata=True,
+        )["model"]
+
+        pred = _predict_weights_from_model(model, sample_df, sw, target_df, tw, False)
+        self.assertEqual(len(pred), 2)
+        self.assertTrue(np.isfinite(pred.to_numpy()).all())

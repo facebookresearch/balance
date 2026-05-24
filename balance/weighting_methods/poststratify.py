@@ -537,9 +537,11 @@ def _predict_weights_from_model(
             )
     sample_df = sample_df.loc[:, variables]
 
-    ratio_name = (
-        "_cell_ratio_tmp" if "_cell_ratio" in sample_df.columns else "_cell_ratio"
-    )
+    ratio_name = "_cell_ratio"
+    suffix = 0
+    while ratio_name in sample_df.columns:
+        suffix += 1
+        ratio_name = "_cell_ratio_tmp" if suffix == 1 else f"_cell_ratio_tmp{suffix}"
     sample_with_ratio = sample_df.join(ratio_series.rename(ratio_name), on=variables)
     missing_ratio = sample_with_ratio[ratio_name].isna()
     if bool(missing_ratio.any()):
