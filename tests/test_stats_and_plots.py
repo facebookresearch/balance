@@ -7,6 +7,9 @@
 
 from __future__ import annotations
 
+import importlib.util
+import unittest
+
 import warnings
 from typing import Any, cast
 
@@ -4216,6 +4219,9 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
             # pyrefly: ignore [bad-argument-type]
             weighted_comparisons_stats.asmd(sample_df, target_df, std_type="invalid")
 
+    @unittest.skipUnless(
+        importlib.util.find_spec("seaborn") is not None, "requires seaborn"
+    )
     def test_love_plot_rejects_non_bool_line_and_show_and_warns_layout_kwargs_for_seaborn(
         self,
     ) -> None:
@@ -4248,6 +4254,9 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
         self.assertIn("Threshold", txt)
         self.assertIn(">", txt)
 
+    @unittest.skipUnless(
+        importlib.util.find_spec("seaborn") is not None, "requires seaborn"
+    )
     def test_love_plot_before_type_error_and_alignment_errors_and_order_none(
         self,
     ) -> None:
@@ -4273,6 +4282,9 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
         self.assertIn("a", labels)
         self.assertIn("b", labels)
 
+    @unittest.skipUnless(
+        importlib.util.find_spec("plotly") is not None, "requires plotly"
+    )
     def test_love_plot_plotly_single_value_series(self) -> None:
         from balance.stats_and_plots.love_plot import love_plot
 
@@ -4295,6 +4307,9 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
         out = wcs.asmd_improvement(sample, sample, target)
         self.assertEqual(float(out), 0.0)
 
+    @unittest.skipUnless(
+        importlib.util.find_spec("seaborn") is not None, "requires seaborn"
+    )
     def test_love_plot_alignment_warning_with_partial_overlap(self) -> None:
         from balance.stats_and_plots.love_plot import love_plot
 
