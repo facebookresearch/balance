@@ -13,14 +13,14 @@ try:
     import seaborn  # noqa: F401
 
     HAS_SEABORN = True
-except Exception:
+except (ImportError, ModuleNotFoundError):
     HAS_SEABORN = False
 
 try:
     import plotly  # noqa: F401
 
     HAS_PLOTLY = True
-except Exception:
+except (ImportError, ModuleNotFoundError):
     HAS_PLOTLY = False
 
 
