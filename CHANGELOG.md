@@ -76,8 +76,8 @@
   fitted model for backwards compatibility. Baseline resets such as
   `set_as_pre_adjust()` clear the history together with the current model.
 
-- **Expanded targeted test coverage to 100% for critical validation modules.**
-  Added focused, non-redundant tests covering predict-time metadata validation, replay/transfer edge cases, and error/warning paths in `weighted_comparisons_stats`, `poststratify`, and `rake`; targeted coverage for these modules is now 100%.
+- **Expanded targeted test coverage for critical validation modules.**
+  Added focused, non-redundant tests covering predict-time metadata validation, replay/transfer edge cases, and error/warning paths in `weighted_comparisons_stats`, `poststratify`, and `rake`; including predict-time metadata validation, replay/transfer edge cases, and error/warning paths in `weighted_comparisons_stats`, `poststratify`, and `rake`.
 
 ## Documentation
 
@@ -123,7 +123,7 @@
 - **Validation-path cleanup in `asmd`, `poststratify`, and `rake` (no behavior loss).**
   Removed redundant/unreachable branches that were previously impossible to hit in valid call paths:
   - `asmd(...)` now uses a single authoritative invalid-`std_type` error path (`Unknown std_type ...`).
-  - `poststratify(..., store_fit_metadata=True)` no longer carries an unreachable "missing stored training weights" runtime guard, and predict-time ratio-column collision handling is simplified to deterministic one-step naming.
+  - `poststratify(..., store_fit_metadata=True)` no longer carries an unreachable "missing stored training weights" runtime guard, and predict-time ratio-column collision handling is uses deterministic suffix-based naming (`_cell_ratio`, `_cell_ratio_tmp`, `_cell_ratio_tmp2`, ...) to avoid collisions.
   - `rake._predict_weights_from_model(...)` now uses the already-validated fit-time target weights directly for non-transfer replay instead of fallback branches that could not be reached.
   These changes are covered by focused tests and keep user-facing behavior intact aside from clearer, more consistent error messages.
 

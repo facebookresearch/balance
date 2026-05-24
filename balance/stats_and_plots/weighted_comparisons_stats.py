@@ -588,6 +588,10 @@ def asmd(
         raise ValueError(f"sample_df must be pd.DataFrame, is {type(sample_df)}")
     if not isinstance(target_df, pd.DataFrame):
         raise ValueError(f"target_df must be pd.DataFrame, is {type(target_df)}")
+    if std_type not in ("sample", "target", "pooled"):
+        raise ValueError(
+            f"Unknown std_type: {std_type!r}. Use 'sample', 'target', or 'pooled'."
+        )
     if sample_df.columns.values.tolist() != target_df.columns.values.tolist():
         logger.warning(
             "sample_df and target_df must have the same column names.\n"
