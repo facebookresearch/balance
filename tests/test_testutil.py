@@ -416,4 +416,4 @@ class TestAssertNotPrintsRegexp(balance.testutil.BalanceTestCase):
     def test_assertEqual_with_extension_array(self) -> None:
         arr1 = pd.array([1, 2, 3], dtype="Int64")
         arr2 = pd.array([1, 2, 3], dtype="Int64")
-        self.assertEqual(arr1, arr2)
+        pd.testing.assert_extension_array_equal(arr1, arr2)
