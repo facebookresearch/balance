@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-import importlib.util
+import importlib
 import unittest
 import warnings
 from typing import Any, cast
@@ -19,8 +19,17 @@ from balance.sample_class import Sample
 from balance.stats_and_plots import weighted_comparisons_stats
 from balance.util import _assert_type
 
-HAS_SEABORN = importlib.util.find_spec("seaborn") is not None
-HAS_PLOTLY = importlib.util.find_spec("plotly") is not None
+
+def _can_import(module_name: str) -> bool:
+    try:
+        importlib.import_module(module_name)
+        return True
+    except ImportError:
+        return False
+
+
+HAS_SEABORN = _can_import("seaborn")
+HAS_PLOTLY = _can_import("plotly")
 
 
 class TestBalance_weights_stats(
