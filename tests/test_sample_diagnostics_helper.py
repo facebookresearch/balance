@@ -608,3 +608,151 @@ def test_build_diagnostics_adjustment_failure_edge_cases() -> None:
             "adjustment_failure_reason": "ignored",
         }
     ) == (0, None)
+
+
+def test_coerce_failure_flag_handles_unknown_string_and_object() -> None:
+    from balance.summary_utils import _coerce_failure_flag
+
+    assert _coerce_failure_flag("maybe") == 1
+    assert _coerce_failure_flag("") == 0
+
+    class Dummy:
+        def __bool__(self) -> bool:
+            return True
+
+    assert _coerce_failure_flag(Dummy()) == 1
+
+
+def test_build_summary_unavailable_deff_and_outcome_means_block() -> None:
+    outcome = pd.DataFrame({"self": [1.0, 2.0]}, index=pd.Index(["y1", "y2"]))
+    txt = _build_summary(
+        is_adjusted=True,
+        has_target=True,
+        covars_asmd=pd.DataFrame(
+            {"mean(asmd)": [0.1, 0.2]}, index=pd.Index(["self", "unadjusted"])
+        ),
+        covars_kld=pd.DataFrame(
+            {"mean(kld)": [0.2, 0.4]}, index=pd.Index(["self", "unadjusted"])
+        ),
+        asmd_improvement_pct=50.0,
+        quick_adjustment_details=[],
+        design_effect=None,
+        effective_sample_size=None,
+        effective_sample_proportion=None,
+        model_dict=None,
+        outcome_means=outcome,
+    )
+    assert "design effect (Deff): unavailable" in txt
+    assert "Outcome weighted means:" in txt
+
+
+def test_build_diagnostics_outcome_impact_and_ipw_optional_and_cbps_blocks() -> None:
+    covars_df = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
+    target_covars_df = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
+    weights_summary = pd.DataFrame({"var": ["design_effect"], "val": [1.1]})
+    covars_asmd = pd.DataFrame(
+        {"self": [0.1], "unadjusted": [0.2], "unadjusted - self": [0.1]},
+        index=pd.Index(["a"]),
+    )
+    covars_asmd_main = covars_asmd.copy()
+    outcome_cols = pd.DataFrame({"y": [1, 2]})
+    outcome_impact = pd.DataFrame(
+        {"diff": [0.1]}, index=pd.Index(["y"], name="outcome")
+    )
+
+    class Fit:
+        penalty = "l2"
+        solver = "lbfgs"
+        multi_class = 1
+        l1_ratio = None
+        tol = 1e-4
+        intercept_ = np.array([1.0])
+        n_iter_ = np.array([5])
+
+        def get_params(self, deep=False):
+            return {
+                "penalty": "l2",
+                "solver": "lbfgs",
+                "tol": 1e-4,
+                "l1_ratio": None,
+                "multi_class": 1,
+            }
+
+    ipw_model = {
+        "method": "ipw",
+        "fit": Fit(),
+        "lambda": 0.5,
+        "perf": {"auc": 0.8, "coefs": pd.Series([1.0], index=["a"])},
+    }
+    di = _build_diagnostics(
+        covars_df=covars_df,
+        target_covars_df=target_covars_df,
+        weights_summary=weights_summary,
+        model_dict=ipw_model,
+        covars_asmd=covars_asmd,
+        covars_asmd_main=covars_asmd_main,
+        outcome_columns=outcome_cols,
+        outcome_impact=outcome_impact,
+    )
+    assert any(di["metric"].astype(str).str.contains("weights_impact_on_outcome_"))
+
+    cbps_model = {
+        "method": "cbps",
+        "beta_optimal": [0.1],
+        "X_matrix_columns": ["a"],
+        "rescale_initial_result": {"success": True, "message": "ok"},
+        "balance_optimize_result": {"success": True, "message": "ok"},
+        "gmm_optimize_result_glm_init": {"success": True, "message": "ok"},
+        "gmm_optimize_result_bal_init": {"success": True, "message": "ok"},
+    }
+    di2 = _build_diagnostics(
+        covars_df=covars_df,
+        target_covars_df=target_covars_df,
+        weights_summary=weights_summary,
+        model_dict=cbps_model,
+        covars_asmd=covars_asmd,
+        covars_asmd_main=covars_asmd_main,
+    )
+    assert "beta_optimal" in set(di2["metric"].astype(str))
+
+
+def test_build_diagnostics_ipw_skips_missing_array_attrs() -> None:
+    covars_df = pd.DataFrame({"a": [1, 2]})
+    target_covars_df = pd.DataFrame({"a": [1, 2]})
+    weights_summary = pd.DataFrame({"var": ["design_effect"], "val": [1.0]})
+    covars_asmd = pd.DataFrame(
+        {"self": [0.1], "unadjusted": [0.2], "unadjusted - self": [0.1]},
+        index=pd.Index(["a"]),
+    )
+
+    class Fit:
+        penalty = "l2"
+        solver = "lbfgs"
+        tol = 1e-4
+        l1_ratio = None
+        multi_class = "auto"
+
+        def get_params(self, deep=False):
+            return {
+                "penalty": "l2",
+                "solver": "lbfgs",
+                "tol": 1e-4,
+                "l1_ratio": None,
+                "multi_class": "auto",
+            }
+
+    model = {
+        "method": "ipw",
+        "fit": Fit(),
+        "lambda": 0.1,
+        "perf": {"auc": 0.7, "coefs": pd.Series([0.1], index=["a"])},
+    }
+    out = _build_diagnostics(
+        covars_df=covars_df,
+        target_covars_df=target_covars_df,
+        weights_summary=weights_summary,
+        model_dict=model,
+        covars_asmd=covars_asmd,
+        covars_asmd_main=covars_asmd,
+    )
+    assert not out.empty

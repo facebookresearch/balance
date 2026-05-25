@@ -76,6 +76,9 @@
   fitted model for backwards compatibility. Baseline resets such as
   `set_as_pre_adjust()` clear the history together with the current model.
 
+- **Expanded targeted test coverage for critical validation modules.**
+  Added focused, non-redundant tests covering predict-time metadata validation, replay/transfer edge cases, and error/warning paths in `weighted_comparisons_stats`, `poststratify`, and `rake`.
+
 ## Documentation
 
 - **README cross-link to diff-diff.** New "Design-based inference" parent section in [README.md](https://github.com/facebookresearch/balance/blob/main/README.md) introduces the diff-diff integration above the API tour, with a fenced code snippet (canonical `Sample.from_frame` → `set_target` → `adjust` → `fit_did` workflow) and links to the upstream project. The Docusaurus tutorials index and the website landing page (`HomepageFeatures.js`) gain matching cross-references; `.github/copilot-instructions.md` gets a new review-checklist bullet for changes that touch `balance/interop/diff_diff.py`.
@@ -116,6 +119,13 @@
   Fractional, zero, negative, and non-numeric values now fail fast during
   argument parsing instead of being accepted after coercion/truncation or
   failing later during IPW adjustment.
+
+- **Validation-path cleanup in `asmd`, `poststratify`, and `rake` (no behavior loss).**
+  Removed redundant/unreachable branches that were previously impossible to hit in valid call paths:
+  - `asmd(...)` now uses a single authoritative invalid-`std_type` error path (`Unknown std_type ...`).
+  - `poststratify(..., store_fit_metadata=True)` no longer carries an unreachable "missing stored training weights" runtime guard, and predict-time ratio-column collision handling uses deterministic suffix-based naming (`_cell_ratio`, `_cell_ratio_tmp`, `_cell_ratio_tmp2`, ...) to avoid collisions.
+  - `rake._predict_weights_from_model(...)` now uses the already-validated fit-time target weights directly for non-transfer replay instead of fallback branches that could not be reached.
+  These changes are covered by focused tests and keep user-facing behavior intact aside from clearer, more consistent error messages.
 
 ## Code Quality & Refactoring
 

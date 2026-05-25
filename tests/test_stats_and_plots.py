@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+import importlib
+import unittest
 import warnings
 from typing import Any, cast
 
@@ -16,6 +18,18 @@ import pandas as pd
 from balance.sample_class import Sample
 from balance.stats_and_plots import weighted_comparisons_stats
 from balance.util import _assert_type
+
+
+def _can_import(module_name: str) -> bool:
+    try:
+        importlib.import_module(module_name)
+        return True
+    except ImportError:
+        return False
+
+
+HAS_SEABORN = _can_import("seaborn")
+HAS_PLOTLY = _can_import("plotly")
 
 
 class TestBalance_weights_stats(
@@ -2569,7 +2583,7 @@ class TestBalance_weighted_comparisons_stats(
             [False, True, True, False],
         )
 
-        with self.assertRaisesRegex(ValueError, "std_type must be in*"):
+        with self.assertRaisesRegex(ValueError, "Unknown std_type"):
             asmd(
                 pd.DataFrame({"a": (1, 2), "b": (-1, 12)}),
                 pd.DataFrame({"a": (3, 4), "c": (5, 6)}),
@@ -4212,6 +4226,107 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
         """Test asmd raises ValueError for unknown std_type (line 613)."""
         sample_df = pd.DataFrame({"a": [1.0, 2.0, 3.0]})
         target_df = pd.DataFrame({"a": [4.0, 5.0, 6.0]})
-        with self.assertRaisesRegex(ValueError, "std_type must be in"):
+        with self.assertRaisesRegex(ValueError, "Unknown std_type"):
             # pyrefly: ignore [bad-argument-type]
             weighted_comparisons_stats.asmd(sample_df, target_df, std_type="invalid")
+
+    @unittest.skipUnless(HAS_SEABORN, "requires seaborn")
+    def test_love_plot_rejects_non_bool_line_and_show_and_warns_layout_kwargs_for_seaborn(
+        self,
+    ) -> None:
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"age": 0.42, "income": 0.31})
+        after = pd.Series({"age": 0.05, "income": 0.08})
+        with self.assertRaisesRegex(TypeError, "line must be a bool"):
+            love_plot(before, after, line=1)  # type: ignore[arg-type]
+        with self.assertRaisesRegex(TypeError, "show must be a bool"):
+            love_plot(before, after, show=1)  # type: ignore[arg-type]
+        with self.assertLogs("balance", level="WARNING") as cm:
+            love_plot(before, after, library="seaborn", title="ignored")
+        self.assertIn("Ignoring plotly layout kwargs", " ".join(cm.output))
+
+    def test_love_plot_no_covariates_after_nan_drop_and_ascii_output(self) -> None:
+        from balance.stats_and_plots.love_plot import love_plot
+
+        with self.assertRaisesRegex(ValueError, "no covariates to plot"):
+            love_plot(pd.Series({"a": np.nan}), after=None)
+
+        txt = love_plot(
+            pd.Series({"a": 0.1}),
+            pd.Series({"a": 0.5}),
+            library="balance",
+            line=True,
+            threshold=0.2,
+        )
+        self.assertIn("Legend", txt)
+        self.assertIn("Threshold", txt)
+        self.assertIn(">", txt)
+
+    @unittest.skipUnless(HAS_SEABORN, "requires seaborn")
+    def test_love_plot_before_type_error_and_alignment_errors_and_order_none(
+        self,
+    ) -> None:
+        from balance.stats_and_plots.love_plot import love_plot
+
+        with self.assertRaisesRegex(TypeError, "before must be a pandas Series"):
+            love_plot([0.1, 0.2], after=None)  # type: ignore[arg-type]
+
+        before = pd.Series({"a": 0.1})
+        after = pd.Series({"b": 0.2})
+        with self.assertRaisesRegex(ValueError, "share no covariates"):
+            love_plot(before, after)
+
+        with self.assertRaisesRegex(
+            ValueError, "no covariates to plot after dropping NaN"
+        ):
+            love_plot(pd.Series({"a": np.nan}), pd.Series({"a": np.nan}))
+
+        ax = love_plot(
+            pd.Series({"b": 0.2, "a": 0.1}), library="seaborn", order_by="none"
+        )
+        labels = [t.get_text() for t in ax.get_yticklabels()]
+        self.assertIn("a", labels)
+        self.assertIn("b", labels)
+
+    @unittest.skipUnless(HAS_PLOTLY, "requires plotly")
+    def test_love_plot_plotly_single_value_series(self) -> None:
+        from balance.stats_and_plots.love_plot import love_plot
+
+        fig = love_plot(pd.Series({"a": 0.2}), after=None, library="plotly")
+        self.assertEqual(len(fig.data), 1)
+        self.assertEqual(fig.data[0].name, "ASMD")
+
+    def test_love_plot_threshold_type_validation(self) -> None:
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"a": 0.1})
+        with self.assertRaisesRegex(TypeError, "threshold must be"):
+            love_plot(before, after=None, threshold="0.1")  # type: ignore[arg-type]
+
+    def test_asmd_improvement_zero_baseline_returns_zero(self) -> None:
+        from balance.stats_and_plots import weighted_comparisons_stats as wcs
+
+        sample = pd.DataFrame({"x": [0.0, 1.0]})
+        target = pd.DataFrame({"x": [0.0, 1.0]})
+        out = wcs.asmd_improvement(sample, sample, target)
+        self.assertEqual(float(out), 0.0)
+
+    @unittest.skipUnless(HAS_SEABORN, "requires seaborn")
+    def test_love_plot_alignment_warning_with_partial_overlap(self) -> None:
+        from balance.stats_and_plots.love_plot import love_plot
+
+        before = pd.Series({"a": 0.1, "b": 0.2})
+        after = pd.Series({"b": 0.05, "c": 0.3})
+        with self.assertLogs("balance", level="WARNING") as cm:
+            love_plot(before, after, library="seaborn")
+        self.assertIn("aligning to 1 common covariates", " ".join(cm.output))
+
+    def test_asmd_invalid_std_type_on_aligned_columns_reaches_else(self) -> None:
+        from balance.stats_and_plots import weighted_comparisons_stats as wcs
+
+        sample_df = pd.DataFrame({"a": [1.0, 2.0, 3.0]})
+        target_df = pd.DataFrame({"a": [1.0, 2.0, 3.0]})
+        with self.assertRaisesRegex(ValueError, "Unknown std_type"):
+            # pyre-ignore[6]: Intentionally passing invalid std_type to test the error path.
+            wcs.asmd(sample_df, target_df, std_type="not-a-real-mode")

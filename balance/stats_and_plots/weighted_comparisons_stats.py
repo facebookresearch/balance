@@ -186,7 +186,7 @@ def _weights_per_covars_names(covar_names: List[str]) -> pd.DataFrame:
     counts = collections.Counter(columns_to_original_variable.values())
     weights = pd.DataFrame(
         {k: 1 / counts[v] for k, v in columns_to_original_variable.items()},
-        index=["weight"],
+        index=pd.Index(["weight"]),
     )
     _check_weights_are_valid(weights)  # verify nothing odd has occurred.
     main_covar_names = pd.DataFrame.from_dict(
@@ -588,9 +588,10 @@ def asmd(
         raise ValueError(f"sample_df must be pd.DataFrame, is {type(sample_df)}")
     if not isinstance(target_df, pd.DataFrame):
         raise ValueError(f"target_df must be pd.DataFrame, is {type(target_df)}")
-    possible_std_type = ("sample", "target", "pooled")
-    if not (std_type in possible_std_type):
-        raise ValueError(f"std_type must be in {possible_std_type}, is {std_type}")
+    if std_type not in ("sample", "target", "pooled"):
+        raise ValueError(
+            f"Unknown std_type: {std_type!r}. Use 'sample', 'target', or 'pooled'."
+        )
     if sample_df.columns.values.tolist() != target_df.columns.values.tolist():
         logger.warning(
             "sample_df and target_df must have the same column names.\n"
@@ -609,10 +610,6 @@ def asmd(
         target_std = descriptive_stats(target_df, target_weights, "std")
         sample_std = descriptive_stats(sample_df, sample_weights, "std")
         std = np.sqrt(((sample_std**2) + (target_std**2)) / 2)
-    else:
-        raise ValueError(
-            f"Unknown std_type: {std_type!r}. Use 'sample', 'target', or 'pooled'."
-        )
 
     out = abs(sample_mean - target_mean) / std
 

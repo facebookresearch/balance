@@ -289,8 +289,6 @@ def poststratify(
 
     model: Dict[str, Any] = {"method": "poststratify"}
     if store_fit_metadata:
-        if original_sample_weights is None or original_target_weights is None:
-            raise RuntimeError("Unexpected missing stored training weights.")
         # Persisting non-pickleable callables (e.g., lambdas/closures) breaks
         # serialization workflows for fitted objects. Require picklable
         # transformations when fit metadata storage is enabled.
@@ -540,8 +538,10 @@ def _predict_weights_from_model(
     sample_df = sample_df.loc[:, variables]
 
     ratio_name = "_cell_ratio"
+    suffix = 0
     while ratio_name in sample_df.columns:
-        ratio_name = f"{ratio_name}_tmp"
+        suffix += 1
+        ratio_name = "_cell_ratio_tmp" if suffix == 1 else f"_cell_ratio_tmp{suffix}"
     sample_with_ratio = sample_df.join(ratio_series.rename(ratio_name), on=variables)
     missing_ratio = sample_with_ratio[ratio_name].isna()
     if bool(missing_ratio.any()):
@@ -567,7 +567,7 @@ def _predict_weights_from_model(
             "Poststratify predict_weights() cannot normalize to a non-finite "
             "target weight total."
         )
-    if np.isclose(raw_total, 0.0) and not np.isclose(target_total, 0.0):
+    if np.isclose(raw_total, 0.0):
         raise ValueError(
             "Poststratify predict_weights() produced zero total raw weights, "
             "so it cannot normalize to the requested target total. This usually "
