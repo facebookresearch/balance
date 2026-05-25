@@ -328,8 +328,6 @@
 
     <span class="n">model</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;poststratify&quot;</span><span class="p">}</span>
     <span class="k">if</span> <span class="n">store_fit_metadata</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">original_sample_weights</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">original_target_weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Unexpected missing stored training weights.&quot;</span><span class="p">)</span>
         <span class="c1"># Persisting non-pickleable callables (e.g., lambdas/closures) breaks</span>
         <span class="c1"># serialization workflows for fitted objects. Require picklable</span>
         <span class="c1"># transformations when fit metadata storage is enabled.</span>
@@ -580,8 +578,10 @@
     <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
 
     <span class="n">ratio_name</span> <span class="o">=</span> <span class="s2">&quot;_cell_ratio&quot;</span>
+    <span class="n">suffix</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">while</span> <span class="n">ratio_name</span> <span class="ow">in</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-        <span class="n">ratio_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ratio_name</span><span class="si">}</span><span class="s2">_tmp&quot;</span>
+        <span class="n">suffix</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">ratio_name</span> <span class="o">=</span> <span class="s2">&quot;_cell_ratio_tmp&quot;</span> <span class="k">if</span> <span class="n">suffix</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;_cell_ratio_tmp</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="n">sample_with_ratio</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ratio_series</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">ratio_name</span><span class="p">),</span> <span class="n">on</span><span class="o">=</span><span class="n">variables</span><span class="p">)</span>
     <span class="n">missing_ratio</span> <span class="o">=</span> <span class="n">sample_with_ratio</span><span class="p">[</span><span class="n">ratio_name</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span>
     <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">missing_ratio</span><span class="o">.</span><span class="n">any</span><span class="p">()):</span>
@@ -607,7 +607,7 @@
             <span class="s2">&quot;Poststratify predict_weights() cannot normalize to a non-finite &quot;</span>
             <span class="s2">&quot;target weight total.&quot;</span>
         <span class="p">)</span>
-    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">raw_total</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">target_total</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">raw_total</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="s2">&quot;Poststratify predict_weights() produced zero total raw weights, &quot;</span>
             <span class="s2">&quot;so it cannot normalize to the requested target total. This usually &quot;</span>
