@@ -339,9 +339,10 @@ class ToPanelForDidTest(unittest.TestCase):
         # ``AssertionError``, ``AttributeError``, ``TypeError``, ``KeyError``
         # all fail the test.
         try:
-            panel_df, second_stage = bd.to_panel_for_did(
-                s, by=["unit", "t"], outcomes="y"
-            )
+            with _ignore_weight_normalization_warning():
+                panel_df, second_stage = bd.to_panel_for_did(
+                    s, by=["unit", "t"], outcomes="y"
+                )
         except ImportError as e:
             self.skipTest(f"aggregate_survey unavailable in this build: {e}")
         self.assertIsInstance(panel_df, pd.DataFrame)
@@ -854,7 +855,7 @@ class DiffDiffBranchCoverageTest(unittest.TestCase):
         s = _make_sample()
         s._df["strata"] = 1
         out = _resolve_design_columns(s, None)
-        self.assertEqual(out.get("stratum"), "strata")
+        self.assertEqual(out.get("strata"), "stratum")
 
     @unittest.skipUnless(_DIFF_DIFF_AVAILABLE, "requires diff_diff")
     def test_fit_did_overlap_and_missing_survey_design_warnings(self) -> None:
