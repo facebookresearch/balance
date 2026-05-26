@@ -6334,3 +6334,51 @@ class TestBalanceFrameAdjustmentHistoryAndCbpsValidation(BalanceTestCase):
                     "X_matrix_columns": [],
                 }
             )
+
+
+class TestBalanceFramePredictWeightsAndDesignEffectEdges(BalanceTestCase):
+    def setUp(self) -> None:
+        self.sample = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]})
+        )
+        self.target = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["3", "4"], "x": [1.5, 2.5], "weight": [1.0, 1.0]})
+        )
+        self.bf = BalanceFrame(sample=self.sample, target=self.target)
+
+    def test_predict_weights_requires_target(self) -> None:
+        adj = self.bf.adjust(method="null")
+        adj._sf_target = None
+        with self.assertRaisesRegex(ValueError, "target set"):
+            adj._predict_weights_ipw({"fit": object()}, source=adj)
+
+    def test_cbps_predict_validation_branches(self) -> None:
+        m = {
+            "variables": [],
+            "na_action": "add_indicator",
+            "model_matrix_mean": np.array([0.0]),
+            "model_matrix_std": np.array([1.0]),
+            "formula": "~x",
+            "transformations": {},
+            "beta_optimal_model_space": np.array([1.0]),
+            "svd_s": np.array([1.0]),
+            "svd_Vh": np.array([[1.0]]),
+            "X_matrix_columns": [],
+        }
+        # variables not list
+        m2 = dict(m)
+        m2["variables"] = "bad"
+        with self.assertRaisesRegex(ValueError, "missing fit-time variables"):
+            BalanceFrame._validate_cbps_metadata(m2)
+        m3 = dict(m)
+        m3["na_action"] = "drop"
+        with self.assertRaisesRegex(ValueError, "na_action='drop'"):
+            BalanceFrame._validate_cbps_metadata(m3)
+
+    def test_design_effect_zero_branch(self) -> None:
+        deff, ess, essp = self.bf._design_effect_summary(
+            pd.Series([1.0, 1.0]), n_rows=0
+        )
+        self.assertIsNotNone(deff)
+        self.assertIsNone(ess)
+        self.assertIsNone(essp)

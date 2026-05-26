@@ -759,6 +759,18 @@ class CommonAndSampleCoverageTest(unittest.TestCase):
             or "required positional" in str(cm.exception)
         )
 
+    def test_sample_new_allows_internal_caller_path(self) -> None:
+        from unittest.mock import patch
+
+        from balance.sample_class import Sample
+
+        class _Frame:
+            function = "from_frame"
+
+        with patch("balance.sample_class.inspect.stack", return_value=[None, _Frame()]):
+            obj = Sample.__new__(Sample)
+        self.assertIsInstance(obj, Sample)
+
     def test_drop_na_weights_missing_col_and_warn_drop(self) -> None:
         from balance.interop._common import drop_nan_weight_rows
 
@@ -834,3 +846,69 @@ class DiffDiffBranchCoverageTest(unittest.TestCase):
             }
         )
         self.assertEqual(_max_per_covariate_asmd_post(df), 0.2)
+
+    @unittest.skipUnless(_DIFF_DIFF_AVAILABLE, "requires diff_diff")
+    def test_resolve_design_columns_autopopulates_and_logs(self) -> None:
+        from balance.interop.diff_diff import _resolve_design_columns
+
+        s = _make_sample()
+        s._df["strata"] = 1
+        out = _resolve_design_columns(s, None)
+        self.assertEqual(out.get("stratum"), "strata")
+
+    @unittest.skipUnless(_DIFF_DIFF_AVAILABLE, "requires diff_diff")
+    def test_fit_did_overlap_and_missing_survey_design_warnings(self) -> None:
+        import diff_diff as dd
+        from balance.interop import diff_diff as bd
+
+        s = _make_sample()
+
+        class Est:
+            def __init__(self, alpha: float = 0.0) -> None:
+                self.alpha = alpha
+
+            def fit(self, data: pd.DataFrame, alpha: float = 0.0) -> object:
+                return object()
+
+        old = getattr(dd, "TestOverlapEstimator", None)
+        setattr(dd, "TestOverlapEstimator", Est)
+        try:
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                bd.fit_did(
+                    s,
+                    estimator="TestOverlapEstimator",
+                    outcome="y",
+                    time="t",
+                    unit="unit",
+                    treatment_first="first_treat",
+                    covariates=["x1"],
+                    alpha=0.1,
+                )
+            msgs = " ".join(str(x.message) for x in w)
+            self.assertIn("appear in BOTH", msgs)
+            self.assertIn("does not accept `survey_design`", msgs)
+        finally:
+            if old is None:
+                delattr(dd, "TestOverlapEstimator")
+            else:
+                setattr(dd, "TestOverlapEstimator", old)
+
+
+class CommonCoverageExtra(unittest.TestCase):
+    def test_attach_balance_provenance_readonly_dict_warns(self) -> None:
+        from balance.interop._common import attach_balance_provenance
+
+        s = _make_sample()
+
+        class ReadOnly:
+            @property
+            def __dict__(self):
+                class D(dict):
+                    def __setitem__(self, k, v):
+                        raise TypeError("ro")
+
+                return D()
+
+        with self.assertWarns(UserWarning):
+            attach_balance_provenance(ReadOnly(), s)
