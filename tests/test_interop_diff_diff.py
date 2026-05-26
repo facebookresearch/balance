@@ -120,7 +120,6 @@ def _ignore_weight_normalization_warning() -> Iterator[None]:
             "ignore",
             message=r".*weights normalized to mean=1.*",
             category=UserWarning,
-            module=r"^diff_diff\.prep$",
         )
         yield
 
@@ -916,6 +915,7 @@ class CommonCoverageExtra(unittest.TestCase):
 
         with self.assertWarns(UserWarning):
             attach_balance_provenance(ReadOnly(), s)
+
 
 class DiffDiffHelperLineCoverageTest(unittest.TestCase):
     def test_resolve_design_columns_autopopulates_strata_default(self) -> None:
