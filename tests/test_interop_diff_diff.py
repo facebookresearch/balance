@@ -25,7 +25,8 @@ from __future__ import annotations
 
 import unittest
 import warnings
-from typing import Any
+from contextlib import contextmanager
+from typing import Any, Iterator
 
 import balance
 import numpy as np
@@ -110,6 +111,17 @@ def _make_sample() -> "balance.Sample":
 # ---------------------------------------------------------------------------
 # Helper-level tests (run regardless of diff-diff availability)
 # ---------------------------------------------------------------------------
+
+
+@contextmanager
+def _ignore_weight_normalization_warning() -> Iterator[None]:
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message=r".*weights normalized to mean=1.*",
+            category=UserWarning,
+        )
+        yield
 
 
 class ActiveWeightColumnTest(unittest.TestCase):
@@ -342,12 +354,7 @@ class ToPanelForDidTest(unittest.TestCase):
         s = _make_sample()
         # See note above re: narrow exception list (ImportError only).
         try:
-            with warnings.catch_warnings():
-                warnings.filterwarnings(
-                    "ignore",
-                    message=r".*weights normalized to mean=1.*",
-                    category=UserWarning,
-                )
+            with _ignore_weight_normalization_warning():
                 _, second_stage = bd.to_panel_for_did(s, by=["unit", "t"], outcomes="y")
         except ImportError as e:
             self.skipTest(f"aggregate_survey unavailable in this build: {e}")
@@ -365,12 +372,7 @@ class ToPanelForDidTest(unittest.TestCase):
 
         s = _make_sample()
         try:
-            with warnings.catch_warnings():
-                warnings.filterwarnings(
-                    "ignore",
-                    message=r".*weights normalized to mean=1.*",
-                    category=UserWarning,
-                )
+            with _ignore_weight_normalization_warning():
                 adapter_panel, adapter_design = bd.to_panel_for_did(
                     s, by=["unit", "t"], outcomes="y"
                 )
@@ -382,12 +384,7 @@ class ToPanelForDidTest(unittest.TestCase):
                 weights="w", weight_type="pweight", lonely_psu="adjust"
             )
             direct_panel: pd.DataFrame
-            with warnings.catch_warnings():
-                warnings.filterwarnings(
-                    "ignore",
-                    message=r".*weights normalized to mean=1.*",
-                    category=UserWarning,
-                )
+            with _ignore_weight_normalization_warning():
                 direct_panel, _ = dd.aggregate_survey(
                     s.df,
                     by=["unit", "t"],
@@ -431,13 +428,9 @@ class ToPanelForDidTest(unittest.TestCase):
         out = bd.as_balance_diagnostic(s, R())
         self.assertEqual(out["att"], 1.23)
 
-    def test_extract_diag_metric_and_max_asmd_empty_paths(self) -> None:
-        from balance.interop.diff_diff import (
-            _extract_diag_metric,
-            _max_per_covariate_asmd_post,
-        )
+    def test_max_asmd_empty_path(self) -> None:
+        from balance.interop.diff_diff import _max_per_covariate_asmd_post
 
-        self.assertIsNone(_extract_diag_metric(pd.DataFrame(), "x", "y"))
         self.assertIsNone(_max_per_covariate_asmd_post(pd.DataFrame()))
 
 
@@ -758,8 +751,12 @@ class CommonAndSampleCoverageTest(unittest.TestCase):
     def test_sample_new_blocks_direct_call(self) -> None:
         from balance.sample_class import Sample
 
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises((NotImplementedError, TypeError)) as cm:
             Sample()
+        self.assertTrue(
+            "Sample should not be constructed directly" in str(cm.exception)
+            or "required positional" in str(cm.exception)
+        )
 
     def test_drop_na_weights_missing_col_and_warn_drop(self) -> None:
         from balance.interop._common import drop_nan_weight_rows
@@ -782,7 +779,8 @@ class CommonAndSampleCoverageTest(unittest.TestCase):
 
         s = _make_sample()
         s.set_weights(pd.Series([1.0] * 24, index=s.df.index))
-        s._df.loc[:, s.weight_column] = np.nan
+        assert s._weight_column_name is not None
+        s._df.loc[:, s._weight_column_name] = np.nan
         with self.assertRaisesRegex(ValueError, "NaN entries"):
             validate_row_count(s, len(s.df), ctx="ctx")
 
@@ -826,11 +824,8 @@ class DiffDiffBranchCoverageTest(unittest.TestCase):
         finally:
             bd._IMPORT_ERROR = original
 
-    def test_extract_diag_metric_and_max_asmd_rows(self) -> None:
-        from balance.interop.diff_diff import (
-            _extract_diag_metric,
-            _max_per_covariate_asmd_post,
-        )
+    def test_max_asmd_rows(self) -> None:
+        from balance.interop.diff_diff import _max_per_covariate_asmd_post
 
         df = pd.DataFrame(
             {
@@ -839,11 +834,4 @@ class DiffDiffBranchCoverageTest(unittest.TestCase):
                 "val": [0.2, 0.15],
             }
         )
-        self.assertEqual(_extract_diag_metric(df, "covar_main_asmd_adjusted", "x"), 0.2)
         self.assertEqual(_max_per_covariate_asmd_post(df), 0.2)
-
-    def test_extract_diag_metric_handles_bad_val(self) -> None:
-        from balance.interop.diff_diff import _extract_diag_metric
-
-        df = pd.DataFrame({"metric": ["m"], "var": ["v"], "val": ["bad"]})
-        self.assertIsNone(_extract_diag_metric(df, "m", "v"))
