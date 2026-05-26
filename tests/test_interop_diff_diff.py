@@ -937,7 +937,9 @@ class DiffDiffHelperLineCoverageTest(unittest.TestCase):
         from balance.interop import diff_diff as bd
 
         s = _make_sample()
-        with self.assertRaisesRegex(TypeError, r"cannot be passed via `\*\*estimator_kwargs`"):
+        with self.assertRaisesRegex(
+            TypeError, r"cannot be passed via `\*\*estimator_kwargs`"
+        ):
             bd.fit_did(
                 s,
                 estimator="CallawaySantAnna",
