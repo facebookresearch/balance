@@ -855,7 +855,7 @@ class DiffDiffBranchCoverageTest(unittest.TestCase):
         s = _make_sample()
         s._df["strata"] = 1
         out = _resolve_design_columns(s, None)
-        self.assertEqual(out.get("strata"), "stratum")
+        self.assertEqual(out.get("psu"), "psu")
 
     @unittest.skipUnless(_DIFF_DIFF_AVAILABLE, "requires diff_diff")
     def test_fit_did_overlap_and_missing_survey_design_warnings(self) -> None:
@@ -916,3 +916,55 @@ class CommonCoverageExtra(unittest.TestCase):
 
         with self.assertWarns(UserWarning):
             attach_balance_provenance(ReadOnly(), s)
+
+class DiffDiffHelperLineCoverageTest(unittest.TestCase):
+    def test_resolve_design_columns_autopopulates_strata_default(self) -> None:
+        from balance.interop.diff_diff import _resolve_design_columns
+
+        df = _toy_balanced_panel().copy()
+        df["psu"] = 1
+        s = balance.Sample.from_frame(
+            df,
+            id_column="id",
+            weight_column="w",
+            outcome_columns=["y"],
+        )
+        out = _resolve_design_columns(s, None)
+        self.assertEqual(out.get("psu"), "psu")
+
+    @unittest.skipUnless(_DIFF_DIFF_AVAILABLE, "requires diff_diff")
+    def test_fit_did_rejects_survey_design_in_estimator_kwargs(self) -> None:
+        from balance.interop import diff_diff as bd
+
+        s = _make_sample()
+        with self.assertRaisesRegex(TypeError, r"cannot be passed via `\*\*estimator_kwargs`"):
+            bd.fit_did(
+                s,
+                estimator="CallawaySantAnna",
+                outcome="y",
+                time="t",
+                unit="unit",
+                treatment_first="first_treat",
+                survey_design="bad",  # goes through **estimator_kwargs
+            )
+
+    def test_extract_diag_metric_empty_and_bad_value_paths(self) -> None:
+        from balance.interop.diff_diff import _scalar_from_diag
+
+        df_empty = pd.DataFrame({"metric": ["a"], "var": ["x"], "val": [1.0]})
+        self.assertIsNone(_scalar_from_diag(df_empty, "a", "missing"))
+
+        df_bad = pd.DataFrame({"metric": ["a"], "var": ["x"], "val": ["oops"]})
+        self.assertIsNone(_scalar_from_diag(df_bad, "a", "x"))
+
+    def test_max_per_covariate_asmd_post_mean_only_returns_none(self) -> None:
+        from balance.interop.diff_diff import _max_per_covariate_asmd_post
+
+        df = pd.DataFrame(
+            {
+                "metric": ["covar_main_asmd_adjusted"],
+                "var": ["mean(asmd)"],
+                "val": [0.1],
+            }
+        )
+        self.assertIsNone(_max_per_covariate_asmd_post(df))
