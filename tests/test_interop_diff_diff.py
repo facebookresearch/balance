@@ -118,8 +118,9 @@ def _ignore_weight_normalization_warning() -> Iterator[None]:
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore",
-            message=r".*weights normalized to mean=1.*",
+            message=r"^pweight weights normalized to mean=1 \(sum=.*\)\. Original sum was .*\.$",
             category=UserWarning,
+            module=r"^diff_diff\.prep$",
         )
         yield
 
@@ -778,7 +779,7 @@ class CommonAndSampleCoverageTest(unittest.TestCase):
         from balance.interop._common import validate_row_count
 
         s = _make_sample()
-        s.set_weights(pd.Series([1.0] * 24, index=s.df.index))
+        s.set_weights(pd.Series([1.0] * len(s.df), index=s.df.index))
         assert s._weight_column_name is not None
         s._df.loc[:, s._weight_column_name] = np.nan
         with self.assertRaisesRegex(ValueError, "NaN entries"):

@@ -4304,11 +4304,18 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
         with self.assertRaisesRegex(TypeError, "threshold must be"):
             love_plot(before, after=None, threshold="0.1")  # type: ignore[arg-type]
 
-    def test_love_plot_ascii_helpers_axis_nonpositive(self) -> None:
-        from balance.stats_and_plots.love_plot import _ascii_position, _ascii_scale_max
+    def test_love_plot_ascii_axis_nonpositive_via_public_api(self) -> None:
+        from balance.stats_and_plots.love_plot import love_plot
 
-        self.assertEqual(_ascii_scale_max(0.0, None), 1.0)
-        self.assertEqual(_ascii_position(0.2, 0.0, width=40), 0)
+        txt = love_plot(
+            pd.Series({"a": 0.0}),
+            after=None,
+            library="balance",
+            threshold=None,
+            bar_width=20,
+        )
+        self.assertIn("|          0 |", txt)
+        self.assertIn("Legend", txt)
 
     def test_asmd_improvement_zero_baseline_returns_zero(self) -> None:
         from balance.stats_and_plots import weighted_comparisons_stats as wcs
