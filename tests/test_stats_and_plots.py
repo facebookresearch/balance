@@ -4304,6 +4304,12 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
         with self.assertRaisesRegex(TypeError, "threshold must be"):
             love_plot(before, after=None, threshold="0.1")  # type: ignore[arg-type]
 
+    def test_love_plot_ascii_helpers_axis_nonpositive(self) -> None:
+        from balance.stats_and_plots.love_plot import _ascii_position, _ascii_scale_max
+
+        self.assertEqual(_ascii_scale_max(0.0, None), 1.0)
+        self.assertEqual(_ascii_position(0.2, 0.0, width=40), 0)
+
     def test_asmd_improvement_zero_baseline_returns_zero(self) -> None:
         from balance.stats_and_plots import weighted_comparisons_stats as wcs
 

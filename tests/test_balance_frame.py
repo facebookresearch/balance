@@ -6279,3 +6279,58 @@ class TestBalanceFrameFilterSfPredicted(BalanceTestCase):
         filtered = BalanceFrame._filter_sf(sf, None, ["x"])
         # predicted column should be filtered (pred not in keep set)
         self.assertEqual(filtered._column_roles.get("predicted", []), [])
+
+
+class TestBalanceFrameAdjustmentHistoryAndCbpsValidation(BalanceTestCase):
+    def test_copy_adjustment_history_nonlist_and_nondict(self) -> None:
+        class A:
+            _adjustment_history = "bad"
+
+        self.assertEqual(BalanceFrame._copy_adjustment_history_from(A()), [])
+
+        class B:
+            _adjustment_history = ["bad", {"method": "x", "model": {"a": 1}}]
+
+        out = BalanceFrame._copy_adjustment_history_from(B())
+        self.assertEqual([e["method"] for e in out], ["x"])
+
+    def test_append_adjustment_history_missing_attr(self) -> None:
+        bf = BalanceFrame.__new__(BalanceFrame)
+        if hasattr(bf, "_adjustment_history"):
+            delattr(bf, "_adjustment_history")
+        bf._append_adjustment_history_entry("new", {"m": 1})
+        self.assertEqual(bf._adjustment_history[0]["method"], "new")
+
+    def test_validate_cbps_metadata_errors(self) -> None:
+        with self.assertRaisesRegex(ValueError, "malformed"):
+            BalanceFrame._validate_cbps_metadata(
+                {
+                    "variables": [],
+                    "na_action": "add_indicator",
+                    "model_matrix_mean": np.array([0.0]),
+                    "model_matrix_std": np.array([1.0]),
+                    "formula": "~x",
+                    "transformations": {},
+                    "beta_optimal_model_space": [1.0],
+                    "svd_s": np.array([1.0]),
+                    "svd_Vh": np.array([[1.0]]),
+                    "X_matrix_columns": [],
+                }
+            )
+
+    def test_validate_cbps_metadata_drop_na_action_error(self) -> None:
+        with self.assertRaisesRegex(ValueError, "na_action='drop'"):
+            BalanceFrame._validate_cbps_metadata(
+                {
+                    "variables": [],
+                    "na_action": "drop",
+                    "model_matrix_mean": np.array([0.0]),
+                    "model_matrix_std": np.array([1.0]),
+                    "formula": "~x",
+                    "transformations": {},
+                    "beta_optimal_model_space": np.array([1.0]),
+                    "svd_s": np.array([1.0]),
+                    "svd_Vh": np.array([[1.0]]),
+                    "X_matrix_columns": [],
+                }
+            )
