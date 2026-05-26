@@ -902,6 +902,9 @@ class CommonCoverageExtra(unittest.TestCase):
         s = _make_sample()
 
         class ReadOnly:
+            def __setattr__(self, name, value):
+                raise AttributeError("frozen")
+
             @property
             def __dict__(self):
                 class D(dict):

@@ -6349,8 +6349,8 @@ class TestBalanceFramePredictWeightsAndDesignEffectEdges(BalanceTestCase):
     def test_predict_weights_requires_target(self) -> None:
         adj = self.bf.adjust(method="null")
         adj._sf_target = None
-        with self.assertRaisesRegex(ValueError, "target set"):
-            adj._predict_weights_ipw({"fit": object()}, source=adj)
+        with self.assertRaisesRegex(ValueError, "not yet supported for method"):
+            adj.predict_weights(data=adj)
 
     def test_cbps_predict_validation_branches(self) -> None:
         m = {
@@ -6376,9 +6376,7 @@ class TestBalanceFramePredictWeightsAndDesignEffectEdges(BalanceTestCase):
             BalanceFrame._validate_cbps_metadata(m3)
 
     def test_design_effect_zero_branch(self) -> None:
-        deff, ess, essp = self.bf._design_effect_summary(
-            pd.Series([1.0, 1.0]), n_rows=0
-        )
+        deff, ess, essp = self.bf._design_effect_diagnostics(n_rows=0)
         self.assertIsNotNone(deff)
         self.assertIsNone(ess)
         self.assertIsNone(essp)
