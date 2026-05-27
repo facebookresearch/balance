@@ -6650,6 +6650,166 @@ class TestBalanceFramePredictAndCbpsEdgeCoverage(BalanceTestCase):
             with self.assertRaisesRegex(ValueError, "non-positive weight sum"):
                 self.bf._predict_weights_cbps(model)
 
+    def test_predict_weights_ipw_falls_back_to_current_index(self) -> None:
+        from unittest.mock import patch
+
+        class Fit:
+            classes_ = np.array([0, 1])
+
+            def predict_proba(self, X):
+                return np.array([[0.4, 0.6], [0.3, 0.7]])
+
+        model = {
+            "fit": Fit(),
+            "X_matrix_columns": ["x"],
+            "sample_index": ["wrong", "index"],
+            "weight_trimming_mean_ratio": None,
+            "weight_trimming_percentile": None,
+        }
+        with (
+            patch.object(self.bf, "_require_fitted_model", return_value=model),
+            patch.object(
+                self.bf, "_resolve_ipw_link", return_value=np.array([0.1, 0.2])
+            ),
+            patch.object(
+                self.bf,
+                "_resolve_design_weights",
+                return_value=(np.array([1.0, 1.0]), np.array([1.0, 1.0])),
+            ),
+            patch(
+                "balance.weighting_methods.ipw.weights_from_link",
+                return_value=pd.Series([2.0, 3.0]),
+            ),
+        ):
+            out = self.bf._predict_weights_ipw(model)
+        self.assertEqual(list(out.index), list(self.bf._sf_sample.df.index))
+
+    def test_build_cbps_scoring_matrix_validation_branches(self) -> None:
+        from unittest.mock import patch
+
+        model = {
+            "transformations": {},
+            "formula": "~x",
+            "model_matrix_mean": np.array([0.0]),
+            "model_matrix_std": np.array([1.0]),
+        }
+        with (
+            patch(
+                "balance.balance_frame.balance_adjustment.apply_transformations",
+                return_value=(
+                    self.bf._sf_sample.covars().df.copy(),
+                    self.target.covars().df.copy(),
+                ),
+            ),
+            patch(
+                "balance.balance_frame.build_design_matrix",
+                return_value={
+                    "combined_matrix": np.array([[np.nan], [1.0], [2.0]]),
+                    "sample_n": 2,
+                },
+            ),
+        ):
+            with self.assertRaisesRegex(ValueError, "non-finite standardized design"):
+                self.bf._build_cbps_scoring_matrix(
+                    self.bf,
+                    model,
+                    fit_columns=["x"],
+                    variables=["x"],
+                    na_action="add_indicator",
+                    svd_s=np.array([1.0]),
+                    svd_Vh=np.array([[1.0, 0.0]]),
+                    beta_opt_model_space=np.array([1.0]),
+                )
+
+        with (
+            patch(
+                "balance.balance_frame.balance_adjustment.apply_transformations",
+                return_value=(
+                    self.bf._sf_sample.covars().df.copy(),
+                    self.target.covars().df.copy(),
+                ),
+            ),
+            patch(
+                "balance.balance_frame.build_design_matrix",
+                return_value={
+                    "combined_matrix": np.array([[1.0], [1.0], [1.0]]),
+                    "sample_n": 2,
+                },
+            ),
+        ):
+            with self.assertRaisesRegex(ValueError, "incompatible SVD components"):
+                self.bf._build_cbps_scoring_matrix(
+                    self.bf,
+                    model,
+                    fit_columns=["x"],
+                    variables=["x"],
+                    na_action="add_indicator",
+                    svd_s=np.array([1.0]),
+                    svd_Vh=np.array([[1.0, 0.0, 0.0]]),
+                    beta_opt_model_space=np.array([1.0]),
+                )
+
+            with self.assertRaisesRegex(ValueError, "inconsistent SVD dimensions"):
+                self.bf._build_cbps_scoring_matrix(
+                    self.bf,
+                    model,
+                    fit_columns=["x"],
+                    variables=["x"],
+                    na_action="add_indicator",
+                    svd_s=np.array([1.0, 2.0]),
+                    svd_Vh=np.array([[1.0, 0.0], [0.0, 1.0], [0.0, 0.0]]),
+                    beta_opt_model_space=np.array([1.0]),
+                )
+
+            with self.assertRaisesRegex(
+                ValueError, "incompatible coefficient dimensions"
+            ):
+                self.bf._build_cbps_scoring_matrix(
+                    self.bf,
+                    model,
+                    fit_columns=["x"],
+                    variables=["x"],
+                    na_action="add_indicator",
+                    svd_s=np.array([1.0]),
+                    svd_Vh=np.array([[1.0, 0.0]]),
+                    beta_opt_model_space=np.array([1.0, 2.0]),
+                )
+
+    def test_compute_cbps_design_weights_non_balanced_path(self) -> None:
+        out = BalanceFrame._compute_cbps_design_weights(
+            sample_weights=np.array([1.0, 2.0]),
+            target_weights=np.array([3.0, 4.0]),
+            balance_classes=False,
+        )
+        self.assertEqual(out.shape[0], 4)
+        self.assertAlmostEqual(float(np.mean(out)), 1.0)
+
+    def test_keep_only_some_rows_columns_no_target_pre_adjust_and_links_error(
+        self,
+    ) -> None:
+        bf = BalanceFrame(sample=self.sample)
+        bf._sf_sample_pre_adjust = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+        )
+
+        class Broken(BalanceFrame):
+            def keep_only_some_rows_columns(
+                self, rows_to_keep=None, columns_to_keep=None
+            ):
+                raise TypeError("boom")
+
+        bf._links["broken"] = Broken(sample=self.sample)
+        with self.assertLogs("balance", level="WARNING") as logs:
+            out = bf.keep_only_some_rows_columns(
+                rows_to_keep="x > 0", columns_to_keep=["x"]
+            )
+        self.assertIsNotNone(out._sf_sample_pre_adjust)
+        self.assertTrue(
+            any("couldn't filter _links['broken']" in m for m in logs.output)
+        )
+
     def test_keep_only_some_rows_columns_pre_adjust_and_link_warning(self) -> None:
         adjusted = self.bf.adjust(method="null")
         linked = BalanceFrame(
