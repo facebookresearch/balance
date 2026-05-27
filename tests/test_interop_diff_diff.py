@@ -120,7 +120,7 @@ def _ignore_weight_normalization_warning() -> Iterator[None]:
             "ignore",
             message=r".*weights normalized to mean=1.*",
             category=UserWarning,
-            module=r"^diff_diff\.prep$",
+            module=r"^diff_diff\.prep(\.|$)",
         )
         yield
 
@@ -852,7 +852,7 @@ class DiffDiffBranchCoverageTest(unittest.TestCase):
         self.assertEqual(_max_per_covariate_asmd_post(df), 0.2)
 
     @unittest.skipUnless(_DIFF_DIFF_AVAILABLE, "requires diff_diff")
-    def test_resolve_design_columns_autopopulates_and_logs(self) -> None:
+    def test_resolve_design_columns_autopopulates_psu(self) -> None:
         from balance.interop.diff_diff import _resolve_design_columns
 
         df = _toy_balanced_panel().copy()
@@ -928,7 +928,7 @@ class CommonCoverageExtra(unittest.TestCase):
 
 
 class DiffDiffHelperLineCoverageTest(unittest.TestCase):
-    def test_resolve_design_columns_autopopulates_strata_default(self) -> None:
+    def test_resolve_design_columns_autopopulates_psu_default(self) -> None:
         from balance.interop.diff_diff import _resolve_design_columns
 
         df = _toy_balanced_panel().copy()
