@@ -120,6 +120,7 @@ def _ignore_weight_normalization_warning() -> Iterator[None]:
             "ignore",
             message=r".*weights normalized to mean=1.*",
             category=UserWarning,
+            module=r"^diff_diff\.prep$",
         )
         yield
 
@@ -423,8 +424,9 @@ class ToPanelForDidTest(unittest.TestCase):
         s = _make_sample()
 
         class R:
-            overall_att = 1.23
-            se = 0.11
+            def __init__(self) -> None:
+                self.overall_att = 1.23
+                self.se = 0.11
 
         out = bd.as_balance_diagnostic(s, R())
         self.assertEqual(out["att"], 1.23)
@@ -760,14 +762,16 @@ class CommonAndSampleCoverageTest(unittest.TestCase):
         )
 
     def test_sample_new_allows_internal_caller_path(self) -> None:
+        from types import SimpleNamespace
         from unittest.mock import patch
 
         from balance.sample_class import Sample
 
-        class _Frame:
-            function = "from_frame"
-
-        with patch("balance.sample_class.inspect.stack", return_value=[None, _Frame()]):
+        stack = [
+            SimpleNamespace(function="ignored"),
+            SimpleNamespace(function="from_frame"),
+        ]
+        with patch("balance.sample_class.inspect.stack", return_value=stack):
             obj = Sample.__new__(Sample)
         self.assertIsInstance(obj, Sample)
 
@@ -851,8 +855,14 @@ class DiffDiffBranchCoverageTest(unittest.TestCase):
     def test_resolve_design_columns_autopopulates_and_logs(self) -> None:
         from balance.interop.diff_diff import _resolve_design_columns
 
-        s = _make_sample()
-        s._df["strata"] = 1
+        df = _toy_balanced_panel().copy()
+        df["psu"] = 1
+        s = balance.Sample.from_frame(
+            df,
+            id_column="id",
+            weight_column="w",
+            outcome_columns=["y"],
+        )
         out = _resolve_design_columns(s, None)
         self.assertEqual(out.get("psu"), "psu")
 

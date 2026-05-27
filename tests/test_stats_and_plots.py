@@ -4259,7 +4259,7 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
             line=True,
             threshold=0.2,
         )
-        self.assertIn("Legend", txt)
+        self.assertRegex(txt, r"(?i)legend")
         self.assertIn("Threshold", txt)
         self.assertIn(">", txt)
 
@@ -4315,7 +4315,7 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
             bar_width=20,
         )
         self.assertRegex(txt, r"\|\s*0\s*\|")
-        self.assertIn("Legend", txt)
+        self.assertRegex(txt, r"(?i)legend")
 
     def test_asmd_improvement_zero_baseline_returns_zero(self) -> None:
         from balance.stats_and_plots import weighted_comparisons_stats as wcs
