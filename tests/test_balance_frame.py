@@ -6775,6 +6775,19 @@ class TestBalanceFramePredictAndCbpsEdgeCoverage(BalanceTestCase):
                     beta_opt_model_space=np.array([1.0, 2.0]),
                 )
 
+    def test_compute_cbps_design_weights_non_balanced_nonpositive_mean_guard(
+        self,
+    ) -> None:
+        from unittest.mock import patch
+
+        with patch("balance.balance_frame.np.mean", return_value=0.0):
+            with self.assertRaisesRegex(ValueError, "positive mean of combined"):
+                BalanceFrame._compute_cbps_design_weights(
+                    sample_weights=np.array([1.0, 2.0]),
+                    target_weights=np.array([3.0, 4.0]),
+                    balance_classes=False,
+                )
+
     def test_compute_cbps_design_weights_non_balanced_path(self) -> None:
         out = BalanceFrame._compute_cbps_design_weights(
             sample_weights=np.array([1.0, 2.0]),
