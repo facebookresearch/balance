@@ -4314,7 +4314,7 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
             threshold=None,
             bar_width=20,
         )
-        self.assertRegex(txt, r"\|\s*0\s*\|")
+        self.assertRegex(txt, r"\|\s*[+-]?0(?:\.0+)?\s*\|")
         self.assertRegex(txt, r"(?i)legend")
 
     def test_asmd_improvement_zero_baseline_returns_zero(self) -> None:

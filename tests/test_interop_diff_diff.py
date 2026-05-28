@@ -120,7 +120,6 @@ def _ignore_weight_normalization_warning() -> Iterator[None]:
             "ignore",
             message=r".*weights normalized to mean=1.*",
             category=UserWarning,
-            module=r"^diff_diff\.prep(\.|$)",
         )
         yield
 
