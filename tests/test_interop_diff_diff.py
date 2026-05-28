@@ -25,7 +25,8 @@ from __future__ import annotations
 
 import unittest
 import warnings
-from typing import Any
+from contextlib import contextmanager
+from typing import Any, Iterator
 
 import balance
 import numpy as np
@@ -110,6 +111,17 @@ def _make_sample() -> "balance.Sample":
 # ---------------------------------------------------------------------------
 # Helper-level tests (run regardless of diff-diff availability)
 # ---------------------------------------------------------------------------
+
+
+@contextmanager
+def _ignore_weight_normalization_warning() -> Iterator[None]:
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message=r".*weights normalized to mean=1.*",
+            category=UserWarning,
+        )
+        yield
 
 
 class ActiveWeightColumnTest(unittest.TestCase):
@@ -326,9 +338,10 @@ class ToPanelForDidTest(unittest.TestCase):
         # ``AssertionError``, ``AttributeError``, ``TypeError``, ``KeyError``
         # all fail the test.
         try:
-            panel_df, second_stage = bd.to_panel_for_did(
-                s, by=["unit", "t"], outcomes="y"
-            )
+            with _ignore_weight_normalization_warning():
+                panel_df, second_stage = bd.to_panel_for_did(
+                    s, by=["unit", "t"], outcomes="y"
+                )
         except ImportError as e:
             self.skipTest(f"aggregate_survey unavailable in this build: {e}")
         self.assertIsInstance(panel_df, pd.DataFrame)
@@ -342,7 +355,8 @@ class ToPanelForDidTest(unittest.TestCase):
         s = _make_sample()
         # See note above re: narrow exception list (ImportError only).
         try:
-            _, second_stage = bd.to_panel_for_did(s, by=["unit", "t"], outcomes="y")
+            with _ignore_weight_normalization_warning():
+                _, second_stage = bd.to_panel_for_did(s, by=["unit", "t"], outcomes="y")
         except ImportError as e:
             self.skipTest(f"aggregate_survey unavailable in this build: {e}")
         self.assertEqual("pweight", second_stage.weight_type)
@@ -359,9 +373,10 @@ class ToPanelForDidTest(unittest.TestCase):
 
         s = _make_sample()
         try:
-            adapter_panel, adapter_design = bd.to_panel_for_did(
-                s, by=["unit", "t"], outcomes="y"
-            )
+            with _ignore_weight_normalization_warning():
+                adapter_panel, adapter_design = bd.to_panel_for_did(
+                    s, by=["unit", "t"], outcomes="y"
+                )
             # Direct route: replicate what to_panel_for_did does internally
             # (build first-stage SurveyDesign from s.weight_column, forward
             # the same second_stage_weights value, no history columns to
@@ -370,13 +385,14 @@ class ToPanelForDidTest(unittest.TestCase):
                 weights="w", weight_type="pweight", lonely_psu="adjust"
             )
             direct_panel: pd.DataFrame
-            direct_panel, _ = dd.aggregate_survey(
-                s.df,
-                by=["unit", "t"],
-                outcomes="y",
-                survey_design=direct_design,
-                second_stage_weights="pweight",
-            )
+            with _ignore_weight_normalization_warning():
+                direct_panel, _ = dd.aggregate_survey(
+                    s.df,
+                    by=["unit", "t"],
+                    outcomes="y",
+                    survey_design=direct_design,
+                    second_stage_weights="pweight",
+                )
         except ImportError as e:
             self.skipTest(f"aggregate_survey unavailable in this build: {e}")
 
@@ -400,6 +416,24 @@ class ToPanelForDidTest(unittest.TestCase):
             rtol=1e-12,
             atol=0.0,
         )
+
+    def test_as_balance_diagnostic_uses_overall_att_fallback(self) -> None:
+        from balance.interop import diff_diff as bd
+
+        s = _make_sample()
+
+        class R:
+            def __init__(self) -> None:
+                self.overall_att = 1.23
+                self.se = 0.11
+
+        out = bd.as_balance_diagnostic(s, R())
+        self.assertEqual(out["att"], 1.23)
+
+    def test_max_asmd_empty_path(self) -> None:
+        from balance.interop.diff_diff import _max_per_covariate_asmd_post
+
+        self.assertIsNone(_max_per_covariate_asmd_post(pd.DataFrame()))
 
 
 class ValidateNonzeroWeightsTest(unittest.TestCase):
@@ -713,3 +747,235 @@ class ImportGuardTest(unittest.TestCase):
         with self.assertRaises(ImportError) as cm:
             bd.to_survey_design(s)
         self.assertIn("balance[did]", str(cm.exception))
+
+
+class CommonAndSampleCoverageTest(unittest.TestCase):
+    def test_sample_new_blocks_direct_call(self) -> None:
+        from balance.sample_class import Sample
+
+        with self.assertRaises((NotImplementedError, TypeError)) as cm:
+            Sample()
+        self.assertTrue(
+            "Sample should not be constructed directly" in str(cm.exception)
+            or "required positional" in str(cm.exception)
+        )
+
+    def test_sample_new_allows_internal_caller_path(self) -> None:
+        from types import SimpleNamespace
+        from unittest.mock import patch
+
+        from balance.sample_class import Sample
+
+        stack = [
+            SimpleNamespace(function="ignored"),
+            SimpleNamespace(function="from_frame"),
+        ]
+        with patch("balance.sample_class.inspect.stack", return_value=stack):
+            obj = Sample.__new__(Sample)
+        self.assertIsInstance(obj, Sample)
+
+    def test_drop_na_weights_missing_col_and_warn_drop(self) -> None:
+        from balance.interop._common import drop_nan_weight_rows
+
+        df = pd.DataFrame({"x": [1, 2], "w": [1.0, np.nan]})
+        with self.assertRaisesRegex(ValueError, "not present"):
+            drop_nan_weight_rows(df, "missing", ctx="ctx")
+        with self.assertWarnsRegex(UserWarning, "dropping 1 row"):
+            out = drop_nan_weight_rows(df, "w", ctx="ctx")
+        self.assertEqual(len(out), 1)
+
+    def test_validate_nonzero_weights_non_numeric(self) -> None:
+        from balance.interop._common import validate_nonzero_weights
+
+        with self.assertRaisesRegex(TypeError, "must be numeric"):
+            validate_nonzero_weights(pd.DataFrame({"w": ["a", "b"]}), "w", ctx="ctx")
+
+    def test_validate_row_count_nan_weight_path(self) -> None:
+        from balance.interop._common import validate_row_count
+
+        s = _make_sample()
+        s.set_weights(pd.Series([np.nan] * len(s.df), index=s.df.index))
+        with self.assertRaisesRegex(ValueError, "NaN entries"):
+            validate_row_count(s, len(s.df), ctx="ctx")
+
+    def test_attach_balance_provenance_fallback_warnings(self) -> None:
+        from balance.interop._common import attach_balance_provenance
+
+        s = _make_sample()
+
+        class NoDict:
+            __slots__ = ()
+
+        with self.assertWarns(UserWarning):
+            attach_balance_provenance(NoDict(), s)
+
+
+class DiffDiffBranchCoverageTest(unittest.TestCase):
+    def test_resolve_design_columns_reject_weight_type_and_non_string(self) -> None:
+        from balance.interop.diff_diff import _resolve_design_columns
+
+        s = _make_sample()
+        with self.assertRaisesRegex(ValueError, "cannot set 'weight_type'"):
+            _resolve_design_columns(s, {"weight_type": "aweight"})
+        with self.assertRaisesRegex(ValueError, "must be strings"):
+            _resolve_design_columns(s, {"strata": 1})
+
+    def test_resolve_design_columns_missing_user_column_repr(self) -> None:
+        from balance.interop.diff_diff import _resolve_design_columns
+
+        s = _make_sample()
+        with self.assertRaisesRegex(ValueError, "do not exist"):
+            _resolve_design_columns(s, {"strata": "def_missing"})
+
+    def test_require_diff_diff_import_error_branch(self) -> None:
+        from balance.interop import diff_diff as bd
+
+        original = bd._IMPORT_ERROR
+        try:
+            bd._IMPORT_ERROR = ImportError("boom")
+            with self.assertRaises(ImportError):
+                bd._require_diff_diff()
+        finally:
+            bd._IMPORT_ERROR = original
+
+    def test_max_asmd_rows(self) -> None:
+        from balance.interop.diff_diff import _max_per_covariate_asmd_post
+
+        df = pd.DataFrame(
+            {
+                "metric": ["covar_main_asmd_adjusted", "covar_main_asmd_adjusted"],
+                "var": ["x", "mean(asmd)"],
+                "val": [0.2, 0.15],
+            }
+        )
+        self.assertEqual(_max_per_covariate_asmd_post(df), 0.2)
+
+    @unittest.skipUnless(_DIFF_DIFF_AVAILABLE, "requires diff_diff")
+    def test_resolve_design_columns_autopopulates_psu(self) -> None:
+        from balance.interop.diff_diff import _resolve_design_columns
+
+        df = _toy_balanced_panel().copy()
+        df["psu"] = 1
+        s = balance.Sample.from_frame(
+            df,
+            id_column="id",
+            weight_column="w",
+            outcome_columns=["y"],
+        )
+        out = _resolve_design_columns(s, None)
+        self.assertEqual(out.get("psu"), "psu")
+
+    @unittest.skipUnless(_DIFF_DIFF_AVAILABLE, "requires diff_diff")
+    def test_fit_did_overlap_and_missing_survey_design_warnings(self) -> None:
+        import diff_diff as dd
+        from balance.interop import diff_diff as bd
+
+        s = _make_sample()
+
+        class Est:
+            def __init__(self, alpha: float = 0.0) -> None:
+                self.alpha = alpha
+
+            def fit(self, data: pd.DataFrame, alpha: float = 0.0) -> object:
+                return object()
+
+        old = getattr(dd, "TestOverlapEstimator", None)
+        setattr(dd, "TestOverlapEstimator", Est)  # noqa: B010
+        try:
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                bd.fit_did(
+                    s,
+                    estimator="TestOverlapEstimator",
+                    outcome="y",
+                    time="t",
+                    unit="unit",
+                    treatment_first="first_treat",
+                    covariates=["x1"],
+                    alpha=0.1,
+                )
+            msgs = " ".join(str(x.message) for x in w)
+            self.assertIn("appear in BOTH", msgs)
+            self.assertIn("does not accept `survey_design`", msgs)
+        finally:
+            if old is None:
+                delattr(dd, "TestOverlapEstimator")
+            else:
+                setattr(dd, "TestOverlapEstimator", old)  # noqa: B010
+
+
+class CommonCoverageExtra(unittest.TestCase):
+    def test_attach_balance_provenance_readonly_dict_warns(self) -> None:
+        from balance.interop._common import attach_balance_provenance
+
+        s = _make_sample()
+
+        class ReadOnly:
+            def __setattr__(self, name, value):
+                raise AttributeError("frozen")
+
+            @property
+            def __dict__(self):  # pyre-ignore[14]
+                class D(dict):
+                    def __setitem__(self, k, v):
+                        raise TypeError("ro")
+
+                return D()
+
+        with self.assertWarns(UserWarning):
+            attach_balance_provenance(ReadOnly(), s)
+
+
+class DiffDiffHelperLineCoverageTest(unittest.TestCase):
+    def test_resolve_design_columns_autopopulates_psu_default(self) -> None:
+        from balance.interop.diff_diff import _resolve_design_columns
+
+        df = _toy_balanced_panel().copy()
+        df["psu"] = 1
+        s = balance.Sample.from_frame(
+            df,
+            id_column="id",
+            weight_column="w",
+            outcome_columns=["y"],
+        )
+        out = _resolve_design_columns(s, None)
+        self.assertEqual(out.get("psu"), "psu")
+
+    @unittest.skipUnless(_DIFF_DIFF_AVAILABLE, "requires diff_diff")
+    def test_fit_did_rejects_survey_design_in_estimator_kwargs(self) -> None:
+        from balance.interop import diff_diff as bd
+
+        s = _make_sample()
+        with self.assertRaisesRegex(
+            TypeError, r"cannot be passed via `\*\*estimator_kwargs`"
+        ):
+            bd.fit_did(
+                s,
+                estimator="CallawaySantAnna",
+                outcome="y",
+                time="t",
+                unit="unit",
+                treatment_first="first_treat",
+                survey_design="bad",  # goes through **estimator_kwargs
+            )
+
+    def test_extract_diag_metric_empty_and_bad_value_paths(self) -> None:
+        from balance.interop.diff_diff import _scalar_from_diag
+
+        df_empty = pd.DataFrame({"metric": ["a"], "var": ["x"], "val": [1.0]})
+        self.assertIsNone(_scalar_from_diag(df_empty, "a", "missing"))
+
+        df_bad = pd.DataFrame({"metric": ["a"], "var": ["x"], "val": ["oops"]})
+        self.assertIsNone(_scalar_from_diag(df_bad, "a", "x"))
+
+    def test_max_per_covariate_asmd_post_mean_only_returns_none(self) -> None:
+        from balance.interop.diff_diff import _max_per_covariate_asmd_post
+
+        df = pd.DataFrame(
+            {
+                "metric": ["covar_main_asmd_adjusted"],
+                "var": ["mean(asmd)"],
+                "val": [0.1],
+            }
+        )
+        self.assertIsNone(_max_per_covariate_asmd_post(df))

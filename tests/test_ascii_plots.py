@@ -1112,9 +1112,10 @@ class TestAsciiComparativeHistEdgeCases(balance.testutil.BalanceTestCase):
             {"df": df, "weight": pd.Series([0.0, 0.0])},
             {"df": df, "weight": pd.Series([0.0, 0.0])},
         ]
-        result = ascii_comparative_hist(
-            dfs, names=["Target", "Sample"], column="v", n_bins=2, bar_width=10
-        )
+        with self.assertWarnsRegex(UserWarning, "All weights are zero"):
+            result = ascii_comparative_hist(
+                dfs, names=["Target", "Sample"], column="v", n_bins=2, bar_width=10
+            )
         # All bins should show 0.0, totals should be 0.0
         self.assertIn("0.0", result)
         self.assertIn("Total", result)

@@ -6279,3 +6279,560 @@ class TestBalanceFrameFilterSfPredicted(BalanceTestCase):
         filtered = BalanceFrame._filter_sf(sf, None, ["x"])
         # predicted column should be filtered (pred not in keep set)
         self.assertEqual(filtered._column_roles.get("predicted", []), [])
+
+
+class TestBalanceFrameAdjustmentHistoryAndCbpsValidation(BalanceTestCase):
+    def test_copy_adjustment_history_nonlist_and_nondict(self) -> None:
+        class A:
+            _adjustment_history = "bad"
+
+        self.assertEqual(BalanceFrame._copy_adjustment_history_from(A()), [])
+
+        class B:
+            _adjustment_history = ["bad", {"method": "x", "model": {"a": 1}}]
+
+        out = BalanceFrame._copy_adjustment_history_from(B())
+        self.assertEqual([e["method"] for e in out], ["x"])
+
+    def test_append_adjustment_history_missing_attr(self) -> None:
+        bf = BalanceFrame.__new__(BalanceFrame)
+        if hasattr(bf, "_adjustment_history"):
+            delattr(bf, "_adjustment_history")
+        bf._append_adjustment_history_entry("new", {"m": 1})
+        self.assertEqual(bf._adjustment_history[0]["method"], "new")
+
+    def test_validate_cbps_metadata_errors(self) -> None:
+        with self.assertRaisesRegex(ValueError, "malformed"):
+            BalanceFrame._validate_cbps_metadata(
+                {
+                    "variables": [],
+                    "na_action": "add_indicator",
+                    "model_matrix_mean": np.array([0.0]),
+                    "model_matrix_std": np.array([1.0]),
+                    "formula": "~x",
+                    "transformations": {},
+                    "beta_optimal_model_space": [1.0],
+                    "svd_s": np.array([1.0]),
+                    "svd_Vh": np.array([[1.0]]),
+                    "X_matrix_columns": [],
+                }
+            )
+
+    def test_validate_cbps_metadata_drop_na_action_error(self) -> None:
+        with self.assertRaisesRegex(ValueError, "na_action='drop'"):
+            BalanceFrame._validate_cbps_metadata(
+                {
+                    "variables": [],
+                    "na_action": "drop",
+                    "model_matrix_mean": np.array([0.0]),
+                    "model_matrix_std": np.array([1.0]),
+                    "formula": "~x",
+                    "transformations": {},
+                    "beta_optimal_model_space": np.array([1.0]),
+                    "svd_s": np.array([1.0]),
+                    "svd_Vh": np.array([[1.0]]),
+                    "X_matrix_columns": [],
+                }
+            )
+
+
+class TestBalanceFramePredictWeightsAndDesignEffectEdges(BalanceTestCase):
+    def setUp(self) -> None:
+        self.sample = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+        )
+        self.target = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["3", "4"], "x": [1.5, 2.5], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+        )
+        self.bf = BalanceFrame(sample=self.sample, target=self.target)
+
+    def test_predict_weights_requires_target(self) -> None:
+        adj = self.bf.adjust(method="null")
+        adj._sf_target = None
+        with self.assertRaisesRegex(ValueError, "not yet supported for method"):
+            adj.predict_weights(data=adj)
+
+    def test_cbps_predict_validation_branches(self) -> None:
+        m = {
+            "variables": [],
+            "na_action": "add_indicator",
+            "model_matrix_mean": np.array([0.0]),
+            "model_matrix_std": np.array([1.0]),
+            "formula": "~x",
+            "transformations": {},
+            "beta_optimal_model_space": np.array([1.0]),
+            "svd_s": np.array([1.0]),
+            "svd_Vh": np.array([[1.0]]),
+            "X_matrix_columns": [],
+        }
+        # variables not list
+        m2 = dict(m)
+        m2["variables"] = "bad"
+        with self.assertRaisesRegex(ValueError, "missing fit-time variables"):
+            BalanceFrame._validate_cbps_metadata(m2)
+        m3 = dict(m)
+        m3["na_action"] = "drop"
+        with self.assertRaisesRegex(ValueError, "na_action='drop'"):
+            BalanceFrame._validate_cbps_metadata(m3)
+
+    def test_design_effect_zero_branch(self) -> None:
+        deff, ess, essp = self.bf._design_effect_diagnostics(n_rows=0)
+        self.assertIsNotNone(deff)
+        self.assertIsNone(ess)
+        self.assertIsNone(essp)
+
+
+class TestBalanceFramePredictAndCbpsEdgeCoverage(BalanceTestCase):
+    def setUp(self) -> None:
+        self.sample = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+        )
+        self.target = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["3", "4"], "x": [1.5, 2.5], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+        )
+        self.bf = BalanceFrame(sample=self.sample, target=self.target)
+
+    def test_predict_weights_data_ipw_target_required_and_index_fallback(self) -> None:
+        from unittest.mock import patch
+
+        import balance.weighting_methods.ipw as ipw_mod
+
+        class Fit:
+            classes_ = np.array([0, 1])
+
+            def predict_proba(self, X):
+                return np.array([[0.2, 0.8], [0.3, 0.7]])
+
+        model = {
+            "method": "ipw",
+            "fit": Fit(),
+            "X_matrix_columns": ["x"],
+            "sample_index": [999],
+        }
+        holdout = copy.deepcopy(self.bf)
+        with (
+            patch.object(self.bf, "_require_fitted_model", return_value=model),
+            patch.object(self.bf, "_validate_data_covariates", return_value=None),
+            patch.object(
+                self.bf,
+                "_compute_ipw_matrices",
+                return_value=(np.zeros((2, 1)), np.zeros((2, 1))),
+            ),
+            patch.object(self.bf, "_ipw_class_index", return_value=1),
+            patch.object(
+                ipw_mod, "weights_from_link", return_value=pd.Series([1.0, 2.0])
+            ),
+        ):
+            holdout._sf_target = None
+            with self.assertRaisesRegex(ValueError, "target set"):
+                self.bf.predict_weights(data=holdout)
+
+            holdout._sf_target = self.target
+            out = self.bf.predict_weights(data=holdout)
+            self.assertEqual(list(out.index), list(self.bf._sf_sample.df.index))
+
+    def test_cbps_error_branches(self) -> None:
+        from unittest.mock import patch
+
+        model = {
+            "variables": ["x"],
+            "na_action": "add_indicator",
+            "model_matrix_mean": np.array([0.0]),
+            "model_matrix_std": np.array([1.0]),
+            "formula": "~x",
+            "transformations": {},
+            "beta_optimal_model_space": np.array([1.0]),
+            "svd_s": np.array([1.0]),
+            "svd_Vh": np.array([[1.0]]),
+            "X_matrix_columns": ["x"],
+        }
+        src = copy.deepcopy(self.bf)
+        src._sf_target = None
+        with self.assertRaisesRegex(ValueError, "target set"):
+            self.bf._predict_weights_cbps(model, source=src)
+
+        with (
+            patch.object(
+                BalanceFrame,
+                "_validate_cbps_metadata",
+                return_value=(
+                    np.array([1.0]),
+                    ["x"],
+                    np.array([1.0]),
+                    np.array([[1.0]]),
+                    ["x"],
+                    "add_indicator",
+                ),
+            ),
+            patch.object(
+                BalanceFrame,
+                "_build_cbps_scoring_matrix",
+                return_value=(np.ones((3, 1)), 5, 0),
+            ),
+            patch.object(
+                BalanceFrame,
+                "_resolve_cbps_training_weights",
+                return_value=(np.array([1.0, 1.0]), np.array([1.0])),
+            ),
+        ):
+            with self.assertRaisesRegex(ValueError, "sample row misalignment"):
+                self.bf._predict_weights_cbps(model)
+
+        with (
+            patch.object(
+                BalanceFrame,
+                "_validate_cbps_metadata",
+                return_value=(
+                    np.array([1.0]),
+                    ["x"],
+                    np.array([1.0]),
+                    np.array([[1.0]]),
+                    ["x"],
+                    "add_indicator",
+                ),
+            ),
+            patch.object(
+                BalanceFrame,
+                "_build_cbps_scoring_matrix",
+                return_value=(np.ones((99, 1)), 2, 0),
+            ),
+            patch.object(
+                BalanceFrame,
+                "_resolve_cbps_training_weights",
+                return_value=(np.array([1.0, 1.0]), np.array([1.0])),
+            ),
+        ):
+            with self.assertRaisesRegex(ValueError, "rows do not match"):
+                self.bf._predict_weights_cbps(model)
+
+        with self.assertRaisesRegex(
+            ValueError, "positive sample and target weight sums"
+        ):
+            self.bf._compute_cbps_design_weights(
+                balance_classes=False,
+                sample_weights=np.array([0.0, 0.0]),
+                target_weights=np.array([0.0]),
+            )
+
+        with (
+            patch.object(
+                BalanceFrame,
+                "_validate_cbps_metadata",
+                return_value=(
+                    np.array([1.0]),
+                    ["x"],
+                    np.array([1.0]),
+                    np.array([[1.0]]),
+                    ["x"],
+                    "add_indicator",
+                ),
+            ),
+            patch.object(
+                BalanceFrame,
+                "_build_cbps_scoring_matrix",
+                return_value=(np.ones((3, 1)), 2, 0),
+            ),
+            patch.object(
+                BalanceFrame,
+                "_resolve_cbps_training_weights",
+                return_value=(np.array([1.0, 1.0]), np.array([1.0])),
+            ),
+            patch.object(
+                BalanceFrame,
+                "_compute_cbps_design_weights",
+                return_value=np.array([1.0, 1.0, 1.0]),
+            ),
+            patch(
+                "balance.weighting_methods.cbps.logit_truncated",
+                return_value=np.array([0.2, 0.2, 0.2]),
+            ),
+            patch(
+                "balance.weighting_methods.cbps.compute_pseudo_weights_from_logit_probs",
+                return_value=np.array([np.inf, 1.0, 1.0]),
+            ),
+        ):
+            with self.assertRaisesRegex(ValueError, "non-finite intermediate"):
+                self.bf._predict_weights_cbps(model)
+
+        with (
+            patch.object(
+                BalanceFrame,
+                "_validate_cbps_metadata",
+                return_value=(
+                    np.array([1.0]),
+                    ["x"],
+                    np.array([1.0]),
+                    np.array([[1.0]]),
+                    ["x"],
+                    "add_indicator",
+                ),
+            ),
+            patch.object(
+                BalanceFrame,
+                "_build_cbps_scoring_matrix",
+                return_value=(np.ones((3, 1)), 2, 0),
+            ),
+            patch.object(
+                BalanceFrame,
+                "_resolve_cbps_training_weights",
+                return_value=(np.array([1.0, 1.0]), np.array([1.0])),
+            ),
+            patch.object(
+                BalanceFrame,
+                "_compute_cbps_design_weights",
+                return_value=np.array([1.0, 1.0, 1.0]),
+            ),
+            patch(
+                "balance.weighting_methods.cbps.logit_truncated",
+                return_value=np.array([0.2, 0.2, 0.2]),
+            ),
+            patch(
+                "balance.weighting_methods.cbps.compute_pseudo_weights_from_logit_probs",
+                return_value=np.array([1.0, 1.0, 1.0]),
+            ),
+            patch(
+                "balance.balance_frame.balance_adjustment.trim_weights",
+                return_value=np.array([np.nan, 1.0]),
+            ),
+        ):
+            with self.assertRaisesRegex(ValueError, "non-finite trimmed"):
+                self.bf._predict_weights_cbps(model)
+
+        with (
+            patch.object(
+                BalanceFrame,
+                "_validate_cbps_metadata",
+                return_value=(
+                    np.array([1.0]),
+                    ["x"],
+                    np.array([1.0]),
+                    np.array([[1.0]]),
+                    ["x"],
+                    "add_indicator",
+                ),
+            ),
+            patch.object(
+                BalanceFrame,
+                "_build_cbps_scoring_matrix",
+                return_value=(np.ones((3, 1)), 2, 0),
+            ),
+            patch.object(
+                BalanceFrame,
+                "_resolve_cbps_training_weights",
+                return_value=(np.array([1.0, 1.0]), np.array([1.0])),
+            ),
+            patch.object(
+                BalanceFrame,
+                "_compute_cbps_design_weights",
+                return_value=np.array([1.0, 1.0, 1.0]),
+            ),
+            patch(
+                "balance.weighting_methods.cbps.logit_truncated",
+                return_value=np.array([0.2, 0.2, 0.2]),
+            ),
+            patch(
+                "balance.weighting_methods.cbps.compute_pseudo_weights_from_logit_probs",
+                return_value=np.array([0.0, 0.0, 1.0]),
+            ),
+            patch(
+                "balance.balance_frame.balance_adjustment.trim_weights",
+                return_value=np.array([0.0, 0.0]),
+            ),
+        ):
+            with self.assertRaisesRegex(ValueError, "non-positive weight sum"):
+                self.bf._predict_weights_cbps(model)
+
+    def test_predict_weights_ipw_falls_back_to_current_index(self) -> None:
+        from unittest.mock import patch
+
+        class Fit:
+            classes_ = np.array([0, 1])
+
+            def predict_proba(self, X):
+                return np.array([[0.4, 0.6], [0.3, 0.7]])
+
+        model = {
+            "fit": Fit(),
+            "X_matrix_columns": ["x"],
+            "sample_index": ["wrong", "index"],
+            "weight_trimming_mean_ratio": None,
+            "weight_trimming_percentile": None,
+        }
+        with (
+            patch.object(self.bf, "_require_fitted_model", return_value=model),
+            patch.object(
+                self.bf, "_resolve_ipw_link", return_value=np.array([0.1, 0.2])
+            ),
+            patch.object(
+                self.bf,
+                "_resolve_design_weights",
+                return_value=(np.array([1.0, 1.0]), np.array([1.0, 1.0])),
+            ),
+            patch(
+                "balance.weighting_methods.ipw.weights_from_link",
+                return_value=pd.Series([2.0, 3.0]),
+            ),
+        ):
+            out = self.bf._predict_weights_ipw(model)
+        self.assertEqual(list(out.index), list(self.bf._sf_sample.df.index))
+
+    def test_build_cbps_scoring_matrix_validation_branches(self) -> None:
+        from unittest.mock import patch
+
+        model = {
+            "transformations": {},
+            "formula": "~x",
+            "model_matrix_mean": np.array([0.0]),
+            "model_matrix_std": np.array([1.0]),
+        }
+        with (
+            patch(
+                "balance.balance_frame.balance_adjustment.apply_transformations",
+                return_value=(
+                    self.bf._sf_sample.covars().df.copy(),
+                    self.target.covars().df.copy(),
+                ),
+            ),
+            patch(
+                "balance.balance_frame.build_design_matrix",
+                return_value={
+                    "combined_matrix": np.array([[np.nan], [1.0], [2.0]]),
+                    "sample_n": 2,
+                },
+            ),
+        ):
+            with self.assertRaisesRegex(ValueError, "non-finite standardized design"):
+                self.bf._build_cbps_scoring_matrix(
+                    self.bf,
+                    model,
+                    fit_columns=["x"],
+                    variables=["x"],
+                    na_action="add_indicator",
+                    svd_s=np.array([1.0]),
+                    svd_Vh=np.array([[1.0, 0.0]]),
+                    beta_opt_model_space=np.array([1.0]),
+                )
+
+        with (
+            patch(
+                "balance.balance_frame.balance_adjustment.apply_transformations",
+                return_value=(
+                    self.bf._sf_sample.covars().df.copy(),
+                    self.target.covars().df.copy(),
+                ),
+            ),
+            patch(
+                "balance.balance_frame.build_design_matrix",
+                return_value={
+                    "combined_matrix": np.array([[1.0], [1.0], [1.0]]),
+                    "sample_n": 2,
+                },
+            ),
+        ):
+            with self.assertRaisesRegex(ValueError, "incompatible SVD components"):
+                self.bf._build_cbps_scoring_matrix(
+                    self.bf,
+                    model,
+                    fit_columns=["x"],
+                    variables=["x"],
+                    na_action="add_indicator",
+                    svd_s=np.array([1.0]),
+                    svd_Vh=np.array([[1.0, 0.0, 0.0]]),
+                    beta_opt_model_space=np.array([1.0]),
+                )
+
+            with self.assertRaisesRegex(ValueError, "inconsistent SVD dimensions"):
+                self.bf._build_cbps_scoring_matrix(
+                    self.bf,
+                    model,
+                    fit_columns=["x"],
+                    variables=["x"],
+                    na_action="add_indicator",
+                    svd_s=np.array([1.0, 2.0]),
+                    svd_Vh=np.array([[1.0, 0.0], [0.0, 1.0], [0.0, 0.0]]),
+                    beta_opt_model_space=np.array([1.0]),
+                )
+
+            with self.assertRaisesRegex(
+                ValueError, "incompatible coefficient dimensions"
+            ):
+                self.bf._build_cbps_scoring_matrix(
+                    self.bf,
+                    model,
+                    fit_columns=["x"],
+                    variables=["x"],
+                    na_action="add_indicator",
+                    svd_s=np.array([1.0]),
+                    svd_Vh=np.array([[1.0, 0.0]]),
+                    beta_opt_model_space=np.array([1.0, 2.0]),
+                )
+
+    def test_compute_cbps_design_weights_non_balanced_nonpositive_mean_guard(
+        self,
+    ) -> None:
+        from unittest.mock import patch
+
+        with patch("balance.balance_frame.np.mean", return_value=0.0):
+            with self.assertRaisesRegex(ValueError, "positive mean of combined"):
+                BalanceFrame._compute_cbps_design_weights(
+                    sample_weights=np.array([1.0, 2.0]),
+                    target_weights=np.array([3.0, 4.0]),
+                    balance_classes=False,
+                )
+
+    def test_compute_cbps_design_weights_non_balanced_path(self) -> None:
+        out = BalanceFrame._compute_cbps_design_weights(
+            sample_weights=np.array([1.0, 2.0]),
+            target_weights=np.array([3.0, 4.0]),
+            balance_classes=False,
+        )
+        self.assertEqual(out.shape[0], 4)
+        self.assertAlmostEqual(float(np.mean(out)), 1.0)
+
+    def test_keep_only_some_rows_columns_no_target_pre_adjust_and_links_error(
+        self,
+    ) -> None:
+        bf = BalanceFrame(sample=self.sample)
+        bf._sf_sample_pre_adjust = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]}),
+            id_column="id",
+            weight_column="weight",
+        )
+
+        class Broken(BalanceFrame):
+            def keep_only_some_rows_columns(
+                self, rows_to_keep=None, columns_to_keep=None
+            ):
+                raise TypeError("boom")
+
+        _assert_type(bf._links)["broken"] = Broken(sample=self.sample)
+        with self.assertLogs("balance", level="WARNING") as logs:
+            out = bf.keep_only_some_rows_columns(
+                rows_to_keep="x > 0", columns_to_keep=["x"]
+            )
+        self.assertIsNotNone(out._sf_sample_pre_adjust)
+        self.assertTrue(
+            any("couldn't filter _links['broken']" in m for m in logs.output)
+        )
+
+    def test_keep_only_some_rows_columns_pre_adjust_and_link_warning(self) -> None:
+        adjusted = self.bf.adjust(method="null")
+        linked = BalanceFrame(
+            sample=SampleFrame.from_frame(
+                pd.DataFrame({"id": ["9"], "z": [1.0], "weight": [1.0]}),
+                id_column="id",
+                weight_column="weight",
+            )
+        )
+        _assert_type(adjusted._links)["bad"] = linked
+        with self.assertLogs("balance", level="WARNING"):
+            out = adjusted.keep_only_some_rows_columns(rows_to_keep="x > 0")
+        self.assertIsNotNone(out)

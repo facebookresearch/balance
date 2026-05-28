@@ -4259,7 +4259,7 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
             line=True,
             threshold=0.2,
         )
-        self.assertIn("Legend", txt)
+        self.assertRegex(txt, r"(?i)legend")
         self.assertIn("Threshold", txt)
         self.assertIn(">", txt)
 
@@ -4304,6 +4304,19 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
         with self.assertRaisesRegex(TypeError, "threshold must be"):
             love_plot(before, after=None, threshold="0.1")  # type: ignore[arg-type]
 
+    def test_love_plot_ascii_axis_nonpositive_via_public_api(self) -> None:
+        from balance.stats_and_plots.love_plot import love_plot
+
+        txt = love_plot(
+            pd.Series({"a": 0.0}),
+            after=None,
+            library="balance",
+            threshold=None,
+            bar_width=20,
+        )
+        self.assertRegex(txt, r"\|\s*[+-]?0(?:\.0+)?\s*\|")
+        self.assertRegex(txt, r"(?i)legend")
+
     def test_asmd_improvement_zero_baseline_returns_zero(self) -> None:
         from balance.stats_and_plots import weighted_comparisons_stats as wcs
 
@@ -4330,3 +4343,10 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
         with self.assertRaisesRegex(ValueError, "Unknown std_type"):
             # pyre-ignore[6]: Intentionally passing invalid std_type to test the error path.
             wcs.asmd(sample_df, target_df, std_type="not-a-real-mode")
+
+
+class TestAsciiPositionEdge(balance.testutil.BalanceTestCase):
+    def test_ascii_position_axis_max_nonpositive(self) -> None:
+        from balance.stats_and_plots.love_plot import _ascii_position
+
+        self.assertEqual(_ascii_position(1.0, 0.0, width=10), 0)
