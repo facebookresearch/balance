@@ -1352,6 +1352,87 @@ class TestCli(
                 np.array(["intercept", "age", "age:gender", "gender"]),
             )
 
+            # test JSON list formula support, including whitespace normalization
+            parser = make_parser()
+            args = parser.parse_args(
+                [
+                    "--input_file",
+                    input_file.name,
+                    "--output_file",
+                    output_file,
+                    "--diagnostics_output_file",
+                    diagnostics_output_file,
+                    "--covariate_columns",
+                    features,
+                    "--num_lambdas=1",
+                    "--transformations=None",
+                    '--formula=[" age ", "gender"]',
+                ]
+            )
+            self.assertEqual(args.formula, ["age", "gender"])
+            cli = BalanceCLI(args)
+            self.assertEqual(cli.formula(), ["age", "gender"])
+            cli.update_attributes_for_main_used_by_adjust()
+            cli.main()
+            diagnostics_output = pd.read_csv(diagnostics_output_file, sep=",")
+            self.assertEqual(
+                diagnostics_output[diagnostics_output["metric"] == "model_coef"][
+                    "var"
+                ].values,
+                np.array(["intercept", "age", "gender"]),
+            )
+
+    def test_formula_json_list_rejects_invalid_values(self) -> None:
+        """The CLI rejects malformed formula lists during argument parsing."""
+        parser = make_parser()
+        base_args = [
+            "--input_file",
+            "input.csv",
+            "--output_file",
+            "output.csv",
+            "--covariate_columns",
+            "age,gender",
+        ]
+
+        invalid_formulas = (
+            "",
+            "   ",
+            "[",
+            "[]",
+            "{}",
+            '["age", 1]',
+            '["age", null]',
+            '["age", "   "]',
+        )
+        for formula in invalid_formulas:
+            with self.subTest(formula=formula):
+                with self.assertRaises(SystemExit):
+                    parser.parse_args([*base_args, f"--formula={formula}"])
+
+    def test_formula_parser_normalizes_namespace_values(self) -> None:
+        """BalanceCLI.formula validates direct Namespace values consistently."""
+        self.assertEqual(
+            BalanceCLI(Namespace(formula=" age + gender ")).formula(), "age + gender"
+        )
+        self.assertIsNone(BalanceCLI(Namespace(formula="None")).formula())
+        self.assertEqual(
+            BalanceCLI(Namespace(formula=[" age ", "gender"])).formula(),
+            ["age", "gender"],
+        )
+
+        invalid_namespace_values = (
+            "",
+            "   ",
+            [],
+            ["age", 1],
+            ["age", "   "],
+            123,
+        )
+        for formula in invalid_namespace_values:
+            with self.subTest(formula=formula):
+                with self.assertRaises(ArgumentTypeError):
+                    BalanceCLI(Namespace(formula=formula)).formula()
+
     def test_cli_return_df_with_original_dtypes(self) -> None:
         """Test CLI flag for preserving original data types in output DataFrames."""
         out_True = check_some_flags(True, "--return_df_with_original_dtypes")
