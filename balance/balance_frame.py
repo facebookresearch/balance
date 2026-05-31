@@ -267,14 +267,6 @@ class BalanceFrame:
         Changed in 0.20.0 to return the name (str) instead of data (pd.Series).
         Use :attr:`id_series` for data.
         """
-        # TODO: remove this warning after 2026-06-01
-        warnings.warn(
-            "Note: id_column now returns the column name (str) since "
-            "balance 0.20.0. It previously returned ID data (pd.Series). "
-            "Use id_series for ID data.",
-            FutureWarning,
-            stacklevel=2,
-        )
         return self._sf_sample._id_column_name
 
     @property

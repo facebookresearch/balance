@@ -1237,31 +1237,21 @@ class TestSampleFrameUncoveredLines(BalanceTestCase):
             f"Expected warning about id/weight in covars, got: {cm.output}",
         )
 
-    def test_weight_column_property_future_warning(self) -> None:
-        """Lines 593-600: weight_column property issues FutureWarning."""
+    def test_weight_column_property_returns_column_name(self) -> None:
+        """weight_column returns the active weight column name without warning."""
         df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20], "weight": [1.0, 1.0]})
         sf = SampleFrame.from_frame(df)
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            result = sf.weight_column
-            self.assertEqual(len(w), 1)
-            self.assertTrue(issubclass(w[0].category, FutureWarning))
-            self.assertIn(
-                "weight_column now returns the column name", str(w[0].message)
-            )
-        self.assertEqual(result, "weight")
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", FutureWarning)
+            self.assertEqual(sf.weight_column, "weight")
 
-    def test_id_column_property_future_warning(self) -> None:
-        """Lines 751-758: id_column property issues FutureWarning."""
+    def test_id_column_property_returns_column_name(self) -> None:
+        """id_column returns the ID column name without warning."""
         df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20], "weight": [1.0, 1.0]})
         sf = SampleFrame.from_frame(df)
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            result = sf.id_column
-            self.assertEqual(len(w), 1)
-            self.assertTrue(issubclass(w[0].category, FutureWarning))
-            self.assertIn("id_column now returns the column name", str(w[0].message))
-        self.assertEqual(result, "id")
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", FutureWarning)
+            self.assertEqual(sf.id_column, "id")
 
     def test_set_weights_use_index_non_series_raises(self) -> None:
         """Line 899: TypeError when use_index=True but weights is not a Series."""
