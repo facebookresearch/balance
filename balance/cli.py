@@ -1543,7 +1543,7 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
             "The formula of the model matrix (in ipw or cbps). If None "
             "(default), the formula is set to an additive formula using all "
             'covariates. Pass a JSON list (for example, \'["age", "gender"]\') '
-            "to assign per-term penalty factors in model-matrix construction."
+            "to build and concatenate multiple model-matrix formula terms."
         ),
     )
     parser.add_argument(
