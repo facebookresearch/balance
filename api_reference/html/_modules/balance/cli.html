@@ -95,6 +95,71 @@
     <span class="k">return</span> <span class="n">parsed</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_validate_formula_list</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate and normalize a JSON/list formula argument.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ArgumentTypeError</span><span class="p">(</span>
+            <span class="s2">&quot;--formula JSON list must contain at least one formula string&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">normalized</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ArgumentTypeError</span><span class="p">(</span>
+                <span class="s2">&quot;--formula JSON list must contain only non-empty formula strings&quot;</span>
+            <span class="p">)</span>
+        <span class="n">stripped_item</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">stripped_item</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ArgumentTypeError</span><span class="p">(</span>
+                <span class="s2">&quot;--formula JSON list must contain only non-empty formula strings&quot;</span>
+            <span class="p">)</span>
+        <span class="n">normalized</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stripped_item</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">normalized</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_formula_arg</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a CLI formula value as a string formula or JSON list of formulas.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        value: Raw formula argument supplied by argparse or tests.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A formula string, a list of formula strings, or ``None``.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ArgumentTypeError: If a formula string is empty, or if a JSON/list</span>
+<span class="sd">            formula is malformed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_validate_formula_list</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">ArgumentTypeError</span><span class="p">(</span>
+            <span class="s2">&quot;--formula must be a formula string, &#39;None&#39;, or a JSON list of formula strings&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">stripped</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">stripped</span> <span class="o">==</span> <span class="s2">&quot;None&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">stripped</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ArgumentTypeError</span><span class="p">(</span><span class="s2">&quot;--formula must not be empty&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">stripped</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="s2">&quot;[{&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">stripped</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">parsed</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">stripped</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ArgumentTypeError</span><span class="p">(</span><span class="s2">&quot;--formula JSON list must be valid JSON&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parsed</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">ArgumentTypeError</span><span class="p">(</span>
+            <span class="s2">&quot;--formula JSON value must be a list of formula strings&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">_validate_formula_list</span><span class="p">(</span><span class="n">parsed</span><span class="p">)</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_parse_csv_columns_arg</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">arg_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a comma-separated CLI columns argument into a validated list.</span>
 
@@ -157,7 +222,7 @@
 
         <span class="c1"># Create attributes (to be populated later, which will be used in main)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_transformations</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_penalty_factor</span><span class="p">:</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_one_hot_encoding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_max_de</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
@@ -630,11 +695,11 @@
 
 <div class="viewcode-block" id="BalanceCLI.formula">
 <a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.formula">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">formula</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the formula string used for model matrices.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">formula</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the formula string or formula list used for model matrices.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Formula string or ``None`` if unset.</span>
+<span class="sd">            Formula string, formula list, or ``None`` if unset.</span>
 
 <span class="sd">        Examples:</span>
 <span class="sd">            .. code-block:: python</span>
@@ -642,7 +707,7 @@
 <span class="sd">                BalanceCLI(Namespace(formula=&quot;age + gender&quot;)).formula()</span>
 <span class="sd">                # &#39;age + gender&#39;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">formula</span></div>
+        <span class="k">return</span> <span class="n">_formula_arg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">formula</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BalanceCLI.one_hot_encoding">
@@ -788,7 +853,7 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">batch_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
         <span class="n">transformations</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
-        <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">penalty_factor</span><span class="p">:</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">one_hot_encoding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">max_de</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mf">1.5</span><span class="p">,</span>
@@ -1399,7 +1464,7 @@
 <span class="sd">            # True</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># TODO: add checks for validity of input (including None as input)</span>
-    <span class="c1"># TODO: add arguments for formula when used as a list and for penalty_factor</span>
+    <span class="c1"># TODO: add arguments for penalty_factor</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--input_file&quot;</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span>
@@ -1616,13 +1681,16 @@
             <span class="s2">&quot;&#39;default&#39; for default transformations.&quot;</span>
         <span class="p">),</span>
     <span class="p">)</span>
-    <span class="c1"># TODO: we currently support only the option of a string formula (or None), not a list of formulas.</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--formula&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">_formula_arg</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="p">(</span>
-            <span class="s2">&quot;The formula of the model matrix (in ipw or cbps). If None (default), the formula will be setted to an additive formula using all the covariates.&quot;</span>
+            <span class="s2">&quot;The formula of the model matrix (in ipw or cbps). If None &quot;</span>
+            <span class="s2">&quot;(default), the formula is set to an additive formula using all &quot;</span>
+            <span class="s1">&#39;covariates. Pass a JSON list (for example, </span><span class="se">\&#39;</span><span class="s1">[&quot;age&quot;, &quot;gender&quot;]</span><span class="se">\&#39;</span><span class="s1">) &#39;</span>
+            <span class="s2">&quot;to build and concatenate multiple model-matrix formula terms.&quot;</span>
         <span class="p">),</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
