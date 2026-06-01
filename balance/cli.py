@@ -58,6 +58,71 @@ def _positive_int_arg(value: Any) -> int:
     return parsed
 
 
+def _validate_formula_list(value: list[Any]) -> list[str]:
+    """Validate and normalize a JSON/list formula argument."""
+    if not value:
+        raise ArgumentTypeError(
+            "--formula JSON list must contain at least one formula string"
+        )
+
+    normalized: list[str] = []
+    for item in value:
+        if not isinstance(item, str):
+            raise ArgumentTypeError(
+                "--formula JSON list must contain only non-empty formula strings"
+            )
+        stripped_item = item.strip()
+        if not stripped_item:
+            raise ArgumentTypeError(
+                "--formula JSON list must contain only non-empty formula strings"
+            )
+        normalized.append(stripped_item)
+
+    return normalized
+
+
+def _formula_arg(value: str | list[str] | None) -> str | list[str] | None:
+    """Parse a CLI formula value as a string formula or JSON list of formulas.
+
+    Args:
+        value: Raw formula argument supplied by argparse or tests.
+
+    Returns:
+        A formula string, a list of formula strings, or ``None``.
+
+    Raises:
+        ArgumentTypeError: If a formula string is empty, or if a JSON/list
+            formula is malformed.
+    """
+    if value is None:
+        return None
+    if isinstance(value, list):
+        return _validate_formula_list(value)
+    if not isinstance(value, str):
+        raise ArgumentTypeError(
+            "--formula must be a formula string, 'None', or a JSON list of formula strings"
+        )
+
+    stripped = value.strip()
+    if stripped == "None":
+        return None
+    if not stripped:
+        raise ArgumentTypeError("--formula must not be empty")
+    if stripped[0] not in "[{":
+        return stripped
+
+    try:
+        parsed = json.loads(stripped)
+    except json.JSONDecodeError as exc:
+        raise ArgumentTypeError("--formula JSON list must be valid JSON") from exc
+
+    if not isinstance(parsed, list):
+        raise ArgumentTypeError(
+            "--formula JSON value must be a list of formula strings"
+        )
+    return _validate_formula_list(parsed)
+
+
 def _parse_csv_columns_arg(value: Optional[str], arg_name: str) -> List[str]:
     """Parse a comma-separated CLI columns argument into a validated list.
 
@@ -118,7 +183,7 @@ class BalanceCLI:
 
         # Create attributes (to be populated later, which will be used in main)
         self._transformations: Dict[str, Any] | str | None = None
-        self._formula: str | None = None
+        self._formula: str | list[str] | None = None
         self._penalty_factor: None = None
         self._one_hot_encoding: bool = False
         self._max_de: float | None = None
@@ -523,11 +588,11 @@ class BalanceCLI:
         else:
             return self.args.transformations
 
-    def formula(self) -> str | None:
-        """Return the formula string used for model matrices.
+    def formula(self) -> str | list[str] | None:
+        """Return the formula string or formula list used for model matrices.
 
         Returns:
-            Formula string or ``None`` if unset.
+            Formula string, formula list, or ``None`` if unset.
 
         Examples:
             .. code-block:: python
@@ -535,7 +600,7 @@ class BalanceCLI:
                 BalanceCLI(Namespace(formula="age + gender")).formula()
                 # 'age + gender'
         """
-        return self.args.formula
+        return _formula_arg(self.args.formula)
 
     def one_hot_encoding(self) -> bool | None:
         """Return the parsed one-hot encoding flag.
@@ -660,7 +725,7 @@ class BalanceCLI:
         self,
         batch_df: pd.DataFrame,
         transformations: Dict[str, Any] | str | None = "default",
-        formula: str | None = None,
+        formula: str | list[str] | None = None,
         penalty_factor: None = None,
         one_hot_encoding: bool = False,
         max_de: float | None = 1.5,
@@ -1252,7 +1317,7 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
             # True
     """
     # TODO: add checks for validity of input (including None as input)
-    # TODO: add arguments for formula when used as a list and for penalty_factor
+    # TODO: add arguments for penalty_factor
     parser.add_argument(
         "--input_file",
         type=Path,
@@ -1469,13 +1534,16 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
             "'default' for default transformations."
         ),
     )
-    # TODO: we currently support only the option of a string formula (or None), not a list of formulas.
     parser.add_argument(
         "--formula",
+        type=_formula_arg,
         default=None,
         required=False,
         help=(
-            "The formula of the model matrix (in ipw or cbps). If None (default), the formula will be setted to an additive formula using all the covariates."
+            "The formula of the model matrix (in ipw or cbps). If None "
+            "(default), the formula is set to an additive formula using all "
+            'covariates. Pass a JSON list (for example, \'["age", "gender"]\') '
+            "to build and concatenate multiple model-matrix formula terms."
         ),
     )
     parser.add_argument(
