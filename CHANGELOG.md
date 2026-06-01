@@ -84,8 +84,7 @@
   `descriptive_stats` → `asmd`, which previously masked the failure mode.
 
 - Removed the scheduled migration `FutureWarning`s from `SampleFrame.weight_column`,
-  `SampleFrame.id_column`, and `BalanceFrame.id_column` now that the
-  2026-06-01 migration window has elapsed; the accessors continue to return
+  `SampleFrame.id_column`, and `BalanceFrame.id_column`; the accessors continue to return
   column names, while `weight_series` and `id_series` return data.
 
 ## Bug Fixes
