@@ -1,14 +1,4 @@
-# 0.22.0 (Unreleased - TBD)
-
-## New Features
-
-- **CLI `--formula` now accepts JSON lists for model-matrix formula lists.**
-  In addition to a single formula string, CLI users can pass values such as
-  `--formula='["age", "gender"]'`, which are parsed and forwarded as
-  `list[str]` to IPW/CBPS model-matrix construction. Malformed, empty, or
-  non-string JSON lists now fail during argument parsing.
-
-# 0.21.0 (2026-05-29)
+# 0.21.0 (2026-06-02)
 
 ## New Features
 
@@ -29,7 +19,6 @@
   threshold default resolving to the cobalt 0.1 cutoff for ASMD only.
   `.plot(dist_type="love_plot", library=...)` (or the `"love"` alias) routes
   covariate views to the same diagnostic.
-
 - **Rake now supports fit-time metadata persistence and `predict_weights()`
   reconstruction.**
   - `rake(..., store_fit_metadata=True)` stores contingency-table artifacts
@@ -44,7 +33,6 @@
     `transformations="default"` and for explicit dicts that directly
     reference data-dependent helpers (`quantize`, `fct_lump`). Pass
     deterministic transformations at fit time or re-fit on the scoring data.
-
 - **Poststratify now supports transfer scoring with `predict_weights(data=...)`.**
   `BalanceFrame.fit(method="poststratify", store_fit_metadata=True)` stores
   the transformation origin needed to safely replay fitted cell ratios on a
@@ -54,7 +42,6 @@
   `transformations="default"` and direct `quantize` / `fct_lump` references.
   Pre-0.21.0 pickles lack `transformations_origin` and must be re-fit for
   transfer scoring; in-place `predict_weights()` continues to work.
-
 - **`balance.interop.diff_diff`** — thin adapter to
   [diff-diff](https://github.com/igerber/diff-diff) (`>=3.3.0,<4`) for
   survey-weighted Difference-in-Differences. Provides `to_survey_design()`,
@@ -67,7 +54,6 @@
   live in `balance/interop/_common.py` and column-name conventions in
   `balance/interop/conventions.py` so a future `balance.interop.svy` adapter
   can reuse them.
-
 - **`balance.stats_and_plots.weights_stats.kish_deff_stats`** — bundled
   Kish-design-effect diagnostic returning a `KishStats(deff, ess, essp)`
   namedtuple. Computes `design_effect` once and derives ESS and ESSP from it,
@@ -76,26 +62,17 @@
   over the existing `design_effect`. `BalanceFrame._design_effect_diagnostics`
   now routes through `kish_deff_stats` so the canonical Kish identities live
   in one place.
-
 - **`BalanceFrame.adjustment_history` records compound adjustment steps.**
   Sequential `adjust()` / `set_fitted_model()` workflows now keep a
   chronological, best-effort read-only copy of each adjustment step while
   preserving `model` as the latest fitted model for backwards compatibility.
   Baseline resets such as `set_as_pre_adjust()` clear the history together
   with the current model.
-
-- **All-zero weight inputs to `_check_weights_series_are_valid` now emit a
-  `UserWarning`** (when `require_positive=False`, the default). Previously,
-  weighted statistics over an all-zero weight vector silently produced `NaN` /
-  `inf` (`sum(w*x)/sum(w) = 0/0`). Callers that already passed
-  `require_positive=True` (e.g. `design_effect`, `nonparametric_skew`,
-  `prop_above_and_below`, `weighted_median_breakdown_point`) keep their
-  `ValueError` behaviour. This affects internal callers like
-  `descriptive_stats` → `asmd`, which previously masked the failure mode.
-
-- Removed the scheduled migration `FutureWarning`s from `SampleFrame.weight_column`,
-  `SampleFrame.id_column`, and `BalanceFrame.id_column`; the accessors continue to return
-  column names, while `weight_series` and `id_series` return data.
+- **CLI `--formula` now accepts JSON lists for model-matrix formula lists.**
+  In addition to a single formula string, CLI users can pass values such as
+  `--formula='["age", "gender"]'`, which are parsed and forwarded as
+  `list[str]` to IPW/CBPS model-matrix construction. Malformed, empty, or
+  non-string JSON lists now fail during argument parsing.
 
 ## Bug Fixes
 
@@ -106,7 +83,6 @@
   matching `poststratify` semantics and ensuring weighted marginals recover
   the target distribution when design weights are non-uniform. No-op when
   design weights are uniform (the common case).
-
 - **`rake()` now gracefully handles single-variable adjustments.** When
   `rake(...)` resolves to exactly one adjustment variable, it logs a warning
   and delegates to `poststratify(...)` instead of raising an assertion. This
@@ -115,12 +91,10 @@
   `BalanceFrame.fit(method="rake")` more robust for one-variable inputs. In
   this delegated path, model metadata records `method='poststratify'` while
   returned weights keep the canonical `rake_weight` name.
-
 - **CLI `--num_lambdas` now parses as a positive integer.** Fractional,
   zero, negative, and non-numeric values fail fast during argument parsing
   instead of being accepted after coercion/truncation or failing later
   during IPW adjustment.
-
 - **Validation-path cleanup in `asmd`, `poststratify`, and `rake`** removes
   redundant/unreachable branches with no behavior loss:
   - `asmd(...)` uses a single authoritative invalid-`std_type` error path
@@ -131,7 +105,6 @@
     `_cell_ratio_tmp`, `_cell_ratio_tmp2`, ...).
   - `rake._predict_weights_from_model(...)` uses already-validated fit-time
     target weights directly for non-transfer replay.
-
 - **Security: `ws` updated from 8.20.0 to 8.20.1** in website dependencies.
   Fixes CVE-2026-45736 (GHSA-58qx-3vcg-4xpx): uninitialized memory disclosure
   in `websocket.close()` when a `TypedArray` is passed as the reason argument.
@@ -147,7 +120,6 @@
   (`HomepageFeatures.js`) gain matching cross-references;
   `.github/copilot-instructions.md` gets a new review-checklist bullet for
   changes that touch `balance/interop/diff_diff.py`.
-
 - **Survey-weighted DiD tutorial.** New
   `tutorials/balance_diff_diff_brfss.ipynb` walks through a BRFSS-style
   staggered-adoption smoking-ban DiD use case end-to-end: load synthetic
@@ -162,6 +134,17 @@
 
 ## Code Quality & Refactoring
 
+- **All-zero weight inputs to `_check_weights_series_are_valid` now emit a
+  `UserWarning`** (when `require_positive=False`, the default). Previously,
+  weighted statistics over an all-zero weight vector silently produced `NaN` /
+  `inf` (`sum(w*x)/sum(w) = 0/0`). Callers that already passed
+  `require_positive=True` (e.g. `design_effect`, `nonparametric_skew`,
+  `prop_above_and_below`, `weighted_median_breakdown_point`) keep their
+  `ValueError` behaviour. This affects internal callers like
+  `descriptive_stats` → `asmd`, which previously masked the failure mode.
+- Removed the scheduled migration `FutureWarning`s from `SampleFrame.weight_column`,
+  `SampleFrame.id_column`, and `BalanceFrame.id_column`; the accessors continue to return
+  column names, while `weight_series` and `id_series` return data.
 - Diagnostics construction now wires `adjustment_failure` metadata from model
   outputs when available (instead of hardcoding success), and supports an
   optional `adjustment_failure_reason` diagnostics row for richer failure
@@ -175,7 +158,6 @@
 - Expanded targeted test coverage for predict-time metadata validation,
   replay/transfer edge cases, and error/warning paths in
   `weighted_comparisons_stats`, `poststratify`, and `rake`.
-
 - **CI matrix entry for diff-diff integration.** The `Build and Test` workflow
   exercises `tests/test_interop_diff_diff.py` on Python 3.12 against both the
   minimum pin (`==3.3.0`) and the resolved-latest within `>=3.3.0,<4`, via
