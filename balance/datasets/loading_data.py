@@ -136,7 +136,7 @@ def load_cbps_data() -> Tuple[pd.DataFrame | None, pd.DataFrame | None]:
     target_df = df_all[df_all.treat == 1].drop(["treat"], axis=1)
     sample_df = df_all[df_all.treat == 0].drop(["treat"], axis=1)
 
-    return (target_df, sample_df)
+    return target_df, sample_df
 
 
 def load_data(

@@ -50,10 +50,10 @@ def _reorder_dfs_and_names(
     # their original order at the end.
     indexed.sort(key=lambda x: (order_map.get(x[1], len(_PREFERRED_NAME_ORDER)), x[0]))
     reordered_indices = [i for i, _ in indexed]
-    return (
+    return 
         [dfs[i] for i in reordered_indices],
         [names[i] for i in reordered_indices],
-    )
+    
 
 
 def _auto_n_bins(n_samples: int, n_unique: int) -> int:

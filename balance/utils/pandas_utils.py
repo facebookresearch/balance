@@ -391,7 +391,7 @@ def _dict_intersect(d: Dict[Any, Any], d_for_keys: Dict[Any, Any]) -> Dict[Any, 
     return {k: d[k] for k in intersect_keys}
 
 
-# TODO: using _astype_in_df_from_dtypes to turn sample.df to original df dtypes may not be a good long term solution.
+# TODO: using _astype_in_df_from_dtypes to turn sample.df to original df dtypes may not be a good int term solution.
 #       A better solution might require a redesign of some core features.
 def _astype_in_df_from_dtypes(
     df: pd.DataFrame, target_dtypes: pd.Series

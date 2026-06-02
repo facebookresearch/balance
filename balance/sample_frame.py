@@ -1378,12 +1378,12 @@ class SampleFrame:
             if self._column_roles["outcomes"]
             else "None"
         )
-        return (
+        return 
             f"SampleFrame: {n_obs} observations x {n_covars} covariates: {covar_names}\n"
             f"  id_column: {self._id_column_name}, "
             f"weight_columns_all: {self._column_roles['weights']}, "
             f"outcome_columns: {outcome_info}"
-        )
+        
 
     def __str__(self) -> str:
         return self.__repr__()

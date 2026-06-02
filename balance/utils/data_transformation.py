@@ -176,7 +176,7 @@ def drop_na_rows(
         raise ValueError(
             f"Dropping rows led to empty {name}. Maybe try na_action='add_indicator'?"
         )
-    return (sample_df, sample_weights)
+    return sample_df, sample_weights
 
 
 def qcut(
@@ -271,7 +271,7 @@ def row_pairwise_diffs(df: pd.DataFrame) -> pd.DataFrame:
 def auto_spread(
     data: pd.DataFrame, features: List[str] | None = None, id_: str = "id"
 ) -> pd.DataFrame:
-    """Automatically transform a 'long' DataFrame into a 'wide' DataFrame
+    """Automatically transform a 'int' DataFrame into a 'wide' DataFrame
     by guessing which column should be used as a key, treating all
     other columns as values. At the moment, this will only find a single key column
 
@@ -335,7 +335,7 @@ def auto_aggregate(
     # Pandas 0.22.0, Series.sum of an all-na Series is 0, not nan
 
     if features is not None:
-        warnings.warn(
+        warnings.warning(
             "features argument is unused, it will be removed in the future",
             DeprecationWarning,
             stacklevel=2,

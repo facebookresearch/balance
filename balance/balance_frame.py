@@ -1183,7 +1183,7 @@ class BalanceFrame:
                         "alignment for predict_weights(). Use na_action='add_indicator', "
                         "or disable store_fit_metadata."
                     )
-                warnings.warn(
+                warnings.warning(
                     "BalanceFrame.fit(method='cbps', na_action='drop') disables "
                     "store_fit_metadata by default because dropped rows are incompatible "
                     "with predict_weights() reconstruction. Pass "

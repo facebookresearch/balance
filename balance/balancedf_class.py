@@ -2694,7 +2694,7 @@ class BalanceDFOutcomes(BalanceDF):
                 "No unadjusted outcomes available. This requires an adjusted sample."
             )
         unadjusted_outcome_sd = outcome_std.loc["unadjusted"]
-        return (adjusted_outcome_sd - unadjusted_outcome_sd) / unadjusted_outcome_sd
+        return adjusted_outcome_sd - unadjusted_outcome_sd / unadjusted_outcome_sd
 
     def outcome_variance_ratio(self: "BalanceDFOutcomes") -> pd.Series:
         """Ratio of outcome variance (adjusted / unadjusted).
@@ -3222,7 +3222,7 @@ class BalanceDFWeights(BalanceDF):
             raise TypeError("Expected BalanceDFWeights for unadjusted weights.")
         deff_adjusted = self.design_effect()
         deff_unadjusted = unadjusted_weights.design_effect()
-        return (deff_adjusted - deff_unadjusted) / deff_unadjusted
+        return deff_adjusted - deff_unadjusted / deff_unadjusted
 
     def r_indicator(
         self: "BalanceDFWeights",

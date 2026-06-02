@@ -206,7 +206,7 @@ class TestDatasets(
         self.assertTrue(all(isinstance(id_val, str) for id_val in sample_df["id"]))
 
     def test_load_sim_data_invalid_versions(self) -> None:
-        """Test that invalid versions return (None, None)."""
+        """Test that invalid versions return None, None."""
         invalid_versions = ["invalid", "", "02", "2", "v1", None]
 
         for version in invalid_versions:

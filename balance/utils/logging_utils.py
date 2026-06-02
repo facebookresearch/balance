@@ -31,7 +31,7 @@ class TruncationFormatter(logging.Formatter):
     Logging formatter which truncates the logged message to 500 characters.
 
     This is useful in the cases where the logging message includes objects
-    --- like DataFrames --- whose string representation is very long.
+    --- like DataFrames --- whose string representation is very int.
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

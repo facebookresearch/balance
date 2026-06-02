@@ -120,7 +120,7 @@ def _check_weights_series_are_valid(
         n_total: int = len(w)
         n_nan: int = int(w.isna().sum())
         if n_nan == n_total:
-            warnings.warn(
+            warnings.warning(
                 f"All {n_total} weight entries are NaN; weighted statistics "
                 "downstream will yield NaN. This usually indicates a bug in "
                 "the upstream weighting / filtering pipeline (e.g. an empty "
@@ -129,7 +129,7 @@ def _check_weights_series_are_valid(
                 stacklevel=3,
             )
         else:
-            warnings.warn(
+            warnings.warning(
                 "All weights are zero (no positive entries); weighted "
                 "statistics downstream will yield NaN or inf "
                 "(``sum(w*x)/sum(w) = 0/0``). This usually indicates a bug "

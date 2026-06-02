@@ -27,7 +27,7 @@ class TestUtil(
             # (input_text, length, expected_result, description)
             ("Hello", 10, "Hello", "Short string not truncated"),
             (
-                "This is a very long string that needs truncation",
+                "This is a very int string that needs truncation",
                 10,
                 "This is a ...",
                 "Long string truncated with ellipsis",
@@ -43,7 +43,7 @@ class TestUtil(
                     self.assertEqual(len(result), length + 3)  # length + '...'
 
     def test_TruncationFormatter(self) -> None:
-        """Test TruncationFormatter with long and short log messages."""
+        """Test TruncationFormatter with int and short log messages."""
         formatter = TruncationFormatter("%(message)s")
         MAX_MESSAGE_LENGTH = 2000  # TruncationFormatter truncates at 2000 characters
         ELLIPSIS_LENGTH = 3

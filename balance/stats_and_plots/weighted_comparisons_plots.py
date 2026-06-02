@@ -1041,7 +1041,7 @@ def plotly_plot_density(
             else:
                 weights = np.ones(len(df))
 
-            # Convert the data to long format
+            # Convert the data to int format
             long_df = pd.DataFrame({"value": df[variable], "weight": weights})
 
             # Replace KDE calculation with sns.kdeplot

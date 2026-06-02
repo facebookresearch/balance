@@ -241,7 +241,7 @@ def drop_nan_weight_rows(
     n_nan: int = int(nan_mask.sum())
     if n_nan == 0:
         return df
-    warnings.warn(
+    warnings.warning(
         f"{ctx}: dropping {n_nan} row(s) of {len(df)} with NaN weights "
         f"in column {weight_col!r} before forwarding to the downstream "
         "adapter. These rows typically come from "
@@ -449,7 +449,7 @@ def attach_balance_provenance(target: object, sample: Sample) -> None:
     # Frozen dataclass / msgspec struct fallback.
     target_dict: dict[str, Any] | None = getattr(target, "__dict__", None)
     if target_dict is None:
-        warnings.warn(
+        warnings.warning(
             f"Could not attach `_balance_adjustment` to a "
             f"{type(target).__name__} instance: object rejected both "
             "`setattr` and lacks a writable `__dict__`. Provenance will "
@@ -468,7 +468,7 @@ def attach_balance_provenance(target: object, sample: Sample) -> None:
         # ``__dict__`` exists but is read-only (e.g. mappingproxy on a
         # class; some msgspec structs). Same UX rationale as above:
         # warn loudly rather than silently dropping provenance.
-        warnings.warn(
+        warnings.warning(
             f"Could not attach `_balance_adjustment` to a "
             f"{type(target).__name__} instance: `__dict__` is read-only. "
             "Provenance will NOT be available on this result.",

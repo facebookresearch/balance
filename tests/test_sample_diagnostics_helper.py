@@ -543,7 +543,7 @@ def test_build_diagnostics_omits_reason_when_failure_is_zero() -> None:
 def _get_adjustment_failure_from_diagnostics(
     model_dict: dict[str, Any] | None,
 ) -> tuple[int, str | None]:
-    """Call _build_diagnostics with the given model_dict and return (failure, reason)."""
+    """Call _build_diagnostics with the given model_dict and return failure, reason."""
     sample = Sample.from_frame(
         pd.DataFrame({"id": ["1", "2"], "x": [0, 1], "weight": [1.0, 2.0]}),
         id_column="id",

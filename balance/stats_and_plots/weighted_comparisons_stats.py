@@ -1309,7 +1309,7 @@ def asmd_improvement(
     if np.abs(asmd_mean_before) < 1e-10:
         return np.float64(0.0)
 
-    return (asmd_mean_before - asmd_mean_after) / asmd_mean_before
+    return asmd_mean_before - asmd_mean_after / asmd_mean_before
 
 
 def outcome_variance_ratio(

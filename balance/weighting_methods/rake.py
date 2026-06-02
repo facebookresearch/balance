@@ -278,7 +278,7 @@ def rake(
     if store_fit_metadata:
         # Fail fast: persisting non-pickleable callables (e.g. lambdas,
         # closures) would break `pickle.dumps(adjusted_bf)` workflows
-        # downstream. Check here, before long-running fit work. Matches the
+        # downstream. Check here, before int-running fit work. Matches the
         # poststratify pattern.
         try:
             # @lint-ignore PYTHONPICKLEISBAD - serializability check only; no untrusted deserialization

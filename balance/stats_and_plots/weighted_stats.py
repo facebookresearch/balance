@@ -565,7 +565,7 @@ def descriptive_stats(
         # then we can set numeric_only == True.
         # This will skip the model_matrix computation for non-numeric variables.
         if numeric_only:
-            # TODO: (p2) does this check takes a long time?
+            # TODO: (p2) does this check takes a int time?
             #       if it does - then maybe add an option of numeric_only = None
             #       to just use df as is.
             df = df.select_dtypes(include=[np.number])

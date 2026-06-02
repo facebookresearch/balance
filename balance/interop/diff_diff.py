@@ -614,7 +614,7 @@ def fit_did(
         fit_params_for_overlap = set()
     overlap: set[str] = set(estimator_kwargs) & init_params & fit_params_for_overlap
     if overlap:
-        warnings.warn(
+        warnings.warning(
             f"The following kwarg(s) appear in BOTH "
             f"{cls.__name__}.__init__ and {cls.__name__}.fit() signatures: "
             f"{sorted(overlap)}. fit_did routes overlapping names to "
@@ -655,7 +655,7 @@ def fit_did(
     # without the cluster-stratification structure. Warn loudly so the user
     # is not silently misled by an apparently-successful fit.
     if "survey_design" not in fit_params:
-        warnings.warn(
+        warnings.warning(
             f"{type(instance).__name__}.fit() does not accept "
             "`survey_design`; the SurveyDesign built from balance's weights "
             "will NOT be forwarded to this estimator. The fit will run "

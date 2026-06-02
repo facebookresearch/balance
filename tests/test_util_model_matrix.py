@@ -797,7 +797,7 @@ class TestBuildProjectedModelMatrix(
         sample_df = pd.DataFrame({"a": [1.0], "b": [3.0]})
         target_df = pd.DataFrame({"a": [5.0], "b": [7.0]})
         # assertNotWarns is implemented with assertLogs() in testutil.py, so it
-        # catches logger.warning(...) — not only warnings.warn(...). Using
+        # catches logger.warning(...) — not only warnings.warning(...). Using
         # assertLogs/assertNotWarns (rather than assertNoLogs) keeps this test
         # compatible with Python 3.9, where assertNoLogs is unavailable.
         self.assertNotWarns(

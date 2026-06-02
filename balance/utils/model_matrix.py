@@ -619,12 +619,12 @@ def _build_projected_model_matrix(
     resolved_formula: str | list[str] | None = cast(
         Optional[Union[str, List[str]]], model_matrix_out.get("formula")
     )
-    return (
+    return 
         combined_matrix,
         project_to_columns,
         penalty_factor_expanded,
         resolved_formula,
-    )
+    
 
 
 def _build_training_model_matrix(

@@ -254,7 +254,7 @@ class ValidateRowCountTest(unittest.TestCase):
     """§11.A — row-count guard catches ``na_action='drop'`` regressions."""
 
     def test_passes_when_counts_match(self) -> None:
-        """T17 — equal counts: silent return (None)."""
+        """T17 — equal counts: silent return None."""
         from balance.interop._common import validate_row_count
 
         s = _make_sample()

@@ -43,7 +43,7 @@ def _timeit(func: Callable[[], np.ndarray], repeat: int = 7) -> float:
     for _ in range(repeat):
         func()
     end = time.perf_counter()
-    return (end - start) / repeat
+    return end - start / repeat
 
 
 def _run_ipfn_lib(original: np.ndarray, margins: Sequence[np.ndarray]) -> np.ndarray:

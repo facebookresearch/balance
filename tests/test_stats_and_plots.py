@@ -4133,7 +4133,7 @@ class TestRelativeFrequencyTableTypeError(balance.testutil.BalanceTestCase):
         class FakeDataFrame:
             @property
             def shape(self) -> tuple:
-                return (3,)
+                return 3,
 
         fake_df = FakeDataFrame()
 
