@@ -12,6 +12,7 @@ import io
 import logging
 import pickle
 import unittest
+import warnings
 from typing import Any, Literal
 from unittest.mock import patch
 
@@ -5439,17 +5440,17 @@ class TestBlogV0_20_0SimDataHoldout(BalanceTestCase):
 # =====================================================================
 
 
-class TestBalanceFrameIdColumnWarning(BalanceTestCase):
-    """Cover lines 201-208: id_column property FutureWarning."""
+class TestBalanceFrameIdColumn(BalanceTestCase):
+    """Cover id_column property."""
 
-    def test_id_column_raises_future_warning(self) -> None:
+    def test_id_column_returns_column_name(self) -> None:
         resp_sf = SampleFrame.from_frame(
             pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]})
         )
         bf = BalanceFrame(sample=resp_sf)
-        with self.assertWarns(FutureWarning):
-            result = bf.id_column
-        self.assertEqual(result, "id")
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", FutureWarning)
+            self.assertEqual(bf.id_column, "id")
 
 
 class TestBalanceFrameWeightSeriesNone(BalanceTestCase):

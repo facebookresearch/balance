@@ -93,6 +93,10 @@
   `ValueError` behaviour. This affects internal callers like
   `descriptive_stats` → `asmd`, which previously masked the failure mode.
 
+- Removed the scheduled migration `FutureWarning`s from `SampleFrame.weight_column`,
+  `SampleFrame.id_column`, and `BalanceFrame.id_column`; the accessors continue to return
+  column names, while `weight_series` and `id_series` return data.
+
 ## Bug Fixes
 
 - **`rake()` now correctly incorporates per-row design weights in final

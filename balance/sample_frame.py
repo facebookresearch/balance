@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import logging
 import re
-import warnings
 from copy import deepcopy
 from typing import Any, cast, TYPE_CHECKING
 
@@ -588,15 +587,6 @@ class SampleFrame:
             >>> sf.weight_column
             'weight'
         """
-        # TODO: remove this warning after 2026-06-01 — by then users will
-        # have migrated to weight_series for data access.
-        warnings.warn(
-            "Note: weight_column now returns the column name (str) since "
-            "balance 0.19.0. It previously returned weight data (pd.Series). "
-            "Use weight_series for weight data.",
-            FutureWarning,
-            stacklevel=2,
-        )
         return self._weight_column_name
 
     # --- DataFrame properties ---
@@ -746,15 +736,6 @@ class SampleFrame:
             >>> sf.id_column
             'id'
         """
-        # TODO: remove this warning after 2026-06-01 — by then users will
-        # have migrated to id_series for data access.
-        warnings.warn(
-            "Note: id_column now returns the column name (str) since "
-            "balance 0.20.0. It previously returned ID data (pd.Series). "
-            "Use id_series for ID data.",
-            FutureWarning,
-            stacklevel=2,
-        )
         return self._id_column_name
 
     @property
