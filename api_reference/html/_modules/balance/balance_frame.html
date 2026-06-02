@@ -306,14 +306,6 @@
 <span class="sd">        Changed in 0.20.0 to return the name (str) instead of data (pd.Series).</span>
 <span class="sd">        Use :attr:`id_series` for data.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># TODO: remove this warning after 2026-06-01</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">&quot;Note: id_column now returns the column name (str) since &quot;</span>
-            <span class="s2">&quot;balance 0.20.0. It previously returned ID data (pd.Series). &quot;</span>
-            <span class="s2">&quot;Use id_series for ID data.&quot;</span><span class="p">,</span>
-            <span class="ne">FutureWarning</span><span class="p">,</span>
-            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-        <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_id_column_name</span>
 
     <span class="nd">@property</span>

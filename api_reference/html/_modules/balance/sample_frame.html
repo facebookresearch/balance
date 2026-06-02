@@ -53,7 +53,6 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
 
@@ -630,15 +629,6 @@
 <span class="sd">            &gt;&gt;&gt; sf.weight_column</span>
 <span class="sd">            &#39;weight&#39;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># TODO: remove this warning after 2026-06-01 — by then users will</span>
-        <span class="c1"># have migrated to weight_series for data access.</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">&quot;Note: weight_column now returns the column name (str) since &quot;</span>
-            <span class="s2">&quot;balance 0.19.0. It previously returned weight data (pd.Series). &quot;</span>
-            <span class="s2">&quot;Use weight_series for weight data.&quot;</span><span class="p">,</span>
-            <span class="ne">FutureWarning</span><span class="p">,</span>
-            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-        <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight_column_name</span>
 
     <span class="c1"># --- DataFrame properties ---</span>
@@ -788,15 +778,6 @@
 <span class="sd">            &gt;&gt;&gt; sf.id_column</span>
 <span class="sd">            &#39;id&#39;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># TODO: remove this warning after 2026-06-01 — by then users will</span>
-        <span class="c1"># have migrated to id_series for data access.</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">&quot;Note: id_column now returns the column name (str) since &quot;</span>
-            <span class="s2">&quot;balance 0.20.0. It previously returned ID data (pd.Series). &quot;</span>
-            <span class="s2">&quot;Use id_series for ID data.&quot;</span><span class="p">,</span>
-            <span class="ne">FutureWarning</span><span class="p">,</span>
-            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-        <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_column_name</span>
 
     <span class="nd">@property</span>
