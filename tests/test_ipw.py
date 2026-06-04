@@ -781,10 +781,10 @@ class TestIPW(
 
     def test_copy_fit_matrix_slice_copies_supported_matrix_types(self) -> None:
         """Fit-matrix persistence copies sparse, dense, and DataFrame slices."""
-        sparse_matrix = csr_matrix(np.arange(12, dtype=float).reshape(4, 3))
+        sparse_matrix = csr_matrix(np.arange(1, 13, dtype=float).reshape(4, 3))
         sparse_slice = balance_ipw._copy_fit_matrix_slice(sparse_matrix, 0, 2)
         sparse_matrix.data[0] = 999.0
-        self.assertNotEqual(sparse_slice.toarray()[0, 1], sparse_matrix.toarray()[0, 1])
+        self.assertNotEqual(sparse_slice.toarray()[0, 0], sparse_matrix.toarray()[0, 0])
 
         dense_matrix = np.arange(12, dtype=float).reshape(4, 3)
         dense_slice = balance_ipw._copy_fit_matrix_slice(dense_matrix, 0, 2)

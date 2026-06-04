@@ -573,10 +573,7 @@ def find_items_index_in_list(a_list: List[Any], items: List[Any]) -> List[int]:
         try:
             hash(item)
         except TypeError:
-            if not any(
-                _values_equal(item, existing) for existing, _ in unhashable_items
-            ):
-                unhashable_items.append((item, index))
+            unhashable_items.append((item, index))
         else:
             first_index_by_hashable_item.setdefault(item, index)
 
