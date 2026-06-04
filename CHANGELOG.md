@@ -1,3 +1,19 @@
+# 0.22.0 (Unreleased - TBD)
+
+## Code Quality & Refactoring
+
+- IPW fit metadata now stores training design weights under the canonical
+  `training_sample_weights` / `training_target_weights` keys used by
+  `predict_weights()`, while retaining BalanceFrame compatibility for legacy
+  `fit_*` aliases. Stored fit matrices are copied before being persisted so
+  sample and target caches cannot share slice views with the fit-time design
+  matrix.
+- ASMD input validation now rejects duplicate DataFrame column labels before
+  computing statistics, making direct `asmd(...)` calls match the unique-column
+  invariant enforced by SampleFrame construction.
+- `find_items_index_in_list(...)` now precomputes first-position lookups instead
+  of rebuilding membership sets and rescanning the source list for every item.
+
 # 0.21.0 (2026-06-02)
 
 ## New Features

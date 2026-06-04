@@ -520,6 +520,39 @@ def choose_variables(
     return ordered_variables
 
 
+def _values_equal(left: Any, right: Any) -> bool:
+    """Return scalar equality for arbitrary list items."""
+    if left is right:
+        return True
+    try:
+        equal = left == right
+    except (TypeError, ValueError):
+        try:
+            return bool(np.array_equal(left, right))
+        except (TypeError, ValueError):
+            return False
+    if isinstance(equal, (np.ndarray, pd.Index, pd.Series)):
+        return bool(np.array_equal(left, right))
+    try:
+        return bool(equal)
+    except (TypeError, ValueError):
+        return False
+
+
+def _find_first_equal_unhashable_item_index(
+    item: Any, unhashable_items: list[tuple[Any, int]]
+) -> Optional[int]:
+    """Return the first source index whose unhashable value equals item."""
+    return next(
+        (
+            existing_index
+            for existing_item, existing_index in unhashable_items
+            if _values_equal(item, existing_item)
+        ),
+        None,
+    )
+
+
 def find_items_index_in_list(a_list: List[Any], items: List[Any]) -> List[int]:
     """Finds the index location of a given item in an array.
 
@@ -534,9 +567,32 @@ def find_items_index_in_list(a_list: List[Any], items: List[Any]) -> List[int]:
     Returns:
         List[int]: a list of indices of the items in x that appear in the items list.
     """
-    # TODO: (p2) Optimization note: checking that i is in set each time is expensive -
-    #       there are probably faster ways to do it. Consider using a dict-based approach for large lists.
-    return [a_list.index(i) for i in items if i in set(a_list)]
+    first_index_by_hashable_item: dict[Any, int] = {}
+    unhashable_items: list[tuple[Any, int]] = []
+    for index, item in enumerate(a_list):
+        try:
+            hash(item)
+        except TypeError:
+            if not any(
+                _values_equal(item, existing) for existing, _ in unhashable_items
+            ):
+                unhashable_items.append((item, index))
+        else:
+            first_index_by_hashable_item.setdefault(item, index)
+
+    indices: list[int] = []
+    for item in items:
+        try:
+            hash(item)
+        except TypeError:
+            index = _find_first_equal_unhashable_item_index(item, unhashable_items)
+        else:
+            index = first_index_by_hashable_item.get(item)
+            if index is None:
+                index = _find_first_equal_unhashable_item_index(item, unhashable_items)
+        if index is not None:
+            indices.append(index)
+    return indices
 
 
 def get_items_from_list_via_indices(a_list: List[Any], indices: List[int]) -> List[Any]:

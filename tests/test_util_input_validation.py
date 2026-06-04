@@ -649,6 +649,12 @@ class TestUtil(
             ([1, 2, 3, 4, 5, 6, 7], [2, 7], [1, 6], "Numeric list with found items"),
             ([1, 2, 3, 4, 5, 6, 7], [1000], [], "Numeric list with missing items"),
             ([10, 20, 30, 40], [20, 100, 40, 200], [1, 3], "Mixed found and missing"),
+            (
+                [10, 20, 10, 30],
+                [10, 30],
+                [0, 3],
+                "First index for duplicate source items",
+            ),
         ]
 
         test_cases_string = [
@@ -660,8 +666,22 @@ class TestUtil(
             ),
         ]
 
+        shared_nan = float("nan")
         test_cases_edge = [
             ([1, 2, 3], [], [], "Empty items list"),
+            ([["a"], ["b"], ["a"]], [["a"], ["missing"]], [0], "Unhashable list items"),
+            (
+                [np.array([1, 2]), np.array([3, 4])],
+                [np.array([3, 4]), np.array([9, 9])],
+                [1],
+                "Unhashable numpy array items",
+            ),
+            (
+                [shared_nan, 1.0],
+                [shared_nan, float("nan")],
+                [0],
+                "NaN identity semantics",
+            ),
         ]
 
         all_test_cases = test_cases_numeric + test_cases_string + test_cases_edge

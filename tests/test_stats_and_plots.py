@@ -4230,6 +4230,30 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
             # pyrefly: ignore [bad-argument-type]
             weighted_comparisons_stats.asmd(sample_df, target_df, std_type="invalid")
 
+    def test_asmd_rejects_duplicate_column_names(self) -> None:
+        """Test asmd rejects ambiguous duplicate DataFrame column labels."""
+        duplicate_cases = [
+            (
+                pd.DataFrame([[1.0, 2.0], [3.0, 4.0]], columns=["a", "a"]),
+                pd.DataFrame([[1.0, 2.0], [3.0, 5.0]], columns=["a", "b"]),
+            ),
+            (
+                pd.DataFrame([[1.0, 2.0], [3.0, 4.0]], columns=["a", "b"]),
+                pd.DataFrame([[1.0, 2.0], [3.0, 5.0]], columns=["b", "b"]),
+            ),
+            (
+                pd.DataFrame([[1.0, 2.0], [3.0, 4.0]], columns=[1, 1]),
+                pd.DataFrame([[1.0, 2.0], [3.0, 5.0]], columns=[1, 2]),
+            ),
+        ]
+
+        for sample_df, target_df in duplicate_cases:
+            with self.subTest(
+                sample_columns=sample_df.columns, target_columns=target_df.columns
+            ):
+                with self.assertRaisesRegex(ValueError, "unique column names"):
+                    weighted_comparisons_stats.asmd(sample_df, target_df)
+
     @unittest.skipUnless(HAS_SEABORN, "requires seaborn")
     def test_love_plot_rejects_non_bool_line_and_show_and_warns_layout_kwargs_for_seaborn(
         self,

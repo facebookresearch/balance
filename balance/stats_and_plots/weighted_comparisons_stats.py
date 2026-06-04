@@ -592,11 +592,25 @@ def asmd(
         raise ValueError(
             f"Unknown std_type: {std_type!r}. Use 'sample', 'target', or 'pooled'."
         )
-    if sample_df.columns.values.tolist() != target_df.columns.values.tolist():
+    sample_columns = sample_df.columns.values.tolist()
+    target_columns = target_df.columns.values.tolist()
+    duplicate_sample_columns = sample_df.columns[
+        sample_df.columns.duplicated()
+    ].tolist()
+    duplicate_target_columns = target_df.columns[
+        target_df.columns.duplicated()
+    ].tolist()
+    if duplicate_sample_columns or duplicate_target_columns:
+        raise ValueError(
+            "sample_df and target_df must have unique column names. "
+            f"Duplicate sample_df columns: {duplicate_sample_columns}. "
+            f"Duplicate target_df columns: {duplicate_target_columns}."
+        )
+    if sample_columns != target_columns:
         logger.warning(
             "sample_df and target_df must have the same column names.\n"
-            f"sample_df column names: {sample_df.columns.values.tolist()}\n"
-            f"target_df column names: {target_df.columns.values.tolist()}"
+            f"sample_df column names: {sample_columns}\n"
+            f"target_df column names: {target_columns}"
         )
 
     sample_mean = descriptive_stats(sample_df, sample_weights, "mean")
@@ -618,8 +632,6 @@ def asmd(
     out = out.loc[:, (c for c in out.columns.values if not c.startswith("_is_na_"))]
     out = _safe_replace_and_infer(out)
 
-    # TODO (p2): verify that df column names are unique (otherwise throw an exception).
-    #            it should probably be upstream during in the Sample creation process.
     weights = _weights_per_covars_names(out.columns.values.tolist())[
         ["weight"]
     ].transpose()
