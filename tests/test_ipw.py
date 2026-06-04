@@ -818,6 +818,8 @@ class TestIPW(
         self.assertIn("model_matrix_target", model)
         self.assertIn("training_sample_weights", model)
         self.assertIn("training_target_weights", model)
+        self.assertIn("fit_sample_weights", model)
+        self.assertIn("fit_target_weights", model)
         self.assertEqual(model["model_matrix_sample"].shape[0], sample_df.shape[0])
         self.assertEqual(model["model_matrix_target"].shape[0], target_df.shape[0])
         self.assertTrue(issparse(model["model_matrix_sample"]))

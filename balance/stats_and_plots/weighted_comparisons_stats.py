@@ -34,6 +34,43 @@ from scipy.stats import gaussian_kde, wasserstein_distance
 logger: logging.Logger = logging.getLogger(__package__)
 
 
+def _labels_equal(left: object, right: object) -> bool:
+    """Return scalar equality for DataFrame column labels."""
+    if left is right:
+        return True
+    try:
+        left_missing = pd.isna(left)
+        right_missing = pd.isna(right)
+    except (TypeError, ValueError):
+        left_missing = False
+        right_missing = False
+    if not isinstance(
+        left_missing, (np.ndarray, pd.Index, pd.Series)
+    ) and not isinstance(right_missing, (np.ndarray, pd.Index, pd.Series)):
+        if bool(left_missing) and bool(right_missing):
+            return True
+    try:
+        equal = left == right
+    except (TypeError, ValueError):
+        return False
+    if isinstance(equal, (np.ndarray, pd.Index, pd.Series)):
+        return bool(np.array_equal(left, right))
+    try:
+        return bool(equal)
+    except (TypeError, ValueError):
+        return False
+
+
+def _duplicated_labels_once(columns: pd.Index) -> list[object]:
+    """Return duplicate labels once, preserving their first duplicate order."""
+    duplicated_labels = columns[columns.duplicated()].tolist()
+    out: list[object] = []
+    for label in duplicated_labels:
+        if not any(_labels_equal(label, existing) for existing in out):
+            out.append(label)
+    return out
+
+
 ##########################################
 # Weighted comparisons - functions to compare one or two data sources with one or two sources of weights
 ##########################################
@@ -594,12 +631,8 @@ def asmd(
         )
     sample_columns = sample_df.columns.values.tolist()
     target_columns = target_df.columns.values.tolist()
-    duplicate_sample_columns = sample_df.columns[
-        sample_df.columns.duplicated()
-    ].tolist()
-    duplicate_target_columns = target_df.columns[
-        target_df.columns.duplicated()
-    ].tolist()
+    duplicate_sample_columns = _duplicated_labels_once(sample_df.columns)
+    duplicate_target_columns = _duplicated_labels_once(target_df.columns)
     if duplicate_sample_columns or duplicate_target_columns:
         raise ValueError(
             "sample_df and target_df must have unique column names. "

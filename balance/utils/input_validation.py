@@ -553,6 +553,54 @@ def _find_first_equal_unhashable_item_index(
     )
 
 
+def _is_safe_hashable_lookup_key(item: Any) -> bool:
+    """Return whether item can be safely used for dict lookup."""
+    try:
+        hash(item)
+        equal_to_self = item == item
+    except (TypeError, ValueError):
+        return False
+    if isinstance(equal_to_self, (np.ndarray, pd.Index, pd.Series)):
+        return False
+    try:
+        bool(equal_to_self)
+    except (TypeError, ValueError):
+        return False
+    return True
+
+
+def _remember_first_item_index(
+    first_index_by_hashable_item: dict[Any, int],
+    fallback_items: list[tuple[Any, int]],
+    item: Any,
+    index: int,
+) -> None:
+    """Store item/index in the fast dict path or the equality-scan fallback."""
+    if not _is_safe_hashable_lookup_key(item):
+        fallback_items.append((item, index))
+        return
+    try:
+        first_index_by_hashable_item.setdefault(item, index)
+    except (TypeError, ValueError):
+        fallback_items.append((item, index))
+
+
+def _find_first_item_index(
+    first_index_by_hashable_item: dict[Any, int],
+    fallback_items: list[tuple[Any, int]],
+    item: Any,
+) -> Optional[int]:
+    """Find item in the fast dict path, falling back to robust equality scans."""
+    if _is_safe_hashable_lookup_key(item):
+        try:
+            index = first_index_by_hashable_item.get(item)
+        except (TypeError, ValueError):
+            index = None
+        if index is not None:
+            return index
+    return _find_first_equal_unhashable_item_index(item, fallback_items)
+
+
 def find_items_index_in_list(a_list: List[Any], items: List[Any]) -> List[int]:
     """Finds the index location of a given item in an array.
 
@@ -568,25 +616,17 @@ def find_items_index_in_list(a_list: List[Any], items: List[Any]) -> List[int]:
         List[int]: a list of indices of the items in x that appear in the items list.
     """
     first_index_by_hashable_item: dict[Any, int] = {}
-    unhashable_items: list[tuple[Any, int]] = []
+    fallback_items: list[tuple[Any, int]] = []
     for index, item in enumerate(a_list):
-        try:
-            hash(item)
-        except TypeError:
-            unhashable_items.append((item, index))
-        else:
-            first_index_by_hashable_item.setdefault(item, index)
+        _remember_first_item_index(
+            first_index_by_hashable_item, fallback_items, item, index
+        )
 
     indices: list[int] = []
     for item in items:
-        try:
-            hash(item)
-        except TypeError:
-            index = _find_first_equal_unhashable_item_index(item, unhashable_items)
-        else:
-            index = first_index_by_hashable_item.get(item)
-            if index is None:
-                index = _find_first_equal_unhashable_item_index(item, unhashable_items)
+        index = _find_first_item_index(
+            first_index_by_hashable_item, fallback_items, item
+        )
         if index is not None:
             indices.append(index)
     return indices
