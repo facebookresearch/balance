@@ -666,7 +666,32 @@ class TestUtil(
             ),
         ]
 
+        class HashableArrayEquality:
+            def __init__(self, value: int) -> None:
+                self.value = value
+
+            def __hash__(self) -> int:
+                return 1
+
+            def __eq__(self, other: object) -> np.ndarray:  # type: ignore[override]
+                if not isinstance(other, HashableArrayEquality):
+                    return np.array(False)
+                return np.array(self.value == other.value)
+
+        class HashableRaisingEquality:
+            def __init__(self, value: int) -> None:
+                self.value = value
+
+            def __hash__(self) -> int:
+                return 1
+
+            def __eq__(self, other: object) -> bool:
+                raise ValueError("non-scalar equality")
+
         shared_nan = float("nan")
+        array_eq_1 = HashableArrayEquality(1)
+        array_eq_2 = HashableArrayEquality(2)
+        raising_eq = HashableRaisingEquality(1)
         test_cases_edge = [
             ([1, 2, 3], [], [], "Empty items list"),
             ([["a"], ["b"], ["a"]], [["a"], ["missing"]], [0], "Unhashable list items"),
@@ -681,6 +706,18 @@ class TestUtil(
                 [shared_nan, float("nan")],
                 [0],
                 "NaN identity semantics",
+            ),
+            (
+                [array_eq_1, array_eq_2],
+                [HashableArrayEquality(2), HashableArrayEquality(9)],
+                [1],
+                "Hashable objects with array equality",
+            ),
+            (
+                [raising_eq],
+                [raising_eq, HashableRaisingEquality(1)],
+                [0],
+                "Hashable objects with raising equality",
             ),
         ]
 

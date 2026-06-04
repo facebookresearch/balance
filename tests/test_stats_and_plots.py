@@ -4234,8 +4234,12 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
         """Test asmd rejects ambiguous duplicate DataFrame column labels."""
         duplicate_cases = [
             (
-                pd.DataFrame([[1.0, 2.0], [3.0, 4.0]], columns=["a", "a"]),
-                pd.DataFrame([[1.0, 2.0], [3.0, 5.0]], columns=["a", "b"]),
+                pd.DataFrame(
+                    [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], columns=["a", "a", "a"]
+                ),
+                pd.DataFrame(
+                    [[1.0, 2.0, 3.0], [4.0, 5.0, 7.0]], columns=["a", "b", "c"]
+                ),
             ),
             (
                 pd.DataFrame([[1.0, 2.0], [3.0, 4.0]], columns=["a", "b"]),
@@ -4245,14 +4249,24 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
                 pd.DataFrame([[1.0, 2.0], [3.0, 4.0]], columns=[1, 1]),
                 pd.DataFrame([[1.0, 2.0], [3.0, 5.0]], columns=[1, 2]),
             ),
+            (
+                pd.DataFrame(
+                    [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],
+                    columns=[np.nan, np.nan, np.nan],
+                ),
+                pd.DataFrame(
+                    [[1.0, 2.0, 3.0], [4.0, 5.0, 7.0]], columns=["a", "b", "c"]
+                ),
+            ),
         ]
 
         for sample_df, target_df in duplicate_cases:
             with self.subTest(
                 sample_columns=sample_df.columns, target_columns=target_df.columns
             ):
-                with self.assertRaisesRegex(ValueError, "unique column names"):
+                with self.assertRaisesRegex(ValueError, "unique column names") as ctx:
                     weighted_comparisons_stats.asmd(sample_df, target_df)
+                self.assertNotIn("'a', 'a'", str(ctx.exception))
 
     @unittest.skipUnless(HAS_SEABORN, "requires seaborn")
     def test_love_plot_rejects_non_bool_line_and_show_and_warns_layout_kwargs_for_seaborn(
