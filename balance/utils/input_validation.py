@@ -542,6 +542,11 @@ def _values_equal(left: Any, right: Any) -> bool:
             and isinstance(right, pd.Index)
             and left.equals(right)
         )
+    if isinstance(left, np.ndarray) or isinstance(right, np.ndarray):
+        try:
+            return bool(np.array_equal(left, right))
+        except (TypeError, ValueError):
+            return False
     try:
         equal = left == right
     except (TypeError, ValueError):
@@ -550,7 +555,10 @@ def _values_equal(left: Any, right: Any) -> bool:
         except (TypeError, ValueError):
             return False
     if isinstance(equal, np.ndarray):
-        return bool(np.array_equal(left, right))
+        try:
+            return bool(np.asarray(equal).all())
+        except (TypeError, ValueError):
+            return False
     try:
         return bool(equal)
     except (TypeError, ValueError):
