@@ -626,7 +626,7 @@ def _find_first_item_index(
             index = None
         if index is not None:
             return index
-    return _find_first_equal_unhashable_item_index(item, fallback_items)
+    return _find_first_equal_fallback_item_index(item, fallback_items)
 
 
 def find_items_index_in_list(a_list: List[Any], items: List[Any]) -> List[int]:
