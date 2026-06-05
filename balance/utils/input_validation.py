@@ -524,11 +524,22 @@ def _values_equal(left: Any, right: Any) -> bool:
     """Return scalar equality for arbitrary list items."""
     if left is right:
         return True
-    pandas_types = (pd.Series, pd.Index, pd.DataFrame)
-    if isinstance(left, pandas_types) or isinstance(right, pandas_types):
+    if isinstance(left, pd.DataFrame) or isinstance(right, pd.DataFrame):
         return (
-            isinstance(left, pandas_types)
-            and isinstance(right, type(left))
+            isinstance(left, pd.DataFrame)
+            and isinstance(right, pd.DataFrame)
+            and left.equals(right)
+        )
+    if isinstance(left, pd.Series) or isinstance(right, pd.Series):
+        return (
+            isinstance(left, pd.Series)
+            and isinstance(right, pd.Series)
+            and left.equals(right)
+        )
+    if isinstance(left, pd.Index) or isinstance(right, pd.Index):
+        return (
+            isinstance(left, pd.Index)
+            and isinstance(right, pd.Index)
             and left.equals(right)
         )
     try:

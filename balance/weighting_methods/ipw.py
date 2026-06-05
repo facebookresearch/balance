@@ -707,6 +707,7 @@ def ipw(
                 When ``store_fit_metadata=True``: adds
                 ``sample_probability``, ``target_probability``,
                 ``sample_link``, ``target_link``,
+                ``sample_index``, ``target_index``,
                 ``training_sample_weights``, ``training_target_weights``.
     """
     custom_model: ClassifierMixin | None = None

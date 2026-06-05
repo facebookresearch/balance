@@ -4266,7 +4266,12 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
             ):
                 with self.assertRaisesRegex(ValueError, "unique column names") as ctx:
                     weighted_comparisons_stats.asmd(sample_df, target_df)
-                self.assertNotIn("'a', 'a'", str(ctx.exception))
+                message = str(ctx.exception)
+                self.assertNotIn("'a', 'a'", message)
+                if not sample_df.columns.has_duplicates:
+                    self.assertNotIn("Duplicate sample_df columns", message)
+                if not target_df.columns.has_duplicates:
+                    self.assertNotIn("Duplicate target_df columns", message)
 
     @unittest.skipUnless(HAS_SEABORN, "requires seaborn")
     def test_love_plot_rejects_non_bool_line_and_show_and_warns_layout_kwargs_for_seaborn(

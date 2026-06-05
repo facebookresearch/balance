@@ -723,6 +723,15 @@ class TestUtil(
                 "Pandas Series equality respects index metadata",
             ),
             (
+                [pd.MultiIndex.from_tuples([("a", 1), ("b", 2)])],
+                [
+                    pd.Index([("a", 1), ("b", 2)]),
+                    pd.MultiIndex.from_tuples([("a", 1), ("b", 2)]),
+                ],
+                [0, 0],
+                "Pandas Index equality is symmetric across subclasses",
+            ),
+            (
                 [raising_eq],
                 [raising_eq, HashableRaisingEquality(1)],
                 [0],

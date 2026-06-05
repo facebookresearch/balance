@@ -39,6 +39,18 @@ def _duplicated_labels_once(columns: pd.Index) -> list[object]:
     return pd.Index(columns[columns.duplicated()]).unique().tolist()
 
 
+def _duplicate_column_names_error_message(
+    duplicate_sample_columns: list[object], duplicate_target_columns: list[object]
+) -> str:
+    """Format duplicate-column validation errors without empty duplicate lists."""
+    parts = ["sample_df and target_df must have unique column names."]
+    if duplicate_sample_columns:
+        parts.append(f"Duplicate sample_df columns: {duplicate_sample_columns}.")
+    if duplicate_target_columns:
+        parts.append(f"Duplicate target_df columns: {duplicate_target_columns}.")
+    return " ".join(parts)
+
+
 ##########################################
 # Weighted comparisons - functions to compare one or two data sources with one or two sources of weights
 ##########################################
@@ -603,9 +615,9 @@ def asmd(
     duplicate_target_columns = _duplicated_labels_once(target_df.columns)
     if duplicate_sample_columns or duplicate_target_columns:
         raise ValueError(
-            "sample_df and target_df must have unique column names. "
-            f"Duplicate sample_df columns: {duplicate_sample_columns}. "
-            f"Duplicate target_df columns: {duplicate_target_columns}."
+            _duplicate_column_names_error_message(
+                duplicate_sample_columns, duplicate_target_columns
+            )
         )
     if sample_columns != target_columns:
         logger.warning(
