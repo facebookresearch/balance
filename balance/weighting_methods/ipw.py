@@ -21,7 +21,7 @@ from balance.stats_and_plots.weighted_comparisons_stats import (
 from balance.stats_and_plots.weights_stats import design_effect
 from balance.util import _assert_type
 from balance.utils.model_matrix import build_design_matrix
-from scipy.sparse import csc_matrix, csr_matrix, issparse
+from scipy.sparse import csc_matrix, csr_matrix, issparse, spmatrix
 from sklearn.base import ClassifierMixin, clone
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import log_loss
@@ -157,10 +157,10 @@ def _compute_proportion_deviance(dev: float, null_dev: float) -> float:
 
 
 def _copy_fit_matrix_slice(
-    X_matrix: Union[pd.DataFrame, np.ndarray, csc_matrix, csr_matrix],
+    X_matrix: Union[pd.DataFrame, np.ndarray, spmatrix],
     start: int,
     stop: int,
-) -> Union[pd.DataFrame, np.ndarray, csc_matrix, csr_matrix]:
+) -> Union[pd.DataFrame, np.ndarray, spmatrix]:
     """Copy a row slice of a fit-time design matrix for persistence."""
     if isinstance(X_matrix, pd.DataFrame):
         return X_matrix.iloc[start:stop].copy()

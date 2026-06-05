@@ -565,14 +565,14 @@ def _values_equal(left: Any, right: Any) -> bool:
         return False
 
 
-def _find_first_equal_unhashable_item_index(
-    item: Any, unhashable_items: list[tuple[Any, int]]
+def _find_first_equal_fallback_item_index(
+    item: Any, fallback_items: list[tuple[Any, int]]
 ) -> Optional[int]:
-    """Return the first source index whose unhashable value equals item."""
+    """Return the first fallback index whose value equals item."""
     return next(
         (
             existing_index
-            for existing_item, existing_index in unhashable_items
+            for existing_item, existing_index in fallback_items
             if _values_equal(item, existing_item)
         ),
         None,

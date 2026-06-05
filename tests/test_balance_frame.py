@@ -3404,6 +3404,8 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
 
         self.assertIs(migrated_model.get("training_sample_weights"), sample_weights)
         self.assertIs(migrated_model.get("training_target_weights"), target_weights)
+        self.assertNotIn("fit_sample_weights", migrated_model)
+        self.assertNotIn("fit_target_weights", migrated_model)
 
     @pytest.mark.requires_sklearn_1_4  # pyre-ignore[56]
     @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires scikit-learn >= 1.4")
