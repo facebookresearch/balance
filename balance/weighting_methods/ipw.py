@@ -1150,8 +1150,6 @@ def ipw(
                 "target_index": target_df.index.copy(),
                 "training_sample_weights": sample_weights.copy(),
                 "training_target_weights": target_weights.copy(),
-                "fit_sample_weights": sample_weights.copy(),
-                "fit_target_weights": target_weights.copy(),
             }
         )
 

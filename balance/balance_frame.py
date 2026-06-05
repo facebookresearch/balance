@@ -843,23 +843,6 @@ class BalanceFrame:
         adj_model = new_bf._adjustment_model
         if isinstance(adj_model, dict):
             adj_model.setdefault("method", method_name)
-            if adj_model.get("method") == "ipw":
-                # Preserve training-time design weights from legacy IPW model
-                # aliases when loading models produced before they were stored
-                # under the canonical predict_weights() names.
-                fit_sample_weights = adj_model.get("fit_sample_weights")
-                if isinstance(fit_sample_weights, pd.Series):
-                    adj_model.setdefault(
-                        "training_sample_weights",
-                        fit_sample_weights,
-                    )
-                if new_bf._sf_target is not None:
-                    fit_target_weights = adj_model.get("fit_target_weights")
-                    if isinstance(fit_target_weights, pd.Series):
-                        adj_model.setdefault(
-                            "training_target_weights",
-                            fit_target_weights,
-                        )
         effective_method_name = (
             str(adj_model.get("method")) if isinstance(adj_model, dict) else method_name
         )

@@ -524,6 +524,13 @@ def _values_equal(left: Any, right: Any) -> bool:
     """Return scalar equality for arbitrary list items."""
     if left is right:
         return True
+    pandas_types = (pd.Series, pd.Index, pd.DataFrame)
+    if isinstance(left, pandas_types) or isinstance(right, pandas_types):
+        return (
+            isinstance(left, pandas_types)
+            and isinstance(right, type(left))
+            and left.equals(right)
+        )
     try:
         equal = left == right
     except (TypeError, ValueError):
@@ -531,7 +538,7 @@ def _values_equal(left: Any, right: Any) -> bool:
             return bool(np.array_equal(left, right))
         except (TypeError, ValueError):
             return False
-    if isinstance(equal, (np.ndarray, pd.Index, pd.Series)):
+    if isinstance(equal, np.ndarray):
         return bool(np.array_equal(left, right))
     try:
         return bool(equal)

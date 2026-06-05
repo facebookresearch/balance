@@ -714,6 +714,15 @@ class TestUtil(
                 "Hashable objects with array equality",
             ),
             (
+                [pd.Series([1, 2], index=["a", "b"])],
+                [
+                    pd.Series([1, 2], index=["b", "a"]),
+                    pd.Series([1, 2], index=["a", "b"]),
+                ],
+                [0],
+                "Pandas Series equality respects index metadata",
+            ),
+            (
                 [raising_eq],
                 [raising_eq, HashableRaisingEquality(1)],
                 [0],
