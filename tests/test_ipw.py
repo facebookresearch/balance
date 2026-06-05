@@ -24,7 +24,7 @@ from balance import util as balance_util
 from balance.sample_class import Sample
 from balance.testutil import _SKLEARN_1_4_AVAILABLE
 from balance.weighting_methods import ipw as balance_ipw
-from scipy.sparse import csr_matrix, issparse
+from scipy.sparse import csc_matrix, csr_matrix, issparse
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import log_loss
