@@ -573,12 +573,14 @@ def _find_first_equal_unhashable_item_index(
 
 def _is_safe_hashable_lookup_key(item: Any) -> bool:
     """Return whether item can be safely used for dict lookup."""
+    if isinstance(item, (np.ndarray, pd.Index, pd.Series, pd.DataFrame)):
+        return False
     try:
         hash(item)
         equal_to_self = item == item
     except (TypeError, ValueError):
         return False
-    if isinstance(equal_to_self, (np.ndarray, pd.Index, pd.Series)):
+    if isinstance(equal_to_self, np.ndarray):
         return False
     try:
         bool(equal_to_self)

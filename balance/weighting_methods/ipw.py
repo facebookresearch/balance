@@ -164,6 +164,8 @@ def _copy_fit_matrix_slice(
     """Copy a row slice of a fit-time design matrix for persistence."""
     if isinstance(X_matrix, pd.DataFrame):
         return X_matrix.iloc[start:stop].copy()
+    if isinstance(X_matrix, csc_matrix):
+        return X_matrix.tocsr()[start:stop].copy()
     return X_matrix[start:stop].copy()
 
 
