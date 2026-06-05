@@ -1,3 +1,11 @@
+# 0.22.0 (Unreleased)
+
+## Tests
+
+- Add regression test for CBPS rank-deficient SVD handling when covariate
+  columns are collinear (near-zero singular values filtered during SVD
+  preprocessing).
+
 # 0.21.0 (2026-06-02)
 
 ## New Features
