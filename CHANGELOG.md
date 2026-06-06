@@ -15,6 +15,12 @@
 - `find_items_index_in_list(...)` now precomputes first-position lookups instead
   of rebuilding membership sets and rescanning the source list for every item.
 
+## Tests
+
+- Add regression test for CBPS rank-deficient SVD handling when covariate
+  columns are collinear (near-zero singular values filtered during SVD
+  preprocessing).
+
 # 0.21.0 (2026-06-02)
 
 ## New Features
