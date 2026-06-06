@@ -525,8 +525,11 @@ def _coerce_equality_result(equal: Any) -> Optional[bool]:
     if isinstance(equal, (bool, np.bool_)):
         return bool(equal)
     if isinstance(equal, np.ndarray):
+        array_equal = np.asarray(equal)
+        if array_equal.size == 0:
+            return None
         try:
-            return bool(np.asarray(equal).all())
+            return bool(array_equal.all())
         except (TypeError, ValueError):
             return None
     if isinstance(equal, (list, tuple)):
