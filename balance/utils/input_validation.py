@@ -633,13 +633,12 @@ def _find_first_item_index(
     item: Any,
 ) -> Optional[int]:
     """Find item in the fast dict path, falling back to robust equality scans."""
-    if _is_safe_hashable_lookup_key(item):
-        try:
-            index = first_index_by_hashable_item.get(item)
-        except (TypeError, ValueError):
-            index = None
-        if index is not None:
-            return index
+    try:
+        index = first_index_by_hashable_item.get(item)
+    except (TypeError, ValueError):
+        index = None
+    if index is not None:
+        return index
     return _find_first_equal_fallback_item_index(item, fallback_items)
 
 
