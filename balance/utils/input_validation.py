@@ -526,7 +526,7 @@ def _coerce_equality_result(equal: Any) -> Optional[bool]:
         return bool(equal)
     if isinstance(equal, np.ndarray):
         array_equal = np.asarray(equal)
-        if array_equal.size == 0:
+        if array_equal.size == 0 or array_equal.dtype.kind != "b":
             return None
         try:
             return bool(array_equal.all())

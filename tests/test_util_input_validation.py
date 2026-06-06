@@ -69,6 +69,14 @@ class HashableEmptyListEquality:
         return []
 
 
+class HashableIntegerArrayEquality:
+    def __hash__(self) -> int:
+        return 1
+
+    def __eq__(self, other: object) -> np.ndarray:  # type: ignore[override]
+        return np.array([1], dtype=int)
+
+
 class HashableRaisingEquality:
     def __init__(self, value: int) -> None:
         self.value = value
@@ -779,6 +787,12 @@ class TestUtil(
                 [HashableEmptyListEquality()],
                 [],
                 "Hashable objects with empty list equality",
+            ),
+            (
+                [HashableIntegerArrayEquality()],
+                [HashableIntegerArrayEquality()],
+                [],
+                "Hashable objects with integer array equality",
             ),
             (
                 [raising_eq],

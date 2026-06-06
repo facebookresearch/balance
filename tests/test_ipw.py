@@ -783,13 +783,13 @@ class TestIPW(
         """Fit-matrix persistence copies sparse, dense, and DataFrame slices."""
         sparse_matrix = csr_matrix(np.arange(1, 13, dtype=float).reshape(4, 3))
         sparse_slice = balance_ipw._copy_fit_matrix_slice(sparse_matrix, 0, 2)
-        sparse_matrix.data[0] = 999.0
+        sparse_matrix[0, 0] = 999.0
         self.assertNotEqual(sparse_slice.toarray()[0, 0], sparse_matrix.toarray()[0, 0])
 
         csc_sparse_matrix = csc_matrix(np.arange(1, 13, dtype=float).reshape(4, 3))
         csc_sparse_slice = balance_ipw._copy_fit_matrix_slice(csc_sparse_matrix, 0, 2)
         self.assertTrue(issparse(csc_sparse_slice))
-        csc_sparse_matrix.data[0] = 999.0
+        csc_sparse_matrix[0, 0] = 999.0
         self.assertNotEqual(
             csc_sparse_slice.toarray()[0, 0], csc_sparse_matrix.toarray()[0, 0]
         )
