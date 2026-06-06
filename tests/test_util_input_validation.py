@@ -678,6 +678,18 @@ class TestUtil(
                     return np.array(False)
                 return np.array(self.value == other.value)
 
+        class HashableListEquality:
+            def __init__(self, value: int) -> None:
+                self.value = value
+
+            def __hash__(self) -> int:
+                return 1
+
+            def __eq__(self, other: object) -> list[bool]:  # type: ignore[override]
+                if not isinstance(other, HashableListEquality):
+                    return [False]
+                return [self.value == other.value]
+
         class HashableRaisingEquality:
             def __init__(self, value: int) -> None:
                 self.value = value
@@ -730,6 +742,12 @@ class TestUtil(
                 ],
                 [0, 0],
                 "Pandas Index equality is symmetric across subclasses",
+            ),
+            (
+                [HashableListEquality(1), HashableListEquality(2)],
+                [HashableListEquality(2), HashableListEquality(9)],
+                [1],
+                "Hashable objects with list equality",
             ),
             (
                 [raising_eq],

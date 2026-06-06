@@ -520,6 +520,25 @@ def choose_variables(
     return ordered_variables
 
 
+def _coerce_equality_result(equal: Any) -> Optional[bool]:
+    """Coerce scalar or vectorized equality results to bool when unambiguous."""
+    if isinstance(equal, (bool, np.bool_)):
+        return bool(equal)
+    if isinstance(equal, np.ndarray):
+        try:
+            return bool(np.asarray(equal).all())
+        except (TypeError, ValueError):
+            return None
+    if isinstance(equal, (list, tuple)):
+        if not equal:
+            return False
+        coerced_values = [_coerce_equality_result(value) for value in equal]
+        if any(value is None for value in coerced_values):
+            return None
+        return all(bool(value) for value in coerced_values)
+    return None
+
+
 def _values_equal(left: Any, right: Any) -> bool:
     """Return scalar equality for arbitrary list items."""
     if left is right:
@@ -554,15 +573,10 @@ def _values_equal(left: Any, right: Any) -> bool:
             return bool(np.array_equal(left, right))
         except (TypeError, ValueError):
             return False
-    if isinstance(equal, np.ndarray):
-        try:
-            return bool(np.asarray(equal).all())
-        except (TypeError, ValueError):
-            return False
-    try:
-        return bool(equal)
-    except (TypeError, ValueError):
-        return False
+    coerced_equal = _coerce_equality_result(equal)
+    if coerced_equal is not None:
+        return coerced_equal
+    return False
 
 
 def _find_first_equal_fallback_item_index(
@@ -588,13 +602,7 @@ def _is_safe_hashable_lookup_key(item: Any) -> bool:
         equal_to_self = item == item
     except (TypeError, ValueError):
         return False
-    if isinstance(equal_to_self, np.ndarray):
-        return False
-    try:
-        bool(equal_to_self)
-    except (TypeError, ValueError):
-        return False
-    return True
+    return isinstance(equal_to_self, (bool, np.bool_))
 
 
 def _remember_first_item_index(
