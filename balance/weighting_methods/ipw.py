@@ -164,7 +164,12 @@ def _copy_fit_matrix_slice(
     """Copy a row slice of a fit-time design matrix for persistence."""
     if isinstance(X_matrix, pd.DataFrame):
         return X_matrix.iloc[start:stop].copy()
-    return X_matrix[start:stop].copy()
+    matrix_slice = X_matrix[start:stop]
+    if issparse(X_matrix):
+        if np.shares_memory(matrix_slice.data, X_matrix.data):
+            return matrix_slice.copy()
+        return matrix_slice
+    return matrix_slice.copy()
 
 
 def _convert_to_dense_array(

@@ -559,11 +559,14 @@ def _values_equal(left: Any, right: Any) -> bool:
             and left.equals(right)
         )
     if isinstance(left, pd.Index) or isinstance(right, pd.Index):
-        return (
-            isinstance(left, pd.Index)
-            and isinstance(right, pd.Index)
-            and left.equals(right)
-        )
+        if not (isinstance(left, pd.Index) and isinstance(right, pd.Index)):
+            return False
+        if left.equals(right):
+            return True
+        try:
+            return list(left) == list(right)
+        except (TypeError, ValueError):
+            return False
     if isinstance(left, np.ndarray) or isinstance(right, np.ndarray):
         try:
             return bool(np.array_equal(left, right))

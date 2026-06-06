@@ -27,6 +27,51 @@ from balance.utils.input_validation import (
 )
 
 
+class HashableArrayEquality:
+    def __init__(self, value: int) -> None:
+        self.value = value
+
+    def __hash__(self) -> int:
+        return 1
+
+    def __eq__(self, other: object) -> np.ndarray:  # type: ignore[override]
+        if not isinstance(other, HashableArrayEquality):
+            return np.array(False)
+        return np.array(self.value == other.value)
+
+
+class HashableListEquality:
+    def __init__(self, value: int) -> None:
+        self.value = value
+
+    def __hash__(self) -> int:
+        return 1
+
+    def __eq__(self, other: object) -> list[bool]:  # type: ignore[override]
+        if not isinstance(other, HashableListEquality):
+            return [False]
+        return [self.value == other.value]
+
+
+class HashableEmptyArrayEquality:
+    def __hash__(self) -> int:
+        return 1
+
+    def __eq__(self, other: object) -> np.ndarray:  # type: ignore[override]
+        return np.array([], dtype=bool)
+
+
+class HashableRaisingEquality:
+    def __init__(self, value: int) -> None:
+        self.value = value
+
+    def __hash__(self) -> int:
+        return 1
+
+    def __eq__(self, other: object) -> bool:
+        raise ValueError("non-scalar equality")
+
+
 class TestUtil(
     balance.testutil.BalanceTestCase,
 ):
@@ -665,47 +710,6 @@ class TestUtil(
                 "String list with duplicates",
             ),
         ]
-
-        class HashableArrayEquality:
-            def __init__(self, value: int) -> None:
-                self.value = value
-
-            def __hash__(self) -> int:
-                return 1
-
-            def __eq__(self, other: object) -> np.ndarray:  # type: ignore[override]
-                if not isinstance(other, HashableArrayEquality):
-                    return np.array(False)
-                return np.array(self.value == other.value)
-
-        class HashableListEquality:
-            def __init__(self, value: int) -> None:
-                self.value = value
-
-            def __hash__(self) -> int:
-                return 1
-
-            def __eq__(self, other: object) -> list[bool]:  # type: ignore[override]
-                if not isinstance(other, HashableListEquality):
-                    return [False]
-                return [self.value == other.value]
-
-        class HashableEmptyArrayEquality:
-            def __hash__(self) -> int:
-                return 1
-
-            def __eq__(self, other: object) -> np.ndarray:  # type: ignore[override]
-                return np.array([], dtype=bool)
-
-        class HashableRaisingEquality:
-            def __init__(self, value: int) -> None:
-                self.value = value
-
-            def __hash__(self) -> int:
-                return 1
-
-            def __eq__(self, other: object) -> bool:
-                raise ValueError("non-scalar equality")
 
         shared_nan = float("nan")
         array_eq_1 = HashableArrayEquality(1)
