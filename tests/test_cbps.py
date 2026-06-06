@@ -376,6 +376,44 @@ class Testcbps(
             np.around(np.matmul(U, beta), 7),
         )
 
+    def test_cbps_rank_deficient_svd_filters_near_zero_singular_values(self) -> None:
+        """Regression test for rank-deficient design matrices in CBPS."""
+        sample_df = pd.DataFrame({"a": [0, 1, 0, 1, 0, 1], "b": [0, 1, 0, 1, 0, 1]})
+        target_df = pd.DataFrame({"a": [0, 1, 0, 1], "b": [0, 1, 0, 1]})
+        sample_weights = pd.Series([1.0] * len(sample_df))
+        target_weights = pd.Series([1.0] * len(target_df))
+
+        result = balance_cbps.cbps(
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            variables=["a", "b"],
+            transformations=None,
+            store_fit_metadata=True,
+        )
+
+        self.assertIn("weight", result)
+        weights = result["weight"]
+        self.assertIsInstance(weights, pd.Series)
+        self.assertEqual(len(weights), len(sample_df))
+        self.assertTrue(np.all(np.isfinite(weights)))
+
+        model = result["model"]
+        self.assertIsInstance(model, dict)
+        svd_s = model["svd_s"]
+        n_design_columns = len(model["X_matrix_columns"])
+
+        self.assertLess(
+            len(svd_s),
+            n_design_columns,
+            msg="Near-zero singular values should be removed for rank-deficient X",
+        )
+        self.assertTrue(
+            np.all(svd_s > TOLERANCE),
+            msg="Retained singular values should exceed the CBPS filtering threshold",
+        )
+
     def test_cbps_consistency_with_default_arguments(self) -> None:
         """Test CBPS function consistency with default arguments on complex data.
 

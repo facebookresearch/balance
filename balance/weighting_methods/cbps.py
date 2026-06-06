@@ -606,7 +606,6 @@ def cbps(  # noqa
     U, s, Vh = scipy.linalg.svd(X_matrix, full_matrices=False)
 
     # remove near-zero singular values to address the rank-deficiency of X_matrix
-    # TODO: add unittest
     singular_value_threshold = 1e-10
     U = U[:, s > singular_value_threshold]
     Vh = Vh[s > singular_value_threshold, :]
