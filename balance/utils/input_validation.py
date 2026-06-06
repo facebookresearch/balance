@@ -534,7 +534,7 @@ def _coerce_equality_result(equal: Any) -> Optional[bool]:
             return None
     if isinstance(equal, (list, tuple)):
         if not equal:
-            return False
+            return None
         coerced_values = [_coerce_equality_result(value) for value in equal]
         if any(value is None for value in coerced_values):
             return None
