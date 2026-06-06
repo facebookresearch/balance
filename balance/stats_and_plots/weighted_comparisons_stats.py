@@ -36,7 +36,7 @@ logger: logging.Logger = logging.getLogger(__package__)
 
 def _duplicated_labels_once(columns: pd.Index) -> list[object]:
     """Return duplicate labels once, preserving their first duplicate order."""
-    return pd.Index(columns[columns.duplicated()]).unique().tolist()
+    return columns[columns.duplicated()].unique().tolist()
 
 
 def _duplicate_column_names_error_message(
@@ -503,6 +503,9 @@ def asmd(
     If column names of sample_df and target_df are different, it will only calculate asmd for
     the overlapping columns. The rest will be np.nan.
     The mean(asmd) will be calculated while treating the nan values as 0s.
+
+    Both sample_df and target_df must have unique column labels. Duplicate labels are
+    ambiguous in the per-column ASMD calculation and will raise ValueError.
 
     Args:
         sample_df (pd.DataFrame): source group of the asmd comparison

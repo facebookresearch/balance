@@ -4258,6 +4258,16 @@ class TestEmptyCategoriesError(balance.testutil.BalanceTestCase):
                     [[1.0, 2.0, 3.0], [4.0, 5.0, 7.0]], columns=["a", "b", "c"]
                 ),
             ),
+            (
+                pd.DataFrame(
+                    [[1.0, 2.0], [3.0, 4.0]],
+                    columns=pd.MultiIndex.from_tuples([("a", 1), ("a", 1)]),
+                ),
+                pd.DataFrame(
+                    [[1.0, 2.0], [3.0, 5.0]],
+                    columns=pd.MultiIndex.from_tuples([("a", 1), ("b", 2)]),
+                ),
+            ),
         ]
 
         for sample_df, target_df in duplicate_cases:
