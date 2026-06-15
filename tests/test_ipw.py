@@ -24,7 +24,7 @@ from balance import util as balance_util
 from balance.sample_class import Sample
 from balance.testutil import _SKLEARN_1_4_AVAILABLE
 from balance.weighting_methods import ipw as balance_ipw
-from scipy.sparse import csr_matrix, issparse
+from scipy.sparse import csc_matrix, csr_matrix, issparse
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import log_loss
@@ -779,6 +779,32 @@ class TestIPW(
         np.testing.assert_allclose(model["sample_probability"], expected_sample)
         np.testing.assert_allclose(model["target_probability"], expected_target)
 
+    def test_copy_fit_matrix_slice_copies_supported_matrix_types(self) -> None:
+        """Fit-matrix persistence copies sparse, dense, and DataFrame slices."""
+        sparse_matrix = csr_matrix(np.arange(1, 13, dtype=float).reshape(4, 3))
+        sparse_slice = balance_ipw._copy_fit_matrix_slice(sparse_matrix, 0, 2)
+        sparse_matrix[0, 0] = 999.0
+        self.assertNotEqual(sparse_slice.toarray()[0, 0], sparse_matrix.toarray()[0, 0])
+
+        csc_sparse_matrix = csc_matrix(np.arange(1, 13, dtype=float).reshape(4, 3))
+        csc_sparse_slice = balance_ipw._copy_fit_matrix_slice(csc_sparse_matrix, 0, 2)
+        self.assertTrue(issparse(csc_sparse_slice))
+        csc_sparse_matrix[0, 0] = 999.0
+        self.assertNotEqual(
+            csc_sparse_slice.toarray()[0, 0], csc_sparse_matrix.toarray()[0, 0]
+        )
+
+        dense_matrix = np.arange(12, dtype=float).reshape(4, 3)
+        dense_slice = balance_ipw._copy_fit_matrix_slice(dense_matrix, 0, 2)
+        dense_matrix[0, 0] = 999.0
+        self.assertNotEqual(dense_slice[0, 0], dense_matrix[0, 0])
+
+        frame_matrix = pd.DataFrame(dense_matrix.copy(), columns=["a", "b", "c"])
+        frame_slice = balance_ipw._copy_fit_matrix_slice(frame_matrix, 0, 2)
+        assert isinstance(frame_slice, pd.DataFrame)
+        frame_matrix.iloc[0, 0] = -999.0
+        self.assertNotEqual(frame_slice.iloc[0, 0], frame_matrix.iloc[0, 0])
+
     def test_ipw_stores_fit_time_model_matrices(self) -> None:
         """IPW model output persists fit-time sample/target matrices."""
         # pyrefly: ignore [bad-argument-type]
@@ -799,9 +825,72 @@ class TestIPW(
         model = result["model"]
         self.assertIn("model_matrix_sample", model)
         self.assertIn("model_matrix_target", model)
+        self.assertIn("training_sample_weights", model)
+        self.assertIn("training_target_weights", model)
+        self.assertNotIn("fit_sample_weights", model)
+        self.assertNotIn("fit_target_weights", model)
         self.assertEqual(model["model_matrix_sample"].shape[0], sample_df.shape[0])
         self.assertEqual(model["model_matrix_target"].shape[0], target_df.shape[0])
         self.assertTrue(issparse(model["model_matrix_sample"]))
+        self.assertFalse(
+            np.shares_memory(
+                model["model_matrix_sample"].data,
+                model["model_matrix_target"].data,
+            )
+        )
+
+    def test_ipw_stores_copied_dense_fit_time_model_matrices(self) -> None:
+        """Stored dense custom-model matrices are independent copied slices."""
+        # pyrefly: ignore [bad-argument-type]
+        rng = np.random.RandomState(28)
+        sample_df = pd.DataFrame({"a": rng.normal(size=20), "b": rng.normal(size=20)})
+        target_df = pd.DataFrame({"a": rng.normal(size=25), "b": rng.normal(size=25)})
+        result = balance_ipw.ipw(
+            sample_df=sample_df,
+            sample_weights=pd.Series(np.ones(len(sample_df))),
+            target_df=target_df,
+            target_weights=pd.Series(np.ones(len(target_df))),
+            model=GaussianNB(),
+            transformations=None,
+            num_lambdas=1,
+            max_de=100.0,
+            store_fit_matrices=True,
+        )
+        model = result["model"]
+
+        self.assertIsInstance(model["model_matrix_sample"], np.ndarray)
+        self.assertIsInstance(model["model_matrix_target"], np.ndarray)
+        self.assertIsNone(model["model_matrix_sample"].base)
+        self.assertIsNone(model["model_matrix_target"].base)
+
+    def test_ipw_stores_copied_dataframe_fit_time_model_matrices(self) -> None:
+        """Stored raw-covariate matrices are independent DataFrame copies."""
+        # pyrefly: ignore [bad-argument-type]
+        rng = np.random.RandomState(29)
+        sample_df = pd.DataFrame({"a": rng.normal(size=20), "b": rng.normal(size=20)})
+        target_df = pd.DataFrame({"a": rng.normal(size=25), "b": rng.normal(size=25)})
+        result = balance_ipw.ipw(
+            sample_df=sample_df,
+            sample_weights=pd.Series(np.ones(len(sample_df))),
+            target_df=target_df,
+            target_weights=pd.Series(np.ones(len(target_df))),
+            model=RandomForestClassifier(n_estimators=5, random_state=29),
+            transformations=None,
+            num_lambdas=1,
+            max_de=100.0,
+            use_model_matrix=False,
+            store_fit_matrices=True,
+        )
+        model = result["model"]
+
+        self.assertIsInstance(model["model_matrix_sample"], pd.DataFrame)
+        self.assertIsInstance(model["model_matrix_target"], pd.DataFrame)
+        self.assertFalse(
+            np.shares_memory(
+                model["model_matrix_sample"].to_numpy(),
+                model["model_matrix_target"].to_numpy(),
+            )
+        )
 
     def test_ipw_stores_resolved_formula_used_for_model_matrix(self) -> None:
         """Stored model formula reflects the effective resolved model_matrix formula."""

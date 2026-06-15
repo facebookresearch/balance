@@ -27,6 +27,67 @@ from balance.utils.input_validation import (
 )
 
 
+class HashableArrayEquality:
+    def __init__(self, value: int) -> None:
+        self.value = value
+
+    def __hash__(self) -> int:
+        return 1
+
+    def __eq__(self, other: object) -> np.ndarray:  # type: ignore[override]
+        if not isinstance(other, HashableArrayEquality):
+            return np.array(False)
+        return np.array(self.value == other.value)
+
+
+class HashableListEquality:
+    def __init__(self, value: int) -> None:
+        self.value = value
+
+    def __hash__(self) -> int:
+        return 1
+
+    def __eq__(self, other: object) -> list[bool]:  # type: ignore[override]
+        if not isinstance(other, HashableListEquality):
+            return [False]
+        return [self.value == other.value]
+
+
+class HashableEmptyArrayEquality:
+    def __hash__(self) -> int:
+        return 1
+
+    def __eq__(self, other: object) -> np.ndarray:  # type: ignore[override]
+        return np.array([], dtype=bool)
+
+
+class HashableEmptyListEquality:
+    def __hash__(self) -> int:
+        return 1
+
+    def __eq__(self, other: object) -> list[bool]:  # type: ignore[override]
+        return []
+
+
+class HashableIntegerArrayEquality:
+    def __hash__(self) -> int:
+        return 1
+
+    def __eq__(self, other: object) -> np.ndarray:  # type: ignore[override]
+        return np.array([1], dtype=int)
+
+
+class HashableRaisingEquality:
+    def __init__(self, value: int) -> None:
+        self.value = value
+
+    def __hash__(self) -> int:
+        return 1
+
+    def __eq__(self, other: object) -> bool:
+        raise ValueError("non-scalar equality")
+
+
 class TestUtil(
     balance.testutil.BalanceTestCase,
 ):
@@ -649,6 +710,12 @@ class TestUtil(
             ([1, 2, 3, 4, 5, 6, 7], [2, 7], [1, 6], "Numeric list with found items"),
             ([1, 2, 3, 4, 5, 6, 7], [1000], [], "Numeric list with missing items"),
             ([10, 20, 30, 40], [20, 100, 40, 200], [1, 3], "Mixed found and missing"),
+            (
+                [10, 20, 10, 30],
+                [10, 30],
+                [0, 3],
+                "First index for duplicate source items",
+            ),
         ]
 
         test_cases_string = [
@@ -660,8 +727,79 @@ class TestUtil(
             ),
         ]
 
+        shared_nan = float("nan")
+        array_eq_1 = HashableArrayEquality(1)
+        array_eq_2 = HashableArrayEquality(2)
+        raising_eq = HashableRaisingEquality(1)
         test_cases_edge = [
             ([1, 2, 3], [], [], "Empty items list"),
+            ([["a"], ["b"], ["a"]], [["a"], ["missing"]], [0], "Unhashable list items"),
+            (
+                [np.array([1, 2]), np.array([3, 4])],
+                [np.array([3, 4]), np.array([9, 9])],
+                [1],
+                "Unhashable numpy array items",
+            ),
+            (
+                [shared_nan, 1.0],
+                [shared_nan, float("nan")],
+                [0],
+                "NaN identity semantics",
+            ),
+            (
+                [array_eq_1, array_eq_2],
+                [HashableArrayEquality(2), HashableArrayEquality(9)],
+                [1],
+                "Hashable objects with array equality",
+            ),
+            (
+                [pd.Series([1, 2], index=["a", "b"])],
+                [
+                    pd.Series([1, 2], index=["b", "a"]),
+                    pd.Series([1, 2], index=["a", "b"]),
+                ],
+                [0],
+                "Pandas Series equality respects index metadata",
+            ),
+            (
+                [pd.MultiIndex.from_tuples([("a", 1), ("b", 2)])],
+                [
+                    pd.Index([("a", 1), ("b", 2)]),
+                    pd.MultiIndex.from_tuples([("a", 1), ("b", 2)]),
+                ],
+                [0, 0],
+                "Pandas Index equality is symmetric across subclasses",
+            ),
+            (
+                [HashableListEquality(1), HashableListEquality(2)],
+                [HashableListEquality(2), HashableListEquality(9)],
+                [1],
+                "Hashable objects with list equality",
+            ),
+            (
+                [HashableEmptyArrayEquality()],
+                [HashableEmptyArrayEquality()],
+                [],
+                "Hashable objects with empty array equality",
+            ),
+            (
+                [HashableEmptyListEquality()],
+                [HashableEmptyListEquality()],
+                [],
+                "Hashable objects with empty list equality",
+            ),
+            (
+                [HashableIntegerArrayEquality()],
+                [HashableIntegerArrayEquality()],
+                [],
+                "Hashable objects with integer array equality",
+            ),
+            (
+                [raising_eq],
+                [raising_eq, HashableRaisingEquality(1)],
+                [0],
+                "Hashable objects with raising equality",
+            ),
         ]
 
         all_test_cases = test_cases_numeric + test_cases_string + test_cases_edge

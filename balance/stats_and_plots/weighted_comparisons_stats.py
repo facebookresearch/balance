@@ -34,6 +34,23 @@ from scipy.stats import gaussian_kde, wasserstein_distance
 logger: logging.Logger = logging.getLogger(__package__)
 
 
+def _duplicated_labels_once(columns: pd.Index) -> list[object]:
+    """Return duplicate labels once, preserving their first duplicate order."""
+    return columns[columns.duplicated()].unique().tolist()
+
+
+def _duplicate_column_names_error_message(
+    duplicate_sample_columns: list[object], duplicate_target_columns: list[object]
+) -> str:
+    """Format duplicate-column validation errors without empty duplicate lists."""
+    parts = ["sample_df and target_df must have unique column names."]
+    if duplicate_sample_columns:
+        parts.append(f"Duplicate sample_df columns: {duplicate_sample_columns}.")
+    if duplicate_target_columns:
+        parts.append(f"Duplicate target_df columns: {duplicate_target_columns}.")
+    return " ".join(parts)
+
+
 ##########################################
 # Weighted comparisons - functions to compare one or two data sources with one or two sources of weights
 ##########################################
@@ -487,6 +504,9 @@ def asmd(
     the overlapping columns. The rest will be np.nan.
     The mean(asmd) will be calculated while treating the nan values as 0s.
 
+    Both sample_df and target_df must have unique column labels. Duplicate labels are
+    ambiguous in the per-column ASMD calculation and will raise ValueError.
+
     Args:
         sample_df (pd.DataFrame): source group of the asmd comparison
         target_df (pd.DataFrame): target group of the asmd comparison.
@@ -592,11 +612,21 @@ def asmd(
         raise ValueError(
             f"Unknown std_type: {std_type!r}. Use 'sample', 'target', or 'pooled'."
         )
-    if sample_df.columns.values.tolist() != target_df.columns.values.tolist():
+    sample_columns = sample_df.columns.values.tolist()
+    target_columns = target_df.columns.values.tolist()
+    duplicate_sample_columns = _duplicated_labels_once(sample_df.columns)
+    duplicate_target_columns = _duplicated_labels_once(target_df.columns)
+    if duplicate_sample_columns or duplicate_target_columns:
+        raise ValueError(
+            _duplicate_column_names_error_message(
+                duplicate_sample_columns, duplicate_target_columns
+            )
+        )
+    if sample_columns != target_columns:
         logger.warning(
             "sample_df and target_df must have the same column names.\n"
-            f"sample_df column names: {sample_df.columns.values.tolist()}\n"
-            f"target_df column names: {target_df.columns.values.tolist()}"
+            f"sample_df column names: {sample_columns}\n"
+            f"target_df column names: {target_columns}"
         )
 
     sample_mean = descriptive_stats(sample_df, sample_weights, "mean")
@@ -618,8 +648,6 @@ def asmd(
     out = out.loc[:, (c for c in out.columns.values if not c.startswith("_is_na_"))]
     out = _safe_replace_and_infer(out)
 
-    # TODO (p2): verify that df column names are unique (otherwise throw an exception).
-    #            it should probably be upstream during in the Sample creation process.
     weights = _weights_per_covars_names(out.columns.values.tolist())[
         ["weight"]
     ].transpose()

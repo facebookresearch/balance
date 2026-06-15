@@ -844,21 +844,19 @@ class BalanceFrame:
         if isinstance(adj_model, dict):
             adj_model.setdefault("method", method_name)
             if adj_model.get("method") == "ipw":
-                # Preserve training-time design weights only when the weighting
-                # method already opted into fit metadata.
+                # Accept older stored IPW model dicts that used fit_* aliases,
+                # while new ipw(...) output only emits the canonical training_*
+                # keys documented for 0.22.0 onward.
                 fit_sample_weights = adj_model.get("fit_sample_weights")
                 if isinstance(fit_sample_weights, pd.Series):
-                    adj_model.setdefault(
-                        "training_sample_weights",
-                        fit_sample_weights,
-                    )
-                if new_bf._sf_target is not None:
-                    fit_target_weights = adj_model.get("fit_target_weights")
-                    if isinstance(fit_target_weights, pd.Series):
-                        adj_model.setdefault(
-                            "training_target_weights",
-                            fit_target_weights,
-                        )
+                    adj_model.setdefault("training_sample_weights", fit_sample_weights)
+                adj_model.pop("fit_sample_weights", None)
+                fit_target_weights = adj_model.get("fit_target_weights")
+                if new_bf._sf_target is not None and isinstance(
+                    fit_target_weights, pd.Series
+                ):
+                    adj_model.setdefault("training_target_weights", fit_target_weights)
+                adj_model.pop("fit_target_weights", None)
         effective_method_name = (
             str(adj_model.get("method")) if isinstance(adj_model, dict) else method_name
         )

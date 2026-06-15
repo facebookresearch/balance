@@ -27,7 +27,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import log_loss
 from sklearn.preprocessing import StandardScaler
 
-
 logger: logging.Logger = logging.getLogger(__package__)
 
 
@@ -155,6 +154,17 @@ def _compute_proportion_deviance(dev: float, null_dev: float) -> float:
         float: Proportion of deviance explained (1 - dev/null_dev).
     """
     return 1 - dev / null_dev
+
+
+def _copy_fit_matrix_slice(
+    X_matrix: Union[pd.DataFrame, np.ndarray, csc_matrix, csr_matrix],
+    start: int,
+    stop: int,
+) -> Union[pd.DataFrame, np.ndarray, csc_matrix, csr_matrix]:
+    """Copy a row slice of a fit-time design matrix for persistence."""
+    if isinstance(X_matrix, pd.DataFrame):
+        return X_matrix.iloc[start:stop].copy()
+    return X_matrix[start:stop].copy()
 
 
 def _convert_to_dense_array(
@@ -697,7 +707,8 @@ def ipw(
                 When ``store_fit_metadata=True``: adds
                 ``sample_probability``, ``target_probability``,
                 ``sample_link``, ``target_link``,
-                ``fit_sample_weights``, ``fit_target_weights``.
+                ``sample_index``, ``target_index``,
+                ``training_sample_weights``, ``training_target_weights``.
     """
     custom_model: ClassifierMixin | None = None
     model_name: str | None = None
@@ -1138,25 +1149,20 @@ def ipw(
                 "target_probability": target_probability,
                 "sample_index": sample_df.index.copy(),
                 "target_index": target_df.index.copy(),
-                # TODO: Rename to "training_sample_weights" /
-                # "training_target_weights" to match what _predict_weights_ipw
-                # expects, eliminating the indirection through
-                # _build_adjusted_frame's setdefault() bridge.
-                "fit_sample_weights": sample_weights.copy(),
-                "fit_target_weights": target_weights.copy(),
+                "training_sample_weights": sample_weights.copy(),
+                "training_target_weights": target_weights.copy(),
             }
         )
 
     if store_fit_matrices:
-        # TODO: Add .copy() to stored matrices for consistency
-        # with the .copy() pattern used for weights and indices above.
-        # numpy slicing returns views (shared memory); currently safe
-        # because downstream cache updates replace dict keys rather than
-        # mutating arrays in-place, but inconsistent.
+        model_matrix_sample = _copy_fit_matrix_slice(X_matrix, 0, sample_n)
+        model_matrix_target = _copy_fit_matrix_slice(
+            X_matrix, sample_n, X_matrix.shape[0]
+        )
         model_out.update(
             {
-                "model_matrix_sample": X_matrix[:sample_n],
-                "model_matrix_target": X_matrix[sample_n:],
+                "model_matrix_sample": model_matrix_sample,
+                "model_matrix_target": model_matrix_target,
                 "sample_index": sample_df.index.copy(),
                 "target_index": target_df.index.copy(),
             }

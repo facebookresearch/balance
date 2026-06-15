@@ -520,6 +520,128 @@ def choose_variables(
     return ordered_variables
 
 
+def _coerce_equality_result(equal: Any) -> Optional[bool]:
+    """Coerce scalar or vectorized equality results to bool when unambiguous."""
+    if isinstance(equal, (bool, np.bool_)):
+        return bool(equal)
+    if isinstance(equal, np.ndarray):
+        array_equal = np.asarray(equal)
+        if array_equal.size == 0 or array_equal.dtype.kind != "b":
+            return None
+        try:
+            return bool(array_equal.all())
+        except (TypeError, ValueError):
+            return None
+    if isinstance(equal, (list, tuple)):
+        if not equal:
+            return None
+        coerced_values = [_coerce_equality_result(value) for value in equal]
+        if any(value is None for value in coerced_values):
+            return None
+        return all(bool(value) for value in coerced_values)
+    return None
+
+
+def _values_equal(left: Any, right: Any) -> bool:
+    """Return scalar equality for arbitrary list items."""
+    if left is right:
+        return True
+    if isinstance(left, pd.DataFrame) or isinstance(right, pd.DataFrame):
+        return (
+            isinstance(left, pd.DataFrame)
+            and isinstance(right, pd.DataFrame)
+            and left.equals(right)
+        )
+    if isinstance(left, pd.Series) or isinstance(right, pd.Series):
+        return (
+            isinstance(left, pd.Series)
+            and isinstance(right, pd.Series)
+            and left.equals(right)
+        )
+    if isinstance(left, pd.Index) or isinstance(right, pd.Index):
+        if not (isinstance(left, pd.Index) and isinstance(right, pd.Index)):
+            return False
+        if left.equals(right):
+            return True
+        try:
+            return list(left) == list(right)
+        except (TypeError, ValueError):
+            return False
+    if isinstance(left, np.ndarray) or isinstance(right, np.ndarray):
+        try:
+            return bool(np.array_equal(left, right))
+        except (TypeError, ValueError):
+            return False
+    try:
+        equal = left == right
+    except (TypeError, ValueError):
+        try:
+            return bool(np.array_equal(left, right))
+        except (TypeError, ValueError):
+            return False
+    coerced_equal = _coerce_equality_result(equal)
+    if coerced_equal is not None:
+        return coerced_equal
+    return False
+
+
+def _find_first_equal_fallback_item_index(
+    item: Any, fallback_items: list[tuple[Any, int]]
+) -> Optional[int]:
+    """Return the first fallback index whose value equals item."""
+    return next(
+        (
+            existing_index
+            for existing_item, existing_index in fallback_items
+            if _values_equal(item, existing_item)
+        ),
+        None,
+    )
+
+
+def _is_safe_hashable_lookup_key(item: Any) -> bool:
+    """Return whether item can be safely used for dict lookup."""
+    if isinstance(item, (np.ndarray, pd.Index, pd.Series, pd.DataFrame)):
+        return False
+    try:
+        hash(item)
+        equal_to_self = item == item
+    except (TypeError, ValueError):
+        return False
+    return isinstance(equal_to_self, (bool, np.bool_))
+
+
+def _remember_first_item_index(
+    first_index_by_hashable_item: dict[Any, int],
+    fallback_items: list[tuple[Any, int]],
+    item: Any,
+    index: int,
+) -> None:
+    """Store item/index in the fast dict path or the equality-scan fallback."""
+    if not _is_safe_hashable_lookup_key(item):
+        fallback_items.append((item, index))
+        return
+    try:
+        first_index_by_hashable_item.setdefault(item, index)
+    except (TypeError, ValueError):
+        fallback_items.append((item, index))
+
+
+def _find_first_item_index(
+    first_index_by_hashable_item: dict[Any, int],
+    fallback_items: list[tuple[Any, int]],
+    item: Any,
+) -> Optional[int]:
+    """Find item in the fast dict path, falling back to robust equality scans."""
+    try:
+        index = first_index_by_hashable_item.get(item)
+    except (TypeError, ValueError):
+        index = None
+    if index is not None:
+        return index
+    return _find_first_equal_fallback_item_index(item, fallback_items)
+
+
 def find_items_index_in_list(a_list: List[Any], items: List[Any]) -> List[int]:
     """Finds the index location of a given item in an array.
 
@@ -534,9 +656,21 @@ def find_items_index_in_list(a_list: List[Any], items: List[Any]) -> List[int]:
     Returns:
         List[int]: a list of indices of the items in x that appear in the items list.
     """
-    # TODO: (p2) Optimization note: checking that i is in set each time is expensive -
-    #       there are probably faster ways to do it. Consider using a dict-based approach for large lists.
-    return [a_list.index(i) for i in items if i in set(a_list)]
+    first_index_by_hashable_item: dict[Any, int] = {}
+    fallback_items: list[tuple[Any, int]] = []
+    for index, item in enumerate(a_list):
+        _remember_first_item_index(
+            first_index_by_hashable_item, fallback_items, item, index
+        )
+
+    indices: list[int] = []
+    for item in items:
+        index = _find_first_item_index(
+            first_index_by_hashable_item, fallback_items, item
+        )
+        if index is not None:
+            indices.append(index)
+    return indices
 
 
 def get_items_from_list_via_indices(a_list: List[Any], indices: List[int]) -> List[Any]:

@@ -3389,6 +3389,48 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         self.assertTrue(isinstance(model.get("training_sample_weights"), pd.Series))
         self.assertTrue(isinstance(model.get("training_target_weights"), pd.Series))
 
+    def test_build_adjusted_frame_migrates_legacy_ipw_fit_weight_aliases(self) -> None:
+        fitted = self.bf.fit(method="ipw")
+        model = copy.deepcopy(_assert_type(fitted.model))
+        sample_weights = model.pop("training_sample_weights")
+        target_weights = model.pop("training_target_weights")
+        model["fit_sample_weights"] = sample_weights
+        model["fit_target_weights"] = target_weights
+
+        migrated = self.bf._build_adjusted_frame(
+            {"weight": _assert_type(fitted.weight_series), "model": model}, "ipw"
+        )
+        migrated_model = _assert_type(migrated.model)
+
+        self.assertIs(migrated_model.get("training_sample_weights"), sample_weights)
+        self.assertIs(migrated_model.get("training_target_weights"), target_weights)
+        self.assertNotIn("fit_sample_weights", migrated_model)
+        self.assertNotIn("fit_target_weights", migrated_model)
+
+        invalid_alias_model = copy.deepcopy(_assert_type(fitted.model))
+        canonical_sample_weights = invalid_alias_model.get("training_sample_weights")
+        canonical_target_weights = invalid_alias_model.get("training_target_weights")
+        invalid_alias_model["fit_sample_weights"] = ["unexpected"]
+        invalid_alias_model["fit_target_weights"] = ["unexpected"]
+
+        cleaned = self.bf._build_adjusted_frame(
+            {
+                "weight": _assert_type(fitted.weight_series),
+                "model": invalid_alias_model,
+            },
+            "ipw",
+        )
+        cleaned_model = _assert_type(cleaned.model)
+
+        self.assertIs(
+            cleaned_model.get("training_sample_weights"), canonical_sample_weights
+        )
+        self.assertIs(
+            cleaned_model.get("training_target_weights"), canonical_target_weights
+        )
+        self.assertNotIn("fit_sample_weights", cleaned_model)
+        self.assertNotIn("fit_target_weights", cleaned_model)
+
     @pytest.mark.requires_sklearn_1_4  # pyre-ignore[56]
     @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires scikit-learn >= 1.4")
     def test_store_fit_matrices_use_model_matrix_false(self) -> None:
