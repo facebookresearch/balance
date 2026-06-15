@@ -889,21 +889,19 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">adj_model</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">adj_model</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;method&quot;</span><span class="p">,</span> <span class="n">method_name</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">adj_model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;method&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;ipw&quot;</span><span class="p">:</span>
-                <span class="c1"># Preserve training-time design weights only when the weighting</span>
-                <span class="c1"># method already opted into fit metadata.</span>
+                <span class="c1"># Accept older stored IPW model dicts that used fit_* aliases,</span>
+                <span class="c1"># while new ipw(...) output only emits the canonical training_*</span>
+                <span class="c1"># keys documented for 0.22.0 onward.</span>
                 <span class="n">fit_sample_weights</span> <span class="o">=</span> <span class="n">adj_model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fit_sample_weights&quot;</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fit_sample_weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
-                    <span class="n">adj_model</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span>
-                        <span class="s2">&quot;training_sample_weights&quot;</span><span class="p">,</span>
-                        <span class="n">fit_sample_weights</span><span class="p">,</span>
-                    <span class="p">)</span>
-                <span class="k">if</span> <span class="n">new_bf</span><span class="o">.</span><span class="n">_sf_target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">fit_target_weights</span> <span class="o">=</span> <span class="n">adj_model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fit_target_weights&quot;</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fit_target_weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
-                        <span class="n">adj_model</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span>
-                            <span class="s2">&quot;training_target_weights&quot;</span><span class="p">,</span>
-                            <span class="n">fit_target_weights</span><span class="p">,</span>
-                        <span class="p">)</span>
+                    <span class="n">adj_model</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;training_sample_weights&quot;</span><span class="p">,</span> <span class="n">fit_sample_weights</span><span class="p">)</span>
+                <span class="n">adj_model</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;fit_sample_weights&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="n">fit_target_weights</span> <span class="o">=</span> <span class="n">adj_model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fit_target_weights&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">new_bf</span><span class="o">.</span><span class="n">_sf_target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="n">fit_target_weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span>
+                <span class="p">):</span>
+                    <span class="n">adj_model</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;training_target_weights&quot;</span><span class="p">,</span> <span class="n">fit_target_weights</span><span class="p">)</span>
+                <span class="n">adj_model</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;fit_target_weights&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="n">effective_method_name</span> <span class="o">=</span> <span class="p">(</span>
             <span class="nb">str</span><span class="p">(</span><span class="n">adj_model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;method&quot;</span><span class="p">))</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">adj_model</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">method_name</span>
         <span class="p">)</span>

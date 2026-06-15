@@ -68,6 +68,8 @@ see the arguments section for details.</p>
 <p>If column names of sample_df and target_df are different, it will only calculate asmd for
 the overlapping columns. The rest will be np.nan.
 The mean(asmd) will be calculated while treating the nan values as 0s.</p>
+<p>Both sample_df and target_df must have unique column labels. Duplicate labels are
+ambiguous in the per-column ASMD calculation and will raise ValueError.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

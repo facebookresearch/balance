@@ -64,7 +64,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">log_loss</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">StandardScaler</span>
 
-
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
 
 
@@ -198,6 +197,17 @@
 <span class="sd">        float: Proportion of deviance explained (1 - dev/null_dev).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">dev</span> <span class="o">/</span> <span class="n">null_dev</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_copy_fit_matrix_slice</span><span class="p">(</span>
+    <span class="n">X_matrix</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">csc_matrix</span><span class="p">,</span> <span class="n">csr_matrix</span><span class="p">],</span>
+    <span class="n">start</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">stop</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">csc_matrix</span><span class="p">,</span> <span class="n">csr_matrix</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Copy a row slice of a fit-time design matrix for persistence.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">X_matrix</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">X_matrix</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_convert_to_dense_array</span><span class="p">(</span>
@@ -751,7 +761,8 @@
 <span class="sd">                When ``store_fit_metadata=True``: adds</span>
 <span class="sd">                ``sample_probability``, ``target_probability``,</span>
 <span class="sd">                ``sample_link``, ``target_link``,</span>
-<span class="sd">                ``fit_sample_weights``, ``fit_target_weights``.</span>
+<span class="sd">                ``sample_index``, ``target_index``,</span>
+<span class="sd">                ``training_sample_weights``, ``training_target_weights``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">custom_model</span><span class="p">:</span> <span class="n">ClassifierMixin</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1192,25 +1203,20 @@
                 <span class="s2">&quot;target_probability&quot;</span><span class="p">:</span> <span class="n">target_probability</span><span class="p">,</span>
                 <span class="s2">&quot;sample_index&quot;</span><span class="p">:</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
                 <span class="s2">&quot;target_index&quot;</span><span class="p">:</span> <span class="n">target_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-                <span class="c1"># TODO: Rename to &quot;training_sample_weights&quot; /</span>
-                <span class="c1"># &quot;training_target_weights&quot; to match what _predict_weights_ipw</span>
-                <span class="c1"># expects, eliminating the indirection through</span>
-                <span class="c1"># _build_adjusted_frame&#39;s setdefault() bridge.</span>
-                <span class="s2">&quot;fit_sample_weights&quot;</span><span class="p">:</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-                <span class="s2">&quot;fit_target_weights&quot;</span><span class="p">:</span> <span class="n">target_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">&quot;training_sample_weights&quot;</span><span class="p">:</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">&quot;training_target_weights&quot;</span><span class="p">:</span> <span class="n">target_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
             <span class="p">}</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">store_fit_matrices</span><span class="p">:</span>
-        <span class="c1"># TODO: Add .copy() to stored matrices for consistency</span>
-        <span class="c1"># with the .copy() pattern used for weights and indices above.</span>
-        <span class="c1"># numpy slicing returns views (shared memory); currently safe</span>
-        <span class="c1"># because downstream cache updates replace dict keys rather than</span>
-        <span class="c1"># mutating arrays in-place, but inconsistent.</span>
+        <span class="n">model_matrix_sample</span> <span class="o">=</span> <span class="n">_copy_fit_matrix_slice</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">sample_n</span><span class="p">)</span>
+        <span class="n">model_matrix_target</span> <span class="o">=</span> <span class="n">_copy_fit_matrix_slice</span><span class="p">(</span>
+            <span class="n">X_matrix</span><span class="p">,</span> <span class="n">sample_n</span><span class="p">,</span> <span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="p">)</span>
         <span class="n">model_out</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
             <span class="p">{</span>
-                <span class="s2">&quot;model_matrix_sample&quot;</span><span class="p">:</span> <span class="n">X_matrix</span><span class="p">[:</span><span class="n">sample_n</span><span class="p">],</span>
-                <span class="s2">&quot;model_matrix_target&quot;</span><span class="p">:</span> <span class="n">X_matrix</span><span class="p">[</span><span class="n">sample_n</span><span class="p">:],</span>
+                <span class="s2">&quot;model_matrix_sample&quot;</span><span class="p">:</span> <span class="n">model_matrix_sample</span><span class="p">,</span>
+                <span class="s2">&quot;model_matrix_target&quot;</span><span class="p">:</span> <span class="n">model_matrix_target</span><span class="p">,</span>
                 <span class="s2">&quot;sample_index&quot;</span><span class="p">:</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
                 <span class="s2">&quot;target_index&quot;</span><span class="p">:</span> <span class="n">target_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
             <span class="p">}</span>
