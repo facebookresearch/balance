@@ -14,6 +14,7 @@
   invariant enforced by SampleFrame construction.
 - `find_items_index_in_list(...)` now precomputes first-position lookups instead
   of rebuilding membership sets and rescanning the source list for every item.
+- Rake `predict_weights()` replay code is split into focused validation, transformation, NA-handling, cell-mapping, target-total, and index-restoration helpers while preserving existing replay and transfer behavior.
 
 ## Tests
 

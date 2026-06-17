@@ -14,7 +14,7 @@ import numbers
 import pickle
 from fractions import Fraction
 from functools import reduce
-from typing import Any, Callable, cast, Dict, List, Tuple, Union
+from typing import Any, Callable, cast, Dict, List, NamedTuple, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -352,10 +352,10 @@ def rake(
 
     # TODO: separate into a function that handles NA (for rake, ipw, poststratify)
     if na_action == "drop":
-        (sample_df, sample_weights) = balance_util.drop_na_rows(
+        sample_df, sample_weights = balance_util.drop_na_rows(
             sample_df, sample_weights, "sample"
         )
-        (target_df, target_weights) = balance_util.drop_na_rows(
+        target_df, target_weights = balance_util.drop_na_rows(
             target_df, target_weights, "target"
         )
     elif na_action == "add_indicator":
@@ -522,85 +522,26 @@ def rake(
 # Private to ``balance``: callers should reach this through
 # ``BalanceFrame.predict_weights()`` rather than importing it directly.
 #
-# TODO: decompose into smaller helpers (validate metadata, apply stored
-# transformations, NA handling, code mapping, cell-ratio compute, target-sum
-# determination, na_action='drop' index restoration). Best done alongside
-# the cbps / poststratify / ipw extractions, where the same helpers can be
-# shared across all four methods to reduce duplication.
-#
 # The shared transfer-rejection guard lives alongside
-# ``apply_transformations`` as ``adjustment._reject_data_dependent_transfer``
-# (extracted from rake + poststratify duplication). It is invoked below
-# under ``is_transfer``. ``cbps`` and ``ipw`` already have
-# ``predict_weights(data=...)`` paths in ``BalanceFrame`` but do not yet
-# persist ``transformations_origin`` or invoke this guard; applying it
-# there is a follow-up to keep transfer behavior aligned across methods.
-#
-# TODO: replace that rejection guard with a *constructive* helper
-# ``_freeze_data_dependent_transformations(transformations, dfs) -> dict[str, Callable]``
-# that captures fit-time parameters (bin edges for ``quantize``, kept
-# levels for ``fct_lump``) and replays them as deterministic closures.
-# Once that exists, transfer scoring works out of the box for
-# ``transformations='default'`` and for explicit dicts containing
-# ``quantize``/``fct_lump`` (or wrappers thereof such as
-# ``functools.partial(fct_lump, prop=0.1)``), removing the entire
-# transfer-rejection branch and its breaking-change burden on users.
-def _predict_weights_from_model(
-    model: dict[str, Any],
-    sample_df: pd.DataFrame,
-    sample_weights_full: pd.Series,
-    target_df: pd.DataFrame,
-    target_weights: pd.Series,
-    is_transfer: bool,
-) -> pd.Series:
-    """Reconstruct rake weights from a stored fit-time model dict.
+# ``apply_transformations`` as ``adjustment._reject_data_dependent_transfer``.
+# It is invoked during transfer scoring because rake currently persists the
+# effective transformation functions, not frozen fit-time parameters for
+# data-dependent helpers such as ``quantize`` and ``fct_lump``.
 
-    Internal helper. The pure-math/model-driven core of
-    ``BalanceFrame.predict_weights()`` for rake — callers should reach
-    this through that public API rather than importing the helper
-    directly. It takes plain DataFrames and Series for the scoring sample
-    and target, plus the ``model`` dict persisted by :func:`rake` when
-    ``store_fit_metadata=True``, and replays the cell-ratio surface
-    (``m_fit / m_sample``) on the scoring sample.
 
-    Two modes:
-    - ``is_transfer=False`` (in-place replay): the scoring frames must be
-      the same rows that were fit; ``training_sample_weights`` and
-      ``training_target_weights`` from ``model`` are used as the canonical
-      fit-time weights.
-    - ``is_transfer=True`` (``data=...`` transfer): the scoring frames are
-      a different sample/target. A warning is emitted unconditionally
-      because transferred rake weights are only guaranteed to recover
-      target marginals when the new sample's joint distribution over the
-      rake variables is similar to the training sample's.
+class _RakePredictMetadata(NamedTuple):
+    variables: list[str]
+    input_variables: list[str]
+    categories: list[Any]
+    m_fit: np.ndarray
+    m_sample: np.ndarray
+    na_action: str
 
-    Args:
-        model: Fitted rake model dict produced with ``store_fit_metadata=True``.
-        sample_df: Scoring sample's covariate frame (full index, pre-transform).
-            Must contain every column listed in
-            ``model['variables_before_transformations']``.
-        sample_weights_full: Scoring sample's design weights aligned to
-            ``sample_df``'s full index.
-        target_df: Scoring target's covariate frame (pre-transform).
-            Must contain every column listed in
-            ``model['variables_before_transformations']``.
-        target_weights: Scoring target's design weights aligned to
-            ``target_df``'s full index.
-        is_transfer: ``True`` when called from
-            ``BalanceFrame.predict_weights(data=...)``; ``False`` for
-            in-place replay (``data=None``).
 
-    Returns:
-        Predicted weights as a ``pd.Series`` with ``sample_weights_full``'s
-        index. For ``na_action='drop'`` rake models, rows dropped during
-        scoring are returned as ``NaN``.
-
-    Raises:
-        ValueError: If model metadata is missing/malformed, if the scoring
-            frames are missing required covariates, if scoring rows fall in
-            joint cells with zero fit-time sample mass, or if in-place
-            replay is requested without compatible fit-time design weights.
-    """
+def _validate_rake_predict_metadata(
+    model: dict[str, Any], is_transfer: bool
+) -> _RakePredictMetadata:
+    """Validate and return the model artifacts needed for rake replay."""
     required = (
         "variables",
         "variables_before_transformations",
@@ -626,101 +567,146 @@ def _predict_weights_from_model(
     categories = model.get("categories")
     m_fit = model.get("m_fit")
     m_sample = model.get("m_sample")
-    transformations_origin = model.get("transformations_origin")
     if (
         not isinstance(variables, list)
         or not isinstance(input_variables, list)
         or not isinstance(categories, list)
     ):
         raise ValueError("Rake model metadata is malformed for predict_weights().")
-    if not isinstance(m_fit, np.ndarray) or not isinstance(m_sample, np.ndarray):
-        raise ValueError("Rake model is missing stored contingency tables.")
-    if is_transfer:
-        balance_adjustment._reject_data_dependent_transfer(
-            transformations_origin,
-            method_name="rake",
-            transformations_effective=model.get("transformations"),
-        )
-
-    for column in input_variables:
-        if column not in sample_df.columns or column not in target_df.columns:
-            raise ValueError(
-                "Rake predict_weights() cannot find required covariate "
-                f"'{column}' in both sample and target."
-            )
-    sample_df = sample_df.loc[:, input_variables]
-    target_df = target_df.loc[:, input_variables]
-
-    na_action = cast(str, model.get("na_action", "add_indicator"))
-
-    sample_df, target_df = balance_adjustment.apply_transformations(
-        (sample_df, target_df), transformations=model.get("transformations")
-    )
-    for column in variables:
-        if column not in sample_df.columns:
-            raise ValueError(
-                "Rake transform output is missing stored variable "
-                f"'{column}' required for predict_weights()."
-            )
-    sample_df = sample_df.loc[:, variables]
-    target_df = target_df.loc[:, variables]
-
     if len(variables) == 0:
         raise ValueError(
             "Rake predict_weights() model metadata is missing stored weighting "
             "variables. Re-fit the model (with store_fit_metadata=True) before "
             "calling predict_weights()."
         )
-
-    sample_weights = sample_weights_full
-    if not is_transfer:
-        training_sample_weights = model.get("training_sample_weights")
-        if isinstance(training_sample_weights, pd.Series):
-            if na_action == "drop":
-                sample_weights = training_sample_weights
-            elif training_sample_weights.index.equals(sample_weights_full.index):
-                sample_weights = training_sample_weights
-            else:
-                raise ValueError(
-                    "Rake predict_weights() requires compatible fit-time sample design "
-                    "weights for in-place replay. This can happen because "
-                    "store_fit_metadata is missing/incompatible, or because you're "
-                    "scoring a different sample; use predict_weights(data=...) "
-                    "for different samples."
-                )
-        else:
-            raise ValueError(
-                "Rake predict_weights() requires compatible fit-time sample design "
-                "weights for in-place replay. This can happen because "
-                "store_fit_metadata is missing/incompatible, or because you're "
-                "scoring a different sample; use predict_weights(data=...) "
-                "for different samples."
-            )
-
-    dropped_target_weights: pd.Series | None = None
-    if na_action == "drop":
-        sample_df, sample_weights = balance_util.drop_na_rows(
-            sample_df, sample_weights, "sample"
-        )
-        target_df, dropped_target_weights = balance_util.drop_na_rows(
-            target_df, target_weights, "target"
-        )
-    elif na_action == "add_indicator":
-        sample_df = pd.DataFrame(_safe_fillna_and_infer(sample_df, "__NaN__"))
-        target_df = pd.DataFrame(_safe_fillna_and_infer(target_df, "__NaN__"))
-    else:
+    if len(categories) != len(variables):
         raise ValueError(
-            f"Rake model has invalid na_action metadata '{na_action}' for predict_weights()."
+            "Rake model metadata has mismatched variables and categories for "
+            "predict_weights()."
         )
-    sample_df = sample_df.astype(str)
+    if not isinstance(m_fit, np.ndarray) or not isinstance(m_sample, np.ndarray):
+        raise ValueError("Rake model is missing stored contingency tables.")
     if m_fit.shape != m_sample.shape:
         raise ValueError(
             "Rake model metadata has incompatible fitted and sample table shapes."
         )
+    if m_fit.ndim != len(variables):
+        raise ValueError(
+            "Rake model metadata has incompatible table dimensions for "
+            "predict_weights()."
+        )
+    expected_shape = tuple(len(cats) for cats in categories)
+    if m_fit.shape != expected_shape:
+        raise ValueError(
+            "Rake model metadata has incompatible category counts and table shape "
+            "for predict_weights()."
+        )
+    return _RakePredictMetadata(
+        variables=cast(list[str], variables),
+        input_variables=cast(list[str], input_variables),
+        categories=categories,
+        m_fit=m_fit,
+        m_sample=m_sample,
+        na_action=cast(str, model.get("na_action", "add_indicator")),
+    )
 
-    category_maps = [{cat: i for i, cat in enumerate(cats)} for cats in categories]
-    code_columns = []
-    for column, cat_map in zip(variables, category_maps):
+
+def _prepare_rake_predict_frames(
+    model: dict[str, Any],
+    metadata: _RakePredictMetadata,
+    sample_df: pd.DataFrame,
+    target_df: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Select input variables and replay stored transformations."""
+    for column in metadata.input_variables:
+        if column not in sample_df.columns or column not in target_df.columns:
+            raise ValueError(
+                "Rake predict_weights() cannot find required covariate "
+                f"'{column}' in both sample and target."
+            )
+    sample_selected = sample_df.loc[:, metadata.input_variables]
+    target_selected = target_df.loc[:, metadata.input_variables]
+    sample_transformed, target_transformed = balance_adjustment.apply_transformations(
+        (sample_selected, target_selected), transformations=model.get("transformations")
+    )
+    for column in metadata.variables:
+        if (
+            column not in sample_transformed.columns
+            or column not in target_transformed.columns
+        ):
+            raise ValueError(
+                "Rake transform output is missing stored variable "
+                f"'{column}' required for predict_weights()."
+            )
+    return (
+        sample_transformed.loc[:, metadata.variables],
+        target_transformed.loc[:, metadata.variables],
+    )
+
+
+def _resolve_rake_sample_weights(
+    model: dict[str, Any],
+    sample_weights_full: pd.Series,
+    na_action: str,
+    is_transfer: bool,
+) -> pd.Series:
+    """Use fit-time design weights for in-place replay, scoring weights for transfer."""
+    if is_transfer:
+        return sample_weights_full
+    training_sample_weights = model.get("training_sample_weights")
+    if isinstance(training_sample_weights, pd.Series):
+        if na_action == "drop" or training_sample_weights.index.equals(
+            sample_weights_full.index
+        ):
+            return training_sample_weights
+    raise ValueError(
+        "Rake predict_weights() requires compatible fit-time sample design "
+        "weights for in-place replay. This can happen because "
+        "store_fit_metadata is missing/incompatible, or because you're "
+        "scoring a different sample; use predict_weights(data=...) "
+        "for different samples."
+    )
+
+
+def _apply_rake_predict_na_action(
+    sample_df: pd.DataFrame,
+    sample_weights: pd.Series,
+    target_df: pd.DataFrame,
+    target_weights: pd.Series,
+    na_action: str,
+) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame, Optional[pd.Series]]:
+    """Apply rake's stored NA policy to scoring frames."""
+    if na_action == "drop":
+        sample_clean, sample_weights_clean = balance_util.drop_na_rows(
+            sample_df, sample_weights, "sample"
+        )
+        target_clean, dropped_target_weights = balance_util.drop_na_rows(
+            target_df, target_weights, "target"
+        )
+        return (
+            sample_clean.astype(str),
+            sample_weights_clean,
+            target_clean,
+            dropped_target_weights,
+        )
+    if na_action == "add_indicator":
+        sample_clean = pd.DataFrame(_safe_fillna_and_infer(sample_df, "__NaN__"))
+        target_clean = pd.DataFrame(_safe_fillna_and_infer(target_df, "__NaN__"))
+        return sample_clean.astype(str), sample_weights, target_clean, None
+    raise ValueError(
+        f"Rake model has invalid na_action metadata '{na_action}' for predict_weights()."
+    )
+
+
+def _rake_predict_code_index(
+    sample_df: pd.DataFrame,
+    variables: list[str],
+    categories: list[Any],
+) -> tuple[np.ndarray, ...]:
+    """Map scoring rows to stored fit-time contingency-table cells."""
+    code_columns: list[np.ndarray] = []
+    for column, cats in zip(variables, categories):
+        cat_map = {cat: i for i, cat in enumerate(cats)}
         codes = sample_df[column].map(cat_map)
         if bool(codes.isna().any()):
             raise ValueError(
@@ -728,7 +714,82 @@ def _predict_weights_from_model(
                 "categories. Re-fit with compatible covariates."
             )
         code_columns.append(codes.astype(int).to_numpy())
-    code_index = tuple(code_columns)
+    return tuple(code_columns)
+
+
+def _rake_target_sum(
+    model: dict[str, Any],
+    target_weights: pd.Series,
+    dropped_target_weights: Optional[pd.Series],
+    na_action: str,
+    is_transfer: bool,
+) -> float:
+    """Determine the target total used when normalizing predicted weights."""
+    if is_transfer:
+        if na_action == "drop" and isinstance(dropped_target_weights, pd.Series):
+            return float(dropped_target_weights.sum())
+        return float(target_weights.sum())
+    training_target_weights = model.get("training_target_weights")
+    if not isinstance(training_target_weights, pd.Series):
+        raise ValueError(
+            "Rake predict_weights() requires compatible fit-time target design "
+            "weights for in-place replay. This can happen because "
+            "store_fit_metadata is missing/incompatible, or because you're "
+            "scoring a different sample; use predict_weights(data=...) "
+            "for different samples."
+        )
+    return float(training_target_weights.sum())
+
+
+def _restore_rake_dropped_index(
+    predicted: pd.Series, sample_weights_full: pd.Series, na_action: str
+) -> pd.Series:
+    """Restore rows dropped by ``na_action='drop'`` as missing predictions."""
+    if na_action != "drop":
+        return predicted
+    predicted_full = pd.Series(
+        np.nan, index=sample_weights_full.index, dtype=float
+    ).rename(predicted.name)
+    predicted_full.loc[predicted.index] = predicted.to_numpy()
+    return predicted_full
+
+
+def _predict_weights_from_model(
+    model: dict[str, Any],
+    sample_df: pd.DataFrame,
+    sample_weights_full: pd.Series,
+    target_df: pd.DataFrame,
+    target_weights: pd.Series,
+    is_transfer: bool,
+) -> pd.Series:
+    """Reconstruct rake weights from a stored fit-time model dict.
+
+    Internal helper. The pure-math/model-driven core of
+    ``BalanceFrame.predict_weights()`` for rake — callers should reach
+    this through that public API rather than importing the helper directly.
+    """
+    metadata = _validate_rake_predict_metadata(model, is_transfer=is_transfer)
+    if is_transfer:
+        balance_adjustment._reject_data_dependent_transfer(
+            model.get("transformations_origin"),
+            method_name="rake",
+            transformations_effective=model.get("transformations"),
+        )
+
+    sample_df, target_df = _prepare_rake_predict_frames(
+        model, metadata, sample_df, target_df
+    )
+    sample_weights = _resolve_rake_sample_weights(
+        model, sample_weights_full, metadata.na_action, is_transfer
+    )
+    sample_df, sample_weights, target_df, dropped_target_weights = (
+        _apply_rake_predict_na_action(
+            sample_df, sample_weights, target_df, target_weights, metadata.na_action
+        )
+    )
+    code_index = _rake_predict_code_index(
+        sample_df, metadata.variables, metadata.categories
+    )
 
     if is_transfer:
         logger.warning(
@@ -747,55 +808,36 @@ def _predict_weights_from_model(
             "Re-fit rake on the scoring sample/target for exact "
             "marginal matching."
         )
-    m_sample_at_cells = m_sample[code_index]
+    
+    m_sample_at_cells = metadata.m_sample[code_index]
     if bool((m_sample_at_cells <= 0).any()):
         raise ValueError(
             "Rake predict_weights() encountered sample rows in joint cells with "
             "zero fit-time sample mass (m_sample==0). Re-fit rake on data with "
             "compatible joint support."
         )
-    # Compute ratios only for the scored cells. Avoids materializing a
-    # dense array the size of the full contingency table on every call
-    # (relevant for high-cardinality rakes).
-    cell_ratios = m_fit[code_index] / m_sample_at_cells
+    cell_ratios = metadata.m_fit[code_index] / m_sample_at_cells
     raw = pd.Series(
         sample_weights.to_numpy() * cell_ratios,
         index=sample_weights.index,
         dtype=float,
     )
-
-    training_target_weights = model.get("training_target_weights")
-    if not is_transfer and not isinstance(training_target_weights, pd.Series):
-        raise ValueError(
-            "Rake predict_weights() requires compatible fit-time target design "
-            "weights for in-place replay. This can happen because "
-            "store_fit_metadata is missing/incompatible, or because you're "
-            "scoring a different sample; use predict_weights(data=...) "
-            "for different samples."
-        )
-    if is_transfer:
-        if na_action == "drop" and isinstance(dropped_target_weights, pd.Series):
-            target_sum = float(dropped_target_weights.sum())
-        else:
-            target_sum = float(target_weights.sum())
-    else:
-        training_target_weights_series = cast(pd.Series, training_target_weights)
-        target_sum = float(training_target_weights_series.sum())
-
     predicted = balance_adjustment.trim_weights(
         raw,
-        target_sum_weights=target_sum,
+        target_sum_weights=_rake_target_sum(
+            model,
+            target_weights,
+            dropped_target_weights,
+            metadata.na_action,
+            is_transfer,
+        ),
         weight_trimming_mean_ratio=model.get("weight_trimming_mean_ratio"),
         weight_trimming_percentile=model.get("weight_trimming_percentile"),
         keep_sum_of_weights=bool(model.get("keep_sum_of_weights", True)),
     )
-    if na_action == "drop":
-        predicted_full = pd.Series(
-            np.nan, index=sample_weights_full.index, dtype=float
-        ).rename(predicted.name)
-        predicted_full.loc[predicted.index] = predicted.to_numpy()
-        predicted = predicted_full
-    return predicted
+    return _restore_rake_dropped_index(
+        predicted, sample_weights_full, metadata.na_action
+    )
 
 
 def _lcm(a: int, b: int) -> int:
