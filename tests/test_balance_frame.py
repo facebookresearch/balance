@@ -4189,7 +4189,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         }
         sample_df = pd.DataFrame({"a": ["A", "B"], "b": ["X", "Y"]})
         target_df = sample_df.copy()
-        with self.assertRaisesRegex(ValueError, "mismatched variables and categories"):
+        with self.assertRaisesRegex(ValueError, "fewer categories than variables"):
             _predict_weights_from_model(
                 model,
                 sample_df,

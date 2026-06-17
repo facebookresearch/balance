@@ -579,9 +579,9 @@ def _validate_rake_predict_metadata(
             "variables. Re-fit the model (with store_fit_metadata=True) before "
             "calling predict_weights()."
         )
-    if len(categories) != len(variables):
+    if len(categories) < len(variables):
         raise ValueError(
-            "Rake model metadata has mismatched variables and categories for "
+            "Rake model metadata has fewer categories than variables for "
             "predict_weights()."
         )
     if not isinstance(m_fit, np.ndarray) or not isinstance(m_sample, np.ndarray):
@@ -589,17 +589,6 @@ def _validate_rake_predict_metadata(
     if m_fit.shape != m_sample.shape:
         raise ValueError(
             "Rake model metadata has incompatible fitted and sample table shapes."
-        )
-    if m_fit.ndim != len(variables):
-        raise ValueError(
-            "Rake model metadata has incompatible table dimensions for "
-            "predict_weights()."
-        )
-    expected_shape = tuple(len(cats) for cats in categories)
-    if m_fit.shape != expected_shape:
-        raise ValueError(
-            "Rake model metadata has incompatible category counts and table shape "
-            "for predict_weights()."
         )
     return _RakePredictMetadata(
         variables=cast(list[str], variables),
@@ -642,6 +631,26 @@ def _prepare_rake_predict_frames(
         sample_transformed.loc[:, metadata.variables],
         target_transformed.loc[:, metadata.variables],
     )
+
+
+def _validate_rake_table_shape(metadata: _RakePredictMetadata) -> None:
+    """Validate contingency-table dimensions after variables are replayable."""
+    if len(metadata.categories) != len(metadata.variables):
+        raise ValueError(
+            "Rake model metadata has mismatched variables and categories for "
+            "predict_weights()."
+        )
+    if metadata.m_fit.ndim != len(metadata.variables):
+        raise ValueError(
+            "Rake model metadata has incompatible table dimensions for "
+            "predict_weights()."
+        )
+    expected_shape = tuple(len(cats) for cats in metadata.categories)
+    if metadata.m_fit.shape != expected_shape:
+        raise ValueError(
+            "Rake model metadata has incompatible category counts and table shape "
+            "for predict_weights()."
+        )
 
 
 def _resolve_rake_sample_weights(
@@ -779,6 +788,7 @@ def _predict_weights_from_model(
     sample_df, target_df = _prepare_rake_predict_frames(
         model, metadata, sample_df, target_df
     )
+    _validate_rake_table_shape(metadata)
     sample_weights = _resolve_rake_sample_weights(
         model, sample_weights_full, metadata.na_action, is_transfer
     )
