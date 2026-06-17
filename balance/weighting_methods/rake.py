@@ -808,7 +808,7 @@ def _predict_weights_from_model(
             "Re-fit rake on the scoring sample/target for exact "
             "marginal matching."
         )
-    
+
     m_sample_at_cells = metadata.m_sample[code_index]
     if bool((m_sample_at_cells <= 0).any()):
         raise ValueError(
