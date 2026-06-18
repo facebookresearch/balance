@@ -26,6 +26,7 @@ from balance.sample_frame import SampleFrame
 from balance.testutil import _SKLEARN_1_4_AVAILABLE, BalanceTestCase
 from balance.util import _assert_type
 from balance.weighting_methods.ipw import ipw as ipw_func
+from balance.weighting_methods.rake import _predict_weights_from_model
 from scipy.special import expit
 
 
@@ -4173,6 +4174,70 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         )
         with self.assertRaisesRegex(ValueError, "missing fit-time metadata"):
             adjusted.predict_weights()
+
+    def test_predict_weights_rake_rejects_mismatched_metadata_shapes(self) -> None:
+        model: dict[str, Any] = {
+            "variables": ["a", "b"],
+            "variables_before_transformations": ["a", "b"],
+            "categories": [["A", "B"]],
+            "m_fit": np.ones((2, 2)),
+            "m_sample": np.ones((2, 2)),
+            "na_action": "add_indicator",
+            "transformations": None,
+            "training_sample_weights": pd.Series([1.0, 1.0]),
+            "training_target_weights": pd.Series([1.0, 1.0]),
+        }
+        sample_df = pd.DataFrame({"a": ["A", "B"], "b": ["X", "Y"]})
+        target_df = sample_df.copy()
+        with self.assertRaisesRegex(ValueError, "fewer categories than variables"):
+            _predict_weights_from_model(
+                model,
+                sample_df,
+                pd.Series([1.0, 1.0]),
+                target_df,
+                pd.Series([1.0, 1.0]),
+                is_transfer=False,
+            )
+
+        model["categories"] = [["A", "B"], ["X", "Y", "Z"]]
+        with self.assertRaisesRegex(ValueError, "category counts and table shape"):
+            _predict_weights_from_model(
+                model,
+                sample_df,
+                pd.Series([1.0, 1.0]),
+                target_df,
+                pd.Series([1.0, 1.0]),
+                is_transfer=False,
+            )
+
+    def test_predict_weights_rake_validates_transformed_target_columns(self) -> None:
+        model: dict[str, Any] = {
+            "variables": ["a", "b"],
+            "variables_before_transformations": ["a", "b"],
+            "categories": [["A", "B"], ["X", "Y"]],
+            "m_fit": np.ones((2, 2)),
+            "m_sample": np.ones((2, 2)),
+            "na_action": "add_indicator",
+            "transformations": None,
+            "training_sample_weights": pd.Series([1.0, 1.0]),
+            "training_target_weights": pd.Series([1.0, 1.0]),
+        }
+        sample_df = pd.DataFrame({"a": ["A", "B"], "b": ["X", "Y"]})
+        target_df = sample_df.copy()
+        transformed_frames = (sample_df, target_df.drop(columns=["b"]))
+        with patch(
+            "balance.weighting_methods.rake.balance_adjustment.apply_transformations",
+            return_value=transformed_frames,
+        ):
+            with self.assertRaisesRegex(ValueError, "missing stored variable 'b'"):
+                _predict_weights_from_model(
+                    model,
+                    sample_df,
+                    pd.Series([1.0, 1.0]),
+                    target_df,
+                    pd.Series([1.0, 1.0]),
+                    is_transfer=False,
+                )
 
     def test_predict_weights_rake_fit_matches_weight_series(self) -> None:
         sample_df = pd.DataFrame(
