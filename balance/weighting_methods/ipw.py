@@ -747,13 +747,16 @@ def ipw(
     sample_df = sample_df.loc[:, variables]
     target_df = target_df.loc[:, variables]
 
-    if na_action == "drop":
-        (sample_df, sample_weights) = balance_util.drop_na_rows(
-            sample_df, sample_weights, "sample"
+    sample_df, sample_weights, target_df, target_weights = (
+        balance_util._apply_na_action_to_frame_pair(
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            na_action,
+            add_indicator_value=np.nan,
         )
-        (target_df, target_weights) = balance_util.drop_na_rows(
-            target_df, target_weights, "target"
-        )
+    )
     sample_n = sample_df.shape[0]
     target_n = target_df.shape[0]
 

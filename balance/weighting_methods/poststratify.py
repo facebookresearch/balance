@@ -222,18 +222,15 @@ def poststratify(
     sample_df = sample_df.loc[:, variables]
     target_df = target_df.loc[:, variables]
 
-    if na_action == "drop":
-        (sample_df, sample_weights) = balance_util.drop_na_rows(
-            sample_df, sample_weights, "sample"
+    sample_df, sample_weights, target_df, target_weights = (
+        balance_util._apply_na_action_to_frame_pair(
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            na_action,
         )
-        (target_df, target_weights) = balance_util.drop_na_rows(
-            target_df, target_weights, "target"
-        )
-    elif na_action == "add_indicator":
-        sample_df = pd.DataFrame(_safe_fillna_and_infer(sample_df, "__NaN__"))
-        target_df = pd.DataFrame(_safe_fillna_and_infer(target_df, "__NaN__"))
-    else:
-        raise ValueError("`na_action` must be 'add_indicator' or 'drop'")
+    )
 
     if store_fit_metadata and transformations_to_apply == "default":
         transformations_to_apply = balance_adjustment.default_transformations(

@@ -350,21 +350,15 @@ def rake(
         (sample_df, target_df), transformations_to_apply
     )
 
-    # TODO: separate into a function that handles NA (for rake, ipw, poststratify)
-    if na_action == "drop":
-        sample_df, sample_weights = balance_util.drop_na_rows(
-            sample_df, sample_weights, "sample"
+    sample_df, sample_weights, target_df, target_weights = (
+        balance_util._apply_na_action_to_frame_pair(
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            na_action,
         )
-        target_df, target_weights = balance_util.drop_na_rows(
-            target_df, target_weights, "target"
-        )
-    elif na_action == "add_indicator":
-        # pyrefly: ignore [bad-assignment]
-        target_df = _safe_fillna_and_infer(target_df, "__NaN__")
-        # pyrefly: ignore [bad-assignment]
-        sample_df = _safe_fillna_and_infer(sample_df, "__NaN__")
-    else:
-        raise ValueError("`na_action` must be 'add_indicator' or 'drop'")
+    )
 
     # Alphabetize variables to ensure consistency across covariate order
     # (ipfn algorithm is iterative and variable order can matter on the margins)

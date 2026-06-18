@@ -16,6 +16,7 @@ import pandas as pd
 from balance.sample_class import Sample
 from balance.util import _assert_type
 from balance.utils.data_transformation import (
+    _apply_na_action_to_frame_pair,
     add_na_indicator,
     auto_aggregate,
     auto_spread,
@@ -37,6 +38,99 @@ class TestUtil(
         text = "x + _is_na_age + foo_is_na_city + _is_na_income_2020 + _is_na_z9x"
         matches = re.findall(NA_INDICATOR_TOKEN_PATTERN, text)
         self.assertEqual(matches, ["_is_na_age", "_is_na_income_2020", "_is_na_z9x"])
+
+    def test_apply_na_action_to_frame_pair_drop(self) -> None:
+        sample_df = pd.DataFrame({"x": ["a", None], "y": [1, 2]}, index=[10, 11])
+        target_df = pd.DataFrame({"x": ["a", "b"], "y": [None, 3]}, index=[20, 21])
+        sample_weights = pd.Series([1.0, 2.0], index=sample_df.index)
+        target_weights = pd.Series([3.0, 4.0], index=target_df.index)
+
+        sample_clean, sample_w, target_clean, target_w = _apply_na_action_to_frame_pair(
+            sample_df, sample_weights, target_df, target_weights, "drop"
+        )
+
+        self.assertEqual(sample_clean.index.tolist(), [10])
+        self.assertEqual(sample_w.index.tolist(), [10])
+        self.assertEqual(target_clean.index.tolist(), [21])
+        self.assertEqual(target_w.index.tolist(), [21])
+
+    def test_apply_na_action_to_frame_pair_add_indicator(self) -> None:
+        sample_df = pd.DataFrame({"x": ["a", None]}, index=[10, 11])
+        target_df = pd.DataFrame({"x": [None, "b"]}, index=[20, 21])
+        sample_weights = pd.Series([1.0, 2.0], index=sample_df.index)
+        target_weights = pd.Series([3.0, 4.0], index=target_df.index)
+
+        sample_filled, sample_w, target_filled, target_w = (
+            _apply_na_action_to_frame_pair(
+                sample_df, sample_weights, target_df, target_weights, "add_indicator"
+            )
+        )
+
+        self.assertEqual(sample_filled.loc[11, "x"], "__NaN__")
+        self.assertEqual(target_filled.loc[20, "x"], "__NaN__")
+        self.assertEqual(sample_w, sample_weights)
+        self.assertEqual(target_w, target_weights)
+
+    def test_apply_na_action_to_frame_pair_add_indicator_preserves_categorical(
+        self,
+    ) -> None:
+        sample_df = pd.DataFrame(
+            {"x": pd.Series(["a", None], dtype="category")}, index=[0, 1]
+        )
+        target_df = pd.DataFrame(
+            {"x": pd.Series([None, "b"], dtype="category")}, index=[0, 1]
+        )
+        weights = pd.Series([1.0, 1.0], index=sample_df.index)
+
+        sample_filled, _, target_filled, _ = _apply_na_action_to_frame_pair(
+            sample_df, weights, target_df, weights, "add_indicator"
+        )
+
+        self.assertEqual(sample_filled.loc[1, "x"], "__NaN__")
+        self.assertEqual(target_filled.loc[0, "x"], "__NaN__")
+        self.assertTrue(isinstance(sample_filled["x"].dtype, pd.CategoricalDtype))
+        self.assertIn("__NaN__", sample_filled["x"].cat.categories)
+
+    def test_apply_na_action_to_frame_pair_preserves_duplicate_columns(self) -> None:
+        sample_df = pd.DataFrame([["a", None]], columns=["x", "x"], index=[10])
+        target_df = pd.DataFrame([[None, "b"]], columns=["x", "x"], index=[20])
+        sample_weights = pd.Series([1.0], index=sample_df.index)
+        target_weights = pd.Series([2.0], index=target_df.index)
+
+        sample_filled, _, target_filled, _ = _apply_na_action_to_frame_pair(
+            sample_df, sample_weights, target_df, target_weights, "add_indicator"
+        )
+
+        self.assertEqual(sample_filled.columns.tolist(), ["x", "x"])
+        self.assertEqual(target_filled.columns.tolist(), ["x", "x"])
+        self.assertEqual(sample_filled.iloc[0, 1], "__NaN__")
+        self.assertEqual(target_filled.iloc[0, 0], "__NaN__")
+
+    def test_apply_na_action_to_frame_pair_handles_empty_frames(self) -> None:
+        sample_df = pd.DataFrame(index=[10, 11])
+        target_df = pd.DataFrame(index=[20])
+        sample_weights = pd.Series([1.0, 2.0], index=sample_df.index)
+        target_weights = pd.Series([3.0], index=target_df.index)
+
+        sample_filled, sample_w, target_filled, target_w = (
+            _apply_na_action_to_frame_pair(
+                sample_df, sample_weights, target_df, target_weights, "add_indicator"
+            )
+        )
+
+        self.assertEqual(sample_filled.index.tolist(), [10, 11])
+        self.assertEqual(target_filled.index.tolist(), [20])
+        self.assertEqual(sample_filled.columns.tolist(), [])
+        self.assertEqual(target_filled.columns.tolist(), [])
+        self.assertEqual(sample_w, sample_weights)
+        self.assertEqual(target_w, target_weights)
+
+    def test_apply_na_action_to_frame_pair_rejects_invalid_policy(self) -> None:
+        df = pd.DataFrame({"x": [1]})
+        weights = pd.Series([1.0])
+
+        with self.assertRaisesRegex(ValueError, "`na_action` must be"):
+            _apply_na_action_to_frame_pair(df, weights, df, weights, "bad")
 
     def test_add_na_indicator(self) -> None:
         """Test addition of NA indicator columns to DataFrames.
