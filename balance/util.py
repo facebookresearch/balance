@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 
 from balance.utils.data_transformation import (
+    _apply_na_action_to_frame_pair,
     add_na_indicator,
     add_na_indicator_to_combined,
     auto_aggregate,
@@ -99,6 +100,7 @@ __all__ = [
     "_warn_of_df_dtypes_change",
     "add_na_indicator",
     "add_na_indicator_to_combined",
+    "_apply_na_action_to_frame_pair",
     "auto_aggregate",
     "auto_spread",
     "build_model_matrix",

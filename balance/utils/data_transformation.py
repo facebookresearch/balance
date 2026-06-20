@@ -27,6 +27,83 @@ NA_INDICATOR_TOKEN_PATTERN: str = (
 )
 
 
+def _fill_missing_for_na_action(df: pd.DataFrame, value: Any) -> pd.DataFrame:
+    """Fill missing values while preserving index, columns, and categories."""
+    filled_columns: List[pd.Series] = []
+
+    for _, series in df.items():
+        if (
+            isinstance(series.dtype, pd.CategoricalDtype)
+            and series.isna().any()
+            and not pd.isna(value)
+        ):
+            category_filled = series
+            if value not in category_filled.cat.categories:
+                category_filled = category_filled.cat.add_categories([value])
+            filled_columns.append(category_filled.fillna(value))
+        else:
+            filled = _safe_fillna_and_infer(series, value)
+            if not isinstance(filled, pd.Series):
+                raise TypeError("Expected Series fill result for a DataFrame column")
+            filled_columns.append(filled)
+
+    if not filled_columns:
+        return df.copy()
+
+    result = pd.concat(filled_columns, axis=1)
+    result.index = df.index
+    result.columns = df.columns
+    return result
+
+
+def _apply_na_action_to_frame_pair(
+    sample_df: pd.DataFrame,
+    sample_weights: pd.Series,
+    target_df: pd.DataFrame,
+    target_weights: pd.Series,
+    na_action: str,
+    *,
+    add_indicator_value: Any = "__NaN__",
+    error_prefix: str = "`na_action`",
+) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
+    """Apply a weighting-method NA policy to sample and target inputs.
+
+    Args:
+        sample_df: Sample covariates.
+        sample_weights: Sample design weights aligned to ``sample_df``.
+        target_df: Target covariates.
+        target_weights: Target design weights aligned to ``target_df``.
+        na_action: Missing-value policy. ``"drop"`` drops missing rows from
+            both frames and their corresponding weights. ``"add_indicator"``
+            fills missing values in both frames with ``add_indicator_value``.
+        add_indicator_value: Fill value used when ``na_action`` is
+            ``"add_indicator"``.
+        error_prefix: Prefix used in the invalid-policy error message.
+
+    Returns:
+        The transformed ``sample_df``, ``sample_weights``, ``target_df``, and
+        ``target_weights``.
+
+    Raises:
+        ValueError: If ``na_action`` is not ``"add_indicator"`` or ``"drop"``.
+    """
+    if na_action == "drop":
+        sample_clean, sample_weights_clean = drop_na_rows(
+            sample_df, sample_weights, "sample"
+        )
+        target_clean, target_weights_clean = drop_na_rows(
+            target_df, target_weights, "target"
+        )
+        return sample_clean, sample_weights_clean, target_clean, target_weights_clean
+
+    if na_action == "add_indicator":
+        sample_filled = _fill_missing_for_na_action(sample_df, add_indicator_value)
+        target_filled = _fill_missing_for_na_action(target_df, add_indicator_value)
+        return sample_filled, sample_weights, target_filled, target_weights
+
+    raise ValueError(f"{error_prefix} must be 'add_indicator' or 'drop'")
+
+
 def add_na_indicator(
     df: pd.DataFrame, replace_val_obj: str = "_NA", replace_val_num: int = 0
 ) -> pd.DataFrame:
