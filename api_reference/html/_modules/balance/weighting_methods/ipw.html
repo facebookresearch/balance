@@ -801,13 +801,16 @@
     <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
     <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
 
-    <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;drop&quot;</span><span class="p">:</span>
-        <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">)</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">drop_na_rows</span><span class="p">(</span>
-            <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">&quot;sample&quot;</span>
+    <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">balance_util</span><span class="o">.</span><span class="n">_apply_na_action_to_frame_pair</span><span class="p">(</span>
+            <span class="n">sample_df</span><span class="p">,</span>
+            <span class="n">sample_weights</span><span class="p">,</span>
+            <span class="n">target_df</span><span class="p">,</span>
+            <span class="n">target_weights</span><span class="p">,</span>
+            <span class="n">na_action</span><span class="p">,</span>
+            <span class="n">add_indicator_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">)</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">drop_na_rows</span><span class="p">(</span>
-            <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span>
-        <span class="p">)</span>
+    <span class="p">)</span>
     <span class="n">sample_n</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">target_n</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 

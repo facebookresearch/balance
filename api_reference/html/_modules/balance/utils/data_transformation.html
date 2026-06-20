@@ -64,6 +64,83 @@
 <span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_fill_missing_for_na_action</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fill missing values while preserving index, columns, and categories.&quot;&quot;&quot;</span>
+    <span class="n">filled_columns</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">series</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">series</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="n">category_filled</span> <span class="o">=</span> <span class="n">series</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">category_filled</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">categories</span><span class="p">:</span>
+                <span class="n">category_filled</span> <span class="o">=</span> <span class="n">category_filled</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">add_categories</span><span class="p">([</span><span class="n">value</span><span class="p">])</span>
+            <span class="n">filled_columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">category_filled</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">filled</span> <span class="o">=</span> <span class="n">_safe_fillna_and_infer</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filled</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Expected Series fill result for a DataFrame column&quot;</span><span class="p">)</span>
+            <span class="n">filled_columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filled</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">filled_columns</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">filled_columns</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">result</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span>
+    <span class="n">result</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_apply_na_action_to_frame_pair</span><span class="p">(</span>
+    <span class="n">sample_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">sample_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">target_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">add_indicator_value</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="s2">&quot;__NaN__&quot;</span><span class="p">,</span>
+    <span class="n">error_prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;`na_action`&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply a weighting-method NA policy to sample and target inputs.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sample_df: Sample covariates.</span>
+<span class="sd">        sample_weights: Sample design weights aligned to ``sample_df``.</span>
+<span class="sd">        target_df: Target covariates.</span>
+<span class="sd">        target_weights: Target design weights aligned to ``target_df``.</span>
+<span class="sd">        na_action: Missing-value policy. ``&quot;drop&quot;`` drops missing rows from</span>
+<span class="sd">            both frames and their corresponding weights. ``&quot;add_indicator&quot;``</span>
+<span class="sd">            fills missing values in both frames with ``add_indicator_value``.</span>
+<span class="sd">        add_indicator_value: Fill value used when ``na_action`` is</span>
+<span class="sd">            ``&quot;add_indicator&quot;``.</span>
+<span class="sd">        error_prefix: Prefix used in the invalid-policy error message.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The transformed ``sample_df``, ``sample_weights``, ``target_df``, and</span>
+<span class="sd">        ``target_weights``.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If ``na_action`` is not ``&quot;add_indicator&quot;`` or ``&quot;drop&quot;``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;drop&quot;</span><span class="p">:</span>
+        <span class="n">sample_clean</span><span class="p">,</span> <span class="n">sample_weights_clean</span> <span class="o">=</span> <span class="n">drop_na_rows</span><span class="p">(</span>
+            <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">&quot;sample&quot;</span>
+        <span class="p">)</span>
+        <span class="n">target_clean</span><span class="p">,</span> <span class="n">target_weights_clean</span> <span class="o">=</span> <span class="n">drop_na_rows</span><span class="p">(</span>
+            <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">sample_clean</span><span class="p">,</span> <span class="n">sample_weights_clean</span><span class="p">,</span> <span class="n">target_clean</span><span class="p">,</span> <span class="n">target_weights_clean</span>
+
+    <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">:</span>
+        <span class="n">sample_filled</span> <span class="o">=</span> <span class="n">_fill_missing_for_na_action</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">add_indicator_value</span><span class="p">)</span>
+        <span class="n">target_filled</span> <span class="o">=</span> <span class="n">_fill_missing_for_na_action</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">add_indicator_value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sample_filled</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="n">target_filled</span><span class="p">,</span> <span class="n">target_weights</span>
+
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">error_prefix</span><span class="si">}</span><span class="s2"> must be &#39;add_indicator&#39; or &#39;drop&#39;&quot;</span><span class="p">)</span>
+
+
 <div class="viewcode-block" id="add_na_indicator">
 <a class="viewcode-back" href="../../../balance.util.html#balance.util.add_na_indicator">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">add_na_indicator</span><span class="p">(</span>
