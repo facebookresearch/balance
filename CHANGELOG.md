@@ -16,6 +16,9 @@
   of rebuilding membership sets and rescanning the source list for every item.
 - Rake `predict_weights()` replay code is split into focused validation, transformation, NA-handling, cell-mapping, target-total, and index-restoration helpers while preserving existing replay and transfer behavior.
 - Rake, poststratify, and IPW now share a single NA-policy helper for fit-time `na_action` handling, keeping drop/add-indicator semantics consistent across weighting methods.
+- Rake now uses the shared weighting-method input validator already used by
+  IPW and poststratify, so DataFrame/weight type, length, and index checks are
+  reported consistently across all three methods.
 
 ## Tests
 
