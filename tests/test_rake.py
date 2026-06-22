@@ -53,6 +53,7 @@ class Testrake(
         sample_weights: pd.Series | None,
         target_df: pd.DataFrame,
         target_weights: pd.Series | None,
+        exc_type: type[Exception] = AssertionError,
         **kwargs: object,
     ) -> None:
         """
@@ -64,10 +65,11 @@ class Testrake(
             sample_weights: Sample weights Series
             target_df: Target DataFrame
             target_weights: Target weights Series
+            exc_type: Exception type expected to be raised (default: AssertionError)
             **kwargs: Additional arguments to pass to rake()
         """
         self.assertRaisesRegex(
-            AssertionError,
+            exc_type,
             expected_message,
             rake,
             sample_df,
@@ -107,25 +109,23 @@ class Testrake(
         )
 
         # Cannot have weight in df that is not the weight column
-        self.assertRaisesRegex(
-            ValueError,
+        self._assert_rake_raises_with_message(
             "weight shouldn't be a name for covariate in the sample data",
-            rake,
             sample,
             pd.Series((1,) * n_rows),
             target,
             pd.Series((1,) * n_rows),
+            exc_type=ValueError,
         )
 
         target["weight"] = [2.0] * n_rows
-        self.assertRaisesRegex(
-            ValueError,
+        self._assert_rake_raises_with_message(
             "weight shouldn't be a name for covariate in the target data",
-            rake,
             sample[["a", "b"]],
             pd.Series((1,) * n_rows),
             target,
             pd.Series((1,) * n_rows),
+            exc_type=ValueError,
         )
 
         # Must pass weights for sample
