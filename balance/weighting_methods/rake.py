@@ -216,12 +216,10 @@ def rake(
         result["weight"].tolist()
         # [1.0, 1.0]
     """
-    assert (
-        "weight" not in sample_df.columns.values
-    ), "weight shouldn't be a name for covariate in the sample data"
-    assert (
-        "weight" not in target_df.columns.values
-    ), "weight shouldn't be a name for covariate in the target data"
+    if "weight" in sample_df.columns.values:
+        raise ValueError("weight shouldn't be a name for covariate in the sample data")
+    if "weight" in target_df.columns.values:
+        raise ValueError("weight shouldn't be a name for covariate in the target data")
 
     # TODO: move the input checks into separate funnction for rake, ipw, poststratify
     assert isinstance(sample_df, pd.DataFrame), "sample_df must be a pandas DataFrame"
