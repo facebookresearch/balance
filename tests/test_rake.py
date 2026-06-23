@@ -132,7 +132,7 @@ class Testrake(
         # Cannot have weight in df that is not the weight column
         self._assert_rake_raises_with_message(
             "weight shouldn't be a name for covariate in the sample data",
-            AssertionError,
+            ValueError,
             sample,
             pd.Series((1,) * n_rows),
             target,
@@ -142,7 +142,7 @@ class Testrake(
         target["weight"] = [2.0] * n_rows
         self._assert_rake_raises_with_message(
             "weight shouldn't be a name for covariate in the target data",
-            AssertionError,
+            ValueError,
             sample[["a", "b"]],
             pd.Series((1,) * n_rows),
             target,

@@ -218,12 +218,10 @@ def rake(
     """
     balance_util._check_weighting_methods_input(sample_df, sample_weights, "sample")
     balance_util._check_weighting_methods_input(target_df, target_weights, "target")
-    assert (
-        "weight" not in sample_df.columns.values
-    ), "weight shouldn't be a name for covariate in the sample data"
-    assert (
-        "weight" not in target_df.columns.values
-    ), "weight shouldn't be a name for covariate in the target data"
+    if "weight" in sample_df.columns.values:
+        raise ValueError("weight shouldn't be a name for covariate in the sample data")
+    if "weight" in target_df.columns.values:
+        raise ValueError("weight shouldn't be a name for covariate in the target data")
     if not isinstance(store_fit_metadata, bool):
         raise TypeError("`store_fit_metadata` must be a bool.")
     variables = balance_util.choose_variables(sample_df, target_df, variables=variables)
