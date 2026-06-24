@@ -35,6 +35,10 @@ hide_title: true
 - Add regression test for CBPS rank-deficient SVD handling when covariate
   columns are collinear (near-zero singular values filtered during SVD
   preprocessing).
+- **Expanded poststratification adjustment coverage**
+  - Added `Sample.adjust(method="poststratify")` coverage for the normalized
+    direct poststratification example to keep the high-level API aligned with
+    the weighting method.
 
 # 0.21.0 (2026-06-02)
 
