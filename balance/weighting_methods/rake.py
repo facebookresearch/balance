@@ -216,30 +216,12 @@ def rake(
         result["weight"].tolist()
         # [1.0, 1.0]
     """
-    assert (
-        "weight" not in sample_df.columns.values
-    ), "weight shouldn't be a name for covariate in the sample data"
-    assert (
-        "weight" not in target_df.columns.values
-    ), "weight shouldn't be a name for covariate in the target data"
-
-    # TODO: move the input checks into separate funnction for rake, ipw, poststratify
-    assert isinstance(sample_df, pd.DataFrame), "sample_df must be a pandas DataFrame"
-    assert isinstance(target_df, pd.DataFrame), "target_df must be a pandas DataFrame"
-    assert isinstance(
-        sample_weights, pd.Series
-    ), "sample_weights must be a pandas Series"
-    assert isinstance(
-        target_weights, pd.Series
-    ), "target_weights must be a pandas Series"
-    assert sample_df.shape[0] == sample_weights.shape[0], (
-        "sample_weights must be the same length as sample_df"
-        f"{sample_df.shape[0]}, {sample_weights.shape[0]}"
-    )
-    assert target_df.shape[0] == target_weights.shape[0], (
-        "target_weights must be the same length as target_df"
-        f"{target_df.shape[0]}, {target_weights.shape[0]}"
-    )
+    balance_util._check_weighting_methods_input(sample_df, sample_weights, "sample")
+    balance_util._check_weighting_methods_input(target_df, target_weights, "target")
+    if "weight" in sample_df.columns.values:
+        raise ValueError("weight shouldn't be a name for covariate in the sample data")
+    if "weight" in target_df.columns.values:
+        raise ValueError("weight shouldn't be a name for covariate in the target data")
     if not isinstance(store_fit_metadata, bool):
         raise TypeError("`store_fit_metadata` must be a bool.")
     variables = balance_util.choose_variables(sample_df, target_df, variables=variables)

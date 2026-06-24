@@ -14,6 +14,7 @@ from __future__ import (
 )
 
 import warnings
+from typing import Any, Optional, Tuple, Type, Union
 
 import balance.testutil
 import numpy as np
@@ -49,10 +50,11 @@ class Testrake(
     def _assert_rake_raises_with_message(
         self,
         expected_message: str,
-        sample_df: pd.DataFrame,
-        sample_weights: pd.Series | None,
-        target_df: pd.DataFrame,
-        target_weights: pd.Series | None,
+        expected_exception: Union[Type[Exception], Tuple[Type[Exception], ...]],
+        sample_df: Any,
+        sample_weights: Optional[pd.Series],
+        target_df: Any,
+        target_weights: Optional[pd.Series],
         **kwargs: object,
     ) -> None:
         """
@@ -60,6 +62,7 @@ class Testrake(
 
         Args:
             expected_message: Expected error message pattern
+            expected_exception: Exception type expected from validation.
             sample_df: Sample DataFrame
             sample_weights: Sample weights Series
             target_df: Target DataFrame
@@ -67,7 +70,7 @@ class Testrake(
             **kwargs: Additional arguments to pass to rake()
         """
         self.assertRaisesRegex(
-            AssertionError,
+            expected_exception,
             expected_message,
             rake,
             sample_df,
@@ -83,9 +86,11 @@ class Testrake(
 
         This test ensures that the rake function correctly identifies and raises
         appropriate errors for various invalid input scenarios:
+        - Non-DataFrame sample/target inputs
         - Presence of 'weight' column in input data
         - Missing or invalid weight Series
         - Mismatched lengths between DataFrames and weight Series
+        - Mismatched DataFrame/weight indexes
         """
         n_rows = 20
         # pyrefly: ignore [bad-argument-type]
@@ -106,9 +111,28 @@ class Testrake(
             }
         )
 
+        # Must pass DataFrames for sample and target before accessing columns
+        self._assert_rake_raises_with_message(
+            "sample_df must be a pandas DataFrame",
+            TypeError,
+            sample[["a", "b"]].to_dict("list"),
+            pd.Series((1,) * n_rows),
+            target,
+            pd.Series((1,) * n_rows),
+        )
+        self._assert_rake_raises_with_message(
+            "target_df must be a pandas DataFrame",
+            TypeError,
+            sample[["a", "b"]],
+            pd.Series((1,) * n_rows),
+            target.to_dict("list"),
+            pd.Series((1,) * n_rows),
+        )
+
         # Cannot have weight in df that is not the weight column
         self._assert_rake_raises_with_message(
             "weight shouldn't be a name for covariate in the sample data",
+            ValueError,
             sample,
             pd.Series((1,) * n_rows),
             target,
@@ -118,6 +142,7 @@ class Testrake(
         target["weight"] = [2.0] * n_rows
         self._assert_rake_raises_with_message(
             "weight shouldn't be a name for covariate in the target data",
+            ValueError,
             sample[["a", "b"]],
             pd.Series((1,) * n_rows),
             target,
@@ -127,6 +152,7 @@ class Testrake(
         # Must pass weights for sample
         self._assert_rake_raises_with_message(
             "sample_weights must be a pandas Series",
+            TypeError,
             sample[["a", "b"]],
             None,
             target[["a", "b"]],
@@ -136,6 +162,7 @@ class Testrake(
         # Must pass weights for target
         self._assert_rake_raises_with_message(
             "target_weights must be a pandas Series",
+            TypeError,
             sample[["a", "b"]],
             pd.Series((1,) * n_rows),
             target[["a", "b"]],
@@ -145,6 +172,7 @@ class Testrake(
         # Must pass weights of same length as sample
         self._assert_rake_raises_with_message(
             "sample_weights must be the same length as sample_df",
+            ValueError,
             sample[["a", "b"]],
             pd.Series((1,) * (n_rows - 1)),
             target[["a", "b"]],
@@ -154,10 +182,35 @@ class Testrake(
         # Must pass weights of same length as target
         self._assert_rake_raises_with_message(
             "target_weights must be the same length as target_df",
+            ValueError,
             sample[["a", "b"]],
             pd.Series((1,) * n_rows),
             target[["a", "b"]],
             pd.Series((1,) * (n_rows - 1)),
+        )
+
+        # Must align indexes before the method chooses or transforms variables
+        mismatched_sample_weights = pd.Series(
+            (1,) * n_rows, index=pd.RangeIndex(n_rows, 2 * n_rows)
+        )
+        self._assert_rake_raises_with_message(
+            "sample_df index must be the same as sample_weights index",
+            ValueError,
+            sample[["a", "b"]],
+            mismatched_sample_weights,
+            target[["a", "b"]],
+            pd.Series((1,) * n_rows),
+        )
+        mismatched_target_weights = pd.Series(
+            (1,) * n_rows, index=pd.RangeIndex(n_rows, 2 * n_rows)
+        )
+        self._assert_rake_raises_with_message(
+            "target_df index must be the same as target_weights index",
+            ValueError,
+            sample[["a", "b"]],
+            pd.Series((1,) * n_rows),
+            target[["a", "b"]],
+            mismatched_target_weights,
         )
 
     def test_rake_no_shared_variables_raises_actionable_error(self) -> None:
