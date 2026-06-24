@@ -70,8 +70,27 @@ class Testpoststratify(
         )["weight"]
         self.assertEqual(result, t_weights.astype("float64"))
 
+        sample = Sample.from_frame(
+            df=s.assign(id=range(len(s)), w=s_weights),
+            id_column="id",
+            weight_column="w",
+        )
+        target = Sample.from_frame(
+            df=t.assign(id=range(len(t)), w=t_weights),
+            id_column="id",
+            weight_column="w",
+        )
+        adjusted = sample.adjust(target, method="poststratify", transformations=None)
+        expected_adjusted_weights = t_weights.astype("float64").rename("w")
+        pd.testing.assert_series_equal(
+            adjusted.weights().df["w"].reset_index(drop=True),
+            expected_adjusted_weights,
+        )
+        self.assertAlmostEqual(
+            float(adjusted.weights().df["w"].sum()), float(t_weights.sum())
+        )
+
         # test through adjustment
-        # TODO: test the previous example through adjustment as well
         sample = Sample.from_frame(
             df=pd.DataFrame(
                 {
