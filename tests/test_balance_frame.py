@@ -2503,6 +2503,73 @@ class TestBalanceFrameDiagnosticsNullMethod(BalanceTestCase):
         self.assertEqual(method_rows["var"].iloc[0], "null_adjustment")
 
 
+class TestBalanceFrameRakeModelMetadata(BalanceTestCase):
+    """Verify rake metadata works across high-level diagnostics without perf."""
+
+    def _adjusted_rake_frame(self) -> BalanceFrame:
+        sample = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["1", "2", "3", "4"],
+                    "group": ["a", "a", "b", "b"],
+                    "region": ["x", "y", "x", "y"],
+                    "weight": [1.0, 1.0, 1.0, 1.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        target = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["5", "6", "7", "8"],
+                    "group": ["a", "b", "b", "b"],
+                    "region": ["x", "x", "y", "y"],
+                    "weight": [1.0, 1.0, 1.0, 1.0],
+                }
+            ),
+            id_column="id",
+            weight_column="weight",
+            standardize_types=False,
+        )
+        return BalanceFrame(sample=sample, target=target).adjust(
+            method="rake",
+            variables=["group", "region"],
+            transformations=None,
+        )
+
+    def test_rake_summary_and_diagnostics_do_not_require_perf(self) -> None:
+        """Rake summaries should not depend on an IPW-only perf dictionary."""
+        adjusted = self._adjusted_rake_frame()
+
+        model = adjusted.model
+        self.assertEqual(model["method"], "rake")
+        self.assertIn("iterations", model)
+        self.assertIn("converged", model)
+        self.assertNotIn("perf", model)
+
+        summary = adjusted.summary()
+        self.assertIn("Adjustment details:", summary)
+        self.assertIn("Weight diagnostics:", summary)
+        self.assertNotIn("Model performance", summary)
+
+        diagnostics = adjusted.diagnostics()
+        self.assertIsInstance(diagnostics, pd.DataFrame)
+        self.assertEqual(
+            diagnostics.loc[diagnostics["metric"] == "adjustment_method", "var"].iloc[
+                0
+            ],
+            "rake",
+        )
+        self.assertFalse(
+            (
+                (diagnostics["metric"] == "model_glance")
+                & (diagnostics["var"] == "prop_dev_explained")
+            ).any()
+        )
+
+
 class TestBalanceFrameSetTargetValidation(BalanceTestCase):
     """Verify set_target propagates validation errors immediately."""
 

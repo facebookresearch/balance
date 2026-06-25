@@ -269,6 +269,25 @@ class Testrake(
         )
         self.assertEqual(rake_result["model"].get("method"), "poststratify")
 
+    def test_rake_model_omits_ipw_performance_placeholder(self) -> None:
+        """Rake model metadata should not expose an IPW-style perf placeholder."""
+        sample = pd.DataFrame({"a": ["x", "x", "y", "y"], "b": ["m", "n", "m", "n"]})
+        target = pd.DataFrame({"a": ["x", "y", "y", "y"], "b": ["m", "m", "n", "n"]})
+
+        result = rake(
+            sample,
+            pd.Series([1.0, 1.0, 1.0, 1.0]),
+            target,
+            pd.Series([1.0, 1.0, 1.0, 1.0]),
+            variables=["a", "b"],
+            transformations=None,
+            store_fit_metadata=True,
+        )
+
+        self.assertEqual(result["model"].get("method"), "rake")
+        self.assertNotIn("perf", result["model"])
+        self.assertIn("converged", result["model"])
+
     def test_rake_single_variable_common_vars_none_fallback(self) -> None:
         """Fallback should also trigger when variables=None and one variable is shared."""
         sample = pd.DataFrame({"a": ["x", "y"], "sample_only": [1, 2]})

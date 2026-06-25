@@ -19,6 +19,9 @@
 - Rake now uses the shared weighting-method input validator already used by
   IPW and poststratify, so DataFrame/weight type, length, and index checks are
   reported consistently across all three methods.
+- Rake model metadata no longer emits the IPW-style `perf` placeholder with a
+  synthetic NaN deviance-explained value; consumers should use rake-specific
+  metadata such as `iterations` and `converged`.
 
 ## Tests
 
@@ -29,6 +32,8 @@
   - Added `Sample.adjust(method="poststratify")` coverage for the normalized
     direct poststratification example to keep the high-level API aligned with
     the weighting method.
+- Add regression coverage that rake metadata without an IPW-style `perf`
+  placeholder still works through high-level summary and diagnostics APIs.
 
 # 0.21.0 (2026-06-02)
 

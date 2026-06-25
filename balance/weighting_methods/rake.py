@@ -468,8 +468,6 @@ def rake(
         "method": "rake",
         "iterations": iterations,
         "converged": converged,
-        "perf": {"prop_dev_explained": np.array([np.nan])},
-        # TODO: fix functions that use the perf and remove it from here
     }
     if store_fit_metadata:
         # Pickleability of `transformations_to_apply` was already validated
