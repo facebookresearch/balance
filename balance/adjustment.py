@@ -533,7 +533,8 @@ def _reject_data_dependent_transfer(
       stored transformed cells do not generalize.
     - An explicit ``dict`` whose values include direct references to
       balance's known data-dependent helpers (``quantize`` or
-      ``fct_lump``): same hazard, just user-supplied.
+      ``fct_lump``), or ``functools.partial(...)`` wrappers around those
+      helpers: same hazard, just user-supplied.
 
     Offender detection runs against ``transformations_effective`` (the
     filtered dict actually applied at fit time, ``model['transformations']``)

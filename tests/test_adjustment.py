@@ -1109,6 +1109,20 @@ class TestRejectDataDependentTransfer(balance.testutil.BalanceTestCase):
                 method_name="rake",
             )
 
+    def test_partial_data_dependent_helper_raises_for_poststratify(self) -> None:
+        import functools
+
+        from balance.adjustment import _reject_data_dependent_transfer
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "Poststratify predict_weights\\(data=\\.\\.\\.\\) is unsupported",
+        ):
+            _reject_data_dependent_transfer(
+                {"x": functools.partial(fct_lump, prop=0.1)},
+                method_name="poststratify",
+            )
+
     def test_nested_partials_are_unwrapped_and_deduplicated(self) -> None:
         import functools
 
