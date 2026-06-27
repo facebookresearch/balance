@@ -22,6 +22,7 @@
 - **Breaking:** Rake model metadata no longer emits the IPW-style `perf` placeholder with a
   synthetic NaN deviance-explained value; consumers should use rake-specific
   metadata such as `iterations` and `converged`.
+- Transfer-scoring guards for rake and poststratify now reject `functools.partial(...)` wrappers around known data-dependent transformation helpers (`quantize` / `fct_lump`), closing a replay-safety gap where partial-wrapped helpers could bypass direct callable checks.
 
 ## Tests
 

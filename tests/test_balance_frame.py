@@ -4713,19 +4713,9 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         )
         self.assertEqual(_assert_type(adjusted.model).get("keep_sum_of_weights"), False)
 
-    def test_predict_weights_rake_data_partial_fct_lump_currently_bypasses_guard(
-        self,
-    ) -> None:
-        # Pin the current gap: ``functools.partial(fct_lump, ...)`` bypasses
-        # the data-dependent transformation guard because the guard matches
-        # the literal ``fct_lump`` function object, not partial wrappers.
-        # Transfer scoring with a partial-wrapped fct_lump emits the
-        # unconditional transfer warning but does NOT raise. The TODO in
-        # ``_predict_weights_from_model`` tracks the proposed shared
-        # ``_freeze_data_dependent_transformations`` helper that would close
-        # this gap by capturing fit-time levels and replaying them
-        # deterministically. Until then, this test pins the existing
-        # behaviour so we notice if the guard is changed silently.
+    def test_predict_weights_rake_data_partial_fct_lump_raises(self) -> None:
+        # ``functools.partial(fct_lump, ...)`` is still data-dependent and is
+        # rejected for transfer scoring, matching direct ``fct_lump`` guards.
         from functools import partial
 
         from balance.utils.data_transformation import fct_lump
@@ -4753,10 +4743,10 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             sample=SampleFrame.from_frame(df.copy()),
             target=SampleFrame.from_frame(df.copy()),
         )
-        with self.assertLogs("balance", level="WARNING") as cm:
-            weights = fitted.predict_weights(data=holdout)
-        self.assertIn("transfer operation", " ".join(cm.output))
-        self.assertEqual(len(weights), len(df))
+        with self.assertRaisesRegex(
+            ValueError, r"data-dependent transformations \(fct_lump\)"
+        ):
+            fitted.predict_weights(data=holdout)
 
     def test_predict_weights_rake_data_deterministic_explicit_dict_allowed(
         self,

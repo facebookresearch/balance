@@ -1079,20 +1079,65 @@ class TestRejectDataDependentTransfer(balance.testutil.BalanceTestCase):
         # (no transforms applied at fit time → safe to replay).
         _reject_data_dependent_transfer(None, method_name="rake")
 
-    def test_indirect_partial_passes_documented_limitation(self) -> None:
-        # Documented best-effort limitation: functools.partial wrappers
-        # around data-dependent helpers are NOT caught — they slip
-        # through silently. Users supplying such wrappers are
-        # responsible for either making them deterministic or re-fitting
-        # on the scoring data. This test pins the current behavior so
-        # any future tightening (or breakage) is visible.
+    def test_indirect_partial_data_dependent_helper_raises(self) -> None:
+        # functools.partial wrappers around known data-dependent helpers are
+        # rejected the same way direct helper references are rejected.
         import functools
 
         from balance.adjustment import _reject_data_dependent_transfer
 
-        # Should not raise (documented limitation).
+        with self.assertRaisesRegex(
+            ValueError,
+            r"models fitted with data-dependent transformations \(fct_lump\)",
+        ):
+            _reject_data_dependent_transfer(
+                {"x": functools.partial(fct_lump, prop=0.1)},
+                method_name="rake",
+            )
+
+    def test_partial_quantize_data_dependent_helper_raises(self) -> None:
+        import functools
+
+        from balance.adjustment import _reject_data_dependent_transfer
+
+        with self.assertRaisesRegex(
+            ValueError,
+            r"models fitted with data-dependent transformations \(quantize\)",
+        ):
+            _reject_data_dependent_transfer(
+                {"x": functools.partial(quantize, q=5)},
+                method_name="rake",
+            )
+
+    def test_nested_partials_are_unwrapped_and_deduplicated(self) -> None:
+        import functools
+
+        from balance.adjustment import _reject_data_dependent_transfer
+
+        nested_fct_lump = functools.partial(functools.partial(fct_lump, prop=0.1))
+        with self.assertRaisesRegex(
+            ValueError,
+            r"data-dependent transformations \(fct_lump, quantize\)",
+        ):
+            _reject_data_dependent_transfer(
+                {
+                    "x": nested_fct_lump,
+                    "y": functools.partial(quantize, q=4),
+                    "z": functools.partial(fct_lump, prop=0.2),
+                },
+                method_name="rake",
+            )
+
+    def test_partial_deterministic_callable_passes(self) -> None:
+        import functools
+
+        from balance.adjustment import _reject_data_dependent_transfer
+
+        def _prefix(s: pd.Series, prefix: str) -> pd.Series:
+            return prefix + s.astype(str)
+
         _reject_data_dependent_transfer(
-            {"x": functools.partial(fct_lump, prop=0.1)},
+            {"x": functools.partial(_prefix, prefix="fit_")},
             method_name="rake",
         )
 

@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import functools
 import logging
 from typing import Any, Callable, Dict, Literal, Tuple
 
@@ -493,6 +494,20 @@ def apply_transformations(
 _UNSET_EFFECTIVE_TRANSFORMATIONS: Any = object()
 
 
+def _unwrap_partial(fn: Any) -> Any:
+    """Return the base callable wrapped by one or more ``functools.partial``s.
+
+    ``functools.partial`` is available as a concrete type on Python 3.9, so
+    ``isinstance(..., functools.partial)`` is both compatible with the minimum
+    supported runtime and more precise than checking for a ``func`` attribute
+    that unrelated objects may define. Non-partial values are returned
+    unchanged so callers can safely pass arbitrary transformation values.
+    """
+    while isinstance(fn, functools.partial):
+        fn = fn.func
+    return fn
+
+
 def _reject_data_dependent_transfer(
     transformations_origin: Any,
     *,
@@ -530,9 +545,10 @@ def _reject_data_dependent_transfer(
     ``transformations_origin`` so the user's literal intent is what gets
     rejected.
 
-    Best-effort: this guard does NOT catch indirect uses such as
-    ``functools.partial(fct_lump, prop=0.1)``, top-level wrapper
-    functions, or user-defined data-dependent transformations. The
+    Best-effort: this guard catches direct references and
+    ``functools.partial(...)`` wrappers around balance's known
+    data-dependent helpers, but it cannot detect arbitrary top-level wrapper
+    functions or user-defined data-dependent transformations. The
     general invariant is: any callable whose output for a row depends on
     other rows in the input is unsafe to replay on a different sample.
     Users supplying such transformations are responsible for either (a)
@@ -558,7 +574,7 @@ def _reject_data_dependent_transfer(
     Raises:
         ValueError: If ``transformations_origin`` is ``'default'`` or
             the effective transformations dict references
-            ``quantize``/``fct_lump`` directly.
+            ``quantize``/``fct_lump`` directly or via ``functools.partial``.
     """
     method_label = method_name.capitalize()
     fit_call_hint = f"BalanceFrame.fit(method='{method_name}')"
@@ -584,11 +600,12 @@ def _reject_data_dependent_transfer(
         from balance.utils.data_transformation import fct_lump, quantize
 
         data_dependent_helpers = {quantize, fct_lump}
+
         offenders = sorted(
             {
-                getattr(fn, "__name__", repr(fn))
-                for fn in inspect.values()
-                if fn in data_dependent_helpers
+                getattr(unwrapped_fn, "__name__", repr(unwrapped_fn))
+                for unwrapped_fn in (_unwrap_partial(fn) for fn in inspect.values())
+                if unwrapped_fn in data_dependent_helpers
             }
         )
         if offenders:
