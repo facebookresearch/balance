@@ -44,6 +44,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Tuple</span>
 
@@ -539,6 +540,20 @@
 <span class="n">_UNSET_EFFECTIVE_TRANSFORMATIONS</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_unwrap_partial</span><span class="p">(</span><span class="n">fn</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the base callable wrapped by one or more ``functools.partial``s.</span>
+
+<span class="sd">    ``functools.partial`` is available as a concrete type on Python 3.9, so</span>
+<span class="sd">    ``isinstance(..., functools.partial)`` is both compatible with the minimum</span>
+<span class="sd">    supported runtime and more precise than checking for a ``func`` attribute</span>
+<span class="sd">    that unrelated objects may define. Non-partial values are returned</span>
+<span class="sd">    unchanged so callers can safely pass arbitrary transformation values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">):</span>
+        <span class="n">fn</span> <span class="o">=</span> <span class="n">fn</span><span class="o">.</span><span class="n">func</span>
+    <span class="k">return</span> <span class="n">fn</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_reject_data_dependent_transfer</span><span class="p">(</span>
     <span class="n">transformations_origin</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -564,7 +579,8 @@
 <span class="sd">      stored transformed cells do not generalize.</span>
 <span class="sd">    - An explicit ``dict`` whose values include direct references to</span>
 <span class="sd">      balance&#39;s known data-dependent helpers (``quantize`` or</span>
-<span class="sd">      ``fct_lump``): same hazard, just user-supplied.</span>
+<span class="sd">      ``fct_lump``), or ``functools.partial(...)`` wrappers around those</span>
+<span class="sd">      helpers: same hazard, just user-supplied.</span>
 
 <span class="sd">    Offender detection runs against ``transformations_effective`` (the</span>
 <span class="sd">    filtered dict actually applied at fit time, ``model[&#39;transformations&#39;]``)</span>
@@ -576,9 +592,10 @@
 <span class="sd">    ``transformations_origin`` so the user&#39;s literal intent is what gets</span>
 <span class="sd">    rejected.</span>
 
-<span class="sd">    Best-effort: this guard does NOT catch indirect uses such as</span>
-<span class="sd">    ``functools.partial(fct_lump, prop=0.1)``, top-level wrapper</span>
-<span class="sd">    functions, or user-defined data-dependent transformations. The</span>
+<span class="sd">    Best-effort: this guard catches direct references and</span>
+<span class="sd">    ``functools.partial(...)`` wrappers around balance&#39;s known</span>
+<span class="sd">    data-dependent helpers, but it cannot detect arbitrary top-level wrapper</span>
+<span class="sd">    functions or user-defined data-dependent transformations. The</span>
 <span class="sd">    general invariant is: any callable whose output for a row depends on</span>
 <span class="sd">    other rows in the input is unsafe to replay on a different sample.</span>
 <span class="sd">    Users supplying such transformations are responsible for either (a)</span>
@@ -604,7 +621,7 @@
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: If ``transformations_origin`` is ``&#39;default&#39;`` or</span>
 <span class="sd">            the effective transformations dict references</span>
-<span class="sd">            ``quantize``/``fct_lump`` directly.</span>
+<span class="sd">            ``quantize``/``fct_lump`` directly or via ``functools.partial``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">method_label</span> <span class="o">=</span> <span class="n">method_name</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span>
     <span class="n">fit_call_hint</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;BalanceFrame.fit(method=&#39;</span><span class="si">{</span><span class="n">method_name</span><span class="si">}</span><span class="s2">&#39;)&quot;</span>
@@ -630,11 +647,12 @@
         <span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.data_transformation</span><span class="w"> </span><span class="kn">import</span> <span class="n">fct_lump</span><span class="p">,</span> <span class="n">quantize</span>
 
         <span class="n">data_dependent_helpers</span> <span class="o">=</span> <span class="p">{</span><span class="n">quantize</span><span class="p">,</span> <span class="n">fct_lump</span><span class="p">}</span>
+
         <span class="n">offenders</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
             <span class="p">{</span>
-                <span class="nb">getattr</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">&quot;__name__&quot;</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="n">fn</span><span class="p">))</span>
-                <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
-                <span class="k">if</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">data_dependent_helpers</span>
+                <span class="nb">getattr</span><span class="p">(</span><span class="n">unwrapped_fn</span><span class="p">,</span> <span class="s2">&quot;__name__&quot;</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="n">unwrapped_fn</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">unwrapped_fn</span> <span class="ow">in</span> <span class="p">(</span><span class="n">_unwrap_partial</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span> <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+                <span class="k">if</span> <span class="n">unwrapped_fn</span> <span class="ow">in</span> <span class="n">data_dependent_helpers</span>
             <span class="p">}</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">offenders</span><span class="p">:</span>
