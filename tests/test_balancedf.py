@@ -386,6 +386,42 @@ class TestBalanceDFOutcomes(BalanceTestCase):
             {"o1": {"n": 4.0, "%": 50.0}, "o2": {"n": 3.0, "%": 37.5}},
         )
 
+        # New explicit denominator selector: relative_to="self" matches the
+        # legacy default, and relative_to="target" matches target=True.
+        self.assertEqual(
+            # pyrefly: ignore [missing-attribute]
+            s_o.outcomes().relative_response_rates(relative_to="self"),
+            # pyrefly: ignore [missing-attribute]
+            s_o.outcomes().relative_response_rates(),
+            lazy=True,
+        )
+        self.assertEqual(
+            # pyrefly: ignore [missing-attribute]
+            s_o2.outcomes()
+            .relative_response_rates(relative_to="target")
+            .round(3)
+            .to_dict(),
+            # pyrefly: ignore [missing-attribute]
+            s_o2.outcomes().relative_response_rates(target=True).round(3).to_dict(),
+        )
+        self.assertEqual(
+            # pyrefly: ignore [missing-attribute]
+            s_o.outcomes().relative_response_rates(relative_to="target"),
+            None,
+        )
+
+        with self.assertRaisesRegex(
+            ValueError, "relative_to must be either 'self' or 'target'"
+        ):
+            # pyrefly: ignore [missing-attribute]
+            s_o.outcomes().relative_response_rates(relative_to="population")
+
+        with self.assertRaisesRegex(ValueError, "Pass either relative_to or target"):
+            # pyrefly: ignore [missing-attribute]
+            s_o2.outcomes().relative_response_rates(
+                target=df_target, relative_to="target"
+            )
+
     def test_BalanceDFOutcomes_target_response_rates(self) -> None:
         """Test target_response_rates method for calculating target sample response rates."""
         self.assertEqual(

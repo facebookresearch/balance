@@ -1,5 +1,9 @@
 # 0.22.0 (Unreleased - TBD)
 
+## New Features
+
+- `BalanceDFOutcomes.relative_response_rates()` now accepts an explicit `relative_to={"self", "target"}` denominator selector while preserving the existing `target=` API.
+
 ## Code Quality & Refactoring
 
 - **Breaking:** IPW fit metadata now stores training design weights under the

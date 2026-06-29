@@ -2249,12 +2249,12 @@ class BalanceDFOutcomes(BalanceDF):
             )
         super().__init__(outcome_df, sample, name="outcomes", links=links)
 
-    # TODO: add the `relative_to` argument (with options 'self' and 'target')
-    #       this will also require to update _relative_response_rates a bit.
     def relative_response_rates(
         self: "BalanceDFOutcomes",
         target: bool | pd.DataFrame = False,
         per_column: bool = False,
+        *,
+        relative_to: Literal["self", "target"] | None = None,
     ) -> pd.DataFrame | None:
         """Produces a summary table of number of responses and proportion of completed responses.
 
@@ -2271,6 +2271,11 @@ class BalanceDFOutcomes(BalanceDF):
                     If you want to control this in a more specific way, pass pd.DataFrame instead.
                 If pd.DataFrame: passes it as is.
             per_column (bool, optional): Default is False. See :func:`general_stats.relative_response_rates`.
+            relative_to (Optional[Literal["self", "target"]], optional):
+                Preferred explicit denominator selector. If ``"self"``, response
+                rates are relative to the number of rows in this outcome frame.
+                If ``"target"``, response rates are relative to the linked target
+                outcomes. Cannot be combined with a non-default ``target`` value.
 
         Returns:
             Optional[pd.DataFrame]: A column per outcome, and two rows.
@@ -2334,6 +2339,17 @@ class BalanceDFOutcomes(BalanceDF):
                     # n   4.0   3.0
                     # %  50.0  50.0
         """
+        if relative_to is not None:
+            if relative_to not in ("self", "target"):
+                raise ValueError("relative_to must be either 'self' or 'target'.")
+            if not (type(target) is bool and target is False):
+                raise ValueError(
+                    "Pass either relative_to or target, not both. Use "
+                    "relative_to='target' instead of target=True when you want "
+                    "the linked target denominator."
+                )
+            target = relative_to == "target"
+
         if type(target) is bool:
             # Then: get target from self:
             if target:
