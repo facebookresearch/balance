@@ -2354,14 +2354,14 @@
             <span class="p">)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">outcome_df</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;outcomes&quot;</span><span class="p">,</span> <span class="n">links</span><span class="o">=</span><span class="n">links</span><span class="p">)</span>
 
-    <span class="c1"># TODO: add the `relative_to` argument (with options &#39;self&#39; and &#39;target&#39;)</span>
-    <span class="c1">#       this will also require to update _relative_response_rates a bit.</span>
 <div class="viewcode-block" id="BalanceDFOutcomes.relative_response_rates">
 <a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFOutcomes.relative_response_rates">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">relative_response_rates</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFOutcomes&quot;</span><span class="p">,</span>
         <span class="n">target</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">per_column</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">relative_to</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Produces a summary table of number of responses and proportion of completed responses.</span>
 
@@ -2378,6 +2378,11 @@
 <span class="sd">                    If you want to control this in a more specific way, pass pd.DataFrame instead.</span>
 <span class="sd">                If pd.DataFrame: passes it as is.</span>
 <span class="sd">            per_column (bool, optional): Default is False. See :func:`general_stats.relative_response_rates`.</span>
+<span class="sd">            relative_to (Optional[Literal[&quot;self&quot;, &quot;target&quot;]], optional):</span>
+<span class="sd">                Preferred explicit denominator selector. If ``&quot;self&quot;``, response</span>
+<span class="sd">                rates are relative to the number of rows in this outcome frame.</span>
+<span class="sd">                If ``&quot;target&quot;``, response rates are relative to the linked target</span>
+<span class="sd">                outcomes. Cannot be combined with a non-default ``target`` value.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Optional[pd.DataFrame]: A column per outcome, and two rows.</span>
@@ -2441,6 +2446,17 @@
 <span class="sd">                    # n   4.0   3.0</span>
 <span class="sd">                    # %  50.0  50.0</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">relative_to</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">relative_to</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;relative_to must be either &#39;self&#39; or &#39;target&#39;.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">bool</span> <span class="ow">and</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Pass either relative_to or target, not both. Use &quot;</span>
+                    <span class="s2">&quot;relative_to=&#39;target&#39; instead of target=True when you want &quot;</span>
+                    <span class="s2">&quot;the linked target denominator.&quot;</span>
+                <span class="p">)</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">relative_to</span> <span class="o">==</span> <span class="s2">&quot;target&quot;</span>
+
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">bool</span><span class="p">:</span>
             <span class="c1"># Then: get target from self:</span>
             <span class="k">if</span> <span class="n">target</span><span class="p">:</span>
