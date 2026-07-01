@@ -13,6 +13,7 @@ hide_title: true
 ## New Features
 
 - `BalanceDFOutcomes.relative_response_rates()` now accepts an explicit `relative_to={"self", "target"}` denominator selector while preserving the existing `target=` API.
+- The CLI now exposes IPW `penalty_factor` through `--penalty_factor`, accepting either comma-separated numbers or a JSON list and forwarding the parsed list into `Sample.adjust()`.
 
 ## Code Quality & Refactoring
 
