@@ -178,6 +178,29 @@ def _penalty_factor_arg(value: Any) -> Optional[List[float]]:
     return parsed
 
 
+def _validate_penalty_factor_matches_formula(
+    formula: str | list[str] | None, penalty_factor: Optional[List[float]]
+) -> None:
+    """Validate CLI penalty-factor length before calling model-matrix code."""
+    if penalty_factor is None:
+        return
+
+    expected_length = len(formula) if isinstance(formula, list) else 1
+    if len(penalty_factor) != expected_length:
+        formula_description = (
+            f"the formula list length ({expected_length})"
+            if isinstance(formula, list)
+            else "the single formula used by --formula or the default formula"
+        )
+        raise ValueError(
+            "--penalty_factor must contain exactly one value per formula. "
+            f"Received {len(penalty_factor)} values, but expected "
+            f"{expected_length} to match {formula_description}. "
+            "Pass one value for a single/default formula, or pass a JSON "
+            "formula list with the same number of entries as --penalty_factor."
+        )
+
+
 def _parse_csv_columns_arg(value: Optional[str], arg_name: str) -> List[str]:
     """Parse a comma-separated CLI columns argument into a validated list.
 
@@ -239,7 +262,7 @@ class BalanceCLI:
         # Create attributes (to be populated later, which will be used in main)
         self._transformations: Dict[str, Any] | str | None = None
         self._formula: str | list[str] | None = None
-        self._penalty_factor: None = None
+        self._penalty_factor: Optional[List[float]] = None
         self._one_hot_encoding: bool = False
         self._max_de: float | None = None
         self._lambda_min: float | None = None
@@ -1177,6 +1200,7 @@ class BalanceCLI:
         transformations = self.transformations()
         formula = self.formula()
         penalty_factor = self.penalty_factor()
+        _validate_penalty_factor_matches_formula(formula, penalty_factor)
         lambda_min = self.lambda_min()
         lambda_max = self.lambda_max()
         num_lambdas = self.num_lambdas()

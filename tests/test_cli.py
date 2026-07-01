@@ -1852,12 +1852,68 @@ class TestBalanceCLI_penalty_factor(balance.testutil.BalanceTestCase):
                 "--covariate_columns",
                 "x",
                 "--penalty_factor",
+                "0",
+            ]
+        )
+        cli = BalanceCLI(args)
+        cli.update_attributes_for_main_used_by_adjust()
+        self.assertEqual(cli._penalty_factor, [0.0])
+
+    def test_update_attributes_accepts_matching_formula_list_and_penalty_factor(
+        self,
+    ) -> None:
+        args = make_parser().parse_args(
+            [
+                "--input_file",
+                "in.csv",
+                "--output_file",
+                "out.csv",
+                "--covariate_columns",
+                "x",
+                "--formula",
+                '["x", "y"]',
+                "--penalty_factor",
                 "0,1",
             ]
         )
         cli = BalanceCLI(args)
         cli.update_attributes_for_main_used_by_adjust()
+        self.assertEqual(cli._formula, ["x", "y"])
         self.assertEqual(cli._penalty_factor, [0.0, 1.0])
+
+    def test_update_attributes_rejects_penalty_factor_length_mismatch(self) -> None:
+        cases = (
+            (
+                None,
+                "0,1",
+                "expected 1 to match the single formula used by --formula or the default formula",
+            ),
+            ('["x", "y"]', "0", "expected 2 to match the formula list length (2)"),
+            ('["x", "y"]', "0,1,2", "expected 2 to match the formula list length (2)"),
+        )
+        for formula, penalty_factor, expected_message in cases:
+            with self.subTest(formula=formula, penalty_factor=penalty_factor):
+                args_to_parse = [
+                    "--input_file",
+                    "in.csv",
+                    "--output_file",
+                    "out.csv",
+                    "--covariate_columns",
+                    "x",
+                    "--penalty_factor",
+                    penalty_factor,
+                ]
+                if formula is not None:
+                    args_to_parse.extend(["--formula", formula])
+                args = make_parser().parse_args(args_to_parse)
+                cli = BalanceCLI(args)
+                with self.assertRaises(ValueError) as context:
+                    cli.update_attributes_for_main_used_by_adjust()
+                self.assertIn(
+                    "--penalty_factor must contain exactly one value per formula",
+                    str(context.exception),
+                )
+                self.assertIn(expected_message, str(context.exception))
 
     def test_process_batch_forwards_penalty_factor_to_adjust(self) -> None:
         class RecordingSample:
