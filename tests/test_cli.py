@@ -1145,6 +1145,86 @@ class TestCli(
                 cli3 = BalanceCLI(args3)
                 cli3.update_attributes_for_main_used_by_adjust()
 
+    def test_transformations_parser_accepts_supported_values(self) -> None:
+        """CLI normalizes all supported transformations spellings."""
+        parser = make_parser()
+        base_args = [
+            "--input_file",
+            "input.csv",
+            "--output_file",
+            "output.csv",
+            "--covariate_columns",
+            "x,y",
+        ]
+        supported_cases = {
+            "default": "default",
+            "DEFAULT": "default",
+            " default ": "default",
+            "None": None,
+            "none": None,
+            " NONE ": None,
+        }
+
+        for raw_value, expected in supported_cases.items():
+            with self.subTest(raw_value=raw_value):
+                args = parser.parse_args([*base_args, f"--transformations={raw_value}"])
+
+                self.assertEqual(args.transformations, expected)
+                self.assertEqual(BalanceCLI(args).transformations(), expected)
+
+    def test_transformations_parser_default_is_normalized(self) -> None:
+        """CLI default transformations value is parsed consistently."""
+        parser = make_parser()
+
+        args = parser.parse_args(
+            [
+                "--input_file",
+                "input.csv",
+                "--output_file",
+                "output.csv",
+                "--covariate_columns",
+                "x,y",
+            ]
+        )
+
+        self.assertEqual(args.transformations, "default")
+        self.assertEqual(BalanceCLI(args).transformations(), "default")
+
+    def test_transformations_parser_rejects_unsupported_values(self) -> None:
+        """CLI rejects transformations values that cannot be represented safely."""
+        parser = make_parser()
+        base_args = [
+            "--input_file",
+            "input.csv",
+            "--output_file",
+            "output.csv",
+            "--covariate_columns",
+            "x,y",
+        ]
+        unsupported_values = ("", " ", "age*gender", "[]", "{}", "null")
+
+        for raw_value in unsupported_values:
+            with self.subTest(raw_value=raw_value):
+                with self.assertRaises(SystemExit):
+                    parser.parse_args([*base_args, f"--transformations={raw_value}"])
+
+    def test_transformations_helper_accepts_preparsed_none(self) -> None:
+        """BalanceCLI.transformations accepts already-normalized None."""
+        cli = BalanceCLI(Namespace(transformations=None))
+
+        self.assertIsNone(cli.transformations())
+
+    def test_transformations_helper_rejects_unsupported_values(self) -> None:
+        """BalanceCLI.transformations validates directly constructed namespaces."""
+        unsupported_values = ("", " ", "age*gender", [], {}, 1, True)
+
+        for raw_value in unsupported_values:
+            with self.subTest(raw_value=raw_value):
+                cli = BalanceCLI(Namespace(transformations=raw_value))
+
+                with self.assertRaises(ArgumentTypeError):
+                    cli.transformations()
+
     def test_transformations_works(self) -> None:
         """Test CLI functionality with different transformation options (None and default)."""
         input_dataset = _create_sample_and_target_data()
