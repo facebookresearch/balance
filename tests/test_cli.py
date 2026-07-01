@@ -13,7 +13,7 @@ import os.path
 import tempfile
 import warnings
 from argparse import ArgumentTypeError, Namespace
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 import balance.testutil
 import numpy as np
@@ -1780,6 +1780,147 @@ class TestBalanceCLI_num_lambdas(balance.testutil.BalanceTestCase):
                 with contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit):
                     self._parse_num_lambdas_args(value)
                 self.assertIn("--num_lambdas", stderr.getvalue())
+
+
+class TestBalanceCLI_penalty_factor(balance.testutil.BalanceTestCase):
+    """Test cases for CLI penalty_factor parsing and forwarding."""
+
+    def test_penalty_factor_returns_none_when_not_set(self) -> None:
+        cli = BalanceCLI(Namespace(penalty_factor=None))
+        self.assertIsNone(cli.penalty_factor())
+
+    def test_penalty_factor_accepts_none_string(self) -> None:
+        for value in ("None", " None "):
+            with self.subTest(value=value):
+                cli = BalanceCLI(Namespace(penalty_factor=value))
+                self.assertIsNone(cli.penalty_factor())
+
+    def test_penalty_factor_accepts_already_parsed_list(self) -> None:
+        cli = BalanceCLI(Namespace(penalty_factor=[0, "1.25", 2.5]))
+        self.assertEqual(cli.penalty_factor(), [0.0, 1.25, 2.5])
+
+    def test_penalty_factor_accepts_comma_separated_values(self) -> None:
+        cli = BalanceCLI(Namespace(penalty_factor="0, 1, 2.5"))
+        self.assertEqual(cli.penalty_factor(), [0.0, 1.0, 2.5])
+
+    def test_penalty_factor_accepts_json_list_values(self) -> None:
+        args = make_parser().parse_args(
+            [
+                "--input_file",
+                "in.csv",
+                "--output_file",
+                "out.csv",
+                "--covariate_columns",
+                "x",
+                "--penalty_factor=[0, 1, 2.5]",
+            ]
+        )
+        self.assertEqual(args.penalty_factor, [0.0, 1.0, 2.5])
+
+    def test_penalty_factor_rejects_invalid_values(self) -> None:
+        invalid_values = (
+            "",
+            "[]",
+            "{}",
+            "[0, null]",
+            "[0, true]",
+            "[0, -1]",
+            "[0, Infinity]",
+            "[0, NaN]",
+            "[0,]",
+            "0,",
+            "0,,1",
+            "0,-1",
+            "0,true",
+            "inf",
+            "nan",
+            "not-a-number",
+        )
+        for value in invalid_values:
+            with self.subTest(value=value):
+                cli = BalanceCLI(Namespace(penalty_factor=value))
+                with self.assertRaises(ArgumentTypeError):
+                    cli.penalty_factor()
+
+    def test_update_attributes_for_main_uses_penalty_factor(self) -> None:
+        args = make_parser().parse_args(
+            [
+                "--input_file",
+                "in.csv",
+                "--output_file",
+                "out.csv",
+                "--covariate_columns",
+                "x",
+                "--penalty_factor",
+                "0,1",
+            ]
+        )
+        cli = BalanceCLI(args)
+        cli.update_attributes_for_main_used_by_adjust()
+        self.assertEqual(cli._penalty_factor, [0.0, 1.0])
+
+    def test_process_batch_forwards_penalty_factor_to_adjust(self) -> None:
+        class RecordingSample:
+            adjust_calls: List[Dict[str, object]] = []
+
+            def __init__(self, df: pd.DataFrame) -> None:
+                self.df = df
+                self._df_dtypes = df.dtypes
+
+            @classmethod
+            def from_frame(
+                cls, df: pd.DataFrame, **kwargs: object
+            ) -> "RecordingSample":
+                return cls(df)
+
+            def set_target(self, target: "RecordingSample") -> "RecordingSample":
+                return self
+
+            def adjust(self, **kwargs: object) -> "RecordingSample":
+                type(self).adjust_calls.append(kwargs)
+                return self
+
+            def keep_only_some_rows_columns(
+                self,
+                rows_to_keep: Optional[str] = None,
+                columns_to_keep: Optional[List[str]] = None,
+            ) -> "RecordingSample":
+                return self
+
+            def diagnostics(
+                self, weights_impact_on_outcome_method: Optional[str] = "t_test"
+            ) -> pd.DataFrame:
+                return pd.DataFrame()
+
+        args = make_parser().parse_args(
+            [
+                "--input_file",
+                "in.csv",
+                "--output_file",
+                "out.csv",
+                "--covariate_columns",
+                "covar_a,covar_b",
+            ]
+        )
+        cli = BalanceCLI(args)
+        batch_df = pd.DataFrame(
+            {
+                "is_respondent": [1, 0],
+                "id": [1, 2],
+                "weight": [1.0, 1.0],
+                "covar_a": [1.0, 2.0],
+                "covar_b": [3.0, 4.0],
+            }
+        )
+        cli.process_batch(
+            batch_df,
+            penalty_factor=[0.0, 1.0],
+            # pyrefly: ignore [bad-argument-type]
+            sample_cls=RecordingSample,
+            sample_package_name="recording",
+        )
+
+        self.assertEqual(RecordingSample.adjust_calls[0]["penalty_factor"], [0.0, 1.0])
 
 
 class TestBalanceCLI_ipw_kwargs(balance.testutil.BalanceTestCase):

@@ -10,6 +10,7 @@ from __future__ import annotations
 import inspect
 import json
 import logging
+import math
 from argparse import ArgumentParser, ArgumentTypeError, Namespace
 from numbers import Integral
 from pathlib import Path
@@ -123,6 +124,60 @@ def _formula_arg(value: str | list[str] | None) -> str | list[str] | None:
     return _validate_formula_list(parsed)
 
 
+def _penalty_factor_arg(value: Any) -> Optional[List[float]]:
+    """Parse the CLI penalty-factor value as a list of floats or ``None``.
+
+    The command-line form accepts either JSON lists (for example,
+    ``"[0, 1, 1]"``) or comma-separated values (for example, ``"0,1,1"``).
+    """
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raw_items = value
+    else:
+        stripped = value.strip()
+        if stripped == "None":
+            return None
+        if not stripped:
+            raise ArgumentTypeError(
+                "--penalty_factor must be a non-empty comma-separated or JSON list of numbers"
+            )
+        if stripped.startswith("["):
+            try:
+                raw_items = json.loads(stripped)
+            except json.JSONDecodeError as exc:
+                raise ArgumentTypeError(
+                    "--penalty_factor JSON list must be valid JSON"
+                ) from exc
+        else:
+            raw_items = [item.strip() for item in stripped.split(",")]
+
+    if not isinstance(raw_items, list) or not raw_items:
+        raise ArgumentTypeError(
+            "--penalty_factor must be a non-empty comma-separated or JSON list of numbers"
+        )
+
+    parsed: List[float] = []
+    for item in raw_items:
+        if isinstance(item, bool) or item is None:
+            raise ArgumentTypeError(
+                "--penalty_factor values must be finite, numeric, and non-negative"
+            )
+        try:
+            parsed_item = float(item)
+        except (TypeError, ValueError) as exc:
+            raise ArgumentTypeError(
+                "--penalty_factor values must be finite, numeric, and non-negative"
+            ) from exc
+        if not math.isfinite(parsed_item) or parsed_item < 0:
+            raise ArgumentTypeError(
+                "--penalty_factor values must be finite, numeric, and non-negative"
+            )
+        parsed.append(parsed_item)
+
+    return parsed
+
+
 def _parse_csv_columns_arg(value: Optional[str], arg_name: str) -> List[str]:
     """Parse a comma-separated CLI columns argument into a validated list.
 
@@ -184,7 +239,7 @@ class BalanceCLI:
         # Create attributes (to be populated later, which will be used in main)
         self._transformations: Dict[str, Any] | str | None = None
         self._formula: str | list[str] | None = None
-        self._penalty_factor: None = None
+        self._penalty_factor: list[float] | None = None
         self._one_hot_encoding: bool = False
         self._max_de: float | None = None
         self._lambda_min: float | None = None
@@ -644,6 +699,14 @@ class BalanceCLI:
         """
         return self.args.weight_trimming_mean_ratio
 
+    def penalty_factor(self) -> Optional[List[float]]:
+        """Return the parsed IPW penalty-factor list.
+
+        Returns:
+            Penalty factors as floats, or ``None`` if unset.
+        """
+        return _penalty_factor_arg(getattr(self.args, "penalty_factor", None))
+
     def logistic_regression_kwargs(self) -> Dict[str, Any] | None:
         """Parse JSON keyword arguments for the IPW logistic regression model.
 
@@ -726,7 +789,7 @@ class BalanceCLI:
         batch_df: pd.DataFrame,
         transformations: Dict[str, Any] | str | None = "default",
         formula: str | list[str] | None = None,
-        penalty_factor: None = None,
+        penalty_factor: Optional[List[float]] = None,
         one_hot_encoding: bool = False,
         max_de: float | None = 1.5,
         lambda_min: float | None = 1e-05,
@@ -1113,7 +1176,7 @@ class BalanceCLI:
         # TODO: future version might include conditional control over these attributes based on some input
         transformations = self.transformations()
         formula = self.formula()
-        penalty_factor = None
+        penalty_factor = self.penalty_factor()
         lambda_min = self.lambda_min()
         lambda_max = self.lambda_max()
         num_lambdas = self.num_lambdas()
@@ -1317,7 +1380,6 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
             # True
     """
     # TODO: add checks for validity of input (including None as input)
-    # TODO: add arguments for penalty_factor
     parser.add_argument(
         "--input_file",
         type=Path,
@@ -1490,6 +1552,19 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
             "Number of elements searched over in the L1 penalty range in ipw."
             "Only used if method is ipw."
             "If not supplied it defaults to 250."
+        ),
+    )
+    parser.add_argument(
+        "--penalty_factor",
+        type=_penalty_factor_arg,
+        required=False,
+        default=None,
+        help=(
+            "Penalty factors used by IPW model-matrix regularization. "
+            "Accepts either a comma-separated list (for example '0,1,1') "
+            "or a JSON list (for example '[0, 1, 1]'). The number of values "
+            "must match the formula list when formula is supplied as a list. "
+            "If omitted, all terms use the default penalty."
         ),
     )
     parser.add_argument(
