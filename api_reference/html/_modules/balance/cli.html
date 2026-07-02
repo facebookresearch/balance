@@ -215,6 +215,32 @@
     <span class="k">return</span> <span class="n">parsed</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_transformations_arg</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse and validate the CLI transformations selector.</span>
+
+<span class="sd">    The CLI supports the two non-callable transformation modes that can be</span>
+<span class="sd">    represented safely on the command line: ``default`` for balance&#39;s built-in</span>
+<span class="sd">    data-driven transformations and ``None`` to disable transformations.</span>
+<span class="sd">    Callable transformation dictionaries remain a Python API feature because</span>
+<span class="sd">    arbitrary callables cannot be represented faithfully by argparse.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">ArgumentTypeError</span><span class="p">(</span><span class="s2">&quot;--transformations must be &#39;default&#39; or &#39;None&#39;&quot;</span><span class="p">)</span>
+
+    <span class="n">stripped</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">stripped</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ArgumentTypeError</span><span class="p">(</span><span class="s2">&quot;--transformations must be &#39;default&#39; or &#39;None&#39;&quot;</span><span class="p">)</span>
+
+    <span class="n">normalized</span> <span class="o">=</span> <span class="n">stripped</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">normalized</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">normalized</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;default&quot;</span>
+    <span class="k">raise</span> <span class="n">ArgumentTypeError</span><span class="p">(</span><span class="s2">&quot;--transformations must be &#39;default&#39; or &#39;None&#39;&quot;</span><span class="p">)</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_parse_csv_columns_arg</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">arg_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a comma-separated CLI columns argument into a validated list.</span>
 
@@ -742,10 +768,7 @@
 <span class="sd">                BalanceCLI(Namespace(transformations=&quot;default&quot;)).transformations()</span>
 <span class="sd">                # &#39;default&#39;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">transformations</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">transformations</span> <span class="o">==</span> <span class="s2">&quot;None&quot;</span><span class="p">):</span>
-            <span class="k">return</span> <span class="kc">None</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">transformations</span></div>
+        <span class="k">return</span> <span class="n">_transformations_arg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">transformations</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BalanceCLI.formula">
@@ -1747,16 +1770,14 @@
             <span class="s2">&quot;Set the value of the one_hot_encoding parameter. Accepts a string with one a value of &#39;True&#39; or &#39;False&#39; (treats it as a bool). Default is &#39;True&#39;&quot;</span>
         <span class="p">),</span>
     <span class="p">)</span>
-    <span class="c1"># TODO: Ideally we would like transformations argument to be able to get three types of values: None (for no transformations),</span>
-    <span class="c1"># &quot;default&quot; for default transformations or a dictionary of transformations.</span>
-    <span class="c1"># However, as a first step I added the option for &quot;default&quot; (which is also the default) and None (for no transformations).</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--transformations&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">_transformations_arg</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">,</span>
         <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="p">(</span>
-            <span class="s2">&quot;Define the transformations for the covariates. Can be set to None for no transformations or&quot;</span>
-            <span class="s2">&quot;&#39;default&#39; for default transformations.&quot;</span>
+            <span class="s2">&quot;Define the transformations for the covariates. Use &#39;None&#39; for no &quot;</span>
+            <span class="s2">&quot;transformations or &#39;default&#39; for default transformations.&quot;</span>
         <span class="p">),</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
