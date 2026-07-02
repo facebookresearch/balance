@@ -2458,9 +2458,6 @@ class TestBalanceDF_asmd(BalanceTestCase):
         )
 
     def test_BalanceDF_asmd_aggregate_by_main_covar(self) -> None:
-        # TODO: re-use this example across tests
-        # TODO: bugfix - adjust fails with apply_transform when inputting a df with categorical column :(
-
         # Prepare dummy data
         # pyrefly: ignore [bad-argument-type]
         np.random.seed(112358)
@@ -2471,7 +2468,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
         # make 'a' a categorical column in d
         # d = d.assign(a=lambda x: pd.cut(x.a,[0,.25,.5,.75,1]))
         # pyrefly: ignore [missing-attribute]
-        d["a"] = pd.cut(d["a"], [0, 0.25, 0.5, 0.75, 1]).astype(str)
+        d["a"] = pd.cut(d["a"], [0, 0.25, 0.5, 0.75, 1]).astype("category")
         # make b "interesting" (so that the model would have something to do)
         d["b"] = np.sqrt(d["b"])
         s = Sample.from_frame(d)
@@ -2482,7 +2479,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
         # make 'a' a categorical column in d
         # d = d.assign(a=lambda x: pd.cut(x.a,[0,.25,.5,.75,1]))
         # pyrefly: ignore [missing-attribute]
-        d["a"] = pd.cut(d["a"], [0, 0.25, 0.5, 0.75, 1]).astype(str)
+        d["a"] = pd.cut(d["a"], [0, 0.25, 0.5, 0.75, 1]).astype("category")
         t = Sample.from_frame(d)
 
         st = s.set_target(t)

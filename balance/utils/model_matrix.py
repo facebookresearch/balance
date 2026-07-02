@@ -204,6 +204,30 @@ def process_formula(
     return desc
 
 
+def _stringify_categorical_values(series: pd.Series) -> pd.Series:
+    """Return categorical values as strings while preserving missing values.
+
+    ``patsy`` uses ``repr``-like labels for some non-string categorical levels
+    (notably pandas ``Interval`` objects), which can make downstream column
+    names unnecessarily verbose and inconsistent with equivalent object/string
+    inputs. Converting the observed values to strings before ``dmatrix`` keeps
+    level labels stable.
+
+    This intentionally converts values rather than renaming categories:
+    different Python objects can have the same string representation (for
+    example ``1`` and ``"1"``), and pandas requires category labels to remain
+    unique after ``rename_categories``.
+    """
+    stringified_categories = [str(category) for category in series.cat.categories]
+    if len(set(stringified_categories)) == len(stringified_categories):
+        return series.cat.rename_categories(stringified_categories)
+
+    values = series.astype(object)
+    missing = values.isna()
+    values.loc[~missing] = values.loc[~missing].map(str)
+    return values
+
+
 def build_model_matrix(
     df: pd.DataFrame,
     formula: str = ".",
@@ -254,10 +278,21 @@ def build_model_matrix(
             raise ValueError("Not all factor variables are contained in df")
 
     model_desc = process_formula(formula, variables, factor_variables)
-    # dmatrix cannot get Int64Dtype as data type. Hence converting all numeric columns to float64.
+    # Keep patsy-specific dtype coercions local to this call. ``model_matrix``
+    # may be called repeatedly with Sample-backed frames, and leaking the
+    # conversions below back to the caller can drop unused categorical levels
+    # needed by later calls (for example after ``add_na=False`` row drops).
+    coerced_columns: Dict[str, pd.Series] = {}
     for x in df.columns:
-        if (is_numeric_dtype(df[x])) and (not is_bool_dtype(df[x])):
-            df[x] = df[x].astype("float64")
+        if is_numeric_dtype(df[x]) and not is_bool_dtype(df[x]):
+            # dmatrix cannot get Int64Dtype as data type.
+            # Hence converting all numeric columns to float64.
+            coerced_columns[x] = df[x].astype("float64")
+        elif isinstance(df[x].dtype, pd.CategoricalDtype):
+            coerced_columns[x] = _stringify_categorical_values(df[x])
+
+    if coerced_columns:
+        df = df.assign(**coerced_columns)
 
     X_matrix = dmatrix(model_desc, data=df, return_type="dataframe")
     # Sorting the output in order to eliminate edge cases that cause column order to be stochastic

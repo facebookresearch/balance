@@ -139,6 +139,39 @@ class TestUtil(
         self.assertEqual(x_matrix["model_matrix"], res)
         self.assertEqual(x_matrix["model_matrix_columns"], res.columns.tolist())
 
+        # Categorical levels with non-string values are stringified before patsy
+        # builds labels. This keeps interval category labels aligned with the
+        # equivalent object/string input representation.
+        interval_df = pd.DataFrame(
+            {
+                "a": pd.cut(
+                    pd.Series([0.1, 0.4, 0.8]),
+                    [0, 0.25, 0.5, 1.0],
+                ).astype("category")
+            }
+        )
+        x_matrix = build_model_matrix(interval_df, "a")
+        self.assertEqual(
+            x_matrix["model_matrix_columns"],
+            ["a[(0.0, 0.25]]", "a[(0.25, 0.5]]", "a[(0.5, 1.0]]"],
+        )
+        self.assertIsInstance(interval_df["a"].dtype, pd.CategoricalDtype)
+        self.assertTrue(
+            all(
+                isinstance(category, pd.Interval)
+                for category in interval_df["a"].cat.categories
+            )
+        )
+
+        # Stringifying values instead of renaming categories avoids pandas'
+        # uniqueness constraint when distinct category objects share the same
+        # string representation.
+        duplicate_stringified_df = pd.DataFrame(
+            {"a": pd.Categorical([1, "1"], categories=[1, "1"])}
+        )
+        x_matrix = build_model_matrix(duplicate_stringified_df, "a")
+        self.assertEqual(x_matrix["model_matrix_columns"], ["a[1]"])
+
         # formula with factor_variables
         x_matrix = build_model_matrix(df, ".", factor_variables=["a"])
         res = pd.DataFrame(
