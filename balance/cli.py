@@ -178,6 +178,32 @@ def _penalty_factor_arg(value: Any) -> Optional[List[float]]:
     return parsed
 
 
+def _transformations_arg(value: Any) -> str | None:
+    """Parse and validate the CLI transformations selector.
+
+    The CLI supports the two non-callable transformation modes that can be
+    represented safely on the command line: ``default`` for balance's built-in
+    data-driven transformations and ``None`` to disable transformations.
+    Callable transformation dictionaries remain a Python API feature because
+    arbitrary callables cannot be represented faithfully by argparse.
+    """
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ArgumentTypeError("--transformations must be 'default' or 'None'")
+
+    stripped = value.strip()
+    if not stripped:
+        raise ArgumentTypeError("--transformations must be 'default' or 'None'")
+
+    normalized = stripped.casefold()
+    if normalized == "none":
+        return None
+    if normalized == "default":
+        return "default"
+    raise ArgumentTypeError("--transformations must be 'default' or 'None'")
+
+
 def _parse_csv_columns_arg(value: Optional[str], arg_name: str) -> List[str]:
     """Parse a comma-separated CLI columns argument into a validated list.
 
@@ -638,10 +664,7 @@ class BalanceCLI:
                 BalanceCLI(Namespace(transformations="default")).transformations()
                 # 'default'
         """
-        if (self.args.transformations is None) or (self.args.transformations == "None"):
-            return None
-        else:
-            return self.args.transformations
+        return _transformations_arg(self.args.transformations)
 
     def formula(self) -> str | list[str] | None:
         """Return the formula string or formula list used for model matrices.
@@ -1597,16 +1620,14 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
             "Set the value of the one_hot_encoding parameter. Accepts a string with one a value of 'True' or 'False' (treats it as a bool). Default is 'True'"
         ),
     )
-    # TODO: Ideally we would like transformations argument to be able to get three types of values: None (for no transformations),
-    # "default" for default transformations or a dictionary of transformations.
-    # However, as a first step I added the option for "default" (which is also the default) and None (for no transformations).
     parser.add_argument(
         "--transformations",
+        type=_transformations_arg,
         default="default",
         required=False,
         help=(
-            "Define the transformations for the covariates. Can be set to None for no transformations or"
-            "'default' for default transformations."
+            "Define the transformations for the covariates. Use 'None' for no "
+            "transformations or 'default' for default transformations."
         ),
     )
     parser.add_argument(
