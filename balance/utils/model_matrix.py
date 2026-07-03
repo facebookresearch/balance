@@ -205,7 +205,7 @@ def process_formula(
 
 
 def _stringify_categorical_values(series: pd.Series) -> pd.Series:
-    """Return categorical values as strings while preserving missing values.
+    """Return a categorical series with string labels for patsy.
 
     ``patsy`` uses ``repr``-like labels for some non-string categorical levels
     (notably pandas ``Interval`` objects), which can make downstream column
@@ -213,10 +213,13 @@ def _stringify_categorical_values(series: pd.Series) -> pd.Series:
     inputs. Converting the observed values to strings before ``dmatrix`` keeps
     level labels stable.
 
-    This intentionally converts values rather than renaming categories:
-    different Python objects can have the same string representation (for
-    example ``1`` and ``"1"``), and pandas requires category labels to remain
-    unique after ``rename_categories``.
+    The return value keeps categorical dtype so patsy can still see unused
+    levels after row filtering. When stringification is one-to-one, categories
+    are renamed directly. When distinct Python objects stringify to the same
+    value (for example ``1`` and ``"1"``), the values are stringified and then
+    rebuilt as a categorical series with the de-duplicated string category list;
+    this avoids pandas' category-uniqueness constraint while preserving the
+    intended level set as far as string labels can represent it.
     """
     stringified_categories = [str(category) for category in series.cat.categories]
     if len(set(stringified_categories)) == len(stringified_categories):
@@ -225,7 +228,12 @@ def _stringify_categorical_values(series: pd.Series) -> pd.Series:
     values = series.astype(object)
     missing = values.isna()
     values.loc[~missing] = values.loc[~missing].map(str)
-    return values
+    deduped_categories = list(dict.fromkeys(stringified_categories))
+    return pd.Series(
+        pd.Categorical(values, categories=deduped_categories),
+        index=series.index,
+        name=series.name,
+    )
 
 
 def build_model_matrix(

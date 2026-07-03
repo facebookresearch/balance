@@ -151,9 +151,12 @@ class TestUtil(
             }
         )
         x_matrix = build_model_matrix(interval_df, "a")
+        expected_interval_columns = [
+            f"a[{category}]" for category in interval_df["a"].cat.categories
+        ]
         self.assertEqual(
             x_matrix["model_matrix_columns"],
-            ["a[(0.0, 0.25]]", "a[(0.25, 0.5]]", "a[(0.5, 1.0]]"],
+            expected_interval_columns,
         )
         self.assertIsInstance(interval_df["a"].dtype, pd.CategoricalDtype)
         self.assertTrue(
@@ -167,10 +170,10 @@ class TestUtil(
         # uniqueness constraint when distinct category objects share the same
         # string representation.
         duplicate_stringified_df = pd.DataFrame(
-            {"a": pd.Categorical([1, "1"], categories=[1, "1"])}
+            {"a": pd.Categorical([1, "1"], categories=[1, "1", 2])}
         )
         x_matrix = build_model_matrix(duplicate_stringified_df, "a")
-        self.assertEqual(x_matrix["model_matrix_columns"], ["a[1]"])
+        self.assertEqual(x_matrix["model_matrix_columns"], ["a[1]", "a[2]"])
 
         # formula with factor_variables
         x_matrix = build_model_matrix(df, ".", factor_variables=["a"])
