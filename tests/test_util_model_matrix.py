@@ -181,6 +181,13 @@ class TestUtil(
         x_matrix = build_model_matrix(duplicate_stringified_df, "a")
         self.assertEqual(x_matrix["model_matrix_columns"], ["a[1]", "a[2]"])
 
+        self.assertRaisesRegex(
+            TypeError,
+            "CategoricalDtype",
+            _stringify_categorical_values,
+            pd.Series(["a", "b"]),
+        )
+
         # formula with factor_variables
         x_matrix = build_model_matrix(df, ".", factor_variables=["a"])
         res = pd.DataFrame(

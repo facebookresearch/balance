@@ -234,7 +234,11 @@ def _stringify_categorical_values(series: pd.Series) -> pd.Series:
     Examples:
         >>> import pandas as pd
         >>> intervals = pd.cut(pd.Series([0.1, 0.4]), [0, 0.25, 0.5])
+        >>> print("before:", type(intervals.cat.categories[0]).__name__)
+        before: Interval
         >>> out = _stringify_categorical_values(intervals)
+        >>> print("after:", type(out.cat.categories[0]).__name__)
+        after: str
         >>> out.cat.categories.tolist() == [str(x) for x in intervals.cat.categories]
         True
         >>> duplicate = pd.Series(
@@ -246,6 +250,12 @@ def _stringify_categorical_values(series: pd.Series) -> pd.Series:
         >>> out.cat.ordered
         True
     """
+    if not isinstance(series.dtype, pd.CategoricalDtype):
+        raise TypeError(
+            "_stringify_categorical_values expects a pandas Series with "
+            "CategoricalDtype"
+        )
+
     stringified_categories = [str(category) for category in series.cat.categories]
     if len(set(stringified_categories)) == len(stringified_categories):
         return series.cat.rename_categories(stringified_categories)
