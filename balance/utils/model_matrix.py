@@ -220,6 +220,31 @@ def _stringify_categorical_values(series: pd.Series) -> pd.Series:
     rebuilt as a categorical series with the de-duplicated string category list;
     this avoids pandas' category-uniqueness constraint while preserving the
     intended level set as far as string labels can represent it.
+
+    Args:
+        series: A pandas Series with ``CategoricalDtype``. Missing values,
+            index, name, category order, and the categorical ``ordered`` flag
+            are preserved.
+
+    Returns:
+        A categorical Series whose category labels are strings. If multiple
+        original categories share the same string representation, the returned
+        categories are the first-seen de-duplicated string labels.
+
+    Examples:
+        >>> import pandas as pd
+        >>> intervals = pd.cut(pd.Series([0.1, 0.4]), [0, 0.25, 0.5])
+        >>> out = _stringify_categorical_values(intervals)
+        >>> out.cat.categories.tolist() == [str(x) for x in intervals.cat.categories]
+        True
+        >>> duplicate = pd.Series(
+        ...     pd.Categorical([1, "1"], categories=[1, "1", 2], ordered=True)
+        ... )
+        >>> out = _stringify_categorical_values(duplicate)
+        >>> out.cat.categories.tolist()
+        ['1', '2']
+        >>> out.cat.ordered
+        True
     """
     stringified_categories = [str(category) for category in series.cat.categories]
     if len(set(stringified_categories)) == len(stringified_categories):
