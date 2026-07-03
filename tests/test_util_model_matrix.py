@@ -14,6 +14,7 @@ from balance.sample_class import Sample
 from balance.util import _assert_type
 from balance.utils.model_matrix import (
     _build_projected_model_matrix,
+    _stringify_categorical_values,
     build_design_matrix,
     build_model_matrix,
     dot_expansion,
@@ -170,8 +171,13 @@ class TestUtil(
         # uniqueness constraint when distinct category objects share the same
         # string representation.
         duplicate_stringified_df = pd.DataFrame(
-            {"a": pd.Categorical([1, "1"], categories=[1, "1", 2])}
+            {"a": pd.Categorical([1, "1"], categories=[1, "1", 2], ordered=True)}
         )
+        stringified_duplicate = _stringify_categorical_values(
+            duplicate_stringified_df["a"]
+        )
+        self.assertTrue(stringified_duplicate.cat.ordered)
+        self.assertEqual(stringified_duplicate.cat.categories.tolist(), ["1", "2"])
         x_matrix = build_model_matrix(duplicate_stringified_df, "a")
         self.assertEqual(x_matrix["model_matrix_columns"], ["a[1]", "a[2]"])
 

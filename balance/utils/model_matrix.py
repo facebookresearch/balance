@@ -230,7 +230,9 @@ def _stringify_categorical_values(series: pd.Series) -> pd.Series:
     values.loc[~missing] = values.loc[~missing].map(str)
     deduped_categories = list(dict.fromkeys(stringified_categories))
     return pd.Series(
-        pd.Categorical(values, categories=deduped_categories),
+        pd.Categorical(
+            values, categories=deduped_categories, ordered=series.cat.ordered
+        ),
         index=series.index,
         name=series.name,
     )
