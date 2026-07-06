@@ -40,6 +40,10 @@ hide_title: true
   metadata such as `iterations` and `converged`.
 - Transfer-scoring guards for rake and poststratify now reject `functools.partial(...)` wrappers around known data-dependent transformation helpers (`quantize` / `fct_lump`), closing a replay-safety gap where partial-wrapped helpers could bypass direct callable checks.
 
+## Bug Fixes
+
+- Model-matrix construction now stringifies pandas categorical levels before calling patsy, so interval-backed categoricals get stable dummy-column names and categorical covariates work in ASMD aggregation/regression coverage.
+
 ## Tests
 
 - Add regression test for CBPS rank-deficient SVD handling when covariate

@@ -253,6 +253,75 @@
 
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_stringify_categorical_values</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a categorical series with string labels for patsy.</span>
+
+<span class="sd">    ``patsy`` uses ``repr``-like labels for some non-string categorical levels</span>
+<span class="sd">    (notably pandas ``Interval`` objects), which can make downstream column</span>
+<span class="sd">    names unnecessarily verbose and inconsistent with equivalent object/string</span>
+<span class="sd">    inputs. Converting the observed values to strings before ``dmatrix`` keeps</span>
+<span class="sd">    level labels stable.</span>
+
+<span class="sd">    The return value keeps categorical dtype so patsy can still see unused</span>
+<span class="sd">    levels after row filtering. When stringification is one-to-one, categories</span>
+<span class="sd">    are renamed directly. When distinct Python objects stringify to the same</span>
+<span class="sd">    value (for example ``1`` and ``&quot;1&quot;``), the values are stringified and then</span>
+<span class="sd">    rebuilt as a categorical series with the de-duplicated string category list;</span>
+<span class="sd">    this avoids pandas&#39; category-uniqueness constraint while preserving the</span>
+<span class="sd">    intended level set as far as string labels can represent it.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        series: A pandas Series with ``CategoricalDtype``. Missing values,</span>
+<span class="sd">            index, name, category order, and the categorical ``ordered`` flag</span>
+<span class="sd">            are preserved.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A categorical Series whose category labels are strings. If multiple</span>
+<span class="sd">        original categories share the same string representation, the returned</span>
+<span class="sd">        categories are the first-seen de-duplicated string labels.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">        &gt;&gt;&gt; intervals = pd.cut(pd.Series([0.1, 0.4]), [0, 0.25, 0.5])</span>
+<span class="sd">        &gt;&gt;&gt; print(&quot;before:&quot;, type(intervals.cat.categories[0]).__name__)</span>
+<span class="sd">        before: Interval</span>
+<span class="sd">        &gt;&gt;&gt; out = _stringify_categorical_values(intervals)</span>
+<span class="sd">        &gt;&gt;&gt; print(&quot;after:&quot;, type(out.cat.categories[0]).__name__)</span>
+<span class="sd">        after: str</span>
+<span class="sd">        &gt;&gt;&gt; out.cat.categories.tolist() == [str(x) for x in intervals.cat.categories]</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; duplicate = pd.Series(</span>
+<span class="sd">        ...     pd.Categorical([1, &quot;1&quot;], categories=[1, &quot;1&quot;, 2], ordered=True)</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; out = _stringify_categorical_values(duplicate)</span>
+<span class="sd">        &gt;&gt;&gt; out.cat.categories.tolist()</span>
+<span class="sd">        [&#39;1&#39;, &#39;2&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; out.cat.ordered</span>
+<span class="sd">        True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="s2">&quot;_stringify_categorical_values expects a pandas Series with &quot;</span>
+            <span class="s2">&quot;CategoricalDtype&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">stringified_categories</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">category</span><span class="p">)</span> <span class="k">for</span> <span class="n">category</span> <span class="ow">in</span> <span class="n">series</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">categories</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">stringified_categories</span><span class="p">))</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">stringified_categories</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">series</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">rename_categories</span><span class="p">(</span><span class="n">stringified_categories</span><span class="p">)</span>
+
+    <span class="n">values</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
+    <span class="n">missing</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span>
+    <span class="n">values</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">missing</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">missing</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    <span class="n">deduped_categories</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">stringified_categories</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span>
+            <span class="n">values</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="n">deduped_categories</span><span class="p">,</span> <span class="n">ordered</span><span class="o">=</span><span class="n">series</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">ordered</span>
+        <span class="p">),</span>
+        <span class="n">index</span><span class="o">=</span><span class="n">series</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">series</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
 <div class="viewcode-block" id="build_model_matrix">
 <a class="viewcode-back" href="../../../balance.util.html#balance.util.build_model_matrix">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">build_model_matrix</span><span class="p">(</span>
@@ -305,10 +374,21 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Not all factor variables are contained in df&quot;</span><span class="p">)</span>
 
     <span class="n">model_desc</span> <span class="o">=</span> <span class="n">process_formula</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">factor_variables</span><span class="p">)</span>
-    <span class="c1"># dmatrix cannot get Int64Dtype as data type. Hence converting all numeric columns to float64.</span>
+    <span class="c1"># Keep patsy-specific dtype coercions local to this call. ``model_matrix``</span>
+    <span class="c1"># may be called repeatedly with Sample-backed frames, and leaking the</span>
+    <span class="c1"># conversions below back to the caller can drop unused categorical levels</span>
+    <span class="c1"># needed by later calls (for example after ``add_na=False`` row drops).</span>
+    <span class="n">coerced_columns</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">is_numeric_dtype</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">]))</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">is_bool_dtype</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">])):</span>
-            <span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_numeric_dtype</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">])</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_bool_dtype</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">]):</span>
+            <span class="c1"># dmatrix cannot get Int64Dtype as data type.</span>
+            <span class="c1"># Hence converting all numeric columns to float64.</span>
+            <span class="n">coerced_columns</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">):</span>
+            <span class="n">coerced_columns</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">_stringify_categorical_values</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">coerced_columns</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="o">**</span><span class="n">coerced_columns</span><span class="p">)</span>
 
     <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">dmatrix</span><span class="p">(</span><span class="n">model_desc</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;dataframe&quot;</span><span class="p">)</span>
     <span class="c1"># Sorting the output in order to eliminate edge cases that cause column order to be stochastic</span>
