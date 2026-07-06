@@ -624,6 +624,38 @@ def _reject_data_dependent_transfer(
             )
 
 
+def _warn_default_transformations_not_transferable(method_name: str) -> None:
+    """Log a shared warning for fit metadata with default transformations.
+
+    Weighting methods that persist fit metadata can replay fitted weights on the
+    original data when ``transformations='default'`` because they also persist
+    the fit-time transformed design. Transfer scoring on new data is different:
+    default transformations choose bins/levels from the current input, so they
+    are intentionally rejected by :func:`_reject_data_dependent_transfer`.
+
+    Args:
+        method_name: Weighting-method name for the warning message.
+
+    Raises:
+        TypeError: If ``method_name`` is not a string.
+        ValueError: If ``method_name`` is empty or only whitespace.
+    """
+    if not isinstance(method_name, str):
+        raise TypeError("method_name must be a string")
+    method_name = method_name.strip()
+    if not method_name:
+        raise ValueError("method_name must be a non-empty string")
+
+    logger.warning(
+        "%s(store_fit_metadata=True) is being used together with "
+        "transformations='default'. The fitted model can be replayed "
+        "in-place via BalanceFrame.predict_weights(), but transfer "
+        "scoring via predict_weights(data=...) will raise. Pass "
+        "deterministic transformations at fit time to enable transfer.",
+        method_name,
+    )
+
+
 def _find_adjustment_method(
     method: Literal["cbps", "ipw", "null", "poststratify", "rake"],
     WEIGHTING_METHODS: Dict[str, Callable[..., Any]] = BALANCE_WEIGHTING_METHODS,

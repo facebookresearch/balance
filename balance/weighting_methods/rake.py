@@ -298,26 +298,7 @@ def rake(
         return poststratified
 
     if store_fit_metadata and transformations == "default":
-        # `transformations='default'` resolves to data-dependent helpers
-        # (`quantize`/`fct_lump`) which recompute bins/levels from the input
-        # data. The fitted model can be replayed in-place via
-        # `BalanceFrame.predict_weights()` but cannot be transferred to new
-        # data via `predict_weights(data=...)` — that path will raise. To
-        # enable transfer scoring, pass deterministic transformations at fit
-        # time (e.g. wrappers built around stored fit-time bin edges).
-        # TODO: replace this warning with a shared
-        # `_freeze_data_dependent_transformations(transformations, dfs)`
-        # helper that captures fit-time parameters (bin edges for `quantize`,
-        # kept levels for `fct_lump`) and replays them as a deterministic
-        # closure, so transfer scoring works out of the box for all four
-        # weighting methods (rake/cbps/poststratify/ipw).
-        logger.warning(
-            "rake(store_fit_metadata=True) is being used together with "
-            "transformations='default'. The fitted model can be replayed "
-            "in-place via BalanceFrame.predict_weights(), but transfer "
-            "scoring via predict_weights(data=...) will raise. Pass "
-            "deterministic transformations at fit time to enable transfer."
-        )
+        balance_adjustment._warn_default_transformations_not_transferable("rake")
 
     transformations_to_apply = transformations
     if transformations == "default":

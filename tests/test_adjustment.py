@@ -1255,3 +1255,37 @@ class TestRejectDataDependentTransfer(balance.testutil.BalanceTestCase):
             r"data-dependent transformations \(quantize\)",
         ):
             _reject_data_dependent_transfer({"x": quantize}, method_name="rake")
+
+
+class TestWarnDefaultTransformationsNotTransferable(balance.testutil.BalanceTestCase):
+    def test_logs_method_specific_transfer_guidance(self) -> None:
+        from balance.adjustment import _warn_default_transformations_not_transferable
+
+        with self.assertLogs("balance", level="WARNING") as cm:
+            _warn_default_transformations_not_transferable("rake")
+
+        output = " ".join(cm.output)
+        self.assertIn("rake(store_fit_metadata=True)", output)
+        self.assertIn("transformations='default'", output)
+        self.assertIn("predict_weights(data=...) will raise", output)
+        self.assertIn("deterministic transformations", output)
+
+    def test_strips_method_name_whitespace(self) -> None:
+        from balance.adjustment import _warn_default_transformations_not_transferable
+
+        with self.assertLogs("balance", level="WARNING") as cm:
+            _warn_default_transformations_not_transferable("  rake  ")
+
+        self.assertIn("rake(store_fit_metadata=True)", " ".join(cm.output))
+
+    def test_rejects_empty_method_name(self) -> None:
+        from balance.adjustment import _warn_default_transformations_not_transferable
+
+        with self.assertRaisesRegex(ValueError, "non-empty string"):
+            _warn_default_transformations_not_transferable("   ")
+
+    def test_rejects_non_string_method_name(self) -> None:
+        from balance.adjustment import _warn_default_transformations_not_transferable
+
+        with self.assertRaisesRegex(TypeError, "must be a string"):
+            _warn_default_transformations_not_transferable(123)  # type: ignore[arg-type]
