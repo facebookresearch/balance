@@ -670,6 +670,38 @@
             <span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_warn_default_transformations_not_transferable</span><span class="p">(</span><span class="n">method_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Log a shared warning for fit metadata with default transformations.</span>
+
+<span class="sd">    Weighting methods that persist fit metadata can replay fitted weights on the</span>
+<span class="sd">    original data when ``transformations=&#39;default&#39;`` because they also persist</span>
+<span class="sd">    the fit-time transformed design. Transfer scoring on new data is different:</span>
+<span class="sd">    default transformations choose bins/levels from the current input, so they</span>
+<span class="sd">    are intentionally rejected by :func:`_reject_data_dependent_transfer`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        method_name: Weighting-method name for the warning message.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        TypeError: If ``method_name`` is not a string.</span>
+<span class="sd">        ValueError: If ``method_name`` is empty or only whitespace.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">method_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;method_name must be a string&quot;</span><span class="p">)</span>
+    <span class="n">method_name</span> <span class="o">=</span> <span class="n">method_name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">method_name</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;method_name must be a non-empty string&quot;</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+        <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">(store_fit_metadata=True) is being used together with &quot;</span>
+        <span class="s2">&quot;transformations=&#39;default&#39;. The fitted model can be replayed &quot;</span>
+        <span class="s2">&quot;in-place via BalanceFrame.predict_weights(), but transfer &quot;</span>
+        <span class="s2">&quot;scoring via predict_weights(data=...) will raise. Pass &quot;</span>
+        <span class="s2">&quot;deterministic transformations at fit time to enable transfer.&quot;</span><span class="p">,</span>
+        <span class="n">method_name</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_find_adjustment_method</span><span class="p">(</span>
     <span class="n">method</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;cbps&quot;</span><span class="p">,</span> <span class="s2">&quot;ipw&quot;</span><span class="p">,</span> <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;poststratify&quot;</span><span class="p">,</span> <span class="s2">&quot;rake&quot;</span><span class="p">],</span>
     <span class="n">WEIGHTING_METHODS</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="n">BALANCE_WEIGHTING_METHODS</span><span class="p">,</span>

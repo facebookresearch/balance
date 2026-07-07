@@ -337,26 +337,7 @@
         <span class="k">return</span> <span class="n">poststratified</span>
 
     <span class="k">if</span> <span class="n">store_fit_metadata</span> <span class="ow">and</span> <span class="n">transformations</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
-        <span class="c1"># `transformations=&#39;default&#39;` resolves to data-dependent helpers</span>
-        <span class="c1"># (`quantize`/`fct_lump`) which recompute bins/levels from the input</span>
-        <span class="c1"># data. The fitted model can be replayed in-place via</span>
-        <span class="c1"># `BalanceFrame.predict_weights()` but cannot be transferred to new</span>
-        <span class="c1"># data via `predict_weights(data=...)` — that path will raise. To</span>
-        <span class="c1"># enable transfer scoring, pass deterministic transformations at fit</span>
-        <span class="c1"># time (e.g. wrappers built around stored fit-time bin edges).</span>
-        <span class="c1"># TODO: replace this warning with a shared</span>
-        <span class="c1"># `_freeze_data_dependent_transformations(transformations, dfs)`</span>
-        <span class="c1"># helper that captures fit-time parameters (bin edges for `quantize`,</span>
-        <span class="c1"># kept levels for `fct_lump`) and replays them as a deterministic</span>
-        <span class="c1"># closure, so transfer scoring works out of the box for all four</span>
-        <span class="c1"># weighting methods (rake/cbps/poststratify/ipw).</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;rake(store_fit_metadata=True) is being used together with &quot;</span>
-            <span class="s2">&quot;transformations=&#39;default&#39;. The fitted model can be replayed &quot;</span>
-            <span class="s2">&quot;in-place via BalanceFrame.predict_weights(), but transfer &quot;</span>
-            <span class="s2">&quot;scoring via predict_weights(data=...) will raise. Pass &quot;</span>
-            <span class="s2">&quot;deterministic transformations at fit time to enable transfer.&quot;</span>
-        <span class="p">)</span>
+        <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">_warn_default_transformations_not_transferable</span><span class="p">(</span><span class="s2">&quot;rake&quot;</span><span class="p">)</span>
 
     <span class="n">transformations_to_apply</span> <span class="o">=</span> <span class="n">transformations</span>
     <span class="k">if</span> <span class="n">transformations</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
