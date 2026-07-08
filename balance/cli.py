@@ -60,12 +60,16 @@ def _diagnostics_output_file_arg(value: Any) -> Path:
     return Path(_non_empty_str_arg(value, "--diagnostics_output_file"))
 
 
+def _supported_methods_help() -> str:
+    """Return the supported weighting methods as CLI help text."""
+    return ", ".join(SUPPORTED_WEIGHTING_METHODS)
+
+
 def _method_arg(value: Any) -> str:
     """Parse and validate the CLI weighting method."""
     method = _non_empty_str_arg(value, "--method")
     if method not in SUPPORTED_WEIGHTING_METHODS:
-        supported = ", ".join(SUPPORTED_WEIGHTING_METHODS)
-        raise ArgumentTypeError(f"--method must be one of: {supported}")
+        raise ArgumentTypeError(f"--method must be one of: {_supported_methods_help()}")
     return method
 
 
@@ -1559,7 +1563,7 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
         "--method",
         type=_method_arg,
         default="ipw",
-        help="Method to use for weighting: ipw, cbps, rake, poststratify, or null [default=ipw]",
+        help=f"Method to use for weighting: {_supported_methods_help()} [default=ipw]",
     )
     parser.add_argument(
         "--sample_column",

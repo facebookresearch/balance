@@ -2551,6 +2551,16 @@ class TestBalanceCLIParserInputValidation(balance.testutil.BalanceTestCase):
         with self.assertRaises(SystemExit):
             make_parser().parse_args(self._base_args() + ["--method", "unknown"])
 
+    def test_method_help_lists_supported_methods(self) -> None:
+        """Method help is derived from the same method list used for validation."""
+        parser = make_parser()
+        method_action = next(
+            action for action in parser._actions if "--method" in action.option_strings
+        )
+
+        for method in ("ipw", "cbps", "rake", "poststratify", "null"):
+            self.assertIn(method, method_action.help)
+
     def test_parser_rejects_invalid_separator_width(self) -> None:
         """Separator arguments must be exactly one character."""
         for flag, value in (
@@ -2570,8 +2580,8 @@ class TestBalanceCLIParserInputValidation(balance.testutil.BalanceTestCase):
         self.assertEqual(args.method, "ipw")
         self.assertEqual(args.sep_input_file, "\t")
 
-    def test_parser_rejects_blank_optional_column_lists(self) -> None:
-        """Optional comma-separated column lists reject blank names at parse time."""
+    def test_parser_rejects_blank_optional_column_inputs(self) -> None:
+        """Optional column inputs reject blank names at parse time."""
         cases = [
             ("--outcome_columns", ""),
             ("--covariate_columns_for_diagnostics", "x,,y"),
