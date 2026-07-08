@@ -14,7 +14,7 @@ import math
 from argparse import ArgumentParser, ArgumentTypeError, Namespace
 from numbers import Integral
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import balance
 import pandas as pd
@@ -25,6 +25,125 @@ from sklearn.base import ClassifierMixin
 from sklearn.linear_model import LogisticRegression
 
 logger: logging.Logger = logging.getLogger(__package__)
+
+SUPPORTED_WEIGHTING_METHODS: Tuple[str, ...] = ("ipw", "cbps", "rake", "poststratify")
+
+
+def _non_empty_str_arg(value: Any, arg_name: str) -> str:
+    """Parse a required string CLI argument and reject empty values."""
+    if not isinstance(value, str):
+        raise ArgumentTypeError(f"{arg_name} must be a non-empty string")
+    stripped = value.strip()
+    if not stripped:
+        raise ArgumentTypeError(f"{arg_name} must be a non-empty string")
+    return stripped
+
+
+def _input_file_arg(value: Any) -> Path:
+    """Parse a required input path and reject empty values."""
+    return Path(_non_empty_str_arg(value, "--input_file"))
+
+
+def _output_file_arg(value: Any) -> Path:
+    """Parse a required output path and reject empty values."""
+    return Path(_non_empty_str_arg(value, "--output_file"))
+
+
+def _diagnostics_output_file_arg(value: Any) -> Path:
+    """Parse an optional diagnostics output path and reject empty values."""
+    return Path(_non_empty_str_arg(value, "--diagnostics_output_file"))
+
+
+def _method_arg(value: Any) -> str:
+    """Parse and validate the CLI weighting method."""
+    method = _non_empty_str_arg(value, "--method")
+    if method not in SUPPORTED_WEIGHTING_METHODS:
+        supported = ", ".join(SUPPORTED_WEIGHTING_METHODS)
+        raise ArgumentTypeError(f"--method must be one of: {supported}")
+    return method
+
+
+def _column_name_arg(value: Any, arg_name: str) -> str:
+    """Parse a single column-name argument and reject empty values."""
+    return _non_empty_str_arg(value, arg_name)
+
+
+def _sample_column_arg(value: Any) -> str:
+    """Parse the sample-column argument."""
+    return _column_name_arg(value, "--sample_column")
+
+
+def _id_column_arg(value: Any) -> str:
+    """Parse the ID-column argument."""
+    return _column_name_arg(value, "--id_column")
+
+
+def _weight_column_arg(value: Any) -> str:
+    """Parse the weight-column argument."""
+    return _column_name_arg(value, "--weight_column")
+
+
+def _keep_row_column_arg(value: Any) -> str:
+    """Parse the keep-row-column argument."""
+    return _column_name_arg(value, "--keep_row_column")
+
+
+def _covariate_columns_arg(value: Any) -> str:
+    """Parse required covariate columns and reject blank CSV entries."""
+    parsed = _non_empty_str_arg(value, "--covariate_columns")
+    _parse_csv_columns_arg(parsed, "--covariate_columns")
+    return parsed
+
+
+def _optional_csv_columns_arg(value: Any, arg_name: str) -> str:
+    """Parse optional comma-separated columns and reject blank entries."""
+    parsed = _non_empty_str_arg(value, arg_name)
+    _parse_csv_columns_arg(parsed, arg_name)
+    return parsed
+
+
+def _outcome_columns_arg(value: Any) -> str:
+    """Parse outcome columns."""
+    return _optional_csv_columns_arg(value, "--outcome_columns")
+
+
+def _covariate_columns_for_diagnostics_arg(value: Any) -> str:
+    """Parse diagnostics covariate columns."""
+    return _optional_csv_columns_arg(value, "--covariate_columns_for_diagnostics")
+
+
+def _batch_columns_arg(value: Any) -> str:
+    """Parse batch columns."""
+    return _optional_csv_columns_arg(value, "--batch_columns")
+
+
+def _keep_columns_arg(value: Any) -> str:
+    """Parse output keep columns."""
+    return _optional_csv_columns_arg(value, "--keep_columns")
+
+
+def _single_character_arg(value: Any, arg_name: str) -> str:
+    """Parse a delimiter argument and ensure it is exactly one character."""
+    if not isinstance(value, str):
+        raise ArgumentTypeError(f"{arg_name} must be exactly one character")
+    if len(value) != 1:
+        raise ArgumentTypeError(f"{arg_name} must be exactly one character")
+    return value
+
+
+def _sep_input_file_arg(value: Any) -> str:
+    """Parse the input-file delimiter."""
+    return _single_character_arg(value, "--sep_input_file")
+
+
+def _sep_output_file_arg(value: Any) -> str:
+    """Parse the output-file delimiter."""
+    return _single_character_arg(value, "--sep_output_file")
+
+
+def _sep_diagnostics_output_file_arg(value: Any) -> str:
+    """Parse the diagnostics-output-file delimiter."""
+    return _single_character_arg(value, "--sep_diagnostics_output_file")
 
 
 def _positive_int_arg(value: Any) -> int:
@@ -59,14 +178,14 @@ def _positive_int_arg(value: Any) -> int:
     return parsed
 
 
-def _validate_formula_list(value: list[Any]) -> list[str]:
+def _validate_formula_list(value: List[Any]) -> List[str]:
     """Validate and normalize a JSON/list formula argument."""
     if not value:
         raise ArgumentTypeError(
             "--formula JSON list must contain at least one formula string"
         )
 
-    normalized: list[str] = []
+    normalized: List[str] = []
     for item in value:
         if not isinstance(item, str):
             raise ArgumentTypeError(
@@ -82,7 +201,9 @@ def _validate_formula_list(value: list[Any]) -> list[str]:
     return normalized
 
 
-def _formula_arg(value: str | list[str] | None) -> str | list[str] | None:
+def _formula_arg(
+    value: Optional[Union[str, List[str]]],
+) -> Optional[Union[str, List[str]]]:
     """Parse a CLI formula value as a string formula or JSON list of formulas.
 
     Args:
@@ -178,7 +299,7 @@ def _penalty_factor_arg(value: Any) -> Optional[List[float]]:
     return parsed
 
 
-def _transformations_arg(value: Any) -> str | None:
+def _transformations_arg(value: Any) -> Optional[str]:
     """Parse and validate the CLI transformations selector.
 
     The CLI supports the two non-callable transformation modes that can be
@@ -263,22 +384,22 @@ class BalanceCLI:
         self.args: Namespace = args
 
         # Create attributes (to be populated later, which will be used in main)
-        self._transformations: Dict[str, Any] | str | None = None
-        self._formula: str | list[str] | None = None
-        self._penalty_factor: list[float] | None = None
+        self._transformations: Optional[Union[Dict[str, Any], str]] = None
+        self._formula: Optional[Union[str, List[str]]] = None
+        self._penalty_factor: Optional[List[float]] = None
         self._one_hot_encoding: bool = False
-        self._max_de: float | None = None
-        self._lambda_min: float | None = None
-        self._lambda_max: float | None = None
-        self._num_lambdas: int | None = None
-        self._weight_trimming_mean_ratio: float | None = 20.0
+        self._max_de: Optional[float] = None
+        self._lambda_min: Optional[float] = None
+        self._lambda_max: Optional[float] = None
+        self._num_lambdas: Optional[int] = None
+        self._weight_trimming_mean_ratio: Optional[float] = 20.0
         # TODO(talgalili): Support BalanceFrame as an alternative entry point to Sample
         self._sample_cls: Type[balance_sample_cls] = balance_sample_cls
         # pyrefly: ignore [bad-assignment]
         self._sample_package_name: str = __package__
         self._sample_package_version: str = __version__
 
-    def check_input_columns(self, columns: List[str] | pd.Index) -> None:
+    def check_input_columns(self, columns: Union[List[str], pd.Index]) -> None:
         """Validate the input frame includes required columns.
 
         Args:
@@ -345,7 +466,7 @@ class BalanceCLI:
                 BalanceCLI(Namespace(method="ipw")).method()
                 # 'ipw'
         """
-        return self.args.method
+        return _method_arg(self.args.method)
 
     def sample_column(self) -> str:
         """Return the column indicating sample membership.
@@ -359,7 +480,7 @@ class BalanceCLI:
                 BalanceCLI(Namespace(sample_column="is_respondent")).sample_column()
                 # 'is_respondent'
         """
-        return self.args.sample_column
+        return _sample_column_arg(self.args.sample_column)
 
     def id_column(self) -> str:
         """Return the identifier column name.
@@ -373,7 +494,7 @@ class BalanceCLI:
                 BalanceCLI(Namespace(id_column="id")).id_column()
                 # 'id'
         """
-        return self.args.id_column
+        return _id_column_arg(self.args.id_column)
 
     def weight_column(self) -> str:
         """Return the weight column name.
@@ -387,7 +508,7 @@ class BalanceCLI:
                 BalanceCLI(Namespace(weight_column="weight")).weight_column()
                 # 'weight'
         """
-        return self.args.weight_column
+        return _weight_column_arg(self.args.weight_column)
 
     def covariate_columns(self) -> List[str]:
         """Return the list of covariate column names.
@@ -405,7 +526,7 @@ class BalanceCLI:
             self.args.covariate_columns, "--covariate_columns"
         )
 
-    def covariate_columns_for_diagnostics(self) -> List[str] | None:
+    def covariate_columns_for_diagnostics(self) -> Optional[List[str]]:
         """Return covariate columns used for diagnostics reporting.
 
         Returns:
@@ -426,7 +547,7 @@ class BalanceCLI:
             else _parse_csv_columns_arg(out, "--covariate_columns_for_diagnostics")
         )
 
-    def rows_to_keep_for_diagnostics(self) -> str | None:
+    def rows_to_keep_for_diagnostics(self) -> Optional[str]:
         """Return the diagnostics row-filter expression.
 
         Returns:
@@ -442,7 +563,7 @@ class BalanceCLI:
         """
         return self.args.rows_to_keep_for_diagnostics
 
-    def weights_impact_on_outcome_method(self) -> str | None:
+    def weights_impact_on_outcome_method(self) -> Optional[str]:
         """Return the outcome weight impact method for diagnostics.
 
         Returns:
@@ -512,7 +633,7 @@ class BalanceCLI:
         """
         return self.args.keep_columns is not None
 
-    def keep_columns(self) -> List[str] | None:
+    def keep_columns(self) -> Optional[List[str]]:
         """Return the subset of columns to keep in outputs.
 
         These columns are used to filter the final output DataFrame.
@@ -548,7 +669,7 @@ class BalanceCLI:
         """
         return self.args.keep_row_column is not None
 
-    def keep_row_column(self) -> str | None:
+    def keep_row_column(self) -> Optional[str]:
         """Return the keep-row indicator column name.
 
         Returns:
@@ -560,7 +681,9 @@ class BalanceCLI:
                 BalanceCLI(Namespace(keep_row_column="keep")).keep_row_column()
                 # 'keep'
         """
-        return self.args.keep_row_column
+        if self.args.keep_row_column is not None:
+            return _keep_row_column_arg(self.args.keep_row_column)
+        return None
 
     def has_outcome_columns(self) -> bool:
         """Return True when outcome columns are explicitly supplied.
@@ -576,7 +699,7 @@ class BalanceCLI:
         """
         return self.args.outcome_columns is not None
 
-    def outcome_columns(self) -> List[str] | None:
+    def outcome_columns(self) -> Optional[List[str]]:
         """Return the list of outcome columns if provided.
 
         Returns:
@@ -594,7 +717,7 @@ class BalanceCLI:
             )
         return None
 
-    def max_de(self) -> float | None:
+    def max_de(self) -> Optional[float]:
         """Return the max design effect setting.
 
         Returns:
@@ -608,7 +731,7 @@ class BalanceCLI:
         """
         return self.args.max_de
 
-    def lambda_min(self) -> float | None:
+    def lambda_min(self) -> Optional[float]:
         """Return the minimum L1 penalty setting.
 
         Returns:
@@ -622,7 +745,7 @@ class BalanceCLI:
         """
         return self.args.lambda_min
 
-    def lambda_max(self) -> float | None:
+    def lambda_max(self) -> Optional[float]:
         """Return the maximum L1 penalty setting.
 
         Returns:
@@ -636,7 +759,7 @@ class BalanceCLI:
         """
         return self.args.lambda_max
 
-    def num_lambdas(self) -> int | None:
+    def num_lambdas(self) -> Optional[int]:
         """Return the number of lambda values to search over.
 
         Returns:
@@ -652,7 +775,7 @@ class BalanceCLI:
             return None
         return _positive_int_arg(self.args.num_lambdas)
 
-    def transformations(self) -> str | None:
+    def transformations(self) -> Optional[str]:
         """Return the transformations config for adjustment.
 
         Returns:
@@ -666,7 +789,7 @@ class BalanceCLI:
         """
         return _transformations_arg(self.args.transformations)
 
-    def formula(self) -> str | list[str] | None:
+    def formula(self) -> Optional[Union[str, List[str]]]:
         """Return the formula string or formula list used for model matrices.
 
         Returns:
@@ -680,7 +803,7 @@ class BalanceCLI:
         """
         return _formula_arg(self.args.formula)
 
-    def one_hot_encoding(self) -> bool | None:
+    def one_hot_encoding(self) -> Optional[bool]:
         """Return the parsed one-hot encoding flag.
 
         Returns:
@@ -708,7 +831,7 @@ class BalanceCLI:
         """
         return balance.util._true_false_str_to_bool(self.args.standardize_types)
 
-    def weight_trimming_mean_ratio(self) -> float | None:
+    def weight_trimming_mean_ratio(self) -> Optional[float]:
         """Return the mean ratio used for trimming weights.
 
         Returns:
@@ -730,7 +853,7 @@ class BalanceCLI:
         """
         return _penalty_factor_arg(getattr(self.args, "penalty_factor", None))
 
-    def logistic_regression_kwargs(self) -> Dict[str, Any] | None:
+    def logistic_regression_kwargs(self) -> Optional[Dict[str, Any]]:
         """Parse JSON keyword arguments for the IPW logistic regression model.
 
         Returns:
@@ -762,7 +885,7 @@ class BalanceCLI:
             )
         return parsed
 
-    def logistic_regression_model(self) -> ClassifierMixin | None:
+    def logistic_regression_model(self) -> Optional[ClassifierMixin]:
         """Build a LogisticRegression model when IPW kwargs are supplied.
 
         Returns:
@@ -810,15 +933,15 @@ class BalanceCLI:
     def process_batch(
         self,
         batch_df: pd.DataFrame,
-        transformations: Dict[str, Any] | str | None = "default",
-        formula: str | list[str] | None = None,
+        transformations: Optional[Union[Dict[str, Any], str]] = "default",
+        formula: Optional[Union[str, List[str]]] = None,
         penalty_factor: Optional[List[float]] = None,
         one_hot_encoding: bool = False,
-        max_de: float | None = 1.5,
-        lambda_min: float | None = 1e-05,
-        lambda_max: float | None = 10,
-        num_lambdas: int | None = 250,
-        weight_trimming_mean_ratio: float | None = 20,
+        max_de: Optional[float] = 1.5,
+        lambda_min: Optional[float] = 1e-05,
+        lambda_max: Optional[float] = 10,
+        num_lambdas: Optional[int] = 250,
+        weight_trimming_mean_ratio: Optional[float] = 20,
         sample_cls: Type[balance_sample_cls] = balance_sample_cls,
         # pyrefly: ignore [bad-function-definition]
         sample_package_name: str = __package__,
@@ -1402,48 +1525,57 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
             isinstance(parser, ArgumentParser)
             # True
     """
-    # TODO: add checks for validity of input (including None as input)
     parser.add_argument(
         "--input_file",
-        type=Path,
+        type=_input_file_arg,
         required=True,
         help="Path to input sample/target",
     )
     parser.add_argument(
         "--output_file",
-        type=Path,
+        type=_output_file_arg,
         required=True,
         help="Path to write output weights",
     )
     parser.add_argument(
         "--diagnostics_output_file",
-        type=Path,
+        type=_diagnostics_output_file_arg,
         required=False,
         help="Path to write adjustment diagnostics",
     )
     parser.add_argument(
-        "--method", default="ipw", help="Method to use for weighting [default=ipw]"
+        "--method",
+        type=_method_arg,
+        default="ipw",
+        help="Method to use for weighting: ipw, cbps, rake, or poststratify [default=ipw]",
     )
     parser.add_argument(
         "--sample_column",
+        type=_sample_column_arg,
         default="is_respondent",
         help="Path to target population [default=is_respondent]",
     )
     parser.add_argument(
         "--id_column",
+        type=_id_column_arg,
         default="id",
         help="Column that identifies units [default=id]",
     )
     parser.add_argument(
         "--weight_column",
+        type=_weight_column_arg,
         default="weight",
         help="Column that identifies weights of samples [default=weight]",
     )
     parser.add_argument(
-        "--covariate_columns", required=True, help="Set of columns used for adjustment"
+        "--covariate_columns",
+        type=_covariate_columns_arg,
+        required=True,
+        help="Set of columns used for adjustment",
     )
     parser.add_argument(
         "--outcome_columns",
+        type=_outcome_columns_arg,
         required=False,
         default=None,
         help=(
@@ -1454,6 +1586,7 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
     )
     parser.add_argument(
         "--covariate_columns_for_diagnostics",
+        type=_covariate_columns_for_diagnostics_arg,
         required=False,
         default=None,
         help="Set of columns used for diagnostics reporting (if not supplied the default is None, which means to use all columns from --covariate_columns)",
@@ -1478,12 +1611,13 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
     )
     parser.add_argument(
         "--batch_columns",
+        type=_batch_columns_arg,
         required=False,
         help="Set of columns used to indicate batches of data",
     )
     parser.add_argument(
         "--keep_columns",
-        type=str,
+        type=_keep_columns_arg,
         required=False,
         help=(
             "Comma-separated columns to include in the output csv file. "
@@ -1492,27 +1626,27 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
     )
     parser.add_argument(
         "--keep_row_column",
-        type=str,
+        type=_keep_row_column_arg,
         required=False,
         help="Column indicating which rows we include in the output csv file",
     )
     parser.add_argument(
         "--sep_input_file",
-        type=str,
+        type=_sep_input_file_arg,
         required=False,
         default=",",
         help="A 1 character for indicating the delimiter for the output file. If not supplied it defaults to a comma (,)",
     )
     parser.add_argument(
         "--sep_output_file",
-        type=str,
+        type=_sep_output_file_arg,
         required=False,
         default=",",
         help="A 1 character for indicating the delimiter for the output file. If not supplied it defaults to a comma (,)",
     )
     parser.add_argument(
         "--sep_diagnostics_output_file",
-        type=str,
+        type=_sep_diagnostics_output_file_arg,
         required=False,
         default=",",
         help="A 1 character for indicating the delimiter for the diagnostics output file. If not supplied it defaults to a comma (,)",
