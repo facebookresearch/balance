@@ -1023,6 +1023,52 @@ class TestCli(
                 np.array(["ipw"]),
             )
 
+    def test_method_works_with_null(self) -> None:
+        """Test CLI functionality with the null adjustment method."""
+        input_dataset = pd.DataFrame(
+            {
+                "x": ["a", "b", "a", "b"],
+                "is_respondent": [1, 1, 0, 0],
+                "id": [1, 2, 3, 4],
+                "weight": [1.0, 2.0, 3.0, 4.0],
+            }
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            input_file = os.path.join(temp_dir, "input.csv")
+            output_file = os.path.join(temp_dir, "weights_out.csv")
+            diagnostics_output_file = os.path.join(temp_dir, "diagnostics_out.csv")
+            input_dataset.to_csv(input_file, index=False)
+
+            args = make_parser().parse_args(
+                [
+                    "--input_file",
+                    input_file,
+                    "--output_file",
+                    output_file,
+                    "--diagnostics_output_file",
+                    diagnostics_output_file,
+                    "--covariate_columns",
+                    "x",
+                    "--method",
+                    "null",
+                ]
+            )
+
+            cli = BalanceCLI(args)
+            cli.update_attributes_for_main_used_by_adjust()
+            cli.main()
+
+            output = pd.read_csv(output_file)
+            diagnostics_output = pd.read_csv(diagnostics_output_file)
+            self.assertEqual(output["weight"].tolist(), [1.0, 2.0])
+            self.assertEqual(
+                diagnostics_output[diagnostics_output["metric"] == "adjustment_method"][
+                    "var"
+                ].values,
+                np.array(["null_adjustment"]),
+            )
+
     def test_method_works_with_rake(self) -> None:
         """Test CLI functionality with raking weighting method."""
         # pyrefly: ignore [bad-argument-type]
@@ -2493,6 +2539,13 @@ class TestBalanceCLIParserInputValidation(balance.testutil.BalanceTestCase):
                 with self.assertRaises(SystemExit):
                     make_parser().parse_args(args)
 
+    def test_parser_accepts_null_method(self) -> None:
+        """The CLI method validator accepts the core API's null adjustment."""
+        args = make_parser().parse_args(self._base_args() + ["--method", "null"])
+
+        self.assertEqual(args.method, "null")
+        self.assertEqual(BalanceCLI(args).method(), "null")
+
     def test_parser_rejects_unsupported_method(self) -> None:
         """Method must be one of the supported adjustment methods."""
         with self.assertRaises(SystemExit):
@@ -2530,6 +2583,19 @@ class TestBalanceCLIParserInputValidation(balance.testutil.BalanceTestCase):
             with self.subTest(flag=flag):
                 with self.assertRaises(SystemExit):
                     make_parser().parse_args(self._base_args() + [flag, value])
+
+    def test_parser_preserves_csv_column_error_details(self) -> None:
+        """Argparse errors include the detailed CSV-column validation reason."""
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit):
+            make_parser().parse_args(
+                self._base_args() + ["--covariate_columns_for_diagnostics", "x,,y"]
+            )
+
+        self.assertIn(
+            "--covariate_columns_for_diagnostics must be a comma-separated list of non-empty column names",
+            stderr.getvalue(),
+        )
 
     def test_direct_namespace_accessors_validate_like_parser(self) -> None:
         """Direct Namespace usage gets the same validation as parser-created args."""

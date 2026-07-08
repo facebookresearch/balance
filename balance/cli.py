@@ -26,7 +26,13 @@ from sklearn.linear_model import LogisticRegression
 
 logger: logging.Logger = logging.getLogger(__package__)
 
-SUPPORTED_WEIGHTING_METHODS: Tuple[str, ...] = ("ipw", "cbps", "rake", "poststratify")
+SUPPORTED_WEIGHTING_METHODS: Tuple[str, ...] = (
+    "ipw",
+    "cbps",
+    "rake",
+    "poststratify",
+    "null",
+)
 
 
 def _non_empty_str_arg(value: Any, arg_name: str) -> str:
@@ -88,18 +94,24 @@ def _keep_row_column_arg(value: Any) -> str:
     return _column_name_arg(value, "--keep_row_column")
 
 
+def _csv_columns_value_arg(value: Any, arg_name: str) -> str:
+    """Parse a comma-separated column argument and preserve validation details."""
+    parsed = _non_empty_str_arg(value, arg_name)
+    try:
+        _parse_csv_columns_arg(parsed, arg_name)
+    except ValueError as exc:
+        raise ArgumentTypeError(str(exc)) from exc
+    return parsed
+
+
 def _covariate_columns_arg(value: Any) -> str:
     """Parse required covariate columns and reject blank CSV entries."""
-    parsed = _non_empty_str_arg(value, "--covariate_columns")
-    _parse_csv_columns_arg(parsed, "--covariate_columns")
-    return parsed
+    return _csv_columns_value_arg(value, "--covariate_columns")
 
 
 def _optional_csv_columns_arg(value: Any, arg_name: str) -> str:
     """Parse optional comma-separated columns and reject blank entries."""
-    parsed = _non_empty_str_arg(value, arg_name)
-    _parse_csv_columns_arg(parsed, arg_name)
-    return parsed
+    return _csv_columns_value_arg(value, arg_name)
 
 
 def _outcome_columns_arg(value: Any) -> str:
@@ -1547,7 +1559,7 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
         "--method",
         type=_method_arg,
         default="ipw",
-        help="Method to use for weighting: ipw, cbps, rake, or poststratify [default=ipw]",
+        help="Method to use for weighting: ipw, cbps, rake, poststratify, or null [default=ipw]",
     )
     parser.add_argument(
         "--sample_column",

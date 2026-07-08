@@ -34,7 +34,7 @@
 ## Bug Fixes
 
 - Model-matrix construction now stringifies pandas categorical levels before calling patsy, so interval-backed categoricals get stable dummy-column names and categorical covariates work in ASMD aggregation/regression coverage.
-- The CLI now rejects blank path/column values, malformed comma-separated column lists, unsupported adjustment methods, and invalid delimiter arguments during argument parsing instead of failing later in execution.
+- The CLI now rejects blank path/column values, malformed comma-separated column lists, unsupported adjustment methods (while allowing the core `null` adjustment), and invalid delimiter arguments during argument parsing instead of failing later in execution.
 
 ## Tests
 
