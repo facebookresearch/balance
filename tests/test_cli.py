@@ -2561,6 +2561,23 @@ class TestBalanceCLIParserInputValidation(balance.testutil.BalanceTestCase):
         for method in ("ipw", "cbps", "rake", "poststratify", "null"):
             self.assertIn(method, method_action.help)
 
+    def test_help_text_describes_sample_column_and_input_separator(self) -> None:
+        """User-facing help describes column and separator arguments accurately."""
+        parser = make_parser()
+        actions_by_option = {
+            option: action
+            for action in parser._actions
+            for option in action.option_strings
+        }
+
+        self.assertIn(
+            "Column indicating sample membership",
+            actions_by_option["--sample_column"].help,
+        )
+        self.assertIn(
+            "delimiter for the input file", actions_by_option["--sep_input_file"].help
+        )
+
     def test_parser_rejects_invalid_separator_width(self) -> None:
         """Separator arguments must be exactly one character."""
         for flag, value in (

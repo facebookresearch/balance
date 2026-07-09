@@ -1569,7 +1569,7 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
         "--sample_column",
         type=_sample_column_arg,
         default="is_respondent",
-        help="Path to target population [default=is_respondent]",
+        help="Column indicating sample membership [default=is_respondent]",
     )
     parser.add_argument(
         "--id_column",
@@ -1651,7 +1651,7 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
         type=_sep_input_file_arg,
         required=False,
         default=",",
-        help="A 1 character for indicating the delimiter for the output file. If not supplied it defaults to a comma (,)",
+        help="A 1 character for indicating the delimiter for the input file. If not supplied it defaults to a comma (,)",
     )
     parser.add_argument(
         "--sep_output_file",
