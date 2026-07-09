@@ -12,6 +12,7 @@ import json
 import logging
 import math
 from argparse import ArgumentParser, ArgumentTypeError, Namespace
+from functools import partial
 from numbers import Integral
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
@@ -45,19 +46,9 @@ def _non_empty_str_arg(value: Any, arg_name: str) -> str:
     return stripped
 
 
-def _input_file_arg(value: Any) -> Path:
-    """Parse a required input path and reject empty values."""
-    return Path(_non_empty_str_arg(value, "--input_file"))
-
-
-def _output_file_arg(value: Any) -> Path:
-    """Parse a required output path and reject empty values."""
-    return Path(_non_empty_str_arg(value, "--output_file"))
-
-
-def _diagnostics_output_file_arg(value: Any) -> Path:
-    """Parse an optional diagnostics output path and reject empty values."""
-    return Path(_non_empty_str_arg(value, "--diagnostics_output_file"))
+def _path_arg(value: Any, arg_name: str) -> Path:
+    """Parse a path CLI argument and reject empty values."""
+    return Path(_non_empty_str_arg(value, arg_name))
 
 
 def _supported_methods_help() -> str:
@@ -73,32 +64,7 @@ def _method_arg(value: Any) -> str:
     return method
 
 
-def _column_name_arg(value: Any, arg_name: str) -> str:
-    """Parse a single column-name argument and reject empty values."""
-    return _non_empty_str_arg(value, arg_name)
-
-
-def _sample_column_arg(value: Any) -> str:
-    """Parse the sample-column argument."""
-    return _column_name_arg(value, "--sample_column")
-
-
-def _id_column_arg(value: Any) -> str:
-    """Parse the ID-column argument."""
-    return _column_name_arg(value, "--id_column")
-
-
-def _weight_column_arg(value: Any) -> str:
-    """Parse the weight-column argument."""
-    return _column_name_arg(value, "--weight_column")
-
-
-def _keep_row_column_arg(value: Any) -> str:
-    """Parse the keep-row-column argument."""
-    return _column_name_arg(value, "--keep_row_column")
-
-
-def _csv_columns_value_arg(value: Any, arg_name: str) -> str:
+def _csv_columns_arg(value: Any, arg_name: str) -> str:
     """Parse a comma-separated column argument and preserve validation details."""
     parsed = _non_empty_str_arg(value, arg_name)
     try:
@@ -108,36 +74,6 @@ def _csv_columns_value_arg(value: Any, arg_name: str) -> str:
     return parsed
 
 
-def _covariate_columns_arg(value: Any) -> str:
-    """Parse required covariate columns and reject blank CSV entries."""
-    return _csv_columns_value_arg(value, "--covariate_columns")
-
-
-def _optional_csv_columns_arg(value: Any, arg_name: str) -> str:
-    """Parse optional comma-separated columns and reject blank entries."""
-    return _csv_columns_value_arg(value, arg_name)
-
-
-def _outcome_columns_arg(value: Any) -> str:
-    """Parse outcome columns."""
-    return _optional_csv_columns_arg(value, "--outcome_columns")
-
-
-def _covariate_columns_for_diagnostics_arg(value: Any) -> str:
-    """Parse diagnostics covariate columns."""
-    return _optional_csv_columns_arg(value, "--covariate_columns_for_diagnostics")
-
-
-def _batch_columns_arg(value: Any) -> str:
-    """Parse batch columns."""
-    return _optional_csv_columns_arg(value, "--batch_columns")
-
-
-def _keep_columns_arg(value: Any) -> str:
-    """Parse output keep columns."""
-    return _optional_csv_columns_arg(value, "--keep_columns")
-
-
 def _single_character_arg(value: Any, arg_name: str) -> str:
     """Parse a delimiter argument and ensure it is exactly one character."""
     if not isinstance(value, str):
@@ -145,21 +81,6 @@ def _single_character_arg(value: Any, arg_name: str) -> str:
     if len(value) != 1:
         raise ArgumentTypeError(f"{arg_name} must be exactly one character")
     return value
-
-
-def _sep_input_file_arg(value: Any) -> str:
-    """Parse the input-file delimiter."""
-    return _single_character_arg(value, "--sep_input_file")
-
-
-def _sep_output_file_arg(value: Any) -> str:
-    """Parse the output-file delimiter."""
-    return _single_character_arg(value, "--sep_output_file")
-
-
-def _sep_diagnostics_output_file_arg(value: Any) -> str:
-    """Parse the diagnostics-output-file delimiter."""
-    return _single_character_arg(value, "--sep_diagnostics_output_file")
 
 
 def _positive_int_arg(value: Any) -> int:
@@ -496,7 +417,7 @@ class BalanceCLI:
                 BalanceCLI(Namespace(sample_column="is_respondent")).sample_column()
                 # 'is_respondent'
         """
-        return _sample_column_arg(self.args.sample_column)
+        return _non_empty_str_arg(self.args.sample_column, "--sample_column")
 
     def id_column(self) -> str:
         """Return the identifier column name.
@@ -510,7 +431,7 @@ class BalanceCLI:
                 BalanceCLI(Namespace(id_column="id")).id_column()
                 # 'id'
         """
-        return _id_column_arg(self.args.id_column)
+        return _non_empty_str_arg(self.args.id_column, "--id_column")
 
     def weight_column(self) -> str:
         """Return the weight column name.
@@ -524,7 +445,7 @@ class BalanceCLI:
                 BalanceCLI(Namespace(weight_column="weight")).weight_column()
                 # 'weight'
         """
-        return _weight_column_arg(self.args.weight_column)
+        return _non_empty_str_arg(self.args.weight_column, "--weight_column")
 
     def covariate_columns(self) -> List[str]:
         """Return the list of covariate column names.
@@ -698,7 +619,7 @@ class BalanceCLI:
                 # 'keep'
         """
         if self.args.keep_row_column is not None:
-            return _keep_row_column_arg(self.args.keep_row_column)
+            return _non_empty_str_arg(self.args.keep_row_column, "--keep_row_column")
         return None
 
     def has_outcome_columns(self) -> bool:
@@ -1543,19 +1464,19 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
     """
     parser.add_argument(
         "--input_file",
-        type=_input_file_arg,
+        type=partial(_path_arg, arg_name="--input_file"),
         required=True,
         help="Path to input sample/target",
     )
     parser.add_argument(
         "--output_file",
-        type=_output_file_arg,
+        type=partial(_path_arg, arg_name="--output_file"),
         required=True,
         help="Path to write output weights",
     )
     parser.add_argument(
         "--diagnostics_output_file",
-        type=_diagnostics_output_file_arg,
+        type=partial(_path_arg, arg_name="--diagnostics_output_file"),
         required=False,
         help="Path to write adjustment diagnostics",
     )
@@ -1567,31 +1488,31 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
     )
     parser.add_argument(
         "--sample_column",
-        type=_sample_column_arg,
+        type=partial(_non_empty_str_arg, arg_name="--sample_column"),
         default="is_respondent",
         help="Column indicating sample membership [default=is_respondent]",
     )
     parser.add_argument(
         "--id_column",
-        type=_id_column_arg,
+        type=partial(_non_empty_str_arg, arg_name="--id_column"),
         default="id",
         help="Column that identifies units [default=id]",
     )
     parser.add_argument(
         "--weight_column",
-        type=_weight_column_arg,
+        type=partial(_non_empty_str_arg, arg_name="--weight_column"),
         default="weight",
         help="Column that identifies weights of samples [default=weight]",
     )
     parser.add_argument(
         "--covariate_columns",
-        type=_covariate_columns_arg,
+        type=partial(_csv_columns_arg, arg_name="--covariate_columns"),
         required=True,
         help="Set of columns used for adjustment",
     )
     parser.add_argument(
         "--outcome_columns",
-        type=_outcome_columns_arg,
+        type=partial(_csv_columns_arg, arg_name="--outcome_columns"),
         required=False,
         default=None,
         help=(
@@ -1602,7 +1523,7 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
     )
     parser.add_argument(
         "--covariate_columns_for_diagnostics",
-        type=_covariate_columns_for_diagnostics_arg,
+        type=partial(_csv_columns_arg, arg_name="--covariate_columns_for_diagnostics"),
         required=False,
         default=None,
         help="Set of columns used for diagnostics reporting (if not supplied the default is None, which means to use all columns from --covariate_columns)",
@@ -1627,13 +1548,13 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
     )
     parser.add_argument(
         "--batch_columns",
-        type=_batch_columns_arg,
+        type=partial(_csv_columns_arg, arg_name="--batch_columns"),
         required=False,
         help="Set of columns used to indicate batches of data",
     )
     parser.add_argument(
         "--keep_columns",
-        type=_keep_columns_arg,
+        type=partial(_csv_columns_arg, arg_name="--keep_columns"),
         required=False,
         help=(
             "Comma-separated columns to include in the output csv file. "
@@ -1642,27 +1563,27 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
     )
     parser.add_argument(
         "--keep_row_column",
-        type=_keep_row_column_arg,
+        type=partial(_non_empty_str_arg, arg_name="--keep_row_column"),
         required=False,
         help="Column indicating which rows we include in the output csv file",
     )
     parser.add_argument(
         "--sep_input_file",
-        type=_sep_input_file_arg,
+        type=partial(_single_character_arg, arg_name="--sep_input_file"),
         required=False,
         default=",",
         help="A 1 character for indicating the delimiter for the input file. If not supplied it defaults to a comma (,)",
     )
     parser.add_argument(
         "--sep_output_file",
-        type=_sep_output_file_arg,
+        type=partial(_single_character_arg, arg_name="--sep_output_file"),
         required=False,
         default=",",
         help="A 1 character for indicating the delimiter for the output file. If not supplied it defaults to a comma (,)",
     )
     parser.add_argument(
         "--sep_diagnostics_output_file",
-        type=_sep_diagnostics_output_file_arg,
+        type=partial(_single_character_arg, arg_name="--sep_diagnostics_output_file"),
         required=False,
         default=",",
         help="A 1 character for indicating the delimiter for the diagnostics output file. If not supplied it defaults to a comma (,)",
