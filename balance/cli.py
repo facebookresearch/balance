@@ -15,7 +15,7 @@ from argparse import ArgumentParser, ArgumentTypeError, Namespace
 from functools import partial
 from numbers import Integral
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 import balance
 import pandas as pd
@@ -115,14 +115,14 @@ def _positive_int_arg(value: Any) -> int:
     return parsed
 
 
-def _validate_formula_list(value: List[Any]) -> List[str]:
+def _validate_formula_list(value: list[Any]) -> list[str]:
     """Validate and normalize a JSON/list formula argument."""
     if not value:
         raise ArgumentTypeError(
             "--formula JSON list must contain at least one formula string"
         )
 
-    normalized: List[str] = []
+    normalized: list[str] = []
     for item in value:
         if not isinstance(item, str):
             raise ArgumentTypeError(
@@ -138,9 +138,7 @@ def _validate_formula_list(value: List[Any]) -> List[str]:
     return normalized
 
 
-def _formula_arg(
-    value: Optional[Union[str, List[str]]],
-) -> Optional[Union[str, List[str]]]:
+def _formula_arg(value: str | list[str] | None) -> str | list[str] | None:
     """Parse a CLI formula value as a string formula or JSON list of formulas.
 
     Args:
@@ -236,7 +234,7 @@ def _penalty_factor_arg(value: Any) -> Optional[List[float]]:
     return parsed
 
 
-def _transformations_arg(value: Any) -> Optional[str]:
+def _transformations_arg(value: Any) -> str | None:
     """Parse and validate the CLI transformations selector.
 
     The CLI supports the two non-callable transformation modes that can be
@@ -321,22 +319,22 @@ class BalanceCLI:
         self.args: Namespace = args
 
         # Create attributes (to be populated later, which will be used in main)
-        self._transformations: Optional[Union[Dict[str, Any], str]] = None
-        self._formula: Optional[Union[str, List[str]]] = None
-        self._penalty_factor: Optional[List[float]] = None
+        self._transformations: Dict[str, Any] | str | None = None
+        self._formula: str | list[str] | None = None
+        self._penalty_factor: list[float] | None = None
         self._one_hot_encoding: bool = False
-        self._max_de: Optional[float] = None
-        self._lambda_min: Optional[float] = None
-        self._lambda_max: Optional[float] = None
-        self._num_lambdas: Optional[int] = None
-        self._weight_trimming_mean_ratio: Optional[float] = 20.0
+        self._max_de: float | None = None
+        self._lambda_min: float | None = None
+        self._lambda_max: float | None = None
+        self._num_lambdas: int | None = None
+        self._weight_trimming_mean_ratio: float | None = 20.0
         # TODO(talgalili): Support BalanceFrame as an alternative entry point to Sample
         self._sample_cls: Type[balance_sample_cls] = balance_sample_cls
         # pyrefly: ignore [bad-assignment]
         self._sample_package_name: str = __package__
         self._sample_package_version: str = __version__
 
-    def check_input_columns(self, columns: Union[List[str], pd.Index]) -> None:
+    def check_input_columns(self, columns: List[str] | pd.Index) -> None:
         """Validate the input frame includes required columns.
 
         Args:
@@ -463,7 +461,7 @@ class BalanceCLI:
             self.args.covariate_columns, "--covariate_columns"
         )
 
-    def covariate_columns_for_diagnostics(self) -> Optional[List[str]]:
+    def covariate_columns_for_diagnostics(self) -> List[str] | None:
         """Return covariate columns used for diagnostics reporting.
 
         Returns:
@@ -484,7 +482,7 @@ class BalanceCLI:
             else _parse_csv_columns_arg(out, "--covariate_columns_for_diagnostics")
         )
 
-    def rows_to_keep_for_diagnostics(self) -> Optional[str]:
+    def rows_to_keep_for_diagnostics(self) -> str | None:
         """Return the diagnostics row-filter expression.
 
         Returns:
@@ -500,7 +498,7 @@ class BalanceCLI:
         """
         return self.args.rows_to_keep_for_diagnostics
 
-    def weights_impact_on_outcome_method(self) -> Optional[str]:
+    def weights_impact_on_outcome_method(self) -> str | None:
         """Return the outcome weight impact method for diagnostics.
 
         Returns:
@@ -570,7 +568,7 @@ class BalanceCLI:
         """
         return self.args.keep_columns is not None
 
-    def keep_columns(self) -> Optional[List[str]]:
+    def keep_columns(self) -> List[str] | None:
         """Return the subset of columns to keep in outputs.
 
         These columns are used to filter the final output DataFrame.
@@ -606,7 +604,7 @@ class BalanceCLI:
         """
         return self.args.keep_row_column is not None
 
-    def keep_row_column(self) -> Optional[str]:
+    def keep_row_column(self) -> str | None:
         """Return the keep-row indicator column name.
 
         Returns:
@@ -636,7 +634,7 @@ class BalanceCLI:
         """
         return self.args.outcome_columns is not None
 
-    def outcome_columns(self) -> Optional[List[str]]:
+    def outcome_columns(self) -> List[str] | None:
         """Return the list of outcome columns if provided.
 
         Returns:
@@ -654,7 +652,7 @@ class BalanceCLI:
             )
         return None
 
-    def max_de(self) -> Optional[float]:
+    def max_de(self) -> float | None:
         """Return the max design effect setting.
 
         Returns:
@@ -668,7 +666,7 @@ class BalanceCLI:
         """
         return self.args.max_de
 
-    def lambda_min(self) -> Optional[float]:
+    def lambda_min(self) -> float | None:
         """Return the minimum L1 penalty setting.
 
         Returns:
@@ -682,7 +680,7 @@ class BalanceCLI:
         """
         return self.args.lambda_min
 
-    def lambda_max(self) -> Optional[float]:
+    def lambda_max(self) -> float | None:
         """Return the maximum L1 penalty setting.
 
         Returns:
@@ -696,7 +694,7 @@ class BalanceCLI:
         """
         return self.args.lambda_max
 
-    def num_lambdas(self) -> Optional[int]:
+    def num_lambdas(self) -> int | None:
         """Return the number of lambda values to search over.
 
         Returns:
@@ -712,7 +710,7 @@ class BalanceCLI:
             return None
         return _positive_int_arg(self.args.num_lambdas)
 
-    def transformations(self) -> Optional[str]:
+    def transformations(self) -> str | None:
         """Return the transformations config for adjustment.
 
         Returns:
@@ -726,7 +724,7 @@ class BalanceCLI:
         """
         return _transformations_arg(self.args.transformations)
 
-    def formula(self) -> Optional[Union[str, List[str]]]:
+    def formula(self) -> str | list[str] | None:
         """Return the formula string or formula list used for model matrices.
 
         Returns:
@@ -740,7 +738,7 @@ class BalanceCLI:
         """
         return _formula_arg(self.args.formula)
 
-    def one_hot_encoding(self) -> Optional[bool]:
+    def one_hot_encoding(self) -> bool | None:
         """Return the parsed one-hot encoding flag.
 
         Returns:
@@ -768,7 +766,7 @@ class BalanceCLI:
         """
         return balance.util._true_false_str_to_bool(self.args.standardize_types)
 
-    def weight_trimming_mean_ratio(self) -> Optional[float]:
+    def weight_trimming_mean_ratio(self) -> float | None:
         """Return the mean ratio used for trimming weights.
 
         Returns:
@@ -790,7 +788,7 @@ class BalanceCLI:
         """
         return _penalty_factor_arg(getattr(self.args, "penalty_factor", None))
 
-    def logistic_regression_kwargs(self) -> Optional[Dict[str, Any]]:
+    def logistic_regression_kwargs(self) -> Dict[str, Any] | None:
         """Parse JSON keyword arguments for the IPW logistic regression model.
 
         Returns:
@@ -822,7 +820,7 @@ class BalanceCLI:
             )
         return parsed
 
-    def logistic_regression_model(self) -> Optional[ClassifierMixin]:
+    def logistic_regression_model(self) -> ClassifierMixin | None:
         """Build a LogisticRegression model when IPW kwargs are supplied.
 
         Returns:
@@ -870,15 +868,15 @@ class BalanceCLI:
     def process_batch(
         self,
         batch_df: pd.DataFrame,
-        transformations: Optional[Union[Dict[str, Any], str]] = "default",
-        formula: Optional[Union[str, List[str]]] = None,
+        transformations: Dict[str, Any] | str | None = "default",
+        formula: str | list[str] | None = None,
         penalty_factor: Optional[List[float]] = None,
         one_hot_encoding: bool = False,
-        max_de: Optional[float] = 1.5,
-        lambda_min: Optional[float] = 1e-05,
-        lambda_max: Optional[float] = 10,
-        num_lambdas: Optional[int] = 250,
-        weight_trimming_mean_ratio: Optional[float] = 20,
+        max_de: float | None = 1.5,
+        lambda_min: float | None = 1e-05,
+        lambda_max: float | None = 10,
+        num_lambdas: int | None = 250,
+        weight_trimming_mean_ratio: float | None = 20,
         sample_cls: Type[balance_sample_cls] = balance_sample_cls,
         # pyrefly: ignore [bad-function-definition]
         sample_package_name: str = __package__,
