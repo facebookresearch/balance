@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type
 import balance
 import pandas as pd
 from balance import __version__  # @manual
+from balance.adjustment import BALANCE_WEIGHTING_METHODS
 from balance.sample_class import Sample as balance_sample_cls  # @manual
 from balance.util import _float_or_none
 from sklearn.base import ClassifierMixin
@@ -27,13 +28,7 @@ from sklearn.linear_model import LogisticRegression
 
 logger: logging.Logger = logging.getLogger(__package__)
 
-SUPPORTED_WEIGHTING_METHODS: Tuple[str, ...] = (
-    "ipw",
-    "cbps",
-    "rake",
-    "poststratify",
-    "null",
-)
+SUPPORTED_WEIGHTING_METHODS: Tuple[str, ...] = tuple(BALANCE_WEIGHTING_METHODS)
 
 
 def _non_empty_str_arg(value: Any, arg_name: str) -> str:
