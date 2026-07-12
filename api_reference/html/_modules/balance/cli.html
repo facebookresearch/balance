@@ -49,6 +49,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">argparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArgumentParser</span><span class="p">,</span> <span class="n">ArgumentTypeError</span><span class="p">,</span> <span class="n">Namespace</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Integral</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span>
@@ -56,12 +57,62 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">balance</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">__version__</span>  <span class="c1"># @manual</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.adjustment</span><span class="w"> </span><span class="kn">import</span> <span class="n">BALANCE_WEIGHTING_METHODS</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sample</span> <span class="k">as</span> <span class="n">balance_sample_cls</span>  <span class="c1"># @manual</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">_float_or_none</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClassifierMixin</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.linear_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LogisticRegression</span>
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
+
+<span class="n">SUPPORTED_WEIGHTING_METHODS</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">BALANCE_WEIGHTING_METHODS</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_non_empty_str_arg</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">arg_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a required string CLI argument and reject empty values.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">ArgumentTypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">arg_name</span><span class="si">}</span><span class="s2"> must be a non-empty string&quot;</span><span class="p">)</span>
+    <span class="n">stripped</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">stripped</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ArgumentTypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">arg_name</span><span class="si">}</span><span class="s2"> must be a non-empty string&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">stripped</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_path_arg</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">arg_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a path CLI argument and reject empty values.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">_non_empty_str_arg</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">arg_name</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_supported_methods_help</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the supported weighting methods as CLI help text.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SUPPORTED_WEIGHTING_METHODS</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_method_arg</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse and validate the CLI weighting method.&quot;&quot;&quot;</span>
+    <span class="n">method</span> <span class="o">=</span> <span class="n">_non_empty_str_arg</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;--method&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SUPPORTED_WEIGHTING_METHODS</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ArgumentTypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--method must be one of: </span><span class="si">{</span><span class="n">_supported_methods_help</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">method</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_csv_columns_arg</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">arg_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a comma-separated column argument and preserve validation details.&quot;&quot;&quot;</span>
+    <span class="n">parsed</span> <span class="o">=</span> <span class="n">_non_empty_str_arg</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">arg_name</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_parse_csv_columns_arg</span><span class="p">(</span><span class="n">parsed</span><span class="p">,</span> <span class="n">arg_name</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ArgumentTypeError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">))</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+    <span class="k">return</span> <span class="n">parsed</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_single_character_arg</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">arg_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a delimiter argument and ensure it is exactly one character.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">ArgumentTypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">arg_name</span><span class="si">}</span><span class="s2"> must be exactly one character&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ArgumentTypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">arg_name</span><span class="si">}</span><span class="s2"> must be exactly one character&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">value</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_positive_int_arg</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
@@ -389,7 +440,7 @@
 <span class="sd">                BalanceCLI(Namespace(method=&quot;ipw&quot;)).method()</span>
 <span class="sd">                # &#39;ipw&#39;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">method</span></div>
+        <span class="k">return</span> <span class="n">_method_arg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">method</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BalanceCLI.sample_column">
@@ -406,7 +457,7 @@
 <span class="sd">                BalanceCLI(Namespace(sample_column=&quot;is_respondent&quot;)).sample_column()</span>
 <span class="sd">                # &#39;is_respondent&#39;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">sample_column</span></div>
+        <span class="k">return</span> <span class="n">_non_empty_str_arg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">sample_column</span><span class="p">,</span> <span class="s2">&quot;--sample_column&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BalanceCLI.id_column">
@@ -423,7 +474,7 @@
 <span class="sd">                BalanceCLI(Namespace(id_column=&quot;id&quot;)).id_column()</span>
 <span class="sd">                # &#39;id&#39;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">id_column</span></div>
+        <span class="k">return</span> <span class="n">_non_empty_str_arg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">id_column</span><span class="p">,</span> <span class="s2">&quot;--id_column&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BalanceCLI.weight_column">
@@ -440,7 +491,7 @@
 <span class="sd">                BalanceCLI(Namespace(weight_column=&quot;weight&quot;)).weight_column()</span>
 <span class="sd">                # &#39;weight&#39;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">weight_column</span></div>
+        <span class="k">return</span> <span class="n">_non_empty_str_arg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">weight_column</span><span class="p">,</span> <span class="s2">&quot;--weight_column&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BalanceCLI.covariate_columns">
@@ -643,7 +694,9 @@
 <span class="sd">                BalanceCLI(Namespace(keep_row_column=&quot;keep&quot;)).keep_row_column()</span>
 <span class="sd">                # &#39;keep&#39;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">keep_row_column</span></div>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">keep_row_column</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_non_empty_str_arg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">keep_row_column</span><span class="p">,</span> <span class="s2">&quot;--keep_row_column&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
 
 
 <div class="viewcode-block" id="BalanceCLI.has_outcome_columns">
@@ -1552,48 +1605,57 @@
 <span class="sd">            isinstance(parser, ArgumentParser)</span>
 <span class="sd">            # True</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># TODO: add checks for validity of input (including None as input)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--input_file&quot;</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_path_arg</span><span class="p">,</span> <span class="n">arg_name</span><span class="o">=</span><span class="s2">&quot;--input_file&quot;</span><span class="p">),</span>
         <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to input sample/target&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--output_file&quot;</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_path_arg</span><span class="p">,</span> <span class="n">arg_name</span><span class="o">=</span><span class="s2">&quot;--output_file&quot;</span><span class="p">),</span>
         <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to write output weights&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--diagnostics_output_file&quot;</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_path_arg</span><span class="p">,</span> <span class="n">arg_name</span><span class="o">=</span><span class="s2">&quot;--diagnostics_output_file&quot;</span><span class="p">),</span>
         <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to write adjustment diagnostics&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--method&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;ipw&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Method to use for weighting [default=ipw]&quot;</span>
+        <span class="s2">&quot;--method&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">_method_arg</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;ipw&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Method to use for weighting: </span><span class="si">{</span><span class="n">_supported_methods_help</span><span class="p">()</span><span class="si">}</span><span class="s2"> [default=ipw]&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--sample_column&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_non_empty_str_arg</span><span class="p">,</span> <span class="n">arg_name</span><span class="o">=</span><span class="s2">&quot;--sample_column&quot;</span><span class="p">),</span>
         <span class="n">default</span><span class="o">=</span><span class="s2">&quot;is_respondent&quot;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to target population [default=is_respondent]&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Column indicating sample membership [default=is_respondent]&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--id_column&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_non_empty_str_arg</span><span class="p">,</span> <span class="n">arg_name</span><span class="o">=</span><span class="s2">&quot;--id_column&quot;</span><span class="p">),</span>
         <span class="n">default</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Column that identifies units [default=id]&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--weight_column&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_non_empty_str_arg</span><span class="p">,</span> <span class="n">arg_name</span><span class="o">=</span><span class="s2">&quot;--weight_column&quot;</span><span class="p">),</span>
         <span class="n">default</span><span class="o">=</span><span class="s2">&quot;weight&quot;</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Column that identifies weights of samples [default=weight]&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--covariate_columns&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Set of columns used for adjustment&quot;</span>
+        <span class="s2">&quot;--covariate_columns&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_csv_columns_arg</span><span class="p">,</span> <span class="n">arg_name</span><span class="o">=</span><span class="s2">&quot;--covariate_columns&quot;</span><span class="p">),</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Set of columns used for adjustment&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--outcome_columns&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_csv_columns_arg</span><span class="p">,</span> <span class="n">arg_name</span><span class="o">=</span><span class="s2">&quot;--outcome_columns&quot;</span><span class="p">),</span>
         <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="p">(</span>
@@ -1604,6 +1666,7 @@
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--covariate_columns_for_diagnostics&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_csv_columns_arg</span><span class="p">,</span> <span class="n">arg_name</span><span class="o">=</span><span class="s2">&quot;--covariate_columns_for_diagnostics&quot;</span><span class="p">),</span>
         <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Set of columns used for diagnostics reporting (if not supplied the default is None, which means to use all columns from --covariate_columns)&quot;</span><span class="p">,</span>
@@ -1628,12 +1691,13 @@
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--batch_columns&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_csv_columns_arg</span><span class="p">,</span> <span class="n">arg_name</span><span class="o">=</span><span class="s2">&quot;--batch_columns&quot;</span><span class="p">),</span>
         <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Set of columns used to indicate batches of data&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--keep_columns&quot;</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_csv_columns_arg</span><span class="p">,</span> <span class="n">arg_name</span><span class="o">=</span><span class="s2">&quot;--keep_columns&quot;</span><span class="p">),</span>
         <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">&quot;Comma-separated columns to include in the output csv file. &quot;</span>
@@ -1642,27 +1706,27 @@
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--keep_row_column&quot;</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_non_empty_str_arg</span><span class="p">,</span> <span class="n">arg_name</span><span class="o">=</span><span class="s2">&quot;--keep_row_column&quot;</span><span class="p">),</span>
         <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Column indicating which rows we include in the output csv file&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--sep_input_file&quot;</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_single_character_arg</span><span class="p">,</span> <span class="n">arg_name</span><span class="o">=</span><span class="s2">&quot;--sep_input_file&quot;</span><span class="p">),</span>
         <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;A 1 character for indicating the delimiter for the output file. If not supplied it defaults to a comma (,)&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;A 1 character for indicating the delimiter for the input file. If not supplied it defaults to a comma (,)&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--sep_output_file&quot;</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_single_character_arg</span><span class="p">,</span> <span class="n">arg_name</span><span class="o">=</span><span class="s2">&quot;--sep_output_file&quot;</span><span class="p">),</span>
         <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;A 1 character for indicating the delimiter for the output file. If not supplied it defaults to a comma (,)&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--sep_diagnostics_output_file&quot;</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_single_character_arg</span><span class="p">,</span> <span class="n">arg_name</span><span class="o">=</span><span class="s2">&quot;--sep_diagnostics_output_file&quot;</span><span class="p">),</span>
         <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;A 1 character for indicating the delimiter for the diagnostics output file. If not supplied it defaults to a comma (,)&quot;</span><span class="p">,</span>
