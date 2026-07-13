@@ -5,6 +5,7 @@
 - `BalanceDFOutcomes.relative_response_rates()` now accepts an explicit `relative_to={"self", "target"}` denominator selector while preserving the existing `target=` API.
 - The CLI now exposes IPW `penalty_factor` through `--penalty_factor`, accepting either comma-separated numbers or a JSON list and forwarding the parsed list into `Sample.adjust()`.
 - The CLI now validates `--transformations` at parse time, accepting only the supported `default` and `None` command-line modes.
+- `rake()` now accepts keyword-only `target_margins` dictionaries so callers with known marginal distributions can fit raking weights without first constructing a row-level target frame.
 
 ## Code Quality & Refactoring
 

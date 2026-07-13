@@ -558,6 +558,93 @@ class Testrake(
             pd.Series([1.67, 0.33] * 6, name="rake_weight").rename_axis("index"),
         )
 
+    def test_rake_accepts_target_margins_without_target_frame(self) -> None:
+        """Known marginal distributions can be passed directly to rake()."""
+
+        sample_df = pd.DataFrame(
+            {
+                "a": ["1", "2"] * 6,
+                "b": ["a"] * 6 + ["b"] * 6,
+            }
+        )
+        sample_weights = pd.Series([1.0] * 12)
+
+        adjusted = rake(
+            sample_df,
+            sample_weights,
+            None,
+            None,
+            target_margins={
+                "a": {"1": 10.0, "2": 2.0},
+                "b": {"a": 6.0, "b": 6.0},
+            },
+        )
+
+        self.assertEqual(
+            adjusted["weight"].round(2),
+            pd.Series([1.67, 0.33] * 6, name="rake_weight").rename_axis("index"),
+        )
+
+    def test_rake_requires_target_source(self) -> None:
+        """rake() requires either row-level target data or target_margins."""
+
+        with self.assertRaisesRegex(
+            ValueError, "Either target_df and target_weights, or target_margins"
+        ):
+            rake(
+                pd.DataFrame({"a": ["1", "2"], "b": ["x", "y"]}),
+                pd.Series([1.0, 1.0]),
+                None,
+                None,
+            )
+
+    def test_rake_target_margins_rejects_row_level_target_inputs(self) -> None:
+        """target_margins cannot be combined with row-level target inputs."""
+
+        with self.assertRaisesRegex(
+            ValueError, "Pass either target_margins or target_df/target_weights"
+        ):
+            rake(
+                pd.DataFrame({"a": ["1", "2"], "b": ["x", "y"]}),
+                pd.Series([1.0, 1.0]),
+                pd.DataFrame({"a": ["1", "2"], "b": ["x", "y"]}),
+                pd.Series([1.0, 1.0]),
+                target_margins={
+                    "a": {"1": 1.0, "2": 1.0},
+                    "b": {"x": 1.0, "y": 1.0},
+                },
+            )
+
+    def test_rake_target_margins_validation(self) -> None:
+        """target_margins validation catches malformed marginal definitions early."""
+
+        sample_df = pd.DataFrame({"a": ["1", "2"], "b": ["x", "y"]})
+        sample_weights = pd.Series([1.0, 1.0])
+        invalid_cases = [
+            ({}, "dict_of_dicts must be non-empty"),
+            ({"a": {}, "b": {"x": 1.0}}, "Variable 'a' must map"),
+            ({"a": {"1": True}, "b": {"x": 1.0}}, "not bool"),
+            ({"a": {"1": np.nan}, "b": {"x": 1.0}}, "finite"),
+            ({"a": {"1": np.inf}, "b": {"x": 1.0}}, "finite"),
+            ({"a": {"1": -1.0}, "b": {"x": 1.0}}, "non-negative"),
+            ({"a": {"1": 0.0}, "b": {"x": 0.0}}, "positive marginal totals"),
+            (
+                {"a": {"1": 1.0}, "b": {"x": 2.0}},
+                "same total weight",
+            ),
+        ]
+
+        for target_margins, expected_message in invalid_cases:
+            with self.subTest(target_margins=target_margins):
+                with self.assertRaisesRegex(ValueError, expected_message):
+                    rake(
+                        sample_df,
+                        sample_weights,
+                        None,
+                        None,
+                        target_margins=target_margins,
+                    )
+
     def test_rake_weight_trimming_applied(self) -> None:
         """Verify that rake forwards trimming arguments to the adjustment helper."""
 

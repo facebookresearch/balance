@@ -24,7 +24,6 @@ from balance.util import _safe_fillna_and_infer
 logger: logging.Logger = logging.getLogger(__package__)
 
 
-# TODO: Add options for only marginal distributions input
 def _run_ipf_numpy(
     original: np.ndarray,
     target_margins: List[np.ndarray],
@@ -112,11 +111,89 @@ def _run_ipf_numpy(
     return table, converged, iterations_df
 
 
+def _validate_dicts_of_proportions(
+    dict_of_dicts: Dict[str, Dict[str, float]],
+    value_label: str = "proportion",
+) -> Dict[str, float]:
+    """Validate nested marginal distributions and return per-variable totals."""
+    if not isinstance(dict_of_dicts, dict) or not dict_of_dicts:
+        raise ValueError("dict_of_dicts must be non-empty; got an empty dictionary.")
+
+    totals: Dict[str, float] = {}
+    for var_name, inner_dict in dict_of_dicts.items():
+        if not isinstance(var_name, str):
+            raise ValueError(
+                "Marginal distribution variable names must be strings; "
+                f"got {type(var_name).__name__}."
+            )
+        if not isinstance(inner_dict, dict) or not inner_dict:
+            raise ValueError(
+                f"Variable '{var_name}' must map to a non-empty dictionary of "
+                f"category {value_label}s."
+            )
+
+        total = 0.0
+        for cat_name, v in inner_dict.items():
+            if isinstance(v, bool) or not isinstance(v, numbers.Real):
+                raise ValueError(
+                    f"Variable '{var_name}', category '{cat_name}': {value_label} must be "
+                    f"a real number (not bool), got {type(v).__name__}."
+                )
+            try:
+                fv = float(v)
+            except (TypeError, OverflowError) as exc:
+                raise ValueError(
+                    f"Variable '{var_name}', category '{cat_name}': {value_label} must be "
+                    f"convertible to float, got {v!r}."
+                ) from exc
+            if math.isnan(fv) or math.isinf(fv):
+                raise ValueError(
+                    f"Variable '{var_name}', category '{cat_name}': {value_label} must be "
+                    f"finite, got {v}."
+                )
+            if fv < 0:
+                raise ValueError(
+                    f"Variable '{var_name}', category '{cat_name}': {value_label} must be "
+                    f"non-negative, got {v}."
+                )
+            total += fv
+        totals[var_name] = total
+
+    return totals
+
+
+def _target_frame_and_weights_from_margins(
+    target_margins: Dict[str, Dict[str, float]],
+    max_length: int,
+) -> Tuple[pd.DataFrame, pd.Series]:
+    """Convert known target marginal totals into rake's row-level target inputs."""
+    margin_totals = _validate_dicts_of_proportions(
+        target_margins, value_label="marginal total"
+    )
+    totals = list(margin_totals.values())
+    if any(total <= 0 for total in totals):
+        raise ValueError("target_margins must contain positive marginal totals.")
+    if not np.allclose(totals, totals[0]):
+        raise ValueError(
+            "All target_margins variables must have the same total weight."
+        )
+
+    target_dict_from_marginals = _realize_dicts_of_proportions(
+        target_margins, max_length=max_length, _skip_validation=True
+    )
+    target_df = pd.DataFrame.from_dict(target_dict_from_marginals)
+    target_weights = pd.Series(
+        np.repeat(totals[0] / target_df.shape[0], target_df.shape[0]),
+        index=target_df.index,
+    )
+    return target_df, target_weights
+
+
 def rake(
     sample_df: pd.DataFrame,
     sample_weights: pd.Series,
-    target_df: pd.DataFrame,
-    target_weights: pd.Series,
+    target_df: Optional[pd.DataFrame],
+    target_weights: Optional[pd.Series],
     variables: Union[List[str], None] = None,
     transformations: Union[Dict[str, Callable[..., Any]], str, None] = "default",
     na_action: str = "add_indicator",
@@ -128,6 +205,8 @@ def rake(
     keep_sum_of_weights: bool = True,
     *args: Any,
     store_fit_metadata: bool = False,
+    target_margins: Optional[Dict[str, Dict[str, float]]] = None,
+    target_margins_max_length: int = 10000,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """
@@ -141,6 +220,13 @@ def rake(
     sample_weights --- (pandas series) design weights for sample.
     target_df ---  (pandas dataframe) a dataframe representing the target.
     target_weights --- (pandas series) design weights for target.
+    target_margins --- (dict, optional, keyword-only) known target marginal
+                       distributions by variable and category. When provided,
+                       pass ``target_df=None`` and ``target_weights=None``;
+                       the margins are realized into a synthetic target frame.
+    target_margins_max_length --- (int, optional, keyword-only) maximum number
+                                  of synthetic target rows used when
+                                  target_margins is provided.
     variables ---  (list of strings) list of variables to include in the model.
                    If None all joint variables of sample_df and target_df are used.
     transformations --- (dict) what transformations to apply to data before fitting the model.
@@ -217,6 +303,18 @@ def rake(
         # [1.0, 1.0]
     """
     balance_util._check_weighting_methods_input(sample_df, sample_weights, "sample")
+    if target_margins is not None:
+        if target_df is not None or target_weights is not None:
+            raise ValueError(
+                "Pass either target_margins or target_df/target_weights, not both."
+            )
+        target_df, target_weights = _target_frame_and_weights_from_margins(
+            target_margins, target_margins_max_length
+        )
+    if target_df is None and target_weights is None:
+        raise ValueError(
+            "Either target_df and target_weights, or target_margins, must be provided."
+        )
     balance_util._check_weighting_methods_input(target_df, target_weights, "target")
     if "weight" in sample_df.columns.values:
         raise ValueError("weight shouldn't be a name for covariate in the sample data")
@@ -635,8 +733,8 @@ def _resolve_rake_sample_weights(
 def _apply_rake_predict_na_action(
     sample_df: pd.DataFrame,
     sample_weights: pd.Series,
-    target_df: pd.DataFrame,
-    target_weights: pd.Series,
+    target_df: Optional[pd.DataFrame],
+    target_weights: Optional[pd.Series],
     na_action: str,
 ) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame, Optional[pd.Series]]:
     """Apply rake's stored NA policy to scoring frames."""
@@ -722,8 +820,8 @@ def _predict_weights_from_model(
     model: dict[str, Any],
     sample_df: pd.DataFrame,
     sample_weights_full: pd.Series,
-    target_df: pd.DataFrame,
-    target_weights: pd.Series,
+    target_df: Optional[pd.DataFrame],
+    target_weights: Optional[pd.Series],
     is_transfer: bool,
 ) -> pd.Series:
     """Reconstruct rake weights from a stored fit-time model dict.
@@ -999,6 +1097,7 @@ def _find_lcm_of_array_lengths(arrays: Dict[str, List[str]]) -> int:
 def _realize_dicts_of_proportions(
     dict_of_dicts: Dict[str, Dict[str, float]],
     max_length: int = 10000,
+    _skip_validation: bool = False,
 ) -> Dict[str, List[str]]:
     """
     Generates proportional arrays of equal length for each input dictionary.
@@ -1061,35 +1160,11 @@ def _realize_dicts_of_proportions(
         or max_length < 1
     ):
         raise ValueError(f"max_length must be a positive integer, got {max_length!r}.")
-    if not dict_of_dicts:
-        raise ValueError("dict_of_dicts must be non-empty; got an empty dictionary.")
     # Validate all inner proportion values before any float coercion so that
     # invalid inputs (bool, NaN, inf, negative) are always caught and reported
     # with the variable name, regardless of whether the LCM-capping path is taken.
-    for var_name, inner_dict in dict_of_dicts.items():
-        for cat_name, v in inner_dict.items():
-            if isinstance(v, bool) or not isinstance(v, numbers.Real):
-                raise ValueError(
-                    f"Variable '{var_name}', category '{cat_name}': proportion must be "
-                    f"a real number (not bool), got {type(v).__name__}."
-                )
-            try:
-                fv = float(v)
-            except (TypeError, OverflowError) as exc:
-                raise ValueError(
-                    f"Variable '{var_name}', category '{cat_name}': proportion must be "
-                    f"convertible to float, got {v!r}."
-                ) from exc
-            if math.isnan(fv) or math.isinf(fv):
-                raise ValueError(
-                    f"Variable '{var_name}', category '{cat_name}': proportion must be "
-                    f"finite, got {v}."
-                )
-            if fv < 0:
-                raise ValueError(
-                    f"Variable '{var_name}', category '{cat_name}': proportion must be "
-                    f"non-negative, got {v}."
-                )
+    if not _skip_validation:
+        _validate_dicts_of_proportions(dict_of_dicts)
     # Generate proportional arrays for each dictionary.  We pass max_length so
     # that the per-variable array length is roughly bounded, but individual arrays
     # can still exceed max_length when there are many small-weight categories that
