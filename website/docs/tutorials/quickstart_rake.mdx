@@ -31,8 +31,8 @@ sample_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
 adjusted = rake(
     sample_df,
     sample_weights,
-    None,
-    None,
+    target_df=None,
+    target_weights=None,
     target_margins={
         "gender": {"F": 60.0, "M": 40.0},
         "region": {"N": 50.0, "S": 50.0},

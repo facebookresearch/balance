@@ -585,6 +585,31 @@ class Testrake(
             pd.Series([1.67, 0.33] * 6, name="rake_weight").rename_axis("index"),
         )
 
+    def test_rake_target_margins_accepts_nan_category_label(self) -> None:
+        """target_margins supports non-string category labels such as NaN."""
+
+        sample_df = pd.DataFrame(
+            {
+                "segment": ["known", np.nan, "known", np.nan],
+                "region": ["N", "N", "S", "S"],
+            }
+        )
+        sample_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+
+        adjusted = rake(
+            sample_df,
+            sample_weights,
+            target_df=None,
+            target_weights=None,
+            target_margins={
+                "segment": {"known": 75.0, np.nan: 25.0},
+                "region": {"N": 50.0, "S": 50.0},
+            },
+        )
+
+        self.assertEqual(round(float(adjusted["weight"].sum()), 6), 100.0)
+        self.assertFalse(adjusted["weight"].isna().any())
+
     def test_rake_requires_target_source(self) -> None:
         """rake() requires either row-level target data or target_margins."""
 

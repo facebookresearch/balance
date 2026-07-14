@@ -14,7 +14,18 @@ import numbers
 import pickle
 from fractions import Fraction
 from functools import reduce
-from typing import Any, Callable, cast, Dict, List, NamedTuple, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    cast,
+    Dict,
+    Hashable,
+    List,
+    Mapping,
+    NamedTuple,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 import pandas as pd
@@ -112,13 +123,13 @@ def _run_ipf_numpy(
 
 
 def _validate_dicts_of_proportions(
-    dict_of_dicts: Dict[str, Dict[str, float]],
+    dict_of_dicts: Mapping[str, Mapping[Hashable, float]],
     value_label: str = "proportion",
 ) -> Dict[str, float]:
     """Validate nested marginal distributions and return per-variable totals.
 
     Args:
-        dict_of_dicts: Nested dictionary whose outer keys are variable names and
+        dict_of_dicts: Nested mapping whose outer keys are variable names and
             whose inner dictionaries map category labels to non-negative, finite
             real-valued amounts. Values may be proportions or totals depending
             on the caller.
@@ -197,13 +208,13 @@ def _marginal_category_presence_key(value: Any) -> str:
 
 
 def _target_frame_and_weights_from_margins(
-    target_margins: Dict[str, Dict[str, float]],
+    target_margins: Mapping[str, Mapping[Hashable, float]],
     max_length: int,
 ) -> Tuple[pd.DataFrame, pd.Series]:
     """Convert known target marginal totals into rake's row-level target inputs.
 
     Args:
-        target_margins: Nested dictionary of target marginal totals. Outer keys
+        target_margins: Nested mapping of target marginal totals. Outer keys
             are variable names, inner keys are category labels, and inner values
             are non-negative target weights. All variables must sum to the same
             positive total.
@@ -283,7 +294,7 @@ def rake(
     keep_sum_of_weights: bool = True,
     *args: Any,
     store_fit_metadata: bool = False,
-    target_margins: Dict[str, Dict[str, float]] | None = None,
+    target_margins: Mapping[str, Mapping[Hashable, float]] | None = None,
     target_margins_max_length: int = 10000,
     **kwargs: Any,
 ) -> Dict[str, Any]:
@@ -298,7 +309,7 @@ def rake(
     sample_weights --- (pandas series) design weights for sample.
     target_df ---  (pandas dataframe) a dataframe representing the target.
     target_weights --- (pandas series) design weights for target.
-    target_margins --- (dict, optional, keyword-only) known target marginal
+    target_margins --- (mapping, optional, keyword-only) known target marginal
                        totals by variable and category. Each inner dictionary
                        maps category labels to non-negative target weights,
                        and every variable must sum to the same positive total.
@@ -395,8 +406,8 @@ def rake(
         result = rake(
             sample_df,
             sample_weights,
-            None,
-            None,
+            target_df=None,
+            target_weights=None,
             target_margins={
                 "gender": {"Female": 60.0, "Male": 40.0},
                 "age_group": {"18-24": 50.0, "25-34": 25.0, "45+": 25.0},
@@ -1056,17 +1067,17 @@ def _lcm(a: int, b: int) -> int:
 
 
 def _proportional_array_from_dict(
-    input_dict: Dict[str, float], max_length: int = 10000
-) -> List[str]:
+    input_dict: Mapping[Hashable, float], max_length: int = 10000
+) -> List[Hashable]:
     """
     Generates a proportional array based on the input dictionary.
 
     Args:
-        input_dict (Dict[str, float]): A dictionary where keys are strings and values are their proportions (float).
+        input_dict: A mapping where keys are hashable category labels and values are their proportions (float).
         max_length (int): check if the length of the output exceeds the max_length. If it does, it will be scaled down to that length. Default is 10k.
 
     Returns:
-        A list of strings where each key is repeated according to its proportion.
+        A list where each category label is repeated according to its proportion.
 
     Examples:
     .. code-block:: python
@@ -1114,9 +1125,9 @@ def _proportional_array_from_dict(
 
 
 def _hare_niemeyer_allocation(
-    proportions: Dict[str, float],
+    proportions: Mapping[Hashable, float],
     n: int,
-) -> List[str]:
+) -> List[Hashable]:
     """Allocate *n* slots to categories using the Hare-Niemeyer (largest-remainder) method.
 
     This avoids rounding bias by first assigning floor counts then distributing
@@ -1139,7 +1150,7 @@ def _hare_niemeyer_allocation(
     Returns:
         A list of length *n* with each label repeated according to its allocated
         count.  Ties in fractional remainders are broken deterministically by
-        category label (alphabetical).
+        category label representation.
 
     Examples:
         >>> _hare_niemeyer_allocation({"a": 0.2, "b": 0.8}, 5)
@@ -1163,26 +1174,26 @@ def _hare_niemeyer_allocation(
     remaining = n - sum(floors.values())
     sorted_keys = sorted(
         ideals.keys(),
-        key=lambda k: (-(ideals[k] - floors[k]), k),
+        key=lambda k: (-(ideals[k] - floors[k]), repr(k)),
     )
     counts = dict(floors)
     for i in range(int(remaining)):
         counts[sorted_keys[i]] += 1
 
     # Build result preserving original dict insertion order
-    result: List[str] = []
+    result: List[Hashable] = []
     for k in proportions:
         if k in counts:
             result.extend([k] * counts[k])
     return result
 
 
-def _find_lcm_of_array_lengths(arrays: Dict[str, List[str]]) -> int:
+def _find_lcm_of_array_lengths(arrays: Dict[str, List[Hashable]]) -> int:
     """
     Finds the least common multiple (LCM) of the lengths of arrays in the input dictionary.
 
     Args:
-        arrays: A dictionary where keys are strings and values are lists of strings.
+        arrays: A dictionary where keys are strings and values are lists of category labels.
 
     Returns:
         The LCM of the lengths of the arrays in the input dictionary.
@@ -1211,10 +1222,10 @@ def _find_lcm_of_array_lengths(arrays: Dict[str, List[str]]) -> int:
 
 
 def _realize_dicts_of_proportions(
-    dict_of_dicts: Dict[str, Dict[str, float]],
+    dict_of_dicts: Mapping[str, Mapping[Hashable, float]],
     max_length: int = 10000,
     _skip_validation: bool = False,
-) -> Dict[str, List[str]]:
+) -> Dict[str, List[Hashable]]:
     """
     Generates proportional arrays of equal length for each input dictionary.
 
@@ -1222,8 +1233,8 @@ def _realize_dicts_of_proportions(
     It can be used as input to the Sample object so it could be used for running raking.
 
     Args:
-        dict_of_dicts: A dictionary of dictionaries, where each key is a string and
-                   each value is a dictionary with keys as strings and values as their
+        dict_of_dicts: A mapping of dictionaries, where each key is a string and
+                   each value is a dictionary with hashable category labels as keys and values as their
                    proportions as real-valued numeric types implementing ``numbers.Real``
                    (e.g., Python floats, NumPy or pandas scalar types).
         max_length: Maximum number of rows in the output arrays. When the least
@@ -1328,7 +1339,7 @@ def _realize_dicts_of_proportions(
 
 
 def prepare_marginal_dist_for_raking(
-    dict_of_dicts: Dict[str, Dict[str, float]],
+    dict_of_dicts: Mapping[str, Mapping[Hashable, float]],
     max_length: int = 10000,
 ) -> pd.DataFrame:
     """
