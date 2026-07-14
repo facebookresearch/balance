@@ -641,6 +641,51 @@ class Testrake(
                 },
             )
 
+    def test_rake_target_margins_max_length_validation(self) -> None:
+        """target_margins_max_length errors should name the public parameter."""
+
+        with self.assertRaisesRegex(
+            ValueError, "target_margins_max_length must be a positive integer"
+        ):
+            rake(
+                pd.DataFrame({"a": ["1", "2"], "b": ["x", "y"]}),
+                pd.Series([1.0, 1.0]),
+                None,
+                None,
+                target_margins={
+                    "a": {"1": 1.0, "2": 1.0},
+                    "b": {"x": 1.0, "y": 1.0},
+                },
+                target_margins_max_length=0,
+            )
+
+    def test_rake_target_margins_errors_when_realization_drops_positive_category(
+        self,
+    ) -> None:
+        """Small positive target categories need enough synthetic rows to survive."""
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "target_margins realization dropped positive categories.*Increase "
+            "target_margins_max_length",
+        ):
+            rake(
+                pd.DataFrame(
+                    {
+                        "a": ["common", "rare"],
+                        "b": ["x", "x"],
+                    }
+                ),
+                pd.Series([1.0, 1.0]),
+                None,
+                None,
+                target_margins={
+                    "a": {"common": 999.0, "rare": 1.0},
+                    "b": {"x": 1000.0},
+                },
+                target_margins_max_length=1,
+            )
+
     def test_rake_target_margins_validation(self) -> None:
         """target_margins validation catches malformed marginal definitions early."""
 

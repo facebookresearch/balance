@@ -14,7 +14,7 @@ import numbers
 import pickle
 from fractions import Fraction
 from functools import reduce
-from typing import Any, Callable, cast, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Any, Callable, cast, Dict, List, NamedTuple, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -115,7 +115,29 @@ def _validate_dicts_of_proportions(
     dict_of_dicts: Dict[str, Dict[str, float]],
     value_label: str = "proportion",
 ) -> Dict[str, float]:
-    """Validate nested marginal distributions and return per-variable totals."""
+    """Validate nested marginal distributions and return per-variable totals.
+
+    Args:
+        dict_of_dicts: Nested dictionary whose outer keys are variable names and
+            whose inner dictionaries map category labels to non-negative, finite
+            real-valued amounts. Values may be proportions or totals depending
+            on the caller.
+        value_label: Human-readable name for values in error messages. Use this
+            to distinguish generic proportions from target marginal totals.
+
+    Returns:
+        A dictionary mapping each variable name to the sum of its inner values,
+        coerced to ``float``.
+
+    Raises:
+        ValueError: If the input is not a non-empty dictionary of non-empty
+            dictionaries, if variable names are not strings, or if any value is
+            boolean, non-real, NaN, infinite, or negative.
+
+    Examples:
+        >>> _validate_dicts_of_proportions({"gender": {"F": 60, "M": 40}})
+        {'gender': 100.0}
+    """
     if not isinstance(dict_of_dicts, dict):
         raise ValueError(
             "dict_of_dicts must be a dictionary of dictionaries; "
@@ -167,11 +189,45 @@ def _validate_dicts_of_proportions(
     return totals
 
 
+def _marginal_category_presence_key(value: Any) -> str:
+    """Return a stable key for checking realized target-margin categories."""
+    if pd.isna(value):
+        return "__NaN__"
+    return str(value)
+
+
 def _target_frame_and_weights_from_margins(
     target_margins: Dict[str, Dict[str, float]],
     max_length: int,
 ) -> Tuple[pd.DataFrame, pd.Series]:
-    """Convert known target marginal totals into rake's row-level target inputs."""
+    """Convert known target marginal totals into rake's row-level target inputs.
+
+    Args:
+        target_margins: Nested dictionary of target marginal totals. Outer keys
+            are variable names, inner keys are category labels, and inner values
+            are non-negative target weights. All variables must sum to the same
+            positive total.
+        max_length: Maximum number of synthetic target rows to realize. Larger
+            values preserve small positive categories more faithfully.
+
+    Returns:
+        A tuple ``(target_df, target_weights)`` suitable for passing through the
+        existing row-level rake implementation. The returned weights sum to the
+        common target-marginal total supplied in ``target_margins``.
+
+    Raises:
+        ValueError: If validation fails, marginal totals are not positive and
+            equal, ``max_length`` is invalid, or realization would drop a
+            positive target category.
+
+    Examples:
+        >>> target_df, target_weights = _target_frame_and_weights_from_margins(
+        ...     {"gender": {"F": 60, "M": 40}, "region": {"N": 50, "S": 50}},
+        ...     max_length=100,
+        ... )
+        >>> float(target_weights.sum())
+        100.0
+    """
     margin_totals = _validate_dicts_of_proportions(
         target_margins, value_label="marginal total"
     )
@@ -187,6 +243,23 @@ def _target_frame_and_weights_from_margins(
         target_margins, max_length=max_length, _skip_validation=True
     )
     target_df = pd.DataFrame.from_dict(target_dict_from_marginals)
+    for variable, categories in target_margins.items():
+        positive_categories = {
+            _marginal_category_presence_key(category)
+            for category, total in categories.items()
+            if float(total) > 0
+        }
+        realized_categories = {
+            _marginal_category_presence_key(category)
+            for category in target_df[variable].unique()
+        }
+        missing_categories = positive_categories - realized_categories
+        if missing_categories:
+            raise ValueError(
+                "target_margins realization dropped positive categories for "
+                f"variable '{variable}': {missing_categories}. Increase "
+                "target_margins_max_length to preserve small positive categories."
+            )
     target_weights = pd.Series(
         np.repeat(totals[0] / target_df.shape[0], target_df.shape[0]),
         index=target_df.index,
@@ -197,8 +270,8 @@ def _target_frame_and_weights_from_margins(
 def rake(
     sample_df: pd.DataFrame,
     sample_weights: pd.Series,
-    target_df: Optional[pd.DataFrame],
-    target_weights: Optional[pd.Series],
+    target_df: pd.DataFrame | None,
+    target_weights: pd.Series | None,
     variables: Union[List[str], None] = None,
     transformations: Union[Dict[str, Callable[..., Any]], str, None] = "default",
     na_action: str = "add_indicator",
@@ -210,7 +283,7 @@ def rake(
     keep_sum_of_weights: bool = True,
     *args: Any,
     store_fit_metadata: bool = False,
-    target_margins: Optional[Dict[str, Dict[str, float]]] = None,
+    target_margins: Dict[str, Dict[str, float]] | None = None,
     target_margins_max_length: int = 10000,
     **kwargs: Any,
 ) -> Dict[str, Any]:
@@ -308,12 +381,44 @@ def rake(
         result = rake(sample_df, sample_weights, target_df, target_weights, variables=["x"])
         result["weight"].tolist()
         # [1.0, 1.0]
+
+        # The same API can fit from known marginal target totals without a
+        # row-level target frame. All variables in target_margins must sum to
+        # the same total target weight.
+        sample_df = pd.DataFrame(
+            {
+                "gender": ["Female", "Male", "Male", "Female"],
+                "age_group": ["18-24", "18-24", "25-34", "45+"],
+            }
+        )
+        sample_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+        result = rake(
+            sample_df,
+            sample_weights,
+            None,
+            None,
+            target_margins={
+                "gender": {"Female": 60.0, "Male": 40.0},
+                "age_group": {"18-24": 50.0, "25-34": 25.0, "45+": 25.0},
+            },
+        )
+        round(float(result["weight"].sum()), 6)
+        # 100.0
     """
     balance_util._check_weighting_methods_input(sample_df, sample_weights, "sample")
     if target_margins is not None:
         if target_df is not None or target_weights is not None:
             raise ValueError(
                 "Pass either target_margins or target_df/target_weights, not both."
+            )
+        if (
+            isinstance(target_margins_max_length, bool)
+            or not isinstance(target_margins_max_length, int)
+            or target_margins_max_length < 1
+        ):
+            raise ValueError(
+                "target_margins_max_length must be a positive integer, "
+                f"got {target_margins_max_length!r}."
             )
         target_df, target_weights = _target_frame_and_weights_from_margins(
             target_margins, target_margins_max_length
@@ -324,9 +429,9 @@ def rake(
         )
     if target_df is None or target_weights is None:
         raise ValueError("target_df and target_weights must be provided together.")
-    target_df = cast(pd.DataFrame, target_df)
-    target_weights = cast(pd.Series, target_weights)
     balance_util._check_weighting_methods_input(target_df, target_weights, "target")
+    target_df = balance_util._assert_type(target_df, pd.DataFrame)
+    target_weights = balance_util._assert_type(target_weights, pd.Series)
     if "weight" in sample_df.columns.values:
         raise ValueError("weight shouldn't be a name for covariate in the sample data")
     if "weight" in target_df.columns.values:
@@ -747,7 +852,7 @@ def _apply_rake_predict_na_action(
     target_df: pd.DataFrame,
     target_weights: pd.Series,
     na_action: str,
-) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame, Optional[pd.Series]]:
+) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series | None]:
     """Apply rake's stored NA policy to scoring frames."""
     if na_action == "drop":
         sample_clean, sample_weights_clean = balance_util.drop_na_rows(
@@ -793,7 +898,7 @@ def _rake_predict_code_index(
 def _rake_target_sum(
     model: dict[str, Any],
     target_weights: pd.Series,
-    dropped_target_weights: Optional[pd.Series],
+    dropped_target_weights: pd.Series | None,
     na_action: str,
     is_transfer: bool,
 ) -> float:
