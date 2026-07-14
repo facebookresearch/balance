@@ -159,10 +159,10 @@ class Testrake(
             pd.Series((1,) * n_rows),
         )
 
-        # Must pass weights for target
+        # Must pass target data and weights together
         self._assert_rake_raises_with_message(
-            "target_weights must be a pandas Series",
-            TypeError,
+            "target_df and target_weights must be provided together",
+            ValueError,
             sample[["a", "b"]],
             pd.Series((1,) * n_rows),
             target[["a", "b"]],
@@ -598,6 +598,32 @@ class Testrake(
                 None,
             )
 
+    def test_rake_requires_target_frame_and_weights_together(self) -> None:
+        """target_df and target_weights must be supplied as a pair."""
+
+        sample_df = pd.DataFrame({"a": ["1", "2"], "b": ["x", "y"]})
+        sample_weights = pd.Series([1.0, 1.0])
+
+        with self.assertRaisesRegex(
+            ValueError, "target_df and target_weights must be provided together"
+        ):
+            rake(
+                sample_df,
+                sample_weights,
+                pd.DataFrame({"a": ["1", "2"], "b": ["x", "y"]}),
+                None,
+            )
+
+        with self.assertRaisesRegex(
+            ValueError, "target_df and target_weights must be provided together"
+        ):
+            rake(
+                sample_df,
+                sample_weights,
+                None,
+                pd.Series([1.0, 1.0]),
+            )
+
     def test_rake_target_margins_rejects_row_level_target_inputs(self) -> None:
         """target_margins cannot be combined with row-level target inputs."""
 
@@ -621,6 +647,7 @@ class Testrake(
         sample_df = pd.DataFrame({"a": ["1", "2"], "b": ["x", "y"]})
         sample_weights = pd.Series([1.0, 1.0])
         invalid_cases = [
+            ([], "dict_of_dicts must be a dictionary of dictionaries"),
             ({}, "dict_of_dicts must be non-empty"),
             ({"a": {}, "b": {"x": 1.0}}, "Variable 'a' must map"),
             ({"a": {"1": True}, "b": {"x": 1.0}}, "not bool"),

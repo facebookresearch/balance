@@ -116,7 +116,12 @@ def _validate_dicts_of_proportions(
     value_label: str = "proportion",
 ) -> Dict[str, float]:
     """Validate nested marginal distributions and return per-variable totals."""
-    if not isinstance(dict_of_dicts, dict) or not dict_of_dicts:
+    if not isinstance(dict_of_dicts, dict):
+        raise ValueError(
+            "dict_of_dicts must be a dictionary of dictionaries; "
+            f"got {type(dict_of_dicts).__name__}."
+        )
+    if not dict_of_dicts:
         raise ValueError("dict_of_dicts must be non-empty; got an empty dictionary.")
 
     totals: Dict[str, float] = {}
@@ -221,8 +226,10 @@ def rake(
     target_df ---  (pandas dataframe) a dataframe representing the target.
     target_weights --- (pandas series) design weights for target.
     target_margins --- (dict, optional, keyword-only) known target marginal
-                       distributions by variable and category. When provided,
-                       pass ``target_df=None`` and ``target_weights=None``;
+                       totals by variable and category. Each inner dictionary
+                       maps category labels to non-negative target weights,
+                       and every variable must sum to the same positive total.
+                       Pass ``target_df=None`` and ``target_weights=None``;
                        the margins are realized into a synthetic target frame.
     target_margins_max_length --- (int, optional, keyword-only) maximum number
                                   of synthetic target rows used when
@@ -315,6 +322,10 @@ def rake(
         raise ValueError(
             "Either target_df and target_weights, or target_margins, must be provided."
         )
+    if target_df is None or target_weights is None:
+        raise ValueError("target_df and target_weights must be provided together.")
+    target_df = cast(pd.DataFrame, target_df)
+    target_weights = cast(pd.Series, target_weights)
     balance_util._check_weighting_methods_input(target_df, target_weights, "target")
     if "weight" in sample_df.columns.values:
         raise ValueError("weight shouldn't be a name for covariate in the sample data")
@@ -733,8 +744,8 @@ def _resolve_rake_sample_weights(
 def _apply_rake_predict_na_action(
     sample_df: pd.DataFrame,
     sample_weights: pd.Series,
-    target_df: Optional[pd.DataFrame],
-    target_weights: Optional[pd.Series],
+    target_df: pd.DataFrame,
+    target_weights: pd.Series,
     na_action: str,
 ) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame, Optional[pd.Series]]:
     """Apply rake's stored NA policy to scoring frames."""
@@ -820,8 +831,8 @@ def _predict_weights_from_model(
     model: dict[str, Any],
     sample_df: pd.DataFrame,
     sample_weights_full: pd.Series,
-    target_df: Optional[pd.DataFrame],
-    target_weights: Optional[pd.Series],
+    target_df: pd.DataFrame,
+    target_weights: pd.Series,
     is_transfer: bool,
 ) -> pd.Series:
     """Reconstruct rake weights from a stored fit-time model dict.
