@@ -204,7 +204,7 @@ def _marginal_category_presence_key(value: Any) -> str:
     """Return a stable key for checking realized target-margin categories."""
     if pd.isna(value):
         return "__NaN__"
-    return str(value)
+    return repr(value)
 
 
 def _target_frame_and_weights_from_margins(
