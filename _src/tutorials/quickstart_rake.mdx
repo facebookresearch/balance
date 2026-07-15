@@ -11,4 +11,40 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 Link to notebook: [balance_quickstart_rake.ipynb](https://github.com/facebookresearch/balance/blob/main/tutorials/balance_quickstart_rake.ipynb)
 
+## Raking from known marginal totals
+
+If you already have target marginal totals rather than row-level target data,
+`rake()` can build the synthetic target input for you via `target_margins`.
+Each variable's dictionary must sum to the same positive target total. For
+example:
+
+```python
+import pandas as pd
+from balance.weighting_methods.rake import rake
+
+sample_df = pd.DataFrame({
+    "gender": ["F", "M", "M", "F"],
+    "region": ["N", "N", "S", "S"],
+})
+sample_weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+
+adjusted = rake(
+    sample_df,
+    sample_weights,
+    target_df=None,
+    target_weights=None,
+    target_margins={
+        "gender": {"F": 60.0, "M": 40.0},
+        "region": {"N": 50.0, "S": 50.0},
+    },
+)
+
+# The fitted weights are rescaled to the common target total (60 + 40 = 100).
+round(float(adjusted["weight"].sum()), 6)
+# 100.0
+```
+
+Use a larger `target_margins_max_length` when very small positive categories
+need more synthetic rows to be represented.
+
 <HTMLLoader docFile={useBaseUrl('html/tutorials/balance_quickstart_rake.html')}/>

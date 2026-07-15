@@ -44,6 +44,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">collections.abc</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
@@ -51,7 +52,18 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">fractions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Fraction</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">reduce</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">cast</span><span class="p">,</span>
+    <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">Hashable</span><span class="p">,</span>
+    <span class="n">List</span><span class="p">,</span>
+    <span class="n">Mapping</span><span class="p">,</span>
+    <span class="n">NamedTuple</span><span class="p">,</span>
+    <span class="n">Tuple</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
@@ -61,7 +73,6 @@
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
 
 
-<span class="c1"># TODO: Add options for only marginal distributions input</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_run_ipf_numpy</span><span class="p">(</span>
     <span class="n">original</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">target_margins</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
@@ -149,13 +160,222 @@
     <span class="k">return</span> <span class="n">table</span><span class="p">,</span> <span class="n">converged</span><span class="p">,</span> <span class="n">iterations_df</span>
 
 
+<span class="c1"># Inner category-label keys below are typed ``Any`` rather than ``Hashable``:</span>
+<span class="c1"># ``Mapping``&#39;s key type is invariant, so ``Mapping[Hashable, float]`` rejects the</span>
+<span class="c1"># ordinary ``dict[str, float]`` / ``dict[int, float]`` arguments callers pass.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_validate_dicts_of_proportions</span><span class="p">(</span>
+    <span class="n">dict_of_dicts</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+    <span class="n">value_label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;proportion&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate nested marginal distributions and return per-variable totals.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dict_of_dicts: Nested mapping whose outer keys are variable names and</span>
+<span class="sd">            whose inner dictionaries map category labels to non-negative, finite</span>
+<span class="sd">            real-valued amounts. Values may be proportions or totals depending</span>
+<span class="sd">            on the caller.</span>
+<span class="sd">        value_label: Human-readable name for values in error messages. Use this</span>
+<span class="sd">            to distinguish generic proportions from target marginal totals.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A dictionary mapping each variable name to the sum of its inner values,</span>
+<span class="sd">        coerced to ``float``.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the input is not a non-empty mapping of non-empty</span>
+<span class="sd">            mappings, if variable names are not strings, or if any value is</span>
+<span class="sd">            boolean, non-real, NaN, infinite, or negative.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; _validate_dicts_of_proportions({&quot;gender&quot;: {&quot;F&quot;: 60, &quot;M&quot;: 40}})</span>
+<span class="sd">        {&#39;gender&#39;: 100.0}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dict_of_dicts</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;dict_of_dicts must be a dictionary of dictionaries; &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">dict_of_dicts</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">dict_of_dicts</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;dict_of_dicts must be non-empty; got an empty dictionary.&quot;</span><span class="p">)</span>
+
+    <span class="n">totals</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">var_name</span><span class="p">,</span> <span class="n">inner_dict</span> <span class="ow">in</span> <span class="n">dict_of_dicts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Marginal distribution variable names must be strings; &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">var_name</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inner_dict</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">inner_dict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Variable &#39;</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">&#39; must map to a non-empty dictionary of &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;category </span><span class="si">{</span><span class="n">value_label</span><span class="si">}</span><span class="s2">s.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">total</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">cat_name</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">inner_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Real</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Variable &#39;</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">&#39;, category &#39;</span><span class="si">{</span><span class="n">cat_name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">value_label</span><span class="si">}</span><span class="s2"> must be &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;a real number (not bool), got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">fv</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">OverflowError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Variable &#39;</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">&#39;, category &#39;</span><span class="si">{</span><span class="n">cat_name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">value_label</span><span class="si">}</span><span class="s2"> must be &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;convertible to float, got </span><span class="si">{</span><span class="n">v</span><span class="si">!r}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+            <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">fv</span><span class="p">)</span> <span class="ow">or</span> <span class="n">math</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">fv</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Variable &#39;</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">&#39;, category &#39;</span><span class="si">{</span><span class="n">cat_name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">value_label</span><span class="si">}</span><span class="s2"> must be &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;finite, got </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">fv</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Variable &#39;</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">&#39;, category &#39;</span><span class="si">{</span><span class="n">cat_name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">value_label</span><span class="si">}</span><span class="s2"> must be &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;non-negative, got </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+            <span class="n">total</span> <span class="o">+=</span> <span class="n">fv</span>
+        <span class="n">totals</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">total</span>
+
+    <span class="k">return</span> <span class="n">totals</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_stable_value_key</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a stable, comparable string key for a value.</span>
+
+<span class="sd">    Missing values (``NaN``/``None``/``NaT``) map to the ``&quot;__NaN__&quot;`` sentinel;</span>
+<span class="sd">    every other value maps to its ``repr``. This yields keys that compare</span>
+<span class="sd">    reliably across containers even when the raw values do not (for example,</span>
+<span class="sd">    ``NaN`` never equals itself).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;__NaN__&quot;</span>
+    <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_target_frame_and_weights_from_margins</span><span class="p">(</span>
+    <span class="n">target_margins</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+    <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert known target marginal totals into rake&#39;s row-level target inputs.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        target_margins: Nested mapping of target marginal totals. Outer keys</span>
+<span class="sd">            are variable names, inner keys are category labels, and inner values</span>
+<span class="sd">            are non-negative target weights. All variables must sum to the same</span>
+<span class="sd">            positive total.</span>
+<span class="sd">        max_length: Maximum number of synthetic target rows to realize. Larger</span>
+<span class="sd">            values preserve small positive categories more faithfully.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A tuple ``(target_df, target_weights)`` suitable for passing through the</span>
+<span class="sd">        existing row-level rake implementation. The returned weights sum to the</span>
+<span class="sd">        common target-marginal total supplied in ``target_margins``.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If validation fails, marginal totals are not positive and</span>
+<span class="sd">            equal, ``max_length`` is invalid, or realization would drop a</span>
+<span class="sd">            positive target category.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; target_df, target_weights = _target_frame_and_weights_from_margins(</span>
+<span class="sd">        ...     {&quot;gender&quot;: {&quot;F&quot;: 60, &quot;M&quot;: 40}, &quot;region&quot;: {&quot;N&quot;: 50, &quot;S&quot;: 50}},</span>
+<span class="sd">        ...     max_length=100,</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; float(target_weights.sum())</span>
+<span class="sd">        100.0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">margin_totals</span> <span class="o">=</span> <span class="n">_validate_dicts_of_proportions</span><span class="p">(</span>
+        <span class="n">target_margins</span><span class="p">,</span> <span class="n">value_label</span><span class="o">=</span><span class="s2">&quot;marginal total&quot;</span>
+    <span class="p">)</span>
+    <span class="n">totals</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">margin_totals</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">total</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">total</span> <span class="ow">in</span> <span class="n">totals</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;target_margins must contain positive marginal totals.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">totals</span><span class="p">,</span> <span class="n">totals</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;All target_margins variables must have the same total weight.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">target_dict_from_marginals</span> <span class="o">=</span> <span class="n">_realize_dicts_of_proportions</span><span class="p">(</span>
+        <span class="n">target_margins</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="n">max_length</span><span class="p">,</span> <span class="n">_skip_validation</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+    <span class="n">target_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">target_dict_from_marginals</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">variable</span><span class="p">,</span> <span class="n">categories</span> <span class="ow">in</span> <span class="n">target_margins</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">positive_categories</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">_stable_value_key</span><span class="p">(</span><span class="n">category</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">category</span><span class="p">,</span> <span class="n">total</span> <span class="ow">in</span> <span class="n">categories</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">total</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="p">}</span>
+        <span class="n">realized_categories</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">_stable_value_key</span><span class="p">(</span><span class="n">category</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">category</span> <span class="ow">in</span> <span class="n">target_dict_from_marginals</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span>
+        <span class="p">}</span>
+        <span class="n">missing_categories</span> <span class="o">=</span> <span class="n">positive_categories</span> <span class="o">-</span> <span class="n">realized_categories</span>
+        <span class="k">if</span> <span class="n">missing_categories</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;target_margins realization dropped positive categories for &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;variable &#39;</span><span class="si">{</span><span class="n">variable</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">missing_categories</span><span class="si">}</span><span class="s2">. Increase &quot;</span>
+                <span class="s2">&quot;target_margins_max_length to preserve small positive categories.&quot;</span>
+            <span class="p">)</span>
+    <span class="n">target_weights</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">totals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">target_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">target_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+        <span class="n">index</span><span class="o">=</span><span class="n">target_df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_resolve_target_inputs</span><span class="p">(</span>
+    <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">target_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">target_margins</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">target_margins_max_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve and validate target inputs for rake.</span>
+
+<span class="sd">    Handles the mutual exclusivity of target_df/target_weights vs</span>
+<span class="sd">    target_margins, validates target_margins_max_length, and realizes</span>
+<span class="sd">    margins into a synthetic target frame when needed.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A validated ``(target_df, target_weights)`` pair ready for use.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If inputs are inconsistent or invalid.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">target_margins</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">target_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">target_weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Pass either target_margins or target_df/target_weights, not both.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_margins_max_length</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_margins_max_length</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="n">target_margins_max_length</span> <span class="o">&lt;</span> <span class="mi">1</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;target_margins_max_length must be a positive integer, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="n">target_margins_max_length</span><span class="si">!r}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="n">_target_frame_and_weights_from_margins</span><span class="p">(</span>
+            <span class="n">target_margins</span><span class="p">,</span> <span class="n">target_margins_max_length</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">target_df</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">target_weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Either target_df and target_weights, or target_margins, must be provided.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">target_df</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">target_weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;target_df and target_weights must be provided together.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span>
+
+
 <div class="viewcode-block" id="rake">
 <a class="viewcode-back" href="../../../balance.weighting_methods.rake.html#balance.weighting_methods.rake.rake">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">rake</span><span class="p">(</span>
     <span class="n">sample_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">sample_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
-    <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-    <span class="n">target_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">target_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">variables</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">transformations</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
     <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">,</span>
@@ -167,6 +387,8 @@
     <span class="n">keep_sum_of_weights</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">store_fit_metadata</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">target_margins</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">target_margins_max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -178,8 +400,21 @@
 <span class="sd">    Arguments:</span>
 <span class="sd">    sample_df --- (pandas dataframe) a dataframe representing the sample.</span>
 <span class="sd">    sample_weights --- (pandas series) design weights for sample.</span>
-<span class="sd">    target_df ---  (pandas dataframe) a dataframe representing the target.</span>
-<span class="sd">    target_weights --- (pandas series) design weights for target.</span>
+<span class="sd">    target_df ---  (pandas dataframe or None) a dataframe representing the target.</span>
+<span class="sd">                   Required together with target_weights, unless target_margins</span>
+<span class="sd">                   is provided instead, in which case pass None.</span>
+<span class="sd">    target_weights --- (pandas series or None) design weights for target.</span>
+<span class="sd">                       Required together with target_df, unless target_margins</span>
+<span class="sd">                       is provided instead, in which case pass None.</span>
+<span class="sd">    target_margins --- (mapping, optional, keyword-only) known target marginal</span>
+<span class="sd">                       totals by variable and category. Each inner dictionary</span>
+<span class="sd">                       maps category labels to non-negative target weights,</span>
+<span class="sd">                       and every variable must sum to the same positive total.</span>
+<span class="sd">                       Pass ``target_df=None`` and ``target_weights=None``;</span>
+<span class="sd">                       the margins are realized into a synthetic target frame.</span>
+<span class="sd">    target_margins_max_length --- (int, optional, keyword-only) maximum number</span>
+<span class="sd">                                  of synthetic target rows used when</span>
+<span class="sd">                                  target_margins is provided.</span>
 <span class="sd">    variables ---  (list of strings) list of variables to include in the model.</span>
 <span class="sd">                   If None all joint variables of sample_df and target_df are used.</span>
 <span class="sd">    transformations --- (dict) what transformations to apply to data before fitting the model.</span>
@@ -254,9 +489,37 @@
 <span class="sd">        result = rake(sample_df, sample_weights, target_df, target_weights, variables=[&quot;x&quot;])</span>
 <span class="sd">        result[&quot;weight&quot;].tolist()</span>
 <span class="sd">        # [1.0, 1.0]</span>
+
+<span class="sd">        # The same API can fit from known marginal target totals without a</span>
+<span class="sd">        # row-level target frame. All variables in target_margins must sum to</span>
+<span class="sd">        # the same total target weight.</span>
+<span class="sd">        sample_df = pd.DataFrame(</span>
+<span class="sd">            {</span>
+<span class="sd">                &quot;gender&quot;: [&quot;Female&quot;, &quot;Male&quot;, &quot;Male&quot;, &quot;Female&quot;],</span>
+<span class="sd">                &quot;age_group&quot;: [&quot;18-24&quot;, &quot;18-24&quot;, &quot;25-34&quot;, &quot;45+&quot;],</span>
+<span class="sd">            }</span>
+<span class="sd">        )</span>
+<span class="sd">        sample_weights = pd.Series([1.0, 1.0, 1.0, 1.0])</span>
+<span class="sd">        result = rake(</span>
+<span class="sd">            sample_df,</span>
+<span class="sd">            sample_weights,</span>
+<span class="sd">            target_df=None,</span>
+<span class="sd">            target_weights=None,</span>
+<span class="sd">            target_margins={</span>
+<span class="sd">                &quot;gender&quot;: {&quot;Female&quot;: 60.0, &quot;Male&quot;: 40.0},</span>
+<span class="sd">                &quot;age_group&quot;: {&quot;18-24&quot;: 50.0, &quot;25-34&quot;: 25.0, &quot;45+&quot;: 25.0},</span>
+<span class="sd">            },</span>
+<span class="sd">        )</span>
+<span class="sd">        round(float(result[&quot;weight&quot;].sum()), 6)</span>
+<span class="sd">        # 100.0</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">balance_util</span><span class="o">.</span><span class="n">_check_weighting_methods_input</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">&quot;sample&quot;</span><span class="p">)</span>
+    <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="n">_resolve_target_inputs</span><span class="p">(</span>
+        <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="n">target_margins</span><span class="p">,</span> <span class="n">target_margins_max_length</span>
+    <span class="p">)</span>
     <span class="n">balance_util</span><span class="o">.</span><span class="n">_check_weighting_methods_input</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">)</span>
+    <span class="n">target_df</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">_assert_type</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
+    <span class="n">target_weights</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">_assert_type</span><span class="p">(</span><span class="n">target_weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span>
     <span class="k">if</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">in</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weight shouldn&#39;t be a name for covariate in the sample data&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">in</span> <span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">:</span>
@@ -416,7 +679,7 @@
     <span class="n">m_fit_input</span> <span class="o">=</span> <span class="n">m_sample</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
     <span class="c1"># Calculate target margins for ipfn</span>
-    <span class="n">target_margins</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ipf_target_margins</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">cats</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">alphabetized_variables</span><span class="p">,</span> <span class="n">categories</span><span class="p">):</span>
         <span class="n">sums</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">target_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">col</span><span class="p">)[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
@@ -424,7 +687,7 @@
             <span class="o">*</span> <span class="n">sample_sum_weights</span>
         <span class="p">)</span>
         <span class="n">sums</span> <span class="o">=</span> <span class="n">sums</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">cats</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">target_margins</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sums</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+        <span class="n">ipf_target_margins</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sums</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
         <span class="s2">&quot;Raking algorithm running following settings: &quot;</span>
@@ -437,7 +700,7 @@
     <span class="c1"># due to incompatability with latest Python versions</span>
     <span class="n">m_fit</span><span class="p">,</span> <span class="n">converged</span><span class="p">,</span> <span class="n">iterations</span> <span class="o">=</span> <span class="n">_run_ipf_numpy</span><span class="p">(</span>
         <span class="n">m_fit_input</span><span class="p">,</span>
-        <span class="n">target_margins</span><span class="p">,</span>
+        <span class="n">ipf_target_margins</span><span class="p">,</span>
         <span class="n">convergence_rate</span><span class="p">,</span>
         <span class="n">max_iteration</span><span class="p">,</span>
         <span class="n">rate_tolerance</span><span class="p">,</span>
@@ -678,7 +941,7 @@
     <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">target_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]]:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply rake&#39;s stored NA policy to scoring frames.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;drop&quot;</span><span class="p">:</span>
         <span class="n">sample_clean</span><span class="p">,</span> <span class="n">sample_weights_clean</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">drop_na_rows</span><span class="p">(</span>
@@ -724,7 +987,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_rake_target_sum</span><span class="p">(</span>
     <span class="n">model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
     <span class="n">target_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
-    <span class="n">dropped_target_weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">],</span>
+    <span class="n">dropped_target_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">is_transfer</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
@@ -882,17 +1145,17 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_proportional_array_from_dict</span><span class="p">(</span>
-    <span class="n">input_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="n">input_dict</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generates a proportional array based on the input dictionary.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        input_dict (Dict[str, float]): A dictionary where keys are strings and values are their proportions (float).</span>
+<span class="sd">        input_dict: A mapping where keys are hashable category labels and values are their proportions (float).</span>
 <span class="sd">        max_length (int): check if the length of the output exceeds the max_length. If it does, it will be scaled down to that length. Default is 10k.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        A list of strings where each key is repeated according to its proportion.</span>
+<span class="sd">        A list where each category label is repeated according to its proportion.</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">    .. code-block:: python</span>
@@ -940,9 +1203,9 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_hare_niemeyer_allocation</span><span class="p">(</span>
-    <span class="n">proportions</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+    <span class="n">proportions</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
     <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Allocate *n* slots to categories using the Hare-Niemeyer (largest-remainder) method.</span>
 
 <span class="sd">    This avoids rounding bias by first assigning floor counts then distributing</span>
@@ -965,7 +1228,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        A list of length *n* with each label repeated according to its allocated</span>
 <span class="sd">        count.  Ties in fractional remainders are broken deterministically by</span>
-<span class="sd">        category label (alphabetical).</span>
+<span class="sd">        category label representation.</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">        &gt;&gt;&gt; _hare_niemeyer_allocation({&quot;a&quot;: 0.2, &quot;b&quot;: 0.8}, 5)</span>
@@ -989,26 +1252,26 @@
     <span class="n">remaining</span> <span class="o">=</span> <span class="n">n</span> <span class="o">-</span> <span class="nb">sum</span><span class="p">(</span><span class="n">floors</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
     <span class="n">sorted_keys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
         <span class="n">ideals</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
-        <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">ideals</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">-</span> <span class="n">floors</span><span class="p">[</span><span class="n">k</span><span class="p">]),</span> <span class="n">k</span><span class="p">),</span>
+        <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">ideals</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">-</span> <span class="n">floors</span><span class="p">[</span><span class="n">k</span><span class="p">]),</span> <span class="nb">repr</span><span class="p">(</span><span class="n">k</span><span class="p">)),</span>
     <span class="p">)</span>
     <span class="n">counts</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">floors</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">remaining</span><span class="p">)):</span>
         <span class="n">counts</span><span class="p">[</span><span class="n">sorted_keys</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
 
     <span class="c1"># Build result preserving original dict insertion order</span>
-    <span class="n">result</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">result</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">proportions</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">:</span>
             <span class="n">result</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">counts</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">result</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_find_lcm_of_array_lengths</span><span class="p">(</span><span class="n">arrays</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_find_lcm_of_array_lengths</span><span class="p">(</span><span class="n">arrays</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Finds the least common multiple (LCM) of the lengths of arrays in the input dictionary.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        arrays: A dictionary where keys are strings and values are lists of strings.</span>
+<span class="sd">        arrays: A dictionary where keys are strings and values are lists of category labels.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        The LCM of the lengths of the arrays in the input dictionary.</span>
@@ -1037,9 +1300,10 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_realize_dicts_of_proportions</span><span class="p">(</span>
-    <span class="n">dict_of_dicts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+    <span class="n">dict_of_dicts</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
     <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+    <span class="n">_skip_validation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generates proportional arrays of equal length for each input dictionary.</span>
 
@@ -1047,8 +1311,8 @@
 <span class="sd">    It can be used as input to the Sample object so it could be used for running raking.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        dict_of_dicts: A dictionary of dictionaries, where each key is a string and</span>
-<span class="sd">                   each value is a dictionary with keys as strings and values as their</span>
+<span class="sd">        dict_of_dicts: A mapping of dictionaries, where each key is a string and</span>
+<span class="sd">                   each value is a dictionary with hashable category labels as keys and values as their</span>
 <span class="sd">                   proportions as real-valued numeric types implementing ``numbers.Real``</span>
 <span class="sd">                   (e.g., Python floats, NumPy or pandas scalar types).</span>
 <span class="sd">        max_length: Maximum number of rows in the output arrays. When the least</span>
@@ -1101,35 +1365,11 @@
         <span class="ow">or</span> <span class="n">max_length</span> <span class="o">&lt;</span> <span class="mi">1</span>
     <span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;max_length must be a positive integer, got </span><span class="si">{</span><span class="n">max_length</span><span class="si">!r}</span><span class="s2">.&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">dict_of_dicts</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;dict_of_dicts must be non-empty; got an empty dictionary.&quot;</span><span class="p">)</span>
     <span class="c1"># Validate all inner proportion values before any float coercion so that</span>
     <span class="c1"># invalid inputs (bool, NaN, inf, negative) are always caught and reported</span>
     <span class="c1"># with the variable name, regardless of whether the LCM-capping path is taken.</span>
-    <span class="k">for</span> <span class="n">var_name</span><span class="p">,</span> <span class="n">inner_dict</span> <span class="ow">in</span> <span class="n">dict_of_dicts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">for</span> <span class="n">cat_name</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">inner_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Real</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Variable &#39;</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">&#39;, category &#39;</span><span class="si">{</span><span class="n">cat_name</span><span class="si">}</span><span class="s2">&#39;: proportion must be &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;a real number (not bool), got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.&quot;</span>
-                <span class="p">)</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">fv</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-            <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">OverflowError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Variable &#39;</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">&#39;, category &#39;</span><span class="si">{</span><span class="n">cat_name</span><span class="si">}</span><span class="s2">&#39;: proportion must be &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;convertible to float, got </span><span class="si">{</span><span class="n">v</span><span class="si">!r}</span><span class="s2">.&quot;</span>
-                <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
-            <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">fv</span><span class="p">)</span> <span class="ow">or</span> <span class="n">math</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">fv</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Variable &#39;</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">&#39;, category &#39;</span><span class="si">{</span><span class="n">cat_name</span><span class="si">}</span><span class="s2">&#39;: proportion must be &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;finite, got </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">.&quot;</span>
-                <span class="p">)</span>
-            <span class="k">if</span> <span class="n">fv</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Variable &#39;</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">&#39;, category &#39;</span><span class="si">{</span><span class="n">cat_name</span><span class="si">}</span><span class="s2">&#39;: proportion must be &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;non-negative, got </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">.&quot;</span>
-                <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_skip_validation</span><span class="p">:</span>
+        <span class="n">_validate_dicts_of_proportions</span><span class="p">(</span><span class="n">dict_of_dicts</span><span class="p">)</span>
     <span class="c1"># Generate proportional arrays for each dictionary.  We pass max_length so</span>
     <span class="c1"># that the per-variable array length is roughly bounded, but individual arrays</span>
     <span class="c1"># can still exceed max_length when there are many small-weight categories that</span>
@@ -1179,7 +1419,7 @@
 <div class="viewcode-block" id="prepare_marginal_dist_for_raking">
 <a class="viewcode-back" href="../../../balance.weighting_methods.rake.html#balance.weighting_methods.rake.prepare_marginal_dist_for_raking">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">prepare_marginal_dist_for_raking</span><span class="p">(</span>
-    <span class="n">dict_of_dicts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+    <span class="n">dict_of_dicts</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
     <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
