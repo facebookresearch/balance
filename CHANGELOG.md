@@ -1,3 +1,13 @@
+# 0.23.0 (unreleased)
+
+## New Features
+
+- Diagnostics now include compact model-glance rows for rake and poststratification adjustments, covering rake convergence metadata and persisted poststratification matching-cell metadata when available.
+
+## Tests
+
+- Added summary-helper regression coverage for rake and poststratification model diagnostics.
+
 # 0.22.0 (2026-07-15)
 
 ## New Features
