@@ -66,6 +66,9 @@ Key: BalanceFrame does NOT inherit from SampleFrame.
   - `BalanceDFCovars` — covariate access and statistics
   - `BalanceDFWeights` — weight diagnostics (design effect, density plots)
   - `BalanceDFOutcomes` — outcome analysis
+  - `BalanceDFOutcomesHat` — predicted-outcome (Ŷ) analysis (weighted mean / CI over the
+    `outcomes_hat` columns); created via the `outcomes_hat()` factory on `SampleFrame` /
+    `BalanceFrame` (returns `None` when there are no Ŷ columns) and exported from `balance`
   - `BalanceDFSource` (protocol) — 8 required members: `weight_series`, `id_series`,
     `_links`, `_covar_columns()`, `_outcome_columns`, `_outcomes_hat_columns`,
     `set_weights()`, `trim()`

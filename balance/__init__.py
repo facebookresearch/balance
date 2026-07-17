@@ -13,6 +13,7 @@ from balance.balance_frame import BalanceFrame  # noqa
 from balance.balancedf_class import (  # noqa
     BalanceDFCovars,  # noqa
     BalanceDFOutcomes,  # noqa
+    BalanceDFOutcomesHat,  # noqa
     BalanceDFSource,  # noqa
     BalanceDFWeights,  # noqa
 )

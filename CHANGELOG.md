@@ -14,6 +14,14 @@
   list(sf.df_covars.columns)                     # -> ["age"]   (Ŷ is not a covariate)
   ```
 
+- **`BalanceDFOutcomesHat` view + `outcomes_hat()` factory.** New `BalanceDFOutcomesHat(BalanceDF)` view (exported from `balance`) gives the predicted-outcome (Ŷ) role the same weighted mean / CI machinery as the other role views. The `outcomes_hat()` factory on `SampleFrame` and `BalanceFrame` returns the view (or `None` when there are no Ŷ columns); on a `BalanceFrame` it carries the linked target (and unadjusted) sources, so `outcomes_hat().mean()` / `mean_with_ci()` expand across whichever sources actually carry Ŷ — mirroring `outcomes()`. `Sample.outcomes_hat()` is available via the MRO. On a target-backed `BalanceFrame`, the weighted mean of the target's Ŷ is the g-computation / outcome-model estimate `μ̂_OM`.
+
+  ```python
+  sf.add_outcomes_hat_column("happiness_hat", pd.Series([52., 58., 68., 79.]))
+  sf.outcomes_hat().mean()                    # -> weighted mean of Ŷ (one column per Ŷ)
+  SampleFrame.from_frame(df).outcomes_hat()   # -> None   (no outcomes_hat columns)
+  ```
+
 ## Documentation
 
 - Add the outcome-modelling design doc: [architecture_0_23_0.md](https://github.com/facebookresearch/balance/blob/main/docs/architecture/architecture_0_23_0.md).

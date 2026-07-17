@@ -120,16 +120,16 @@ class BalanceDF:
         self: "BalanceDF",
         df: pd.DataFrame,
         sample: BalanceDFSource,
-        name: Literal["outcomes", "weights", "covars"],
+        name: Literal["outcomes", "outcomes_hat", "weights", "covars"],
         links: dict[str, "BalanceDFSource"] | None = None,
     ) -> None:
-        """A basic init method used by BalanceDFOutcomes,BalanceDFCovars, and BalanceDFWeights
+        """A basic init method used by BalanceDFOutcomes,BalanceDFOutcomesHat,BalanceDFCovars, and BalanceDFWeights
 
         Args:
             self (BalanceDF): The object that is initiated.
             df (pd.DataFrame): a df from a sample object.
             sample (BalanceDFSource): A BalanceDFSource-compatible object (e.g. Sample, SampleFrame) to be stored as reference.
-            name (Literal["outcomes", "weights", "covars"]): The type of object that will be created. In practice, used for "outcomes", "weights" and "covars".
+            name (Literal["outcomes", "outcomes_hat", "weights", "covars"]): The type of object that will be created. In practice, used for "outcomes", "outcomes_hat", "weights" and "covars".
             links (dict[str, BalanceDFSource] | None): Optional explicit links dict
                 (e.g. {"target": ..., "unadjusted": ...}).  When provided,
                 _balancedf_child_from_linked_samples uses this instead of
@@ -2777,6 +2777,85 @@ class BalanceDFOutcomes(BalanceDF):
             adjusted_weights,
             unadjusted_weights,
         )
+
+
+class BalanceDFOutcomesHat(BalanceDF):
+    """A view over the predicted-outcome (Y_hat / ``outcomes_hat``) columns.
+
+    Mirrors :class:`BalanceDFOutcomes` but backs onto the ``outcomes_hat``
+    role (the ``ŷ`` columns produced by an outcome model) instead of the
+    observed outcomes.  It inherits the weighted ``mean`` / ``std`` /
+    ``var_of_mean`` / ``ci_of_mean`` / ``mean_with_ci`` / ``plot`` / ``summary``
+    machinery from :class:`BalanceDF` unchanged, so ``outcomes_hat().mean()``
+    is the weighted mean of the predicted outcomes (one column per ``ŷ``,
+    source-indexed exactly like ``outcomes().mean()``).  When backed by a
+    :class:`~balance.balance_frame.BalanceFrame` that carries a target, the
+    weighted mean of the target's ``ŷ`` is the g-computation / outcome-model
+    estimate ``μ̂_OM``.
+
+    Construct it through :meth:`SampleFrame.outcomes_hat` /
+    :meth:`BalanceFrame.outcomes_hat` (which return ``None`` when there are no
+    predicted-outcome columns) rather than directly.
+
+    Examples:
+    .. code-block:: python
+
+            import pandas as pd
+            from balance.sample_frame import SampleFrame
+
+            df = pd.DataFrame(
+                {
+                    "id": ["1", "2", "3", "4"],
+                    "age": [25, 30, 35, 40],
+                    "weight": [1.0, 1.0, 1.0, 1.0],
+                }
+            )
+            sf = SampleFrame.from_frame(df)
+            sf.add_outcomes_hat_column("happiness_hat", pd.Series([52.0, 58.0, 68.0, 79.0]))
+
+            sf.outcomes_hat().mean()  # weighted mean of Y_hat, one column per Y_hat
+            #         happiness_hat
+            # source
+            # self            64.25
+    """
+
+    def __init__(
+        self: "BalanceDFOutcomesHat",
+        sample: BalanceDFSource,
+        links: dict[str, BalanceDFSource] | None = None,
+    ) -> None:
+        """Initiate a BalanceDFOutcomesHat.
+
+        This is used through :func:`SampleFrame.outcomes_hat` /
+        :func:`BalanceFrame.outcomes_hat`.  It reads the backing object's
+        ``_outcomes_hat_columns`` (the predicted-outcome DataFrame) and passes
+        the relevant arguments to :func:`BalanceDF.__init__` with
+        ``name="outcomes_hat"``.
+
+        The ``name="outcomes_hat"`` is load-bearing: it must equal the factory
+        method name so that ``_call_on_linked`` can call
+        ``getattr(linked_source, "outcomes_hat")()`` when expanding across
+        linked sources (self / target / unadjusted).
+
+        Args:
+            self (BalanceDFOutcomesHat): Object that is initiated.
+            sample (BalanceDFSource): A BalanceDFSource-compatible object (e.g. Sample, SampleFrame).
+            links (Dict | None): Optional explicit links for BalanceDF.
+
+        Raises:
+            ValueError: If the backing object has no ``outcomes_hat`` columns.
+        """
+        outcomes_hat_df = sample._outcomes_hat_columns
+        if outcomes_hat_df is None:
+            source_type = type(sample).__name__
+            raise ValueError(
+                f"Cannot create BalanceDFOutcomesHat: no outcomes_hat columns are "
+                f"defined on the provided {source_type}. Populate the underlying "
+                "object with outcomes_hat columns (e.g. via "
+                "add_outcomes_hat_column) before constructing or accessing "
+                "outcomes_hat."
+            )
+        super().__init__(outcomes_hat_df, sample, name="outcomes_hat", links=links)
 
 
 class BalanceDFCovars(BalanceDF):

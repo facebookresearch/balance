@@ -21,16 +21,20 @@ from unittest.mock import patch, PropertyMock
 import IPython.display
 import numpy as np
 import pandas as pd
+from balance.balance_frame import BalanceFrame
 from balance.balancedf_class import (  # noqa
     BalanceDF,
     BalanceDFCovars,  # noqa
     BalanceDFOutcomes,  # noqa
+    BalanceDFOutcomesHat,  # noqa
     BalanceDFSource,  # noqa
     BalanceDFWeights,  # noqa
 )
 from balance.sample_class import Sample
+from balance.sample_frame import SampleFrame
 from balance.stats_and_plots import weighted_comparisons_stats
 from balance.testutil import BalanceTestCase, tempfile_path
+from balance.util import _assert_type
 from balance.utils.model_matrix import model_matrix
 from patsy import PatsyError
 
@@ -4173,3 +4177,160 @@ class TestBalanceDFWeights_r_indicator_scalar_ndarray(BalanceTestCase):
         self.assertEqual(scalar_array.ndim, 0)
         result = weights.r_indicator(target_propensity=scalar_array)
         self.assertIsInstance(result, (float, np.floating))
+
+
+def _sf_with_outcomes_hat(
+    ids: tuple[int, ...],
+    weights: tuple[float, ...],
+    yhat: tuple[float, ...],
+    name: str = "happiness_hat",
+) -> SampleFrame:
+    """Build a SampleFrame with a single covariate and one outcomes_hat column."""
+    sf = SampleFrame.from_frame(
+        pd.DataFrame(
+            {
+                "id": list(ids),
+                "age": [float(i) for i in ids],
+                "weight": list(weights),
+            }
+        )
+    )
+    sf.add_outcomes_hat_column(name, pd.Series(list(yhat)))
+    return sf
+
+
+class TestBalanceDFOutcomesHat(BalanceTestCase):
+    """Test cases for the BalanceDFOutcomesHat view + outcomes_hat() factory."""
+
+    def test_importable_from_balance(self) -> None:
+        """BalanceDFOutcomesHat is exported from the top-level balance package."""
+        import balance
+
+        self.assertIs(balance.BalanceDFOutcomesHat, BalanceDFOutcomesHat)
+
+    def test_outcomes_hat_example_snippet(self) -> None:
+        """Assert the diff's Example snippet: weighted mean of Y_hat + None when empty."""
+        df = pd.DataFrame(
+            {
+                "id": ["1", "2", "3", "4"],
+                "age": [25, 30, 35, 40],
+                "weight": [1.0, 1.0, 1.0, 1.0],
+            }
+        )
+        sf = SampleFrame.from_frame(df)
+        sf.add_outcomes_hat_column("happiness_hat", pd.Series([52.0, 58.0, 68.0, 79.0]))
+
+        # weighted mean of Y_hat, one column per Y_hat, source-indexed like outcomes().mean()
+        the_mean = _assert_type(sf.outcomes_hat()).mean()
+        self.assertEqual(
+            the_mean.to_dict(),
+            {"happiness_hat": {"self": 64.25}},
+        )
+
+        # None when there are no outcomes_hat columns
+        self.assertIsNone(SampleFrame.from_frame(df).outcomes_hat())
+
+    def test_outcomes_hat_returns_view_type(self) -> None:
+        """SampleFrame.outcomes_hat() returns a BalanceDFOutcomesHat instance."""
+        sf = _sf_with_outcomes_hat(
+            (1, 2, 3, 4), (1.0, 1.0, 1.0, 1.0), (1.0, 2.0, 3.0, 4.0)
+        )
+        self.assertIsInstance(sf.outcomes_hat(), BalanceDFOutcomesHat)
+        self.assertEqual(_assert_type(sf.outcomes_hat()).names(), ["happiness_hat"])
+
+    def test_outcomes_hat_weighted_mean(self) -> None:
+        """The mean respects the active weights (weighted, not simple, mean)."""
+        # weights (0.5, 2, 1, 1) sum to 4.5; weighted mean of (10, 20, 30, 40)
+        # = (0.5*10 + 2*20 + 1*30 + 1*40) / 4.5 = 115 / 4.5
+        sf = _sf_with_outcomes_hat(
+            (1, 2, 3, 4), (0.5, 2.0, 1.0, 1.0), (10.0, 20.0, 30.0, 40.0)
+        )
+        the_mean = _assert_type(sf.outcomes_hat()).mean(on_linked_samples=False)
+        self.assertEqual(
+            round(the_mean["happiness_hat"].iloc[0], 6),
+            round(115.0 / 4.5, 6),
+        )
+
+    def test_outcomes_hat_mean_with_ci(self) -> None:
+        """mean_with_ci() works on a standalone outcomes_hat view."""
+        sf = _sf_with_outcomes_hat(
+            (1, 2, 3, 4), (1.0, 1.0, 1.0, 1.0), (1.0, 2.0, 3.0, 4.0)
+        )
+        out = _assert_type(sf.outcomes_hat()).mean_with_ci()
+        # one row per Y_hat column, with a mean ("self") and a CI ("self_ci") column
+        self.assertIn("self", out.columns)
+        self.assertIn("self_ci", out.columns)
+        self.assertEqual(out.loc["happiness_hat", "self"], 2.5)
+
+    def test_outcomes_hat_none_when_empty(self) -> None:
+        """outcomes_hat() returns None when the SampleFrame has no Y_hat columns."""
+        sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": [1, 2], "age": [10.0, 20.0], "weight": [1.0, 1.0]})
+        )
+        self.assertIsNone(sf.outcomes_hat())
+
+    def test_outcomes_hat_raises_when_no_columns(self) -> None:
+        """Constructing BalanceDFOutcomesHat without Y_hat columns raises ValueError."""
+        sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": [1, 2], "age": [10.0, 20.0], "weight": [1.0, 1.0]})
+        )
+        with self.assertRaisesRegex(ValueError, "no outcomes_hat columns are defined"):
+            # pyrefly: ignore [bad-argument-type]
+            BalanceDFOutcomesHat(sample=sf)
+
+    def test_outcomes_hat_linked_self_target_expansion(self) -> None:
+        """A BalanceFrame with Y_hat on responder AND target expands across both."""
+        resp = _sf_with_outcomes_hat((1, 2), (1.0, 1.0), (0.3, 0.7), name="y_hat")
+        tgt = _sf_with_outcomes_hat((3, 4), (1.0, 1.0), (0.2, 0.4), name="y_hat")
+        bf = BalanceFrame(sample=resp, target=tgt)
+
+        the_dict = _assert_type(
+            bf.outcomes_hat()
+        )._balancedf_child_from_linked_samples()
+        # both self and target carry outcomes_hat (unlike observed outcomes, which
+        # the target usually lacks)
+        self.assertEqual(
+            [v.__class__ for (_k, v) in the_dict.items()],
+            [BalanceDFOutcomesHat, BalanceDFOutcomesHat],
+        )
+
+        the_mean = _assert_type(bf.outcomes_hat()).mean()
+        self.assertEqual(
+            the_mean.round(6).to_dict(),
+            {"y_hat": {"self": 0.5, "target": 0.3}},
+        )
+
+    def test_outcomes_hat_linked_target_only_skips_missing(self) -> None:
+        """When only the responder carries Y_hat, the target row is dropped (None-skip)."""
+        resp = _sf_with_outcomes_hat((1, 2), (1.0, 1.0), (0.3, 0.7), name="y_hat")
+        tgt = SampleFrame.from_frame(
+            pd.DataFrame({"id": [3, 4], "age": [15.0, 25.0], "weight": [1.0, 1.0]})
+        )
+        bf = BalanceFrame(sample=resp, target=tgt)
+        the_mean = _assert_type(bf.outcomes_hat()).mean()
+        # target has no outcomes_hat, so only the self row appears
+        self.assertEqual(the_mean.round(6).to_dict(), {"y_hat": {"self": 0.5}})
+
+    def test_sample_outcomes_hat_via_mro(self) -> None:
+        """Sample.outcomes_hat() works through the MRO (no facade gap)."""
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": (1, 2, 3, 4),
+                    "age": (25, 30, 35, 40),
+                    "w": (1.0, 1.0, 1.0, 1.0),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+        )
+        self.assertIsNone(sample.outcomes_hat())
+        sample.add_outcomes_hat_column(
+            "happiness_hat", pd.Series([52.0, 58.0, 68.0, 79.0])
+        )
+        self.assertIsInstance(sample.outcomes_hat(), BalanceDFOutcomesHat)
+        # default on_linked_samples=True -> source-indexed (like outcomes().mean())
+        self.assertEqual(
+            _assert_type(sample.outcomes_hat()).mean().to_dict(),
+            {"happiness_hat": {"self": 64.25}},
+        )

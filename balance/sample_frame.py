@@ -1157,6 +1157,39 @@ class SampleFrame:
 
         return BalanceDFOutcomes(cast("BalanceDFSource", self))
 
+    def outcomes_hat(self) -> Any | None:
+        """Return a :class:`~balance.balancedf_class.BalanceDFOutcomesHat`, or None.
+
+        Returns ``None`` if this SampleFrame has no predicted-outcome
+        (``outcomes_hat`` / Y_hat) columns.  When present, the returned view
+        exposes the weighted mean / CI machinery over the Y_hat columns (one
+        column per predicted outcome), mirroring :meth:`outcomes`.
+
+        Returns:
+            BalanceDFOutcomesHat or None: Predicted-outcome view backed by this
+                SampleFrame, or ``None`` if no outcomes_hat columns are defined.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> df = pd.DataFrame({"id": ["1", "2", "3", "4"],
+            ...                    "age": [25, 30, 35, 40],
+            ...                    "weight": [1.0, 1.0, 1.0, 1.0]})
+            >>> sf = SampleFrame.from_frame(df)
+            >>> sf.add_outcomes_hat_column("happiness_hat",
+            ...                            pd.Series([52., 58., 68., 79.]))
+            >>> sf.outcomes_hat().df.columns.tolist()
+            ['happiness_hat']
+            >>> SampleFrame.from_frame(df).outcomes_hat() is None
+            True
+        """
+        if not self._column_roles["outcomes_hat"]:
+            return None
+        # Deferred import to avoid circular dependency with balancedf_class
+        from balance.balancedf_class import BalanceDFOutcomesHat
+
+        return BalanceDFOutcomesHat(cast("BalanceDFSource", self))
+
     @property
     def df(self) -> pd.DataFrame:
         """Full DataFrame reconstruction."""

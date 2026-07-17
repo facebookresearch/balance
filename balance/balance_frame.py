@@ -2966,6 +2966,45 @@ class BalanceFrame:
             cast(BalanceDFSource, self), links=self._build_links_dict()
         )
 
+    def outcomes_hat(self) -> Any | None:
+        """Return a :class:`~balance.balancedf_class.BalanceDFOutcomesHat`, or None.
+
+        Returns ``None`` if the responder SampleFrame has no predicted-outcome
+        (``outcomes_hat`` / Y_hat) columns.  The returned view carries linked
+        target (and unadjusted, if adjusted) sources so that ``.mean()`` and
+        ``.mean_with_ci()`` automatically expand across the sources that
+        actually carry predicted outcomes -- mirroring :meth:`outcomes`.  In
+        particular, the weighted mean of the target's Y_hat is the
+        g-computation / outcome-model estimate ``μ̂_OM``.
+
+        Returns:
+            BalanceDFOutcomesHat or None: Predicted-outcome view with linked
+                sources, or ``None`` if no outcomes_hat columns are defined.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
+            >>> bf.outcomes_hat() is None
+            True
+            >>> resp.add_outcomes_hat_column("y_hat", pd.Series([0.3, 0.7]))
+            >>> bf2 = BalanceFrame(sample=resp, target=tgt)
+            >>> bf2.outcomes_hat().df.columns.tolist()
+            ['y_hat']
+        """
+        if not self._sf_sample.outcomes_hat_columns:
+            return None
+        from balance.balancedf_class import BalanceDFOutcomesHat, BalanceDFSource
+
+        return BalanceDFOutcomesHat(
+            cast(BalanceDFSource, self), links=self._build_links_dict()
+        )
+
     # --- Summary & diagnostics ---
 
     def _design_effect_diagnostics(
