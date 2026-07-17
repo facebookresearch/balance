@@ -75,6 +75,8 @@ class SampleFrame:
     # pyre-fixme[13]: Initialized in _create() which bypasses __init__
     _weight_metadata: dict[str, Any]
     # pyre-fixme[13]: Initialized in _create() which bypasses __init__
+    _prediction_metadata: dict[str, Any]
+    # pyre-fixme[13]: Initialized in _create() which bypasses __init__
     _links: dict[str, Any]
     # pyre-fixme[13]: Initialized in _create() which bypasses __init__
     _df_dtypes: pd.Series | None
@@ -126,6 +128,9 @@ class SampleFrame:
         new_instance._column_roles = deepcopy(self._column_roles, memo)
         new_instance._weight_column_name = self._weight_column_name
         new_instance._weight_metadata = deepcopy(self._weight_metadata, memo)
+        new_instance._prediction_metadata = deepcopy(
+            getattr(self, "_prediction_metadata", {}), memo
+        )
         new_instance._links = deepcopy(getattr(self, "_links", {}), memo)
         _df_dtypes = getattr(self, "_df_dtypes", None)
         new_instance._df_dtypes = _df_dtypes.copy() if _df_dtypes is not None else None
@@ -158,6 +163,8 @@ class SampleFrame:
         instance._weight_column_name = weight_columns[0] if weight_columns else None
         # Defaults; set via set_weight_metadata() etc.
         instance._weight_metadata = {}
+        # Per-outcomes_hat-column provenance; set via add_outcomes_hat_column().
+        instance._prediction_metadata = {}
         instance._links = {}
         instance._df_dtypes = _df_dtypes
         return instance
@@ -408,6 +415,19 @@ class SampleFrame:
             special.update(outcome_list or [])
             special.update(ignored or [])
             covar_list = [c for c in _df.columns if c not in special]
+            # Round-trip leak guard: an undeclared "<outcome>_hat" column would
+            # be inferred as a covariate and silently corrupt a later adjust()'s
+            # propensity model. Warn (do not raise) — it is a naming convention.
+            stray_hat = [str(c) for c in covar_list if str(c).endswith("_hat")]
+            if stray_hat:
+                logger.warning(
+                    "Inferred covariate column(s) %r end with '_hat' but were "
+                    "not declared as outcomes_hat_columns; they will be treated "
+                    "as covariates. If these are predicted-outcome (Y_hat) "
+                    "columns, pass them via outcomes_hat_columns= to keep them "
+                    "out of the covariate/propensity model.",
+                    stray_hat,
+                )
 
         # --- Column role overlap validation ---
         role_to_columns: dict[str, list[str]] = {
@@ -667,6 +687,32 @@ class SampleFrame:
         return self._df[cols].copy() if cols else None
 
     @property
+    def df_outcomes_hat(self) -> pd.DataFrame | None:
+        """Predicted-outcome (Y_hat) columns, or None if none.
+
+        Mirrors :attr:`df_outcomes` for the ``outcomes_hat`` role.  Returns a
+        copy so that callers cannot accidentally mutate the internal data.
+
+        Returns:
+            pd.DataFrame | None: A copy of the outcomes_hat columns, or None
+                if no outcomes_hat columns are registered.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> df = pd.DataFrame({"id": ["1", "2", "3", "4"],
+            ...                    "age": [25, 30, 35, 40],
+            ...                    "weight": [1.0, 1.0, 1.0, 1.0]})
+            >>> sf = SampleFrame.from_frame(df)
+            >>> sf.add_outcomes_hat_column("happiness_hat",
+            ...                            pd.Series([52., 58., 68., 79.]))
+            >>> sf.df_outcomes_hat["happiness_hat"].tolist()
+            [52.0, 58.0, 68.0, 79.0]
+        """
+        cols = self._column_roles["outcomes_hat"]
+        return self._df[cols].copy() if cols else None
+
+    @property
     def df_ignored(self) -> pd.DataFrame | None:
         """Ignored columns, or None.
 
@@ -809,6 +855,30 @@ class SampleFrame:
             ['y']
         """
         return self.df_outcomes
+
+    @property
+    def _outcomes_hat_columns(self) -> pd.DataFrame | None:
+        """outcomes_hat columns as a DataFrame, or None (BalanceDFSource protocol).
+
+        This property satisfies the ``BalanceDFSource`` protocol.  Note the
+        codebase quirk it mirrors from :attr:`_outcome_columns`: this ``_*``
+        protocol accessor returns the *data* (a DataFrame), not the column
+        *names* (the names accessor is :attr:`outcomes_hat_columns`).
+
+        Returns:
+            pd.DataFrame | None: A copy of the outcomes_hat columns, or None
+                if no outcomes_hat columns are registered.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> df = pd.DataFrame({"id": [1, 2], "x": [10, 20],
+            ...                    "weight": [1.0, 1.0], "p_y": [0.3, 0.7]})
+            >>> sf = SampleFrame.from_frame(df, outcomes_hat_columns=["p_y"])
+            >>> sf._outcomes_hat_columns.columns.tolist()
+            ['p_y']
+        """
+        return self.df_outcomes_hat
 
     def set_weights(
         self,
@@ -1280,6 +1350,84 @@ class SampleFrame:
         if metadata is not None:
             self._weight_metadata[name] = metadata
 
+    def add_outcomes_hat_column(
+        self,
+        name: str,
+        values: pd.Series,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """Attach a predicted-outcome (Y_hat) column to the SampleFrame.
+
+        Mirrors :meth:`add_weight_column`: the column is appended to the
+        internal DataFrame in place, registered under the ``outcomes_hat``
+        role, and optionally associated with provenance metadata (stored in
+        ``_prediction_metadata``).  Because the column takes the
+        ``outcomes_hat`` role, it is *not* treated as a covariate.
+
+        By convention, predicted-outcome columns are named ``"<outcome>_hat"``
+        (e.g. ``"happiness_hat"``).  A ``logging.warning`` is emitted — but
+        no error raised — when *name* does not end in ``_hat``.
+
+        Args:
+            name (str): Name for the new outcomes_hat column.
+            values (pd.Series): Predicted values.  Must match the DataFrame
+                length, unless it is a shorter ``pd.Series`` — in which case
+                values are aligned by index and missing rows are filled with
+                NaN.
+            metadata (dict, optional): Provenance metadata for the new column
+                (e.g. the fitting method or learner).
+
+        Raises:
+            ValueError: If *name* is already an outcomes_hat column, if *name*
+                already exists in the DataFrame, or if *values* is longer than
+                the DataFrame (or is a non-Series with a different length).
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> df = pd.DataFrame({"id": ["1", "2", "3", "4"],
+            ...                    "age": [25, 30, 35, 40],
+            ...                    "weight": [1.0, 1.0, 1.0, 1.0]})
+            >>> sf = SampleFrame.from_frame(df)
+            >>> sf.add_outcomes_hat_column("happiness_hat",
+            ...                            pd.Series([52., 58., 68., 79.]))
+            >>> sf.df_outcomes_hat["happiness_hat"].tolist()
+            [52.0, 58.0, 68.0, 79.0]
+            >>> list(sf.df_covars.columns)
+            ['age']
+        """
+        if name in self._column_roles["outcomes_hat"]:
+            raise ValueError(
+                f"'{name}' is already an outcomes_hat column. "
+                "Choose a different name."
+            )
+        if name in self._df.columns:
+            raise ValueError(
+                f"'{name}' already exists in the DataFrame. " "Choose a different name."
+            )
+        if not name.endswith("_hat"):
+            logger.warning(
+                "outcomes_hat column %r does not follow the '<outcome>_hat' "
+                "naming convention (e.g. 'happiness_hat'). It will still be "
+                "registered, but the convention keeps predicted columns "
+                "self-describing and discernible from covariates.",
+                name,
+            )
+        if len(values) != len(self._df):
+            if isinstance(values, pd.Series) and len(values) < len(self._df):
+                # Align by index, padding missing rows with NaN (mirrors
+                # add_weight_column, supporting learners that drop rows).
+                values = values.reindex(self._df.index)
+            else:
+                raise ValueError(
+                    f"'values' length ({len(values)}) doesn't match "
+                    f"DataFrame length ({len(self._df)})"
+                )
+        self._df[name] = values.to_numpy()
+        self._column_roles["outcomes_hat"].append(name)
+        if metadata is not None:
+            self._prediction_metadata[name] = metadata
+
     @classmethod
     def from_sample(cls, sample: Any) -> SampleFrame:
         """Convert a :class:`~balance.sample_class.Sample` to a SampleFrame.
@@ -1301,9 +1449,6 @@ class SampleFrame:
            * ``_links`` — references to ``target``, ``unadjusted``, and other
              linked Samples (used by :class:`~balance.balancedf_class.BalanceDF`
              for comparative display).
-           * ``outcomes_hat_columns`` — Sample has no native concept of
-             predicted-outcome columns, so the resulting SampleFrame will
-             always have an empty ``outcomes_hat`` role.
            * **Column ordering** may differ after a round-trip
              (``Sample → SampleFrame → Sample``), since SampleFrame stores
              columns grouped by role rather than preserving the original
@@ -1354,18 +1499,29 @@ class SampleFrame:
         if sample._outcome_columns is not None:
             outcome_cols = sample._outcome_columns.columns.tolist()
 
+        outcomes_hat_cols: list[str] = getattr(sample, "outcomes_hat_columns", []) or []
+
         ignored_cols: list[str] = getattr(sample, "_ignored_column_names", []) or []
 
         df = sample._df
         if df is None:
             raise ValueError("Sample has no DataFrame set.")
 
+        # ``_covar_columns_names()`` derives covariates by excluding special
+        # columns (id/weight/outcome/outcomes_hat/ignored); defensively drop
+        # any outcomes_hat columns again so each column keeps exactly one role.
+        covar_cols = sample._covar_columns_names()
+        if outcomes_hat_cols:
+            hat_set = set(outcomes_hat_cols)
+            covar_cols = [c for c in covar_cols if c not in hat_set]
+
         return cls._create(
             df=df,
             id_column=id_col_name,
-            covar_columns=sample._covar_columns_names(),
+            covar_columns=covar_cols,
             weight_columns=[weight_col_name],
             outcome_columns=outcome_cols,
+            outcomes_hat_columns=outcomes_hat_cols if outcomes_hat_cols else None,
             ignored_columns=ignored_cols if ignored_cols else None,
         )
 

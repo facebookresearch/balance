@@ -182,6 +182,8 @@ class BalanceFrame:
             # pyrefly: ignore [missing-attribute]
             self._weight_metadata = responder._weight_metadata
             # pyrefly: ignore [missing-attribute]
+            self._prediction_metadata = responder._prediction_metadata
+            # pyrefly: ignore [missing-attribute]
             self._df_dtypes = responder._df_dtypes
 
     @staticmethod
@@ -308,6 +310,21 @@ class BalanceFrame:
             self._sf_sample._column_roles["outcomes"] = []
         else:
             self._sf_sample._column_roles["outcomes"] = value.columns.tolist()
+
+    @property
+    def _outcomes_hat_columns(self) -> pd.DataFrame | None:
+        """outcomes_hat columns as a DataFrame, delegated to ``_sf_sample``.
+
+        Satisfies the ``BalanceDFSource`` protocol.  Delegates to the wrapped
+        responder SampleFrame so there is a single source of truth (mirrors
+        how :attr:`_outcome_columns` reads through to ``_sf_sample``).
+        """
+        return self._sf_sample._outcomes_hat_columns
+
+    @property
+    def df_outcomes_hat(self) -> pd.DataFrame | None:
+        """Predicted-outcome (Y_hat) columns from the responder, or None."""
+        return self._sf_sample.df_outcomes_hat
 
     @property
     def _ignored_column_names(self) -> list[str]:
@@ -2798,6 +2815,7 @@ class BalanceFrame:
             id_column=self._sf_sample._id_column_name,
             weight_column=self._sf_sample._weight_column_name,
             outcome_columns=self._sf_sample.outcome_columns or None,
+            outcomes_hat_columns=self._sf_sample.outcomes_hat_columns or None,
             ignored_columns=self._sf_sample.ignored_columns or None,
             standardize_types=False,
         )
@@ -2806,6 +2824,7 @@ class BalanceFrame:
             id_column=target._id_column_name,
             weight_column=target._weight_column_name,
             outcome_columns=target.outcome_columns or None,
+            outcomes_hat_columns=target.outcomes_hat_columns or None,
             ignored_columns=target.ignored_columns or None,
             standardize_types=False,
         )
@@ -2817,6 +2836,9 @@ class BalanceFrame:
                 id_column=self._sf_sample_pre_adjust._id_column_name,
                 weight_column=self._sf_sample_pre_adjust._weight_column_name,
                 outcome_columns=self._sf_sample_pre_adjust.outcome_columns or None,
+                outcomes_hat_columns=(
+                    self._sf_sample_pre_adjust.outcomes_hat_columns or None
+                ),
                 ignored_columns=self._sf_sample_pre_adjust.ignored_columns or None,
                 standardize_types=False,
             )
@@ -3650,12 +3672,17 @@ class BalanceFrame:
     # --- Column accessors (moved from Sample) ---
 
     def _special_columns_names(self) -> list[str]:
-        """Return names of all special columns (id, weight, outcome, ignored)."""
+        """Return names of all special columns (id, weight, outcome, outcomes_hat, ignored)."""
         return (
             [str(i.name) for i in [self.id_series, self.weight_series] if i is not None]
             + (
                 self._outcome_columns.columns.tolist()
                 if self._outcome_columns is not None
+                else []
+            )
+            + (
+                self._outcomes_hat_columns.columns.tolist()
+                if self._outcomes_hat_columns is not None
                 else []
             )
             + getattr(self, "_ignored_column_names", [])

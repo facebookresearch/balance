@@ -3766,6 +3766,47 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
         # versions (3.8+).  __protocol_attrs__ only exists from 3.12+.
         self.assertTrue(getattr(BalanceDFSource, "_is_runtime_protocol", False))
 
+    def test_protocol_requires_outcomes_hat_columns(self) -> None:
+        """A source missing _outcomes_hat_columns does NOT satisfy the protocol."""
+
+        class _MissingHat:
+            @property
+            def weight_series(self) -> pd.Series:
+                return pd.Series([1.0], name="w")
+
+            @property
+            def id_series(self) -> pd.Series:
+                return pd.Series([1], name="id")
+
+            @property
+            def _links(self) -> dict:
+                return {}
+
+            def _covar_columns(self) -> pd.DataFrame:
+                return pd.DataFrame()
+
+            @property
+            def _outcome_columns(self) -> pd.DataFrame | None:
+                return None
+
+            def set_weights(
+                self, weights: pd.Series | float | None, *, use_index: bool = False
+            ) -> None:
+                pass
+
+            def trim(
+                self,
+                ratio: float | int | None = None,
+                percentile: float | tuple[float, float] | None = None,
+                keep_sum_of_weights: bool = True,
+                target_sum_weights: float | int | np.floating | None = None,
+                *,
+                inplace: bool = False,
+            ) -> "_MissingHat":
+                return self
+
+        self.assertNotIsInstance(_MissingHat(), BalanceDFSource)
+
     def test_non_conforming_object_fails_isinstance(self) -> None:
         """Verify that an arbitrary object does NOT satisfy the protocol."""
         self.assertNotIsInstance("not a source", BalanceDFSource)
@@ -3802,6 +3843,10 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
 
             @property
             def _outcome_columns(self) -> pd.DataFrame | None:
+                return None
+
+            @property
+            def _outcomes_hat_columns(self) -> pd.DataFrame | None:
                 return None
 
             def set_weights(
@@ -3860,6 +3905,10 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
             def _outcome_columns(self) -> pd.DataFrame | None:
                 return None
 
+            @property
+            def _outcomes_hat_columns(self) -> pd.DataFrame | None:
+                return None
+
             def set_weights(
                 self, weights: pd.Series | float | None, *, use_index: bool = False
             ) -> None:
@@ -3916,6 +3965,10 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
             def _outcome_columns(self) -> pd.DataFrame | None:
                 return None
 
+            @property
+            def _outcomes_hat_columns(self) -> pd.DataFrame | None:
+                return None
+
             def set_weights(
                 self, weights: pd.Series | float | None, *, use_index: bool = False
             ) -> None:
@@ -3962,6 +4015,10 @@ class TestBalanceDFSourceProtocol(BalanceTestCase):
             @property
             def _outcome_columns(self) -> pd.DataFrame | None:
                 return pd.DataFrame({"o1": [7.0, 8.0, 9.0]})
+
+            @property
+            def _outcomes_hat_columns(self) -> pd.DataFrame | None:
+                return None
 
             def set_weights(
                 self, weights: pd.Series | float | None, *, use_index: bool = False

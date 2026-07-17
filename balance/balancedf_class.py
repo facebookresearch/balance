@@ -46,9 +46,10 @@ class BalanceDFSource(Protocol):
     ``SampleFrame`` implement this protocol, allowing BalanceDF to work with
     either backing class without modification.
 
-    The seven members below are the complete set of attributes and methods that
-    BalanceDF and its subclasses access on the backing object (``self._sample``).
-    They were identified by auditing every ``self._sample.*`` access in
+    The eight members below are the complete set of attributes and methods that
+    BalanceDF and its subclasses access on the backing object (``self._sample``),
+    plus the role accessors that complete the data-source contract.  They were
+    identified by auditing every ``self._sample.*`` access in
     ``balancedf_class.py``.
 
     Attributes:
@@ -57,6 +58,8 @@ class BalanceDFSource(Protocol):
         _links: Dict mapping relationship names (e.g. ``"target"``,
             ``"unadjusted"``) to other ``BalanceDFSource`` instances.
         _outcome_columns: Outcome DataFrame, or ``None`` if no outcomes.
+        _outcomes_hat_columns: Predicted-outcome (Y_hat) DataFrame, or
+            ``None`` if no outcomes_hat columns.
 
     Methods:
         _covar_columns: Return the covariate DataFrame.
@@ -81,6 +84,10 @@ class BalanceDFSource(Protocol):
 
     @property
     def _outcome_columns(self) -> pd.DataFrame | None:  # noqa: E704
+        ...
+
+    @property
+    def _outcomes_hat_columns(self) -> pd.DataFrame | None:  # noqa: E704
         ...
 
     def set_weights(  # noqa: E704

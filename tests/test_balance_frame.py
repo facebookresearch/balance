@@ -2011,6 +2011,54 @@ class TestBalanceFrameFromSample(BalanceTestCase):
                     self.assertAlmostEqual(o_val, n_val, places=5)
 
 
+class TestBalanceFrameOutcomesHatDelegates(BalanceTestCase):
+    """BalanceFrame delegates the outcomes_hat accessors to _sf_sample."""
+
+    def _make_bf(self) -> BalanceFrame:
+        resp_df = pd.DataFrame(
+            {
+                "id": ["1", "2", "3"],
+                "x": [10.0, 20.0, 30.0],
+                "p_y": [0.1, 0.2, 0.3],
+                "weight": [1.0, 1.0, 1.0],
+            }
+        )
+        tgt_df = pd.DataFrame(
+            {
+                "id": ["4", "5", "6"],
+                "x": [15.0, 25.0, 35.0],
+                "weight": [1.0, 1.0, 1.0],
+            }
+        )
+        resp_sf = SampleFrame.from_frame(resp_df, outcomes_hat_columns=["p_y"])
+        tgt_sf = SampleFrame.from_frame(tgt_df)
+        return BalanceFrame(sample=resp_sf, target=tgt_sf)
+
+    def test_df_outcomes_hat_delegates(self) -> None:
+        bf = self._make_bf()
+        assert bf.df_outcomes_hat is not None
+        self.assertEqual(list(bf.df_outcomes_hat.columns), ["p_y"])
+        self.assertEqual(bf.df_outcomes_hat["p_y"].tolist(), [0.1, 0.2, 0.3])
+
+    def test__outcomes_hat_columns_delegates(self) -> None:
+        bf = self._make_bf()
+        data = bf._outcomes_hat_columns
+        assert data is not None
+        self.assertIsInstance(data, pd.DataFrame)
+        self.assertEqual(list(data.columns), ["p_y"])
+
+    def test_outcomes_hat_accessors_none_when_empty(self) -> None:
+        resp_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["1", "2"], "x": [1.0, 2.0], "weight": [1.0, 1.0]})
+        )
+        tgt_sf = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["3", "4"], "x": [1.0, 2.0], "weight": [1.0, 1.0]})
+        )
+        bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
+        self.assertIsNone(bf.df_outcomes_hat)
+        self.assertIsNone(bf._outcomes_hat_columns)
+
+
 class TestBalanceFrameToSample(BalanceTestCase):
     def setUp(self) -> None:
         super().setUp()
@@ -2087,6 +2135,23 @@ class TestBalanceFrameToSample(BalanceTestCase):
         self.assertIsNotNone(s._outcome_columns)
         assert s._outcome_columns is not None
         self.assertEqual(s._outcome_columns.columns.tolist(), ["y"])
+
+    def test_to_sample_preserves_outcomes_hat_role(self) -> None:
+        resp_df = pd.DataFrame(
+            {
+                "id": ["1", "2", "3"],
+                "x1": [10.0, 20.0, 30.0],
+                "p_y": [0.5, 0.8, 0.3],
+                "weight": [1.0, 1.0, 1.0],
+            }
+        )
+        resp_sf = SampleFrame.from_frame(resp_df, outcomes_hat_columns=["p_y"])
+        bf = BalanceFrame(sample=resp_sf, target=self.tgt_sf)
+        s = bf.to_sample()
+        # BalanceFrame -> Sample carries the outcomes_hat role through, and the
+        # Ŷ column does not leak into the covariates.
+        self.assertEqual(s.outcomes_hat_columns, ["p_y"])
+        self.assertNotIn("p_y", s._covar_columns_names())
 
     def test_to_sample_roundtrip_sample_bf_sample(self) -> None:
         """Sample -> BalanceFrame -> Sample round-trip preserves data."""

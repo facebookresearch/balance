@@ -66,8 +66,9 @@ Key: BalanceFrame does NOT inherit from SampleFrame.
   - `BalanceDFCovars` — covariate access and statistics
   - `BalanceDFWeights` — weight diagnostics (design effect, density plots)
   - `BalanceDFOutcomes` — outcome analysis
-  - `BalanceDFSource` (protocol) — 7 required members: `weight_series`, `id_series`,
-    `_links`, `_covar_columns()`, `_outcome_columns`, `set_weights()`, `trim()`
+  - `BalanceDFSource` (protocol) — 8 required members: `weight_series`, `id_series`,
+    `_links`, `_covar_columns()`, `_outcome_columns`, `_outcomes_hat_columns`,
+    `set_weights()`, `trim()`
 
 ### Accessor naming convention
 
@@ -77,8 +78,10 @@ All data-access properties follow a consistent naming pattern:
 |--------|---------|----------|
 | `*_column` | Column name (`str`) | `id_column`, `weight_column` |
 | `*_series` | Column data (`pd.Series`) | `id_series`, `weight_series` |
-| `*_columns` | List of names (`list[str]`) | `covar_columns`, `outcome_columns`, `weight_columns_all` |
-| `df_*` | DataFrame | `df_covars`, `df_weights`, `df_outcomes`, `df_ignored` |
+| `*_columns` | List of names (`list[str]`) | `covar_columns`, `outcome_columns`, `outcomes_hat_columns`, `weight_columns_all` |
+| `df_*` | DataFrame | `df_covars`, `df_weights`, `df_outcomes`, `df_outcomes_hat`, `df_ignored` |
+
+Note: the `_*` protocol accessors `_outcome_columns` and `_outcomes_hat_columns` return the column *data* (a `DataFrame | None`), not names — the names live on `outcome_columns` / `outcomes_hat_columns`.
 
 **Migration warnings** (`FutureWarning`, will be removed after 2026-06-01):
 - `id_column` — changed in 0.20.0 from returning data to returning the name. Use `id_series` for data.
@@ -92,6 +95,9 @@ All data-access properties follow a consistent naming pattern:
 ├──────────────────────────┼──────────────────────────────┤
 │ DataFrame storage        │ SampleFrame._df              │
 │ Column-role metadata     │ SampleFrame._column_roles    │
+│ outcomes_hat (Ŷ) data    │ SampleFrame (canonical)      │
+│  (df_outcomes_hat /      │  add_outcomes_hat_column();  │
+│   _outcomes_hat_columns) │  BalanceFrame delegates      │
 │ ID/weight columns        │ SampleFrame                  │
 │ Type standardization     │ SampleFrame.from_frame()     │
 │ Weight management        │ SampleFrame (canonical)      │

@@ -21,6 +21,7 @@ from balance.balancedf_class import (
 from balance.sample_class import Sample
 from balance.sample_frame import SampleFrame
 from balance.testutil import BalanceTestCase
+from balance.util import _assert_type
 
 
 class TestSampleFrame(BalanceTestCase):
@@ -829,6 +830,165 @@ class TestSampleFrameWeightMetadata(BalanceTestCase):
         self.assertEqual(sf.weight_metadata("weight"), {"method": "original"})
 
 
+class TestSampleFrameOutcomesHat(BalanceTestCase):
+    """Data-model accessors + add_outcomes_hat_column for the outcomes_hat role."""
+
+    def _make_sf(self) -> SampleFrame:
+        df = pd.DataFrame(
+            {
+                "id": ["1", "2", "3", "4"],
+                "age": [25.0, 30.0, 35.0, 40.0],
+                "weight": [1.0, 1.0, 1.0, 1.0],
+            }
+        )
+        return SampleFrame.from_frame(df)
+
+    def test_df_outcomes_hat_none_when_empty(self) -> None:
+        self.assertIsNone(self._make_sf().df_outcomes_hat)
+
+    def test_add_outcomes_hat_column_example_snippet(self) -> None:
+        # Mirrors the diff summary + docstring example.
+        sf = self._make_sf()
+        sf.add_outcomes_hat_column("happiness_hat", pd.Series([52.0, 58.0, 68.0, 79.0]))
+        assert sf.df_outcomes_hat is not None
+        self.assertEqual(
+            sf.df_outcomes_hat["happiness_hat"].tolist(), [52.0, 58.0, 68.0, 79.0]
+        )
+        # Ŷ is registered under the outcomes_hat role, not as a covariate.
+        self.assertEqual(list(sf.df_covars.columns), ["age"])
+        self.assertEqual(sf.outcomes_hat_columns, ["happiness_hat"])
+
+    def test_add_outcomes_hat_column_covariate_exclusion_after_add(self) -> None:
+        sf = self._make_sf()
+        sf.add_outcomes_hat_column("happiness_hat", pd.Series([1.0, 2.0, 3.0, 4.0]))
+        self.assertNotIn("happiness_hat", sf.covar_columns)
+        self.assertNotIn("happiness_hat", list(sf.df_covars.columns))
+
+    def test__outcomes_hat_columns_returns_data(self) -> None:
+        sf = self._make_sf()
+        sf.add_outcomes_hat_column("happiness_hat", pd.Series([1.0, 2.0, 3.0, 4.0]))
+        data = sf._outcomes_hat_columns
+        assert data is not None
+        self.assertIsInstance(data, pd.DataFrame)
+        self.assertEqual(list(data.columns), ["happiness_hat"])
+
+    def test__outcomes_hat_columns_none_when_empty(self) -> None:
+        self.assertIsNone(self._make_sf()._outcomes_hat_columns)
+
+    def test_df_outcomes_hat_returns_copy(self) -> None:
+        sf = self._make_sf()
+        sf.add_outcomes_hat_column("happiness_hat", pd.Series([1.0, 2.0, 3.0, 4.0]))
+        out = sf.df_outcomes_hat
+        assert out is not None
+        out["happiness_hat"] = [9.0, 9.0, 9.0, 9.0]
+        self.assertEqual(
+            _assert_type(sf.df_outcomes_hat)["happiness_hat"].tolist(),
+            [1.0, 2.0, 3.0, 4.0],
+        )
+
+    def test_add_outcomes_hat_column_with_metadata(self) -> None:
+        sf = self._make_sf()
+        sf.add_outcomes_hat_column(
+            "happiness_hat",
+            pd.Series([1.0, 2.0, 3.0, 4.0]),
+            metadata={"learner": "manual"},
+        )
+        self.assertEqual(
+            sf._prediction_metadata["happiness_hat"], {"learner": "manual"}
+        )
+
+    def test_add_outcomes_hat_column_duplicate_raises(self) -> None:
+        sf = self._make_sf()
+        sf.add_outcomes_hat_column("happiness_hat", pd.Series([1.0, 2.0, 3.0, 4.0]))
+        with self.assertRaises(ValueError) as ctx:
+            sf.add_outcomes_hat_column("happiness_hat", pd.Series([1.0, 2.0, 3.0, 4.0]))
+        self.assertIn("already an outcomes_hat column", str(ctx.exception))
+
+    def test_add_outcomes_hat_column_existing_column_raises(self) -> None:
+        sf = self._make_sf()
+        with self.assertRaises(ValueError) as ctx:
+            sf.add_outcomes_hat_column("age", pd.Series([1.0, 2.0, 3.0, 4.0]))
+        self.assertIn("already exists in the DataFrame", str(ctx.exception))
+
+    def test_add_outcomes_hat_column_shorter_series_pads_nan(self) -> None:
+        sf = self._make_sf()
+        sf.add_outcomes_hat_column("happiness_hat", pd.Series([1.0, 2.0]))
+        assert sf.df_outcomes_hat is not None
+        self.assertEqual(len(sf.df_outcomes_hat["happiness_hat"]), 4)
+        self.assertTrue(pd.isna(sf._df["happiness_hat"].iloc[2]))
+
+    def test_add_outcomes_hat_column_longer_series_raises(self) -> None:
+        sf = self._make_sf()
+        with self.assertRaises(ValueError) as ctx:
+            sf.add_outcomes_hat_column("happiness_hat", pd.Series([1.0] * 6))
+        self.assertIn("length", str(ctx.exception))
+
+    def test_add_outcomes_hat_column_non_hat_name_warns(self) -> None:
+        sf = self._make_sf()
+        self.assertWarnsRegexp(
+            "naming convention",
+            sf.add_outcomes_hat_column,
+            "happiness_pred",
+            pd.Series([1.0, 2.0, 3.0, 4.0]),
+        )
+        # The column is still registered despite the warning.
+        self.assertEqual(sf.outcomes_hat_columns, ["happiness_pred"])
+
+    def test_add_outcomes_hat_column_hat_name_does_not_warn(self) -> None:
+        sf = self._make_sf()
+        # A conventional "<outcome>_hat" name emits no log at all.
+        self.assertNotWarns(
+            sf.add_outcomes_hat_column,
+            "happiness_hat",
+            pd.Series([1.0, 2.0, 3.0, 4.0]),
+        )
+
+    def test_prediction_metadata_survives_deepcopy(self) -> None:
+        import copy
+
+        sf = self._make_sf()
+        sf.add_outcomes_hat_column(
+            "happiness_hat",
+            pd.Series([1.0, 2.0, 3.0, 4.0]),
+            metadata={"learner": "manual"},
+        )
+        sf2 = copy.deepcopy(sf)
+        self.assertEqual(
+            sf2._prediction_metadata["happiness_hat"], {"learner": "manual"}
+        )
+        # Independent copy: mutating sf2's metadata does not affect sf.
+        sf2._prediction_metadata["happiness_hat"]["learner"] = "changed"
+        self.assertEqual(sf._prediction_metadata["happiness_hat"]["learner"], "manual")
+
+    def test_from_frame_stray_hat_column_warns(self) -> None:
+        df = pd.DataFrame(
+            {
+                "id": ["1", "2"],
+                "age": [25.0, 30.0],
+                "weight": [1.0, 1.0],
+                "happiness_hat": [0.3, 0.7],
+            }
+        )
+        # Undeclared _hat column inferred as covariate -> warning.
+        self.assertWarnsRegexp("_hat", SampleFrame.from_frame, df)
+
+    def test_from_frame_declared_hat_column_does_not_warn(self) -> None:
+        df = pd.DataFrame(
+            {
+                "id": ["1", "2"],
+                "age": [25.0, 30.0],
+                "weight": [1.0, 1.0],
+                "happiness_hat": [0.3, 0.7],
+            }
+        )
+        self.assertNotWarnsRegexp(
+            "not declared as outcomes_hat_columns",
+            SampleFrame.from_frame,
+            df,
+            outcomes_hat_columns=["happiness_hat"],
+        )
+
+
 class TestSampleFrameIntegration(BalanceTestCase):
     def test_full_lifecycle(self) -> None:
         """Exercise SampleFrame from construction through core features.
@@ -1179,6 +1339,25 @@ class TestSampleFrameFromSample(BalanceTestCase):
         sf = SampleFrame.from_sample(sample)
         self.assertIsNone(sf.df_outcomes)
         self.assertEqual(sf._column_roles["outcomes"], [])
+
+    def test_from_sample_preserves_outcomes_hat_role(self) -> None:
+        df = pd.DataFrame(
+            {
+                "id": ["1", "2", "3"],
+                "age": [25.0, 30.0, 35.0],
+                "weight": [1.0, 1.0, 1.0],
+                "p_y": [0.3, 0.5, 0.7],
+            }
+        )
+        sample = Sample.from_frame(df, outcomes_hat_columns=["p_y"])
+        sf = SampleFrame.from_sample(sample)
+        # Round-trip carries the outcomes_hat role through...
+        self.assertEqual(sf.outcomes_hat_columns, ["p_y"])
+        assert sf.df_outcomes_hat is not None
+        self.assertEqual(list(sf.df_outcomes_hat.columns), ["p_y"])
+        # ...and the Ŷ column does NOT leak into the covariates.
+        self.assertEqual(sf.covar_columns, ["age"])
+        self.assertNotIn("p_y", sf.covar_columns)
 
     def test_from_frame_duplicate_columns_raises(self) -> None:
         df = pd.DataFrame([[1, 2, 3]], columns=["id", "x", "x"])

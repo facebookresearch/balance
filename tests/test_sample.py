@@ -2969,3 +2969,48 @@ class TestSampleFrameSetterCoverage(balance.testutil.BalanceTestCase):
         # Should not raise
         sample._balance_frame = None
         sample._balance_frame = "anything"  # type: ignore[assignment]
+
+
+class TestSampleOutcomesHat(balance.testutil.BalanceTestCase):
+    """The outcomes_hat data-model accessors are usable on Sample (via MRO)."""
+
+    def _make_sample(self) -> Sample:
+        return Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["1", "2", "3", "4"],
+                    "age": [25.0, 30.0, 35.0, 40.0],
+                    "weight": [1.0, 1.0, 1.0, 1.0],
+                }
+            )
+        )
+
+    def test_add_outcomes_hat_column_on_sample(self) -> None:
+        s = self._make_sample()
+        s.add_outcomes_hat_column(
+            "happiness_hat",
+            pd.Series([52.0, 58.0, 68.0, 79.0]),
+            metadata={"learner": "manual"},
+        )
+        self.assertEqual(s.outcomes_hat_columns, ["happiness_hat"])
+        assert s.df_outcomes_hat is not None
+        self.assertEqual(
+            s.df_outcomes_hat["happiness_hat"].tolist(), [52.0, 58.0, 68.0, 79.0]
+        )
+        # Ŷ is not a covariate.
+        self.assertEqual(list(s.df_covars.columns), ["age"])
+        # Metadata is synced onto the Sample's _prediction_metadata.
+        self.assertEqual(s._prediction_metadata["happiness_hat"], {"learner": "manual"})
+
+    def test_outcomes_hat_role_survives_deepcopy(self) -> None:
+        s = self._make_sample()
+        s.add_outcomes_hat_column(
+            "happiness_hat",
+            pd.Series([1.0, 2.0, 3.0, 4.0]),
+            metadata={"learner": "manual"},
+        )
+        s2 = deepcopy(s)
+        self.assertEqual(s2.outcomes_hat_columns, ["happiness_hat"])
+        self.assertEqual(
+            s2._prediction_metadata["happiness_hat"], {"learner": "manual"}
+        )

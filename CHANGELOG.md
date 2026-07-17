@@ -4,6 +4,16 @@
 
 - **Breaking:** the previously-inert `predicted_outcome_columns` parameter (`Sample.from_frame` / `SampleFrame.from_frame` / `SampleFrame._create`) and the `SampleFrame.predicted_outcome_columns` property are renamed to `outcomes_hat_columns` (internal `_column_roles` key `"predicted"` → `"outcomes_hat"`). The old names are removed outright with no alias — the role was reserved scaffolding, never populated or consumed, so no migration is provided.
 
+## New Features
+
+- **`outcomes_hat` is now a usable data slot.** New data-model accessors expose the predicted-outcome (Ŷ) role on `SampleFrame` (and, delegating to the wrapped responder, on `BalanceFrame`): `df_outcomes_hat` returns the Ŷ columns as a DataFrame (or `None`), and the `_outcomes_hat_columns` protocol accessor returns the same data (matching the `_outcome_columns` quirk of returning data, not names — names remain on `outcomes_hat_columns`). `SampleFrame.add_outcomes_hat_column(name, values, metadata=None)` attaches a Ŷ column in place (mirroring `add_weight_column`, including index-aligned NaN-padding for shorter Series), registers it under the `outcomes_hat` role so it is excluded from covariates, and stores optional provenance in a new `_prediction_metadata` dict. Predicted columns follow a `<outcome>_hat` naming convention: `add_outcomes_hat_column` emits a `logging.warning` (it does not raise) when the name does not end in `_hat`, and `SampleFrame.from_frame` / `Sample.from_frame` warn when an undeclared `_hat`-suffixed column would be inferred as a covariate (the round-trip covariate-leak guard). The `outcomes_hat` role is now preserved across `Sample` ↔ `SampleFrame` and `BalanceFrame` ↔ `Sample` conversions.
+
+  ```python
+  sf.add_outcomes_hat_column("happiness_hat", pd.Series([52., 58., 68., 79.]))
+  sf.df_outcomes_hat["happiness_hat"].tolist()   # -> [52.0, 58.0, 68.0, 79.0]
+  list(sf.df_covars.columns)                     # -> ["age"]   (Ŷ is not a covariate)
+  ```
+
 ## Documentation
 
 - Add the outcome-modelling design doc: [architecture_0_23_0.md](https://github.com/facebookresearch/balance/blob/main/docs/architecture/architecture_0_23_0.md).
