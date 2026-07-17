@@ -6425,10 +6425,10 @@ class TestBalanceFrameKeepOnlyPreAdjustAndLinks(BalanceTestCase):
         self.assertIsNotNone(result)
 
 
-class TestBalanceFrameFilterSfPredicted(BalanceTestCase):
-    """Cover line 2859: _filter_sf for predicted column roles."""
+class TestBalanceFrameFilterSfOutcomesHat(BalanceTestCase):
+    """Cover _filter_sf for outcomes_hat column roles."""
 
-    def test_filter_sf_predicted_columns(self) -> None:
+    def test_filter_sf_outcomes_hat_columns(self) -> None:
         sf = SampleFrame._create(
             df=pd.DataFrame(
                 {
@@ -6442,10 +6442,10 @@ class TestBalanceFrameFilterSfPredicted(BalanceTestCase):
             covar_columns=["x"],
             weight_columns=["weight"],
         )
-        sf._column_roles["predicted"] = ["pred"]
+        sf._column_roles["outcomes_hat"] = ["pred"]
         filtered = BalanceFrame._filter_sf(sf, None, ["x"])
-        # predicted column should be filtered (pred not in keep set)
-        self.assertEqual(filtered._column_roles.get("predicted", []), [])
+        # outcomes_hat column should be filtered (pred not in keep set)
+        self.assertEqual(filtered._column_roles.get("outcomes_hat", []), [])
 
 
 class TestBalanceFrameAdjustmentHistoryAndCbpsValidation(BalanceTestCase):

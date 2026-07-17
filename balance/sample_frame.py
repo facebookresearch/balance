@@ -7,7 +7,7 @@
 
 """SampleFrame: an explicit-role DataFrame container for the Balance library.
 
-Stores covariates, weights, outcomes, predicted, and ignored columns with
+Stores covariates, weights, outcomes, outcomes_hat, and ignored columns with
 explicit role metadata, replacing the inference-by-exclusion pattern used
 in the legacy Sample class.
 """
@@ -41,7 +41,7 @@ class SampleFrame:
 
     SampleFrame stores data as a single internal pd.DataFrame but with
     explicit metadata tracking which columns belong to which role:
-    covars (X), weights (W), outcomes (Y), predicted_outcomes (Y_hat), ignored.
+    covars (X), weights (W), outcomes (Y), outcomes_hat (Y_hat), ignored.
 
     Must be constructed via SampleFrame.from_frame() or SampleFrame.from_sample().
 
@@ -139,7 +139,7 @@ class SampleFrame:
         covar_columns: list[str],
         weight_columns: list[str],
         outcome_columns: list[str] | None = None,
-        predicted_outcome_columns: list[str] | None = None,
+        outcomes_hat_columns: list[str] | None = None,
         ignored_columns: list[str] | None = None,
         _skip_copy: bool = False,
         _df_dtypes: pd.Series | None = None,
@@ -152,7 +152,7 @@ class SampleFrame:
             "covars": list(covar_columns),
             "weights": list(weight_columns),
             "outcomes": list(outcome_columns or []),
-            "predicted": list(predicted_outcome_columns or []),
+            "outcomes_hat": list(outcomes_hat_columns or []),
             "ignored": list(ignored_columns or []),
         }
         instance._weight_column_name = weight_columns[0] if weight_columns else None
@@ -172,7 +172,7 @@ class SampleFrame:
         covar_columns: list[str] | None = None,
         weight_column: str | None = None,
         outcome_columns: list[str] | tuple[str, ...] | str | None = None,
-        predicted_outcome_columns: list[str] | tuple[str, ...] | str | None = None,
+        outcomes_hat_columns: list[str] | tuple[str, ...] | str | None = None,
         ignored_columns: list[str] | tuple[str, ...] | str | None = None,
         check_id_uniqueness: bool = True,
         standardize_types: bool = True,
@@ -194,14 +194,14 @@ class SampleFrame:
                 (``"id"``, ``"ID"``, etc.).
             covar_columns (list of str, optional): Explicit list of covariate
                 column names. If None, inferred by exclusion (all columns
-                minus id, weight, outcome, predicted, and ignored columns).
+                minus id, weight, outcome, outcomes_hat, and ignored columns).
             weight_column (str, optional): Name of the column containing
                 sampling weights. If None, guesses ``"weight"``/``"weights"``
                 or creates one filled with 1.0.
             outcome_columns (list of str or str, optional): Column names to
                 treat as outcome variables.
-            predicted_outcome_columns (list of str or str, optional): Column
-                names to treat as predicted outcome variables.
+            outcomes_hat_columns (list of str or str, optional): Column
+                names to treat as predicted-outcome (Y_hat) variables.
             ignored_columns (list of str or str, optional): Column names to
                 ignore (excluded from covariates).
             check_id_uniqueness (bool): Whether to verify id uniqueness.
@@ -218,7 +218,7 @@ class SampleFrame:
         Raises:
             ValueError: If the id column contains nulls or duplicates, if the
                 weight column contains nulls or negative values, or if
-                specified outcome/predicted/ignore columns are missing from the
+                specified outcome/outcomes_hat/ignore columns are missing from the
                 DataFrame.
 
         Examples:
@@ -239,8 +239,8 @@ class SampleFrame:
         # Normalize string inputs to lists
         if isinstance(outcome_columns, str):
             outcome_columns = [outcome_columns]
-        if isinstance(predicted_outcome_columns, str):
-            predicted_outcome_columns = [predicted_outcome_columns]
+        if isinstance(outcomes_hat_columns, str):
+            outcomes_hat_columns = [outcomes_hat_columns]
         if isinstance(ignored_columns, str):
             ignored_columns = [ignored_columns]
 
@@ -366,14 +366,14 @@ class SampleFrame:
                     f"outcome columns {list(missing_outcome)} not in df columns {_df.columns.values.tolist()}"
                 )
 
-        # --- Predicted outcome columns validation ---
-        predicted_list: list[str] | None = None
-        if predicted_outcome_columns is not None:
-            predicted_list = list(predicted_outcome_columns)
-            missing_predicted = set(predicted_list).difference(_df.columns)
-            if missing_predicted:
+        # --- outcomes_hat columns validation ---
+        outcomes_hat_list: list[str] | None = None
+        if outcomes_hat_columns is not None:
+            outcomes_hat_list = list(outcomes_hat_columns)
+            missing_outcomes_hat = set(outcomes_hat_list).difference(_df.columns)
+            if missing_outcomes_hat:
                 raise ValueError(
-                    f"predicted outcome columns {list(missing_predicted)} not in df columns {_df.columns.values.tolist()}"
+                    f"outcomes_hat columns {list(missing_outcomes_hat)} not in df columns {_df.columns.values.tolist()}"
                 )
 
         # --- Ignore columns validation ---
@@ -403,7 +403,7 @@ class SampleFrame:
                 )
         else:
             # Infer by exclusion
-            ignored = (predicted_list or []) + (ignore_list or [])
+            ignored = (outcomes_hat_list or []) + (ignore_list or [])
             special = {id_col_name, weight_column}
             special.update(outcome_list or [])
             special.update(ignored or [])
@@ -413,7 +413,7 @@ class SampleFrame:
         role_to_columns: dict[str, list[str]] = {
             "covars": covar_list,
             "outcomes": outcome_list or [],
-            "predicted": predicted_list or [],
+            "outcomes_hat": outcomes_hat_list or [],
             "ignored": ignore_list or [],
         }
         roles = list(role_to_columns.keys())
@@ -452,7 +452,7 @@ class SampleFrame:
             covar_columns=covar_list,
             weight_columns=[weight_column],
             outcome_columns=outcome_list,
-            predicted_outcome_columns=predicted_list,
+            outcomes_hat_columns=outcomes_hat_list,
             ignored_columns=ignore_list,
             _skip_copy=True,
             _df_dtypes=df_dtypes,
@@ -525,25 +525,25 @@ class SampleFrame:
         return list(self._column_roles["outcomes"])
 
     @property
-    def predicted_outcome_columns(self) -> list[str]:
-        """Names of the predicted outcome columns.
+    def outcomes_hat_columns(self) -> list[str]:
+        """Names of the predicted-outcome (Y_hat) columns.
 
         Returns a copy so that callers cannot accidentally mutate the
         internal column-role registry.
 
         Returns:
-            list[str]: Predicted outcome column names (empty list if none).
+            list[str]: outcomes_hat column names (empty list if none).
 
         Examples:
             >>> import pandas as pd
             >>> from balance.sample_frame import SampleFrame
             >>> df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20],
             ...                    "weight": [1.0, 1.0], "p_y": [0.3, 0.7]})
-            >>> sf = SampleFrame.from_frame(df, predicted_outcome_columns=["p_y"])
-            >>> sf.predicted_outcome_columns
+            >>> sf = SampleFrame.from_frame(df, outcomes_hat_columns=["p_y"])
+            >>> sf.outcomes_hat_columns
             ['p_y']
         """
-        return list(self._column_roles["predicted"])
+        return list(self._column_roles["outcomes_hat"])
 
     @property
     def ignored_columns(self) -> list[str]:
@@ -1301,9 +1301,9 @@ class SampleFrame:
            * ``_links`` — references to ``target``, ``unadjusted``, and other
              linked Samples (used by :class:`~balance.balancedf_class.BalanceDF`
              for comparative display).
-           * ``predicted_outcome_columns`` — Sample has no native concept of
+           * ``outcomes_hat_columns`` — Sample has no native concept of
              predicted-outcome columns, so the resulting SampleFrame will
-             always have an empty ``predicted`` role.
+             always have an empty ``outcomes_hat`` role.
            * **Column ordering** may differ after a round-trip
              (``Sample → SampleFrame → Sample``), since SampleFrame stores
              columns grouped by role rather than preserving the original

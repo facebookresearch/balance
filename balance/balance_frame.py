@@ -3434,9 +3434,9 @@ class BalanceFrame:
                 sf._column_roles["outcomes"] = [
                     c for c in sf._column_roles["outcomes"] if c in keep_set
                 ]
-            if sf._column_roles["predicted"]:
-                sf._column_roles["predicted"] = [
-                    c for c in sf._column_roles["predicted"] if c in keep_set
+            if sf._column_roles.get("outcomes_hat", []):
+                sf._column_roles["outcomes_hat"] = [
+                    c for c in sf._column_roles.get("outcomes_hat", []) if c in keep_set
                 ]
             if sf._column_roles["ignored"]:
                 sf._column_roles["ignored"] = [

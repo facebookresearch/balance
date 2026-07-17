@@ -52,7 +52,7 @@ Key: BalanceFrame does NOT inherit from SampleFrame.
   All public API unchanged — `from_frame()`, `set_target()`, `adjust()`, `summary()`,
   `covars()`, `weights()`, `outcomes()`, etc. all work identically.
 - **`SampleFrame`** (`sample_frame.py`) — DataFrame container with explicit column-role metadata
-  (covars, weights, outcomes, predicted outcomes, ignored). Created via `SampleFrame.from_frame()`.
+  (covars, weights, outcomes, outcomes_hat, ignored). Created via `SampleFrame.from_frame()`.
   Provides weight management methods (`add_weight_column()`, `set_active_weight()`,
   `rename_weight_column()`, `set_weight_metadata()`), `set_weights()`, and `trim()`.
 - **`BalanceFrame`** (`balance_frame.py`) — adjustment orchestrator pairing a responder

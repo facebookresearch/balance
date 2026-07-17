@@ -101,7 +101,7 @@ class Sample(BalanceFrame, SampleFrame):
         covar_columns: list[str] | None = None,
         weight_column: str | None = None,
         outcome_columns: list[str] | tuple[str, ...] | str | None = None,
-        predicted_outcome_columns: list[str] | tuple[str, ...] | str | None = None,
+        outcomes_hat_columns: list[str] | tuple[str, ...] | str | None = None,
         ignored_columns: list[str] | tuple[str, ...] | str | None = None,
         check_id_uniqueness: bool = True,
         standardize_types: bool = True,
@@ -120,7 +120,7 @@ class Sample(BalanceFrame, SampleFrame):
                 covariates are inferred by exclusion.
             weight_column: Column to treat as weight.
             outcome_columns: Columns to treat as outcomes.
-            predicted_outcome_columns: Columns to treat as predicted outcomes.
+            outcomes_hat_columns: Columns to treat as predicted outcomes (Y_hat).
             ignored_columns: Columns to ignore (excluded from covariates).
             check_id_uniqueness: Whether to verify id uniqueness.
             standardize_types: Whether to convert int types to float.
@@ -137,7 +137,7 @@ class Sample(BalanceFrame, SampleFrame):
             covar_columns=covar_columns,
             weight_column=weight_column,
             outcome_columns=outcome_columns,
-            predicted_outcome_columns=predicted_outcome_columns,
+            outcomes_hat_columns=outcomes_hat_columns,
             ignored_columns=ignored_columns,
             check_id_uniqueness=check_id_uniqueness,
             standardize_types=standardize_types,

@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import warnings
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -192,7 +193,7 @@ class TestSampleFrameMutableViewSafety(BalanceTestCase):
         return SampleFrame.from_frame(
             df,
             outcome_columns=["y"],
-            predicted_outcome_columns=["p_y"],
+            outcomes_hat_columns=["p_y"],
             ignored_columns=["region"],
         )
 
@@ -293,36 +294,53 @@ class TestSampleFrameColumnRoleProperties(BalanceTestCase):
         result.append("injected")
         self.assertEqual(sf.outcome_columns, ["y"])
 
-    def test_predicted_outcome_columns(self) -> None:
+    def test_outcomes_hat_columns(self) -> None:
         df = pd.DataFrame({"id": [1], "x": [10], "w": [1.0], "p_y": [0.5]})
         sf = SampleFrame._create(
             df=df,
             id_column="id",
             covar_columns=["x"],
             weight_columns=["w"],
-            predicted_outcome_columns=["p_y"],
+            outcomes_hat_columns=["p_y"],
         )
-        self.assertEqual(sf.predicted_outcome_columns, ["p_y"])
+        self.assertEqual(sf.outcomes_hat_columns, ["p_y"])
 
-    def test_predicted_outcome_columns_empty(self) -> None:
+    def test_outcomes_hat_columns_empty(self) -> None:
         df = pd.DataFrame({"id": [1], "x": [10], "w": [1.0]})
         sf = SampleFrame._create(
             df=df, id_column="id", covar_columns=["x"], weight_columns=["w"]
         )
-        self.assertEqual(sf.predicted_outcome_columns, [])
+        self.assertEqual(sf.outcomes_hat_columns, [])
 
-    def test_predicted_outcome_columns_returns_copy(self) -> None:
+    def test_outcomes_hat_columns_returns_copy(self) -> None:
         df = pd.DataFrame({"id": [1], "x": [10], "w": [1.0], "p_y": [0.5]})
         sf = SampleFrame._create(
             df=df,
             id_column="id",
             covar_columns=["x"],
             weight_columns=["w"],
-            predicted_outcome_columns=["p_y"],
+            outcomes_hat_columns=["p_y"],
         )
-        result = sf.predicted_outcome_columns
+        result = sf.outcomes_hat_columns
         result.append("injected")
-        self.assertEqual(sf.predicted_outcome_columns, ["p_y"])
+        self.assertEqual(sf.outcomes_hat_columns, ["p_y"])
+
+    def test_outcomes_hat_hard_removal_contract(self) -> None:
+        """The rename removes the old public names outright (no alias)."""
+        df = pd.DataFrame(
+            {"id": ["1", "2"], "x": [10, 20], "weight": [1.0, 1.0], "p_y": [0.3, 0.7]}
+        )
+        sf = SampleFrame.from_frame(df, outcomes_hat_columns=["p_y"])
+        # Renamed accessor works.
+        self.assertEqual(sf.outcomes_hat_columns, ["p_y"])
+        # Old property is gone (no alias, no FutureWarning).
+        self.assertFalse(hasattr(sf, "predicted_outcome_columns"))
+        # Old kwarg is removed outright -> TypeError. Passed via a str-keyed dict
+        # (typed dict[str, object], so pyre can't validate the keys) so static
+        # type checkers don't flag the intentionally-removed keyword.
+        removed_kwarg: dict[str, Any] = {"predicted_outcome_columns": ["p_y"]}
+        with self.assertRaises(TypeError):
+            SampleFrame.from_frame(df, **removed_kwarg)
 
     def test_ignored_columns(self) -> None:
         df = pd.DataFrame({"id": [1], "x": [10], "w": [1.0], "region": ["US"]})
@@ -520,10 +538,10 @@ class TestSampleFrameFromFrame(BalanceTestCase):
         with self.assertRaises(ValueError):
             SampleFrame.from_frame(df, outcome_columns=["nonexistent"])
 
-    def test_from_frame_missing_predicted_column_raises(self) -> None:
+    def test_from_frame_missing_outcomes_hat_column_raises(self) -> None:
         df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20], "weight": [1.0, 1.0]})
         with self.assertRaises(ValueError):
-            SampleFrame.from_frame(df, predicted_outcome_columns=["nonexistent"])
+            SampleFrame.from_frame(df, outcomes_hat_columns=["nonexistent"])
 
     def test_from_frame_missing_ignore_column_raises(self) -> None:
         df = pd.DataFrame({"id": ["1", "2"], "x": [10, 20], "weight": [1.0, 1.0]})
@@ -682,10 +700,10 @@ class TestSampleFrameEdgeCases(BalanceTestCase):
         self.assertIsInstance(w, pd.DataFrame)
         self.assertEqual(w.shape[1], 0)
 
-    def test_from_frame_predicted_column_missing_from_df(self) -> None:
+    def test_from_frame_outcomes_hat_column_missing_from_df(self) -> None:
         df = pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]})
         with self.assertRaises(ValueError):
-            SampleFrame.from_frame(df, predicted_outcome_columns=["y_hat"])
+            SampleFrame.from_frame(df, outcomes_hat_columns=["y_hat"])
 
     def test_skip_copy_optimization_preserves_isolation(self) -> None:
         # from_frame() passes _skip_copy=True to _create() since it already deep-copied.
@@ -1212,13 +1230,13 @@ class TestSampleFrameFromFrameEdgeCases(BalanceTestCase):
 class TestSampleFrameUncoveredLines(BalanceTestCase):
     """Tests targeting specific uncovered lines in sample_frame.py."""
 
-    def test_from_frame_predicted_outcome_columns_string(self) -> None:
-        """Line 244: predicted_outcome_columns as a string is normalised to list."""
+    def test_from_frame_outcomes_hat_columns_string(self) -> None:
+        """outcomes_hat_columns as a string is normalised to a list."""
         df = pd.DataFrame(
             {"id": ["1", "2"], "x": [10, 20], "weight": [1.0, 1.0], "p_y": [0.3, 0.7]}
         )
-        sf = SampleFrame.from_frame(df, predicted_outcome_columns="p_y")
-        self.assertEqual(sf.predicted_outcome_columns, ["p_y"])
+        sf = SampleFrame.from_frame(df, outcomes_hat_columns="p_y")
+        self.assertEqual(sf.outcomes_hat_columns, ["p_y"])
 
     def test_from_frame_missing_covar_columns_raises(self) -> None:
         """Line 402: ValueError when explicit covar_columns are not in df."""
