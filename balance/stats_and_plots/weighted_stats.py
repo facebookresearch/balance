@@ -381,6 +381,77 @@ def weighted_sd(
     return pd.Series(np.sqrt(weighted_var(v, w, inf_rm)))
 
 
+def weighted_r2(
+    y_true: list[Any] | pd.Series | npt.NDArray,
+    y_pred: list[Any] | pd.Series | npt.NDArray,
+    w: list[Any] | pd.Series | npt.NDArray | None = None,
+    inf_rm: bool = False,
+) -> float:
+    """Computes the weighted coefficient of determination (weighted R²).
+
+    Defined as ``1 - SS_res / SS_tot`` where
+    ``SS_res = Σ wᵢ (yᵢ − ŷᵢ)²`` (weighted residual sum of squares) and
+    ``SS_tot = Σ wᵢ (yᵢ − ȳ_w)²`` (weighted total sum of squares), with
+    ``ȳ_w`` the :func:`weighted_mean` of ``y_true``.
+
+    For a Gaussian/regression target this is also the (weighted) fraction of
+    deviance explained. When no weights are supplied (or all weights are equal)
+    this reduces to :func:`sklearn.metrics.r2_score`.
+
+    See: https://en.wikipedia.org/wiki/Coefficient_of_determination
+
+    Rows that are missing (NaN) or infinite in any of ``y_true``, ``y_pred``, or
+    ``w`` are dropped before the computation (using :func:`rm_mutual_nas`),
+    matching the mutual-NA handling of the other weighted-stats helpers.
+
+    Args:
+        y_true (Union[List, pd.Series, np.ndarray]): the observed target values.
+        y_pred (Union[List, pd.Series, np.ndarray]): the predicted target values, aligned with ``y_true``.
+        w (Union[List, pd.Series, np.ndarray, None], optional): weights to apply. If None, all rows are weighted equally (uniform weights of 1.0). Defaults to None.
+        inf_rm (bool, optional): kept for signature parity with the other weighted-stats helpers. Infinite values in the inputs are always removed together with NaNs regardless of this flag. Defaults to False.
+
+    Returns:
+        float: the weighted R². Matches :func:`sklearn.metrics.r2_score` on the degenerate ``SS_tot == 0`` case: returns ``1.0`` when the predictions are perfect (``SS_res == 0``) and ``0.0`` otherwise.
+
+    Examples:
+    .. code-block:: python
+
+            import pandas as pd
+            from balance.stats_and_plots.weighted_stats import weighted_r2
+
+            weighted_r2(
+                pd.Series([1.0, 2.0, 3.0]),
+                pd.Series([1.1, 1.9, 3.2]),
+                w=pd.Series([1.0, 1.0, 2.0]),
+            )
+                # 0.9636363636363636
+
+            # Without weights it matches sklearn.metrics.r2_score:
+            weighted_r2(pd.Series([1.0, 2.0, 3.0]), pd.Series([1.1, 1.9, 3.2]))
+                # 0.97
+    """
+    del inf_rm  # infinite values are always removed together with NaNs below
+    if w is None:
+        w = np.ones(len(y_true))
+
+    y_true, y_pred, w = rm_mutual_nas(
+        np.asarray(y_true, dtype=float),
+        np.asarray(y_pred, dtype=float),
+        np.asarray(w, dtype=float),
+    )
+    _check_weights_are_valid(pd.Series(w))
+
+    y_bar = weighted_mean(pd.Series(y_true), pd.Series(w)).iloc[0]
+    ss_res = float(np.sum(w * (y_true - y_pred) ** 2))
+    ss_tot = float(np.sum(w * (y_true - y_bar) ** 2))
+
+    if ss_tot == 0:
+        # Matches sklearn.metrics.r2_score: a constant y_true yields 1.0 when the
+        # residuals are also zero (perfect prediction) and 0.0 otherwise.
+        return 1.0 if ss_res == 0 else 0.0
+    return 1.0 - ss_res / ss_tot
+
+
 def weighted_quantile(
     v: list[Any] | pd.Series | pd.DataFrame | npt.NDArray | np.matrix,
     quantiles: list[Any] | pd.Series | npt.NDArray,

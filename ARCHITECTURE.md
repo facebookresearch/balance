@@ -215,7 +215,7 @@ Key parameters across methods: `max_de` (design effect cap, default 1.5), `trans
 
 ## Supporting modules
 
-- `stats_and_plots/` — statistical summaries, weighted comparisons (ASMD), plots (seaborn/plotly/ASCII)
+- `stats_and_plots/` — statistical summaries (weighted mean/var/sd/quantile, weighted R² via `weighted_r2`), weighted comparisons (ASMD), plots (seaborn/plotly/ASCII)
 - `utils/` — data transformations, input validation, model matrix (patsy), pandas helpers, file/logging utils
 - `datasets/` — simulated data generators and sample CSVs
 - `adjustment.py` — weight trimming (mean ratio, percentile winsorization)

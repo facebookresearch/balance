@@ -22,6 +22,14 @@
   SampleFrame.from_frame(df).outcomes_hat()   # -> None   (no outcomes_hat columns)
   ```
 
+- **`weighted_r2` — weighted coefficient of determination.** New `balance.stats_and_plots.weighted_stats.weighted_r2(y_true, y_pred, w=None)` returns the weighted R² (`1 - SS_res / SS_tot`), built on `weighted_mean`. For a Gaussian/regression target this is the fraction of deviance explained; with no weights (or uniform weights) it reduces to `sklearn.metrics.r2_score`. Rows that are NaN/inf in any input are dropped (mutual-NA handling like the other weighted-stats helpers), and the degenerate `SS_tot == 0` case matches sklearn (`1.0` for a perfect fit, `0.0` otherwise). This is balance's first weighted regression-fit metric, powering the `perf` field of the forthcoming outcome models.
+
+  ```python
+  from balance.stats_and_plots.weighted_stats import weighted_r2
+  weighted_r2(pd.Series([1., 2., 3.]), pd.Series([1.1, 1.9, 3.2]), w=pd.Series([1., 1., 2.]))
+  # 0.9636363636363636   (unweighted call equals sklearn.metrics.r2_score)
+  ```
+
 ## Documentation
 
 - Add the outcome-modelling design doc: [architecture_0_23_0.md](https://github.com/facebookresearch/balance/blob/main/docs/architecture/architecture_0_23_0.md).

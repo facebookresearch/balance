@@ -2350,6 +2350,108 @@ class TestBalance_weighted_stats(
             )
         )
 
+    def test_weighted_r2_example_snippet(self) -> None:
+        """Assert the Example snippet from the docstring / diff summary."""
+        from balance.stats_and_plots.weighted_stats import weighted_r2
+
+        result = weighted_r2(
+            pd.Series([1.0, 2.0, 3.0]),
+            pd.Series([1.1, 1.9, 3.2]),
+            w=pd.Series([1.0, 1.0, 2.0]),
+        )
+        # ~0.96 -- hand-computed: ybar_w = 2.25, SS_res = 0.10, SS_tot = 2.75,
+        # R2 = 1 - 0.10 / 2.75 = 0.9636363636363636
+        self.assertAlmostEqual(result, 0.9636363636363636, places=10)
+
+        # The unweighted docstring example: ybar = 2.0, SS_res = 0.06, SS_tot = 2.0,
+        # R2 = 1 - 0.06 / 2.0 = 0.97
+        unweighted = weighted_r2(pd.Series([1.0, 2.0, 3.0]), pd.Series([1.1, 1.9, 3.2]))
+        self.assertAlmostEqual(unweighted, 0.97, places=10)
+
+    def test_weighted_r2_hand_computed_weighted_value(self) -> None:
+        """Weighted R2 matches an independent hand-computed value."""
+        from balance.stats_and_plots.weighted_stats import weighted_r2
+
+        y_true = pd.Series([2.0, 4.0, 6.0, 8.0])
+        y_pred = pd.Series([2.5, 3.5, 6.5, 7.5])
+        w = pd.Series([1.0, 2.0, 3.0, 4.0])
+        # ybar_w = (1*2 + 2*4 + 3*6 + 4*8) / 10 = 60 / 10 = 6.0
+        # SS_res = 1*0.25 + 2*0.25 + 3*0.25 + 4*0.25 = 2.5
+        # SS_tot = 1*16 + 2*4 + 3*0 + 4*4 = 16 + 8 + 0 + 16 = 40
+        # R2 = 1 - 2.5 / 40 = 0.9375
+        self.assertAlmostEqual(weighted_r2(y_true, y_pred, w=w), 0.9375, places=10)
+
+    def test_weighted_r2_unweighted_matches_sklearn(self) -> None:
+        """Unweighted (w=None) and uniform-weight calls equal sklearn.metrics.r2_score."""
+        from balance.stats_and_plots.weighted_stats import weighted_r2
+        from sklearn.metrics import r2_score
+
+        y_true = [3.0, -0.5, 2.0, 7.0, 4.2]
+        y_pred = [2.5, 0.0, 2.1, 7.8, 3.9]
+        expected = r2_score(y_true, y_pred)
+
+        self.assertAlmostEqual(
+            weighted_r2(pd.Series(y_true), pd.Series(y_pred)), expected, places=12
+        )
+        # Uniform (non-1.0) weights must also reduce to the unweighted score.
+        self.assertAlmostEqual(
+            weighted_r2(pd.Series(y_true), pd.Series(y_pred), w=pd.Series([2.0] * 5)),
+            expected,
+            places=12,
+        )
+
+    def test_weighted_r2_weighted_matches_sklearn(self) -> None:
+        """Weighted call equals sklearn.metrics.r2_score with sample_weight."""
+        from balance.stats_and_plots.weighted_stats import weighted_r2
+        from sklearn.metrics import r2_score
+
+        y_true = [3.0, -0.5, 2.0, 7.0, 4.2]
+        y_pred = [2.5, 0.0, 2.1, 7.8, 3.9]
+        w = [1.0, 2.0, 3.0, 1.0, 2.0]
+        self.assertAlmostEqual(
+            weighted_r2(pd.Series(y_true), pd.Series(y_pred), w=pd.Series(w)),
+            r2_score(y_true, y_pred, sample_weight=w),
+            places=12,
+        )
+
+    def test_weighted_r2_perfect_prediction_is_one(self) -> None:
+        """Perfect predictions give an R2 of exactly 1.0."""
+        from balance.stats_and_plots.weighted_stats import weighted_r2
+
+        y = pd.Series([1.0, 2.0, 3.0, 4.0])
+        self.assertEqual(weighted_r2(y, y, w=pd.Series([1.0, 1.0, 2.0, 3.0])), 1.0)
+
+    def test_weighted_r2_degenerate_ss_tot_zero(self) -> None:
+        """Constant y_true (SS_tot == 0) matches sklearn: 1.0 if perfect else 0.0."""
+        from balance.stats_and_plots.weighted_stats import weighted_r2
+
+        # Perfect prediction of a constant target -> 1.0
+        self.assertEqual(
+            weighted_r2(pd.Series([5.0, 5.0, 5.0]), pd.Series([5.0, 5.0, 5.0])), 1.0
+        )
+        # Imperfect prediction of a constant target -> 0.0
+        self.assertEqual(
+            weighted_r2(pd.Series([5.0, 5.0, 5.0]), pd.Series([4.0, 5.0, 6.0])), 0.0
+        )
+
+    def test_weighted_r2_drops_mutual_nas(self) -> None:
+        """NaN / inf rows in any input are dropped before the computation."""
+        from balance.stats_and_plots.weighted_stats import weighted_r2
+
+        y_true = pd.Series([1.0, 2.0, 3.0])
+        y_pred = pd.Series([1.1, 1.9, 3.2])
+        w = pd.Series([1.0, 1.0, 2.0])
+        expected = weighted_r2(y_true, y_pred, w=w)
+
+        # Appending rows that are NaN / inf in one of the inputs must not change
+        # the result once those rows are removed.
+        y_true_ext = pd.Series([1.0, 2.0, 3.0, np.nan, 10.0])
+        y_pred_ext = pd.Series([1.1, 1.9, 3.2, 5.0, np.inf])
+        w_ext = pd.Series([1.0, 1.0, 2.0, 1.0, 1.0])
+        self.assertAlmostEqual(
+            weighted_r2(y_true_ext, y_pred_ext, w=w_ext), expected, places=12
+        )
+
 
 class TestBalance_weighted_comparisons_stats(
     balance.testutil.BalanceTestCase,
