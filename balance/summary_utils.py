@@ -172,6 +172,8 @@ def _safe_len(value: Any) -> int | float:
         The object's length, or ``np.nan`` when the object is scalar or its
         length implementation raises.
     """
+    if value is None or isinstance(value, (str, bytes)):
+        return np.nan
     if not isinstance(value, Sized):
         return np.nan
 

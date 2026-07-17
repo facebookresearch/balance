@@ -819,6 +819,25 @@ def test_build_diagnostics_handles_sparse_rake_metadata() -> None:
     assert np.isnan(float(glance["n_variables"]))
 
 
+def test_build_diagnostics_treats_scalar_strings_as_missing_lengths() -> None:
+    for method in ("rake", "poststratify"):
+        model = {
+            "method": method,
+            "variables": "ab",
+            "cell_weight_ratio": b"xy",
+        }
+
+        out = _build_diagnostics(
+            **_minimal_diagnostics_inputs(),
+            model_dict=model,
+        )
+
+        glance = out[out["metric"] == "model_glance"].set_index("var")["val"]
+        assert np.isnan(float(glance["n_variables"]))
+        if method == "poststratify":
+            assert np.isnan(float(glance["n_cells"]))
+
+
 def test_build_diagnostics_includes_poststratify_model_glance() -> None:
     model = {
         "method": "poststratify",
