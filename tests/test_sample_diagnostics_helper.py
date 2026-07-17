@@ -758,6 +758,11 @@ def test_build_diagnostics_ipw_skips_missing_array_attrs() -> None:
     assert not out.empty
 
 
+class _BrokenLen:
+    def __len__(self) -> int:
+        raise RuntimeError("length unavailable")
+
+
 def _minimal_diagnostics_inputs() -> dict[str, Any]:
     covars_df = pd.DataFrame({"a": [1, 2], "b": ["x", "y"]})
     covars_asmd = pd.DataFrame(
@@ -799,7 +804,7 @@ def test_build_diagnostics_handles_sparse_rake_metadata() -> None:
     model = {
         "method": "rake",
         "iterations": pd.DataFrame({"other": [1.0]}),
-        "variables": object(),
+        "variables": _BrokenLen(),
     }
 
     out = _build_diagnostics(
@@ -836,9 +841,9 @@ def test_build_diagnostics_includes_poststratify_model_glance() -> None:
 def test_build_diagnostics_handles_sparse_poststratify_metadata() -> None:
     model = {
         "method": "poststratify",
-        "variables": object(),
+        "variables": _BrokenLen(),
         "strict_matching": False,
-        "cell_weight_ratio": 1.0,
+        "cell_weight_ratio": _BrokenLen(),
     }
 
     out = _build_diagnostics(

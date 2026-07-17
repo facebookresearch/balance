@@ -177,7 +177,7 @@ def _safe_len(value: Any) -> int | float:
 
     try:
         return len(value)
-    except TypeError:
+    except Exception:
         return np.nan
 
 
