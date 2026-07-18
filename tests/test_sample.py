@@ -3014,3 +3014,63 @@ class TestSampleOutcomesHat(balance.testutil.BalanceTestCase):
         self.assertEqual(
             s2._prediction_metadata["happiness_hat"], {"learner": "manual"}
         )
+
+
+class TestSampleFitOutcomeModel(balance.testutil.BalanceTestCase):
+    """fit_outcome_model / predict_outcomes / fit_predict_outcomes via MRO on Sample."""
+
+    def _make_sample(self, n: int = 40) -> Sample:
+        rng = np.random.default_rng(0)
+        age = rng.normal(50, 10, n)
+        return Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(n)],
+                    "age": age,
+                    "grp": rng.choice(["a", "b"], n),
+                    "happiness": age + rng.normal(0, 1, n),
+                    "weight": rng.uniform(0.5, 2.0, n),
+                }
+            ),
+            outcome_columns=["happiness"],
+        )
+
+    def test_fit_outcome_model_on_sample(self) -> None:
+        s = self._make_sample()
+        returned = s.fit_outcome_model(model="auto")
+        self.assertIs(returned, s)
+        self.assertEqual(_assert_type(s.outcome_model)["method"], "outcome_model")
+        # fit does NOT persist Ŷ.
+        self.assertIsNone(s.df_outcomes_hat)
+
+    def test_predict_outcomes_on_sample(self) -> None:
+        s = self._make_sample()
+        s.fit_outcome_model(model="auto")
+        result = s.predict_outcomes()
+        self.assertEqual(list(result.columns), ["happiness_hat"])
+        self.assertIn("happiness_hat", s.outcomes_hat_columns)
+        assert s.df_outcomes_hat is not None
+        self.assertEqual(len(s.df_outcomes_hat["happiness_hat"]), 40)
+
+    def test_fit_predict_outcomes_on_sample(self) -> None:
+        s = self._make_sample()
+        result = s.fit_predict_outcomes(model="auto")
+        self.assertEqual(_assert_type(s.outcome_model)["method"], "outcome_model")
+        self.assertEqual(list(result.columns), ["happiness_hat"])
+        self.assertIn("happiness_hat", s.outcomes_hat_columns)
+
+    def test_outcome_model_none_before_fit_on_sample(self) -> None:
+        self.assertIsNone(self._make_sample().outcome_model)
+
+    def test_predict_before_fit_raises_on_sample(self) -> None:
+        s = self._make_sample()
+        with self.assertRaises(ValueError) as ctx:
+            s.predict_outcomes()
+        self.assertIn("no outcome model has been fit", str(ctx.exception))
+
+    def test_outcome_model_survives_deepcopy_on_sample(self) -> None:
+        s = self._make_sample()
+        s.fit_outcome_model(model="auto")
+        s2 = deepcopy(s)
+        self.assertIsNotNone(s2.outcome_model)
+        self.assertEqual(s2.outcome_model["method"], "outcome_model")

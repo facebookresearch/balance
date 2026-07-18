@@ -38,6 +38,15 @@
   predict_outcome(model, covars_T)["happiness"][:3]                   # -> ŷ on new (target) data
   ```
 
+- **`SampleFrame.fit_outcome_model` / `predict_outcomes` / `fit_predict_outcomes` + `outcome_model`.** `SampleFrame` (and, via the MRO, `Sample`) now exposes an sklearn-style trio that wires the `outcome_models` primitives onto a frame and stores the fitted model on it — the outcome-modelling counterpart to `BalanceFrame.fit` for the weighting axis. `fit_outcome_model(*, model="auto", outcome_columns=None, variables=None, weighted=False, ..., inplace=True)` fits a regressor/classifier per resolved outcome column on the frame's covariates and observed outcome(s) and stores the model dict on the new read-only `outcome_model` property; like sklearn's `fit`, it does **not** persist predictions. `predict_outcomes(*, data=None, populate=True)` replays the stored model (on this frame's covariates, or on `data`'s when a `SampleFrame` is passed) and returns a `{"<outcome>_hat": ŷ}` DataFrame, persisting the `<outcome>_hat` columns onto the frame when `populate=True`. `fit_predict_outcomes(*, populate=True, **fit_kwargs)` does both in one call. All three are keyword-only. `model=` takes `"auto"`, a single sklearn estimator, a `{"_discrete": clf, "_continuous": reg}` type map, or a `{outcome_column: estimator}` column map; a new `variables=` restricts the model inputs `X` to a validated covariate subset (default: all covars). The fit is **unweighted by default** (`weighted=False`); pass `weighted=True` to align the active weight to the covariate index before fitting (a `TypeError` is raised if the chosen estimator's `fit` does not accept `sample_weight`). Rows with a missing outcome `Y` are dropped (covariates/weights realign) so the fit uses only complete outcome observations; and re-fitting drops any `<outcome>_hat` columns left by a prior `predict_outcomes` so a stale prediction can't linger against a new model. This is the standalone (no-target) fit/store step; combining with a target for the g-computation estimate `μ̂_OM` on the target arrives in a following change.
+
+  ```python
+  sf.fit_outcome_model()                         # fit + store (model="auto"); does NOT persist Ŷ
+  sf.outcome_model["method"]                     # -> "outcome_model"
+  sf.predict_outcomes()                          # persists "<outcome>_hat" columns
+  sf.df_outcomes_hat["happiness_hat"].tolist()   # -> [...]  (in-sample ŷ on the responders)
+  ```
+
 ## Documentation
 
 - Add the outcome-modelling design doc: [architecture_0_23_0.md](https://github.com/facebookresearch/balance/blob/main/docs/architecture/architecture_0_23_0.md).

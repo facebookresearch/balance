@@ -184,6 +184,8 @@ class BalanceFrame:
             # pyrefly: ignore [missing-attribute]
             self._prediction_metadata = responder._prediction_metadata
             # pyrefly: ignore [missing-attribute]
+            self._outcome_model = responder._outcome_model
+            # pyrefly: ignore [missing-attribute]
             self._df_dtypes = responder._df_dtypes
 
     @staticmethod

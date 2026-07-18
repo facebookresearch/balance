@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from typing import Self
 
     from balance.balancedf_class import BalanceDFSource  # noqa: F401
+    from balance.typing import OutcomeLearner  # noqa: F401
 
 
 logger: logging.Logger = logging.getLogger(__package__)
@@ -76,6 +77,8 @@ class SampleFrame:
     _weight_metadata: dict[str, Any]
     # pyre-fixme[13]: Initialized in _create() which bypasses __init__
     _prediction_metadata: dict[str, Any]
+    # pyre-fixme[13]: Initialized in _create() which bypasses __init__
+    _outcome_model: dict[str, Any] | None
     # pyre-fixme[13]: Initialized in _create() which bypasses __init__
     _links: dict[str, Any]
     # pyre-fixme[13]: Initialized in _create() which bypasses __init__
@@ -131,6 +134,19 @@ class SampleFrame:
         new_instance._prediction_metadata = deepcopy(
             getattr(self, "_prediction_metadata", {}), memo
         )
+        # Reference-share the fitted estimators (immutable post-fit and possibly
+        # large, e.g. boosting models) but deep-copy the mutable metadata, so an
+        # in-place edit of one copy's metadata can't leak into another.  getattr
+        # default keeps older pickles loadable.
+        outcome_model = getattr(self, "_outcome_model", None)
+        if outcome_model is None:
+            new_instance._outcome_model = None
+        else:
+            fit = outcome_model["fit"]
+            new_instance._outcome_model = {
+                key: (fit if key == "fit" else deepcopy(value, memo))
+                for key, value in outcome_model.items()
+            }
         new_instance._links = deepcopy(getattr(self, "_links", {}), memo)
         _df_dtypes = getattr(self, "_df_dtypes", None)
         new_instance._df_dtypes = _df_dtypes.copy() if _df_dtypes is not None else None
@@ -165,6 +181,8 @@ class SampleFrame:
         instance._weight_metadata = {}
         # Per-outcomes_hat-column provenance; set via add_outcomes_hat_column().
         instance._prediction_metadata = {}
+        # Fitted outcome-model dict; set via fit_outcome_model().
+        instance._outcome_model = None
         instance._links = {}
         instance._df_dtypes = _df_dtypes
         return instance
@@ -564,6 +582,38 @@ class SampleFrame:
             ['p_y']
         """
         return list(self._column_roles["outcomes_hat"])
+
+    @property
+    def outcome_model(self) -> dict[str, Any] | None:
+        """The fitted outcome-model dictionary, or None if not fit.
+
+        Mirrors :attr:`~balance.balance_frame.BalanceFrame.model` (which holds
+        the *weighting* model) for the outcome-modelling axis.  The dict is
+        produced by :meth:`fit_outcome_model` and consumed by
+        :meth:`predict_outcomes`; its keys are documented on
+        :func:`balance.outcome_models.fit_outcome_model` (``"method"``,
+        ``"fit"``, ``"X_matrix_columns"``, ``"perf"``, …).
+
+        Returns:
+            dict[str, Any] | None: The stored ``_outcome_model`` dict, or
+                ``None`` when no outcome model has been fit.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> df = pd.DataFrame({"id": ["1", "2", "3", "4"],
+            ...                    "age": [25.0, 30.0, 35.0, 40.0],
+            ...                    "happiness": [50.0, 55.0, 65.0, 80.0],
+            ...                    "weight": [1.0, 1.0, 1.0, 1.0]})
+            >>> sf = SampleFrame.from_frame(df, outcome_columns=["happiness"])
+            >>> sf.outcome_model is None
+            True
+            >>> sf.fit_outcome_model()  # doctest: +ELLIPSIS
+            <balance.sample_frame.SampleFrame object at ...>
+            >>> sf.outcome_model["method"]
+            'outcome_model'
+        """
+        return self._outcome_model
 
     @property
     def ignored_columns(self) -> list[str]:
@@ -1460,6 +1510,357 @@ class SampleFrame:
         self._column_roles["outcomes_hat"].append(name)
         if metadata is not None:
             self._prediction_metadata[name] = metadata
+
+    # --- Outcome-model fit / predict (sklearn-style trio) ---
+
+    def _resolve_outcome_columns_for_fit(
+        self, outcome_columns: list[str] | str | None
+    ) -> list[str]:
+        """Resolve the outcome column(s) to fit, defaulting to all outcomes.
+
+        Raises an actionable ``ValueError`` when the resolved set is empty (no
+        outcome column to fit a model on) or when a requested column is not a
+        registered outcome column.
+        """
+        if outcome_columns is None:
+            resolved = list(self._column_roles["outcomes"])
+        elif isinstance(outcome_columns, str):
+            resolved = [outcome_columns]
+        else:
+            resolved = list(outcome_columns)
+
+        if not resolved:
+            if outcome_columns is not None:
+                raise ValueError(
+                    "outcome_columns= was given as an empty selection; pass None to "
+                    "use all registered outcome columns, or a non-empty subset."
+                )
+            raise ValueError(
+                "fit_outcome_model requires at least one outcome column, but this "
+                "SampleFrame has no registered outcome columns. Construct the frame "
+                "with outcome_columns=, or pass outcome_columns= explicitly."
+            )
+        known = set(self._column_roles["outcomes"])
+        missing = [c for c in resolved if c not in known]
+        if missing:
+            raise ValueError(
+                f"outcome_columns {missing} are not registered outcome columns. "
+                f"Available outcome columns: {sorted(known)}."
+            )
+        return resolved
+
+    def _resolve_variables_for_fit(
+        self, variables: list[str] | str | None
+    ) -> list[str] | None:
+        """Resolve the covariate subset to model on, or ``None`` for all covars.
+
+        Validates that every requested variable is a registered covariate column.
+        """
+        if variables is None:
+            return None
+        resolved = [variables] if isinstance(variables, str) else list(variables)
+        if not resolved:
+            raise ValueError(
+                "variables= was given as an empty list; pass None to use all "
+                "covariates, or a non-empty subset of the covariate columns."
+            )
+        known = set(self._column_roles["covars"])
+        missing = [c for c in resolved if c not in known]
+        if missing:
+            raise ValueError(
+                f"variables {missing} are not registered covariate columns. "
+                f"Available covariate columns: {sorted(known)}."
+            )
+        return resolved
+
+    def fit_outcome_model(
+        self,
+        *,
+        model: OutcomeLearner = "auto",
+        outcome_columns: list[str] | str | None = None,
+        variables: list[str] | str | None = None,
+        formula: str | list[str] | None = None,
+        transformations: str | dict[str, Any] | None = None,
+        na_action: str = "add_indicator",
+        use_model_matrix: bool | str = "auto",
+        weighted: bool = False,
+        calibrate: bool = False,
+        inplace: bool = True,
+    ) -> Self:
+        """Fit an outcome model ``ĝ(X) ≈ E[Y|X]`` on the responders and store it.
+
+        This is the outcome-modelling counterpart to
+        :meth:`~balance.balance_frame.BalanceFrame.fit` (which fits the
+        *weighting* model).  It fits a regressor (continuous outcome) or
+        classifier (binary outcome) per resolved outcome column on this frame's
+        covariates and observed outcome(s), and stores the resulting model dict
+        (fitted estimators + preprocessing) on :attr:`outcome_model`.  Like
+        sklearn's ``fit()``, it does **not** produce predictions — call
+        :meth:`predict_outcomes` (or :meth:`fit_predict_outcomes`) to write the
+        ``<outcome>_hat`` columns.
+
+        The fit is **unweighted by default** (``weighted=False``): the outcome
+        model estimates ``E[Y|X]`` and is usually best left unbiased by the
+        design weights.  Pass ``weighted=True`` to fit with the frame's
+        currently-applied weight (weighted least squares / weighted boosting),
+        aligned to the covariate index before it is passed through.  Rows whose
+        outcome ``Y`` is missing (NaN) are dropped before fitting — the
+        covariates and weights are aligned to the retained rows, so the fit uses
+        only complete outcome observations.  Re-fitting drops any
+        ``<outcome>_hat`` columns left by a previous :meth:`predict_outcomes` so
+        a stale prediction cannot linger against a newly-fit model.
+
+        Args:
+            model: ``"auto"`` (a ``HistGradientBoosting`` regressor/classifier
+                chosen by outcome type), a single sklearn estimator (cloned per
+                outcome column — one estimator type only when the outcomes are
+                mixed), a ``{"_discrete": clf, "_continuous": reg}`` type map, or
+                a ``{outcome_column: estimator}`` column map.
+            outcome_columns: Outcome column name(s) to model.  Defaults to all
+                of this frame's :attr:`outcome_columns`; raises if none exist.
+            variables: Covariate column name(s) to use as the model inputs ``X``.
+                Defaults to ``None`` (all of this frame's covariates); pass a
+                subset (validated against the covariate role) to restrict the
+                model to those columns.
+            formula: Optional patsy formula(s) forwarded to the one-hot path.
+            transformations: Reserved for parity with IPW; must be ``None`` (the
+                replay-safe default) — a non-``None`` value raises.
+            na_action: Missing-value handling for the design matrix; only
+                ``"add_indicator"`` (default) is supported (``"drop"`` raises).
+            use_model_matrix: ``"auto"`` (default) picks the native-categorical
+                path for tree/boosting learners on scikit-learn >= 1.4 and the
+                one-hot + scaler path otherwise; pass ``True``/``False`` to force.
+            weighted: When ``True``, fit with the frame's currently-applied
+                weight (weighted least squares / weighted boosting).  Defaults to
+                ``False`` — the outcome model predicts ``E[Y|X]`` and is usually
+                best left unweighted.  A weighted fit whose estimator's ``fit``
+                does not accept ``sample_weight`` raises ``TypeError``.
+            calibrate: When ``True``, wrap each classifier in
+                ``CalibratedClassifierCV`` (binary outcomes only).
+            inplace: If ``True`` (default), mutate this frame (store the model)
+                and return ``self``; if ``False``, return a new copy with the
+                model stored and leave ``self`` untouched — mirroring
+                :meth:`~balance.balance_frame.BalanceFrame.fit`.
+
+        Returns:
+            The frame with the fitted outcome model stored (``self`` when
+            ``inplace``, else a new copy).
+
+        Raises:
+            ValueError: If there are no outcome columns to fit (and none are
+                passed), if a requested outcome/variable column is not registered,
+                or for the underlying ``fit_outcome_model`` errors
+                (``na_action="drop"``, non-``None`` ``transformations``, a
+                ``model`` column map missing an outcome column, a single estimator
+                for mixed-type outcomes, etc.).
+            TypeError: If ``weighted=True`` but the resolved estimator's ``fit``
+                does not accept ``sample_weight``.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> df = pd.DataFrame({"id": ["1", "2", "3", "4"],
+            ...                    "age": [25.0, 30.0, 35.0, 40.0],
+            ...                    "happiness": [50.0, 55.0, 65.0, 80.0],
+            ...                    "weight": [1.0, 1.0, 1.0, 1.0]})
+            >>> sf = SampleFrame.from_frame(df, outcome_columns=["happiness"])
+            >>> sf.fit_outcome_model()  # doctest: +ELLIPSIS
+            <balance.sample_frame.SampleFrame object at ...>
+            >>> sf.outcome_model["method"]
+            'outcome_model'
+            >>> sf.df_outcomes_hat is None  # fit does NOT persist Ŷ
+            True
+        """
+        from balance.outcome_models.outcome_model import (
+            fit_outcome_model as _fit_outcome_model,
+        )
+
+        target = self if inplace else deepcopy(self)
+
+        resolved_outcomes = target._resolve_outcome_columns_for_fit(outcome_columns)
+        resolved_variables = target._resolve_variables_for_fit(variables)
+
+        covars = target.df_covars
+        if resolved_variables is not None:
+            covars = covars[resolved_variables]
+        outcomes = target._df[resolved_outcomes].copy()
+
+        # Drop rows whose outcome Y is missing so the weighted fit uses only
+        # complete outcome observations; align covars (and weights) to match.
+        complete = outcomes.notna().all(axis=1)
+        covars = covars.loc[complete]
+        outcomes = outcomes.loc[complete]
+
+        sample_weight: pd.Series | None = None
+        if weighted:
+            # Align the active weight to the (post-drop) covariate index — the
+            # weighting-methods input validator requires the weight index to
+            # match the covariate index exactly.
+            sample_weight = target.weight_series.loc[covars.index]
+
+        fitted_model = _fit_outcome_model(
+            covars,
+            outcomes,
+            sample_weight=sample_weight,
+            model=model,
+            formula=formula,
+            transformations=transformations,
+            na_action=na_action,
+            use_model_matrix=use_model_matrix,
+            calibrate=calibrate,
+        )
+
+        # Drop any superseded <outcome>_hat columns from a prior
+        # predict_outcomes so a stale Ŷ can't linger against the new model.
+        target._drop_outcomes_hat_columns()
+        target._outcome_model = fitted_model
+        return target
+
+    def _drop_outcomes_hat_columns(self) -> None:
+        """Drop every registered ``outcomes_hat`` column from the frame in place."""
+        hat_columns = list(self._column_roles["outcomes_hat"])
+        if not hat_columns:
+            return
+        self._df = self._df.drop(columns=hat_columns)
+        self._column_roles["outcomes_hat"] = []
+        for col in hat_columns:
+            self._prediction_metadata.pop(col, None)
+
+    def predict_outcomes(
+        self,
+        *,
+        data: SampleFrame | None = None,
+        populate: bool | None = None,
+    ) -> pd.DataFrame:
+        """Predict ``outcomes_hat`` from the stored model, optionally persisting.
+
+        Requires a model fit by :meth:`fit_outcome_model`.  Predictions are
+        produced on this frame's covariates (or on ``data``'s covariates when a
+        ``SampleFrame`` is passed via ``data=``) by replaying the model's stored
+        preprocessing.  The returned DataFrame has one column per fitted
+        outcome, named ``"<outcome>_hat"``.
+
+        When ``populate`` is ``True``, the predicted columns are written
+        onto **this** frame via :meth:`add_outcomes_hat_column` (a same-named Ŷ
+        column is dropped and re-added).
+
+        Args:
+            data: Optional ``SampleFrame`` whose covariates to score.  Defaults
+                to ``None``, meaning predict on this frame's own covariates.
+                When scoring a *different* frame, prefer ``populate=False``:
+                persisting predictions row-indexed by ``data`` onto this frame
+                would row-misalign (they are reindexed to this frame, NaN-padding
+                or dropping non-matching rows).
+            populate: Whether to persist the predictions onto this frame as
+                ``<outcome>_hat`` columns. Defaults to ``True`` when scoring this
+                frame (``data=None``) and ``False`` when ``data=`` is given, since a
+                different frame's row index would misalign onto this one.
+
+        Returns:
+            pd.DataFrame: The predictions, one ``"<outcome>_hat"`` column per
+                fitted outcome, indexed by the scored covariate rows.
+
+        Raises:
+            ValueError: If no outcome model has been fit on this frame.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> df = pd.DataFrame({"id": ["1", "2", "3", "4"],
+            ...                    "age": [25.0, 30.0, 35.0, 40.0],
+            ...                    "happiness": [50.0, 55.0, 65.0, 80.0],
+            ...                    "weight": [1.0, 1.0, 1.0, 1.0]})
+            >>> sf = SampleFrame.from_frame(df, outcome_columns=["happiness"])
+            >>> _ = sf.fit_outcome_model()
+            >>> preds = sf.predict_outcomes()
+            >>> list(preds.columns)
+            ['happiness_hat']
+            >>> "happiness_hat" in sf.outcomes_hat_columns
+            True
+        """
+        from balance.outcome_models.outcome_model import (
+            predict_outcome as _predict_outcome,
+        )
+
+        if self._outcome_model is None:
+            raise ValueError(
+                "no outcome model has been fit; call fit_outcome_model(...) "
+                "(or fit_predict_outcomes(...)) before predict_outcomes()."
+            )
+
+        # Default: persist when scoring this frame, but not when scoring a
+        # different frame via data= (whose row index would misalign onto self).
+        if populate is None:
+            populate = data is None
+
+        source: SampleFrame = data if data is not None else self
+        covars = source.df_covars
+
+        predictions = _predict_outcome(self._outcome_model, covars)
+        result = pd.DataFrame(
+            {f"{col}_hat": values for col, values in predictions.items()},
+            index=covars.index,
+        )
+
+        if populate:
+            for column in result.columns:
+                column_name = str(column)
+                if column_name in self._column_roles["outcomes_hat"]:
+                    self._drop_single_outcomes_hat_column(column_name)
+                self.add_outcomes_hat_column(column_name, result[column_name])
+
+        return result
+
+    def _drop_single_outcomes_hat_column(self, name: str) -> None:
+        """Drop one registered ``outcomes_hat`` column from the frame in place."""
+        if name not in self._column_roles["outcomes_hat"]:
+            return
+        self._df = self._df.drop(columns=[name])
+        self._column_roles["outcomes_hat"].remove(name)
+        self._prediction_metadata.pop(name, None)
+
+    def fit_predict_outcomes(
+        self,
+        *,
+        populate: bool = True,
+        **fit_kwargs: Any,
+    ) -> pd.DataFrame:
+        """Fit an outcome model then predict on this frame, in one call.
+
+        Convenience wrapper mirroring sklearn's ``fit_predict``: it calls
+        :meth:`fit_outcome_model` (in place) with ``**fit_kwargs`` and then
+        :meth:`predict_outcomes` on this frame, persisting ``<outcome>_hat`` when
+        ``populate=True`` (the default).
+
+        Args:
+            populate: When ``True`` (default), persist the predictions onto this
+                frame as ``<outcome>_hat`` columns.
+            **fit_kwargs: Keyword arguments forwarded to
+                :meth:`fit_outcome_model` (e.g. ``model``, ``outcome_columns``,
+                ``variables``, ``weighted``).  ``inplace`` is always ``True``
+                here.
+
+        Returns:
+            pd.DataFrame: The predictions, one ``"<outcome>_hat"`` column per
+                fitted outcome.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> df = pd.DataFrame({"id": ["1", "2", "3", "4"],
+            ...                    "age": [25.0, 30.0, 35.0, 40.0],
+            ...                    "happiness": [50.0, 55.0, 65.0, 80.0],
+            ...                    "weight": [1.0, 1.0, 1.0, 1.0]})
+            >>> sf = SampleFrame.from_frame(df, outcome_columns=["happiness"])
+            >>> preds = sf.fit_predict_outcomes()
+            >>> list(preds.columns)
+            ['happiness_hat']
+            >>> sf.outcome_model["method"]
+            'outcome_model'
+        """
+        fit_kwargs.pop("inplace", None)
+        self.fit_outcome_model(inplace=True, **fit_kwargs)
+        return self.predict_outcomes(populate=populate)
 
     @classmethod
     def from_sample(cls, sample: Any) -> SampleFrame:

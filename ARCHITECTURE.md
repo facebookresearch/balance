@@ -101,6 +101,11 @@ Note: the `_*` protocol accessors `_outcome_columns` and `_outcomes_hat_columns`
 │ outcomes_hat (Ŷ) data    │ SampleFrame (canonical)      │
 │  (df_outcomes_hat /      │  add_outcomes_hat_column();  │
 │   _outcomes_hat_columns) │  BalanceFrame delegates      │
+│ Fit outcome model ĝ(X)   │ SampleFrame.fit_outcome_model│
+│  (store on frame)        │  → _outcome_model /          │
+│                          │    outcome_model (property)  │
+│ Predict/persist Ŷ        │ SampleFrame.predict_outcomes │
+│  from stored model       │  / fit_predict_outcomes      │
 │ ID/weight columns        │ SampleFrame                  │
 │ Type standardization     │ SampleFrame.from_frame()     │
 │ Weight management        │ SampleFrame (canonical)      │
@@ -206,8 +211,9 @@ raises actionable errors that direct users to `fit(method="ipw")` or the explici
 The `outcome_models/` package is the outcome-modelling counterpart to the IPW
 fit-artifact workflow, on a separate axis: instead of a propensity model over a
 sample-vs-target indicator, it fits a learner `ĝ(X) ≈ E[Y|X]` of an *observed
-outcome* on covariates. It currently ships **pure DataFrame functions** (no
-`SampleFrame`/`BalanceFrame` wiring yet):
+outcome* on covariates. The package ships **pure DataFrame functions**, and
+`SampleFrame` wires them onto a frame as an sklearn-style trio (the standalone,
+no-target fit/store step):
 
 - `fit_outcome_model(covars_df, outcomes_df, *, sample_weight=None, model="auto", ...)`
   builds a design matrix via `build_design_matrix` (train mode), fits a regressor
@@ -222,10 +228,33 @@ outcome* on covariates. It currently ships **pure DataFrame functions** (no
 Preprocessing is learner-dependent (`use_model_matrix="auto"`): tree/boosting learners
 use the native-categorical path on scikit-learn >= 1.4 (one-hot fallback on < 1.4),
 linear learners use one-hot + `StandardScaler`; the matrix is densified for
-`HistGradientBoosting*`. The weighted mean of the predicted outcomes on the target is
-the g-computation / outcome-model population estimate `μ̂_OM`. The `SampleFrame`
-storage + estimation surface (`SampleFrame.fit_outcome_model` / `predict_outcomes`,
-`outcomes_hat().mean()`) builds on these primitives. See the design doc
+`HistGradientBoosting*`.
+
+On top of these primitives, `SampleFrame` (and, via the MRO, `Sample`) exposes the
+sklearn-style trio, which stores the fitted model on the frame:
+
+- `fit_outcome_model(*, model="auto", outcome_columns=None, variables=None, weighted=False, ..., inplace=True)`
+  resolves the outcome column(s) (default: all `outcome_columns`), extracts `df_covars`
+  (optionally restricted to the `variables=` subset) and the observed outcome(s),
+  **drops rows with a missing outcome `Y`** (covariates/weights realign), and — when
+  `weighted=True` (the default is unweighted) — aligns the active weight to the covariate index,
+  fits via `fit_outcome_model`, and stores the model dict on `_outcome_model` (exposed via
+  the read-only `outcome_model` property, mirroring `BalanceFrame.model`). Like sklearn's
+  `fit`, it does **not** persist `outcomes_hat`; a re-fit drops any `<outcome>_hat` columns
+  a prior `predict_outcomes` left behind so a stale Ŷ can't linger against a new model.
+- `predict_outcomes(*, data=None, populate=True)` replays the stored model on this frame's
+  covariates (or on `data`'s covariates when a `SampleFrame` is passed) and returns a
+  `{"<outcome>_hat": ŷ}` DataFrame, persisting the `<outcome>_hat` columns via
+  `add_outcomes_hat_column` when `populate=True`.
+- `fit_predict_outcomes(*, populate=True, **fit_kwargs)` fits then predicts-on-self in one call.
+
+The new `_outcome_model` frame state is initialised in `SampleFrame._create`, reference-shares
+its fitted estimators on `SampleFrame.__deepcopy__` (immutable post-fit — the dict is shallow
+copied, the estimators are kept by reference), and is synced onto `Sample` via
+`BalanceFrame._sync_sampleframe_state_from_responder` (mirroring `_prediction_metadata`). This
+is the standalone (no-target) storage step; combining with a target so the weighted mean of the
+target's predicted outcomes is the g-computation / outcome-model population estimate `μ̂_OM`
+(`outcomes_hat().mean()`) arrives in a following change. See the design doc
 [architecture_0_23_0.md](docs/architecture/architecture_0_23_0.md).
 
 ## Weighting methods (`weighting_methods/`)

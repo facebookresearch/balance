@@ -7,11 +7,13 @@
 
 from __future__ import annotations
 
+import unittest
 import warnings
 from typing import Any
 
 import numpy as np
 import pandas as pd
+import pytest
 from balance.balancedf_class import (
     BalanceDFCovars,
     BalanceDFOutcomes,
@@ -20,7 +22,7 @@ from balance.balancedf_class import (
 )
 from balance.sample_class import Sample
 from balance.sample_frame import SampleFrame
-from balance.testutil import BalanceTestCase
+from balance.testutil import _SKLEARN_1_4_AVAILABLE, BalanceTestCase
 from balance.util import _assert_type
 
 
@@ -1527,3 +1529,314 @@ class TestSampleFrameUncoveredLines(BalanceTestCase):
         with self.assertRaises(ValueError) as ctx:
             SampleFrame.from_sample(sample)
         self.assertIn("no DataFrame", str(ctx.exception))
+
+
+class TestSampleFrameFitOutcomeModel(BalanceTestCase):
+    """fit_outcome_model / predict_outcomes / fit_predict_outcomes + storage."""
+
+    def _make_sf(
+        self, n: int = 40, *, outcome: str = "happiness", binary: bool = False
+    ) -> SampleFrame:
+        rng = np.random.default_rng(0)
+        age = rng.normal(50, 10, n)
+        if binary:
+            y = (age > np.median(age)).astype(float)
+        else:
+            y = age + rng.normal(0, 1, n)
+        df = pd.DataFrame(
+            {
+                "id": [str(i) for i in range(n)],
+                "age": age,
+                "grp": rng.choice(["a", "b"], n),
+                outcome: y,
+                "weight": rng.uniform(0.5, 2.0, n),
+            }
+        )
+        return SampleFrame.from_frame(df, outcome_columns=[outcome])
+
+    def test_fit_outcome_model_example_snippet(self) -> None:
+        # Mirrors the diff summary + docstring example.
+        sf = self._make_sf()
+        returned = sf.fit_outcome_model(model="auto")
+        # inplace default -> mutates and returns self.
+        self.assertIs(returned, sf)
+        self.assertEqual(_assert_type(sf.outcome_model)["method"], "outcome_model")
+        # fit does NOT persist Ŷ.
+        self.assertIsNone(sf.df_outcomes_hat)
+        # predict persists "<outcome>_hat".
+        sf.predict_outcomes()
+        assert sf.df_outcomes_hat is not None
+        preds = sf.df_outcomes_hat["happiness_hat"].tolist()
+        self.assertEqual(len(preds), 40)
+        self.assertTrue(all(np.isfinite(preds)))
+
+    def test_fit_stores_model_but_no_yhat(self) -> None:
+        sf = self._make_sf()
+        sf.fit_outcome_model(model="auto")
+        self.assertIsNotNone(sf.outcome_model)
+        self.assertEqual(sf.outcomes_hat_columns, [])
+        self.assertIsNone(sf.df_outcomes_hat)
+
+    def test_outcome_model_none_before_fit(self) -> None:
+        self.assertIsNone(self._make_sf().outcome_model)
+
+    def test_predict_outcomes_persists_yhat(self) -> None:
+        sf = self._make_sf()
+        sf.fit_outcome_model(model="auto")
+        result = sf.predict_outcomes()
+        self.assertEqual(list(result.columns), ["happiness_hat"])
+        self.assertIn("happiness_hat", sf.outcomes_hat_columns)
+        # Ŷ is not a covariate.
+        self.assertNotIn("happiness_hat", sf.covar_columns)
+
+    def test_predict_outcomes_no_populate_does_not_persist(self) -> None:
+        sf = self._make_sf()
+        sf.fit_outcome_model(model="auto")
+        result = sf.predict_outcomes(populate=False)
+        self.assertEqual(list(result.columns), ["happiness_hat"])
+        self.assertEqual(sf.outcomes_hat_columns, [])
+
+    def test_fit_predict_outcomes_does_both(self) -> None:
+        sf = self._make_sf()
+        result = sf.fit_predict_outcomes(model="auto")
+        self.assertEqual(_assert_type(sf.outcome_model)["method"], "outcome_model")
+        self.assertEqual(list(result.columns), ["happiness_hat"])
+        self.assertIn("happiness_hat", sf.outcomes_hat_columns)
+
+    def test_predict_before_fit_raises(self) -> None:
+        sf = self._make_sf()
+        with self.assertRaises(ValueError) as ctx:
+            sf.predict_outcomes()
+        self.assertIn("no outcome model has been fit", str(ctx.exception))
+
+    def test_fit_no_outcome_columns_raises(self) -> None:
+        df = pd.DataFrame({"id": ["1", "2"], "age": [25.0, 30.0], "weight": [1.0, 1.0]})
+        sf = SampleFrame.from_frame(df)
+        with self.assertRaises(ValueError) as ctx:
+            sf.fit_outcome_model(model="auto")
+        self.assertIn("at least one outcome column", str(ctx.exception))
+
+    def test_fit_unknown_outcome_column_raises(self) -> None:
+        sf = self._make_sf()
+        with self.assertRaises(ValueError) as ctx:
+            sf.fit_outcome_model(model="auto", outcome_columns=["not_a_col"])
+        self.assertIn("not registered outcome columns", str(ctx.exception))
+
+    def test_inplace_false_returns_copy(self) -> None:
+        sf = self._make_sf()
+        fitted = sf.fit_outcome_model(model="auto", inplace=False)
+        self.assertIsNot(fitted, sf)
+        # Original untouched.
+        self.assertIsNone(sf.outcome_model)
+        self.assertEqual(_assert_type(fitted.outcome_model)["method"], "outcome_model")
+
+    def test_refit_drops_stale_yhat(self) -> None:
+        sf = self._make_sf()
+        sf.fit_predict_outcomes(model="auto")
+        self.assertIn("happiness_hat", sf.outcomes_hat_columns)
+        # Re-fit must drop the superseded Ŷ column so it can't linger.
+        sf.fit_outcome_model(model="auto")
+        self.assertEqual(sf.outcomes_hat_columns, [])
+        self.assertNotIn("happiness_hat", sf._df.columns)
+
+    def test_predict_twice_replaces_column(self) -> None:
+        sf = self._make_sf()
+        sf.fit_outcome_model(model="auto")
+        sf.predict_outcomes()
+        # Predicting again should drop+re-add, not raise on duplicate.
+        sf.predict_outcomes()
+        self.assertEqual(sf.outcomes_hat_columns, ["happiness_hat"])
+
+    def test_missing_y_rows_dropped_fit_succeeds(self) -> None:
+        sf = self._make_sf()
+        # Introduce a missing outcome value.
+        sf._df.loc[0, "happiness"] = np.nan
+        # Fit still succeeds; the missing-Y row is dropped and weights realign.
+        sf.fit_outcome_model(model="auto", weighted=True)
+        self.assertEqual(_assert_type(sf.outcome_model)["method"], "outcome_model")
+        # perf n reflects the retained (complete-outcome) rows.
+        self.assertEqual(_assert_type(sf.outcome_model)["perf"]["happiness"]["n"], 39)
+        self.assertEqual(_assert_type(sf.outcome_model)["weighted"], True)
+
+    def test_unweighted_fit(self) -> None:
+        sf = self._make_sf()
+        sf.fit_outcome_model(model="auto", weighted=False)
+        self.assertEqual(_assert_type(sf.outcome_model)["weighted"], False)
+
+    def test_deepcopy_preserves_outcome_model_and_shares_estimator(self) -> None:
+        import copy
+
+        sf = self._make_sf()
+        sf.fit_outcome_model(model="auto")
+        sf2 = copy.deepcopy(sf)
+        # The model is preserved across deepcopy.
+        self.assertIsNotNone(sf2.outcome_model)
+        self.assertEqual(sf2.outcome_model["method"], "outcome_model")
+        # The fitted estimator is reference-shared (immutable post-fit), not
+        # deep-cloned, by identity.
+        for col in _assert_type(sf.outcome_model)["fit"]:
+            self.assertIs(
+                sf2.outcome_model["fit"][col],
+                _assert_type(sf.outcome_model)["fit"][col],
+            )
+
+    def test_deepcopy_without_model_is_none(self) -> None:
+        import copy
+
+        sf = self._make_sf()
+        sf2 = copy.deepcopy(sf)
+        self.assertIsNone(sf2.outcome_model)
+
+    def test_fit_outcome_model_positional_rejected(self) -> None:
+        sf = self._make_sf()
+        # model is keyword-only; a positional arg must be a TypeError.
+        with self.assertRaises(TypeError):
+            # pyre-ignore[19]: intentionally passing a positional arg.
+            sf.fit_outcome_model("auto")
+
+    def test_predict_outcomes_positional_rejected(self) -> None:
+        sf = self._make_sf()
+        sf.fit_outcome_model(model="auto")
+        with self.assertRaises(TypeError):
+            # pyre-ignore[19]: intentionally passing a positional arg.
+            sf.predict_outcomes(sf)
+
+    def test_predict_outcomes_on_data(self) -> None:
+        sf = self._make_sf()
+        sf.fit_outcome_model(model="auto")
+        other = self._make_sf(n=10)
+        result = sf.predict_outcomes(data=other, populate=False)
+        # Predictions align to the OTHER frame's covariate rows.
+        self.assertEqual(len(result), 10)
+        self.assertEqual(list(result.columns), ["happiness_hat"])
+
+    def test_binary_outcome_predict_proba(self) -> None:
+        sf = self._make_sf(binary=True)
+        sf.fit_predict_outcomes(model="auto")
+        self.assertEqual(
+            _assert_type(sf.outcome_model)["prediction_kind"]["happiness"], "proba"
+        )
+        assert sf.df_outcomes_hat is not None
+        proba = sf.df_outcomes_hat["happiness_hat"]
+        # Probabilities are in [0, 1].
+        self.assertTrue(((proba >= 0.0) & (proba <= 1.0)).all())
+
+    def test_fit_predict_outcomes_ignores_inplace_kwarg(self) -> None:
+        # fit_predict_outcomes always fits in place; a stray inplace= is dropped.
+        sf = self._make_sf()
+        result = sf.fit_predict_outcomes(model="auto", inplace=False)
+        self.assertEqual(_assert_type(sf.outcome_model)["method"], "outcome_model")
+        self.assertEqual(list(result.columns), ["happiness_hat"])
+
+    def test_docstring_four_row_fixture_runs(self) -> None:
+        # The 4-row fixture used verbatim in the method docstrings must run.
+        df = pd.DataFrame(
+            {
+                "id": ["1", "2", "3", "4"],
+                "age": [25.0, 30.0, 35.0, 40.0],
+                "happiness": [50.0, 55.0, 65.0, 80.0],
+                "weight": [1.0, 1.0, 1.0, 1.0],
+            }
+        )
+        sf = SampleFrame.from_frame(df, outcome_columns=["happiness"])
+        self.assertIsNone(sf.outcome_model)
+        self.assertIs(sf.fit_outcome_model(model="auto"), sf)
+        self.assertEqual(_assert_type(sf.outcome_model)["method"], "outcome_model")
+        self.assertIsNone(sf.df_outcomes_hat)
+        preds = sf.predict_outcomes()
+        self.assertEqual(list(preds.columns), ["happiness_hat"])
+        self.assertIn("happiness_hat", sf.outcomes_hat_columns)
+
+    def test_default_fit_is_unweighted(self) -> None:
+        # weighted defaults to False: the fit ignores the design weight.
+        sf = self._make_sf()
+        sf.fit_outcome_model()
+        self.assertFalse(_assert_type(sf.outcome_model)["weighted"])
+
+    def test_variables_subset_restricts_covariates(self) -> None:
+        # variables= limits the model inputs X to the named covariate subset.
+        sf = self._make_sf()
+        sf.fit_outcome_model(variables=["age"])
+        cols = _assert_type(sf.outcome_model)["X_matrix_columns"]
+        # Only 'age' feeds the model; the 'grp' covariate is excluded.
+        self.assertTrue(any("age" in str(c) for c in cols))
+        self.assertFalse(any("grp" in str(c) for c in cols))
+        # Predict still works end-to-end: replay projects the full covars down
+        # to the fitted 'age'-only design.
+        preds = sf.predict_outcomes(populate=False)["happiness_hat"]
+        self.assertEqual(len(preds), 40)
+        self.assertTrue(np.all(np.isfinite(preds)))
+
+    def test_variables_unknown_raises(self) -> None:
+        sf = self._make_sf()
+        with self.assertRaises(ValueError) as ctx:
+            sf.fit_outcome_model(variables=["not_a_covar"])
+        self.assertIn("not registered covariate columns", str(ctx.exception))
+
+    def test_model_type_map_dispatch(self) -> None:
+        # A {"_discrete": clf, "_continuous": reg} map picks the regressor here.
+        from sklearn.linear_model import LinearRegression, LogisticRegression
+
+        sf = self._make_sf()
+        sf.fit_outcome_model(
+            model={
+                "_discrete": LogisticRegression(max_iter=1000),
+                "_continuous": LinearRegression(),
+            }
+        )
+        self.assertIsInstance(
+            _assert_type(sf.outcome_model)["fit"]["happiness"], LinearRegression
+        )
+
+    def test_variables_empty_list_raises(self) -> None:
+        sf = self._make_sf()
+        with self.assertRaises(ValueError) as ctx:
+            sf.fit_outcome_model(variables=[])
+        self.assertIn("empty list", str(ctx.exception))
+
+    def test_outcome_columns_empty_list_raises(self) -> None:
+        # A frame that HAS outcomes but an empty selection: the message must say
+        # "empty selection", not "no registered outcome columns".
+        sf = self._make_sf()
+        with self.assertRaises(ValueError) as ctx:
+            sf.fit_outcome_model(outcome_columns=[])
+        self.assertIn("empty selection", str(ctx.exception))
+
+    def test_weighted_fit_estimator_without_sample_weight_raises(self) -> None:
+        # weighted=True with an estimator whose fit() lacks sample_weight -> TypeError.
+        from sklearn.neighbors import KNeighborsRegressor
+
+        sf = self._make_sf()
+        with self.assertRaises(TypeError) as ctx:
+            sf.fit_outcome_model(
+                model=KNeighborsRegressor(n_neighbors=3), weighted=True
+            )
+        self.assertIn("sample_weight", str(ctx.exception))
+
+
+class TestSampleFrameFitOutcomeModelSklearn14(BalanceTestCase):
+    """Native-categorical fit path (requires scikit-learn >= 1.4)."""
+
+    def _make_sf(self, n: int = 40) -> SampleFrame:
+        rng = np.random.default_rng(1)
+        age = rng.normal(50, 10, n)
+        df = pd.DataFrame(
+            {
+                "id": [str(i) for i in range(n)],
+                "age": age,
+                "grp": pd.Categorical(rng.choice(["a", "b", "c"], n)),
+                "happiness": age + rng.normal(0, 1, n),
+                "weight": rng.uniform(0.5, 2.0, n),
+            }
+        )
+        return SampleFrame.from_frame(df, outcome_columns=["happiness"])
+
+    @pytest.mark.requires_sklearn_1_4  # pyre-ignore[56]
+    @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires sklearn >= 1.4")
+    def test_native_categorical_fit_predict(self) -> None:
+        sf = self._make_sf()
+        sf.fit_predict_outcomes(model="auto")
+        # The boosting default uses the native-categorical path on sklearn>=1.4.
+        self.assertEqual(_assert_type(sf.outcome_model)["use_model_matrix"], False)
+        assert sf.df_outcomes_hat is not None
+        self.assertEqual(len(sf.df_outcomes_hat["happiness_hat"]), 40)
