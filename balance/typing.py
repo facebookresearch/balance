@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import AnyStr, IO, Iterable, Union
+from typing import Any, AnyStr, Dict, IO, Iterable, Literal, Union
 
 # NOTE: Type aliases must use Union instead of | syntax for Python 3.9 compatibility.
 # While `from __future__ import annotations` enables PEP 604 syntax (|) in function
@@ -30,3 +30,18 @@ DiagnosticScalar = Union[str, int, float, bytes, None]
 # Accepts either a single scalar or an iterable of scalars (list, tuple, Series, etc.).
 # Note: str and bytes are technically Iterable but are treated as scalars at runtime.
 DiagnosticInput = Union[DiagnosticScalar, Iterable[DiagnosticScalar]]
+
+# String modes accepted by the outcome-model `model=` dispatcher
+# (``balance.outcome_models.fit_outcome_model``). ``"auto"`` selects a
+# HistGradientBoosting regressor/classifier by outcome type. A learner can also
+# be passed as a concrete sklearn estimator or a ``{outcome_column: estimator}``
+# mapping, hence the wider ``OutcomeLearner`` union below.
+# NOTE: must use ``Literal``/``Union`` (not ``|``) — this alias is evaluated at
+# runtime and Python 3.9 rejects ``|`` in alias definitions (see note above).
+OutcomeLearnerMode = Literal["auto"]
+
+# Full input type accepted for the ``model`` argument of
+# ``fit_outcome_model``: the ``"auto"`` mode string, a single sklearn estimator
+# (typed ``Any`` to avoid a hard sklearn import here), or a per-outcome-column
+# mapping of estimators.
+OutcomeLearner = Union[OutcomeLearnerMode, Any, Dict[str, Any]]

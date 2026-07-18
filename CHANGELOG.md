@@ -30,6 +30,14 @@
   # 0.9636363636363636   (unweighted call equals sklearn.metrics.r2_score)
   ```
 
+- **`outcome_models` package — pure fit/predict functions for outcome modelling.** New `balance.outcome_models` package (parallel to `weighting_methods/`) with `fit_outcome_model(covars_df, outcomes_df, *, sample_weight=None, model="auto", ...)` and `predict_outcome(model, new_covars_df)`. These operate on plain DataFrames (no `SampleFrame`/`BalanceFrame` wiring yet) and mirror the IPW fit-store-replay conventions: `fit_outcome_model` fits a regressor (continuous outcome) or classifier (binary outcome) per outcome column and returns a stored model dict (`method`, `fit`, `X_matrix_columns`, `fit_scaler`, `categorical_levels`, `fit_matrix_type`, `weighted`, `prediction_kind`, `perf`, …); `predict_outcome` replays that stored preprocessing on new covariates and returns `ŷ` (regressor `.predict`, or `P̂(Y=1)` for a classifier). `model="auto"` selects a `HistGradientBoosting{Regressor,Classifier}` by outcome type and is pluggable (a single sklearn estimator, a `{"_discrete": clf, "_continuous": reg}` type map, or a `{outcome_column: estimator}` column map); preprocessing is learner-dependent (`use_model_matrix="auto"`: native categoricals for tree/boosting learners on scikit-learn >= 1.4, one-hot + `StandardScaler` otherwise, with a one-hot fallback on scikit-learn < 1.4), the design matrix is densified for `HistGradientBoosting*`, `na_action="drop"` is rejected, and stored `categorical_levels` are re-applied on replay so novel/missing target categories do not shift the learner's integer codes. `perf` uses `weighted_r2` for regression and a weighted deviance-explained / log-loss for classification. These are the standalone learner primitives the forthcoming `SampleFrame.fit_outcome_model` / `predict_outcomes` build on.
+
+  ```python
+  from balance.outcome_models import fit_outcome_model, predict_outcome
+  model = fit_outcome_model(covars_R, outcomes_R, sample_weight=w_R)  # -> {"method", "fit", "X_matrix_columns", ...}
+  predict_outcome(model, covars_T)["happiness"][:3]                   # -> ŷ on new (target) data
+  ```
+
 ## Documentation
 
 - Add the outcome-modelling design doc: [architecture_0_23_0.md](https://github.com/facebookresearch/balance/blob/main/docs/architecture/architecture_0_23_0.md).

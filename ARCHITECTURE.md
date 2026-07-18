@@ -201,6 +201,33 @@ When these artifacts are not stored (e.g. plain `adjust(method="ipw")`), the API
 raises actionable errors that direct users to `fit(method="ipw")` or the explicit
 `ipw(..., store_fit_matrices=True/store_fit_metadata=True)` flags.
 
+## Outcome-model workflow (`outcome_models/`)
+
+The `outcome_models/` package is the outcome-modelling counterpart to the IPW
+fit-artifact workflow, on a separate axis: instead of a propensity model over a
+sample-vs-target indicator, it fits a learner `ĝ(X) ≈ E[Y|X]` of an *observed
+outcome* on covariates. It currently ships **pure DataFrame functions** (no
+`SampleFrame`/`BalanceFrame` wiring yet):
+
+- `fit_outcome_model(covars_df, outcomes_df, *, sample_weight=None, model="auto", ...)`
+  builds a design matrix via `build_design_matrix` (train mode), fits a regressor
+  (continuous outcome) or classifier (binary outcome) per outcome column, and
+  returns a stored model dict (`method="outcome_model"`, `fit`, `X_matrix_columns`,
+  `fit_scaler`, `categorical_levels`, `fit_matrix_type`, `weighted`,
+  `prediction_kind`, `perf`, …) mirroring the IPW model dict so the same replay works.
+- `predict_outcome(model, new_covars_df)` rebuilds the design matrix in replay mode
+  (`project_to_columns` + stored scaler + re-applied `categorical_levels`) and returns
+  `ŷ` per outcome (`.predict` for a regressor, `P̂(Y=1)` for a classifier).
+
+Preprocessing is learner-dependent (`use_model_matrix="auto"`): tree/boosting learners
+use the native-categorical path on scikit-learn >= 1.4 (one-hot fallback on < 1.4),
+linear learners use one-hot + `StandardScaler`; the matrix is densified for
+`HistGradientBoosting*`. The weighted mean of the predicted outcomes on the target is
+the g-computation / outcome-model population estimate `μ̂_OM`. The `SampleFrame`
+storage + estimation surface (`SampleFrame.fit_outcome_model` / `predict_outcomes`,
+`outcomes_hat().mean()`) builds on these primitives. See the design doc
+[architecture_0_23_0.md](docs/architecture/architecture_0_23_0.md).
+
 ## Weighting methods (`weighting_methods/`)
 
 | Method | File | When to use |
@@ -228,7 +255,7 @@ Key parameters across methods: `max_de` (design effect cap, default 1.5), `trans
 In the open-source repo, the top-level structure is: `balance/` (package source), `tests/`, `tutorials/`, `website/`, `pyproject.toml`, `CHANGELOG.md`.
 
 Within `balance/`, the core files are: `sample_class.py` (Sample), `sample_frame.py` (SampleFrame), `balance_frame.py` (BalanceFrame), `balancedf_class.py` (BalanceDF views), `adjustment.py` (weight trimming), `cli.py`, `summary_utils.py`, `util.py`, `typing.py`.
-Subdirs: `weighting_methods/`, `stats_and_plots/`, `utils/`, `datasets/`.
+Subdirs: `weighting_methods/`, `outcome_models/` (outcome-model learner + fit/predict), `stats_and_plots/`, `utils/`, `datasets/`.
 
 ## Detailed architecture documentation
 
