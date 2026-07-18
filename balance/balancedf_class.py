@@ -2837,25 +2837,138 @@ class BalanceDFOutcomesHat(BalanceDF):
         ``getattr(linked_source, "outcomes_hat")()`` when expanding across
         linked sources (self / target / unadjusted).
 
+        The outcome-model estimate workflow populates only the **target's**
+        ``outcomes_hat`` (via ``predict_outcomes(on="target")``), leaving the
+        responder with none.  So when the responder itself has no ``outcomes_hat``
+        columns but a linked source (target / unadjusted) does, this builds an
+        all-``NaN`` responder frame carrying the union of the linked sources'
+        ``outcomes_hat`` column names, so ``mean()`` still expands to the linked
+        rows (the responder row is ``NaN``, the **target** row is ``μ̂_OM``) —
+        mirroring how ``covars().mean()`` fills absent categories with ``NaN``.
+        Only when *no* source anywhere has ``outcomes_hat`` columns does this
+        raise.
+
         Args:
             self (BalanceDFOutcomesHat): Object that is initiated.
             sample (BalanceDFSource): A BalanceDFSource-compatible object (e.g. Sample, SampleFrame).
             links (Dict | None): Optional explicit links for BalanceDF.
 
         Raises:
-            ValueError: If the backing object has no ``outcomes_hat`` columns.
+            ValueError: If neither the backing object nor any linked source has
+                ``outcomes_hat`` columns.
         """
         outcomes_hat_df = sample._outcomes_hat_columns
         if outcomes_hat_df is None:
-            source_type = type(sample).__name__
-            raise ValueError(
-                f"Cannot create BalanceDFOutcomesHat: no outcomes_hat columns are "
-                f"defined on the provided {source_type}. Populate the underlying "
-                "object with outcomes_hat columns (e.g. via "
-                "add_outcomes_hat_column) before constructing or accessing "
-                "outcomes_hat."
+            # Fall back to the union of the linked sources' outcomes_hat columns
+            # (the estimate workflow populates only the target).
+            linked_hat_columns: list[str] = []
+            for src in (links or {}).values():
+                src_hat = getattr(src, "_outcomes_hat_columns", None)
+                if src_hat is not None:
+                    for col in src_hat.columns:
+                        if col not in linked_hat_columns:
+                            linked_hat_columns.append(str(col))
+            if not linked_hat_columns:
+                source_type = type(sample).__name__
+                raise ValueError(
+                    f"Cannot create BalanceDFOutcomesHat: no outcomes_hat columns "
+                    f"are defined on the provided {source_type} or any linked "
+                    "source. Populate the underlying object with outcomes_hat "
+                    "columns (e.g. via add_outcomes_hat_column, or "
+                    "predict_outcomes(on='target')) before constructing or "
+                    "accessing outcomes_hat."
+                )
+            # All-NaN responder frame with the linked Ŷ column names, indexed by
+            # the responder rows.
+            responder_index = sample.weight_series.index
+            outcomes_hat_df = pd.DataFrame(
+                np.nan, index=responder_index, columns=linked_hat_columns
             )
         super().__init__(outcomes_hat_df, sample, name="outcomes_hat", links=links)
+
+    def _raise_if_target_unpopulated(self: "BalanceDFOutcomesHat") -> None:
+        """Guard the ``μ̂_OM`` estimate against a silently-missing target row.
+
+        When the view is backed by a :class:`~balance.balance_frame.BalanceFrame`
+        that has (a) a fitted outcome model and (b) a target, but the target's
+        ``outcomes_hat`` columns have **not** been populated, an
+        ``on_linked_samples`` reduction (e.g. :meth:`mean`) would silently omit
+        the target row and return only the responder's in-sample value — a
+        wrong answer masquerading as the population estimate ``μ̂_OM``.  Raise an
+        actionable error instead, telling the user to populate the target first.
+        """
+        from balance.balance_frame import BalanceFrame
+
+        sample = self._sample
+        if not isinstance(sample, BalanceFrame):
+            return
+        if sample._sf_target is None or sample.outcome_model is None:
+            return
+        target_hat = sample._sf_target._column_roles.get("outcomes_hat", [])
+        if not target_hat:
+            raise ValueError(
+                "outcomes_hat().mean() cannot compute the outcome-model estimate "
+                "(μ̂_OM): an outcome model is fit but the target's outcomes_hat "
+                "columns are not populated, so the target row would be silently "
+                "dropped. Call predict_outcomes(on='target') first to populate "
+                "the target's predicted outcomes, then read outcomes_hat().mean()."
+            )
+
+    def mean(
+        self: "BalanceDFOutcomesHat",
+        on_linked_samples: bool = True,
+        **kwargs: Any,
+    ) -> pd.DataFrame:
+        """Weighted mean of the predicted outcomes; the target row is ``μ̂_OM``.
+
+        Overrides :meth:`BalanceDF.mean` only to add the estimate guard: when
+        backed by a :class:`~balance.balance_frame.BalanceFrame` that has a
+        fitted outcome model and a target whose ``outcomes_hat`` is not yet
+        populated, this raises (instead of silently returning only the
+        responder row) — see :meth:`_raise_if_target_unpopulated`.  Otherwise it
+        behaves exactly like the inherited weighted mean: with
+        ``on_linked_samples=True`` (the default) it returns one row per source
+        (``self`` / ``target`` / ``unadjusted``), one column per predicted
+        outcome, and the **target** row is the g-computation / outcome-model
+        population estimate ``μ̂_OM`` = ``Σ w_T ŷ_T / Σ w_T``.
+
+        Args:
+            on_linked_samples: When ``True`` (default), expand across the linked
+                sources (self / target / unadjusted); when ``False``, return
+                only this view's own weighted mean.
+            **kwargs: Forwarded to :meth:`BalanceDF.mean`.
+
+        Returns:
+            pd.DataFrame: The source-indexed weighted means (one column per
+            predicted outcome).
+
+        Raises:
+            ValueError: If a model is fit and a target is set but the target's
+                ``outcomes_hat`` is unpopulated (call
+                ``predict_outcomes(on='target')`` first).
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": ["1", "2", "3", "4"],
+            ...                   "age": [25.0, 30.0, 35.0, 40.0],
+            ...                   "happiness": [50.0, 55.0, 65.0, 80.0],
+            ...                   "weight": [1.0, 1.0, 1.0, 1.0]}),
+            ...     outcome_columns=["happiness"])
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": ["5", "6"], "age": [28.0, 38.0],
+            ...                   "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
+            >>> _ = bf.fit_outcome_model(model="auto")
+            >>> _ = bf.predict_outcomes(on="target")
+            >>> "target" in bf.outcomes_hat().mean().index
+            True
+        """
+        if on_linked_samples:
+            self._raise_if_target_unpopulated()
+        return super().mean(on_linked_samples=on_linked_samples, **kwargs)
 
 
 class BalanceDFCovars(BalanceDF):

@@ -3055,6 +3055,7 @@ class TestSampleFitOutcomeModel(balance.testutil.BalanceTestCase):
     def test_fit_predict_outcomes_on_sample(self) -> None:
         s = self._make_sample()
         result = s.fit_predict_outcomes(model="auto")
+        assert isinstance(result, pd.DataFrame)
         self.assertEqual(_assert_type(s.outcome_model)["method"], "outcome_model")
         self.assertEqual(list(result.columns), ["happiness_hat"])
         self.assertIn("happiness_hat", s.outcomes_hat_columns)
@@ -3074,3 +3075,56 @@ class TestSampleFitOutcomeModel(balance.testutil.BalanceTestCase):
         s2 = deepcopy(s)
         self.assertIsNotNone(s2.outcome_model)
         self.assertEqual(s2.outcome_model["method"], "outcome_model")
+
+
+class TestSampleOutcomeModelTargetTransfer(balance.testutil.BalanceTestCase):
+    """Sample end-to-end outcome-model transfer to a target (via MRO)."""
+
+    def _make_pair(self, n: int = 50) -> tuple[Sample, Sample]:
+        rng = np.random.default_rng(11)
+        age_r = rng.normal(50, 10, n)
+        s = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(n)],
+                    "age": age_r,
+                    "happiness": age_r + rng.normal(0, 1, n),
+                    "weight": rng.uniform(0.5, 2.0, n),
+                }
+            ),
+            outcome_columns=["happiness"],
+        )
+        t = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(n, 2 * n)],
+                    "age": rng.normal(55, 10, n),
+                    "weight": rng.uniform(0.5, 2.0, n),
+                }
+            )
+        )
+        return s, t
+
+    def test_sample_set_target_fit_predict_estimate(self) -> None:
+        s, t = self._make_pair()
+        bf = s.set_target(t)
+        bf.fit_outcome_model(model="auto")
+        bf.predict_outcomes(on="target")
+        means = _assert_type(bf.outcomes_hat()).mean()
+        self.assertIn("target", means.index)
+
+    def test_sample_model_survives_adjust(self) -> None:
+        s, t = self._make_pair()
+        bf = s.set_target(t)
+        bf.fit_outcome_model(model="auto")
+        adjusted = bf.adjust(method="null")
+        self.assertIsNotNone(adjusted.outcome_model)
+        self.assertEqual(adjusted.outcome_model["method"], "outcome_model")
+
+    def test_sample_estimate_raises_when_target_unpopulated(self) -> None:
+        s, t = self._make_pair()
+        bf = s.set_target(t)
+        bf.fit_outcome_model(model="auto")
+        with self.assertRaises(ValueError) as ctx:
+            _assert_type(bf.outcomes_hat()).mean()
+        self.assertIn("predict_outcomes(on='target')", str(ctx.exception))

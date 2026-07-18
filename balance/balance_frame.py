@@ -329,6 +329,39 @@ class BalanceFrame:
         return self._sf_sample.df_outcomes_hat
 
     @property
+    def outcome_model(self) -> dict[str, Any] | None:
+        """The fitted outcome-model dict, delegated to ``_sf_sample``.
+
+        Single source of truth: the outcome model lives on the wrapped
+        responder SampleFrame (``_sf_sample._outcome_model``), so it rides
+        along whenever ``_sf_sample`` is deep-copied (e.g. by :meth:`adjust`)
+        and a :class:`~balance.sample_class.Sample` — which is both a
+        BalanceFrame and a SampleFrame — never reports a stale inherited copy.
+        Mirrors how :attr:`_outcome_columns` / :attr:`df_outcomes_hat` read
+        through to ``_sf_sample``, and parallels :attr:`model` (the *weighting*
+        model) for the outcome-modelling axis.
+
+        Returns:
+            dict[str, Any] | None: The stored ``_outcome_model`` dict from the
+            responder, or ``None`` if no outcome model has been fit.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0],
+            ...                   "y": [1.0, 0.0], "weight": [1.0, 1.0]}),
+            ...     outcome_columns=["y"])
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
+            >>> bf.outcome_model is None
+            True
+        """
+        return self._sf_sample._outcome_model
+
+    @property
     def _ignored_column_names(self) -> list[str]:
         """Ignored column names, delegated to ``_sf_sample.ignored_columns``."""
         return self._sf_sample._column_roles.get("ignored", [])
@@ -607,7 +640,13 @@ class BalanceFrame:
                     "weights to pre-adjust values and discards current "
                     "adjustment results on the returned copy."
                 )
+                # Preserve a fitted outcome model across the responder reset:
+                # outcomes_hat = ĝ(X) is weight-invariant, so a model fit before
+                # OR after adjust() must survive replacing the target.
+                preserved_model = new_copy._sf_sample._outcome_model
                 new_copy._sf_sample = new_copy._sf_sample_pre_adjust
+                if preserved_model is not None:
+                    new_copy._sf_sample._outcome_model = preserved_model
                 new_copy._clear_adjustment_state()
             # pyrefly: ignore [unsupported-operation]
             new_copy._links["target"] = target
@@ -633,16 +672,32 @@ class BalanceFrame:
                 self._sf_target = target
                 # pyrefly: ignore [unsupported-operation]
                 self._links["target"] = target
+                # Preserve a fitted outcome model across the responder reset:
+                # outcomes_hat = ĝ(X) is weight-invariant, so a model fit before
+                # OR after adjust() must survive replacing the target.
+                preserved_model = self._sf_sample._outcome_model
                 # Reset adjustment state — old adjustment is no longer valid.
                 self._sf_sample = self._sf_sample_pre_adjust
+                if preserved_model is not None:
+                    self._sf_sample._outcome_model = preserved_model
                 self._clear_adjustment_state()
                 self._sync_sampleframe_state_from_responder(self._sf_sample)
                 return self
             else:
-                return type(self)._create(
+                # Preserve a fitted outcome model (weight-invariant ĝ(X)) that
+                # may live only on the current responder — e.g. one fit AFTER
+                # adjust(), which is absent from _sf_sample_pre_adjust.
+                preserved_model = self._sf_sample._outcome_model
+                new_frame = type(self)._create(
                     sample=copy.deepcopy(self._sf_sample_pre_adjust),
                     target=target,
                 )
+                if preserved_model is not None:
+                    new_frame._sf_sample._outcome_model = preserved_model
+                    new_frame._sync_sampleframe_state_from_responder(
+                        new_frame._sf_sample
+                    )
+                return new_frame
 
         raise TypeError("A target, a Sample object, must be specified")
 
@@ -1408,6 +1463,316 @@ class BalanceFrame:
 
         bf._sync_sampleframe_state_from_responder(bf._sf_sample)
         return bf
+
+    # --- Outcome-model fit / transfer / estimate ---
+
+    def fit_outcome_model(
+        self,
+        *,
+        target: BalanceFrame | SampleFrame | None = None,
+        inplace: bool = True,
+        **kwargs: Any,
+    ) -> Self:
+        """Fit an outcome model ``ĝ(X) ≈ E[Y|X]`` on the responders and store it.
+
+        This is the ``BalanceFrame`` entry point to the outcome-modelling axis
+        (the counterpart to :meth:`fit` for the *weighting* axis).  It
+        **delegates to the responder** (``self._sf_sample``): the fitted model
+        is stored on ``_sf_sample._outcome_model`` — the single source of truth
+        read back through :attr:`outcome_model`.  Because the model lives on the
+        responder SampleFrame, it rides along whenever ``_sf_sample`` is
+        deep-copied — in particular it **survives :meth:`adjust`** (which
+        deep-copies ``_sf_sample``) and is preserved across :meth:`set_target`.
+
+        On a :class:`~balance.sample_class.Sample`, this ``BalanceFrame`` method
+        takes MRO precedence over ``SampleFrame.fit_outcome_model`` (``Sample``
+        is both classes), so the model correctly lands on ``_sf_sample`` rather
+        than on the Sample's own inherited attribute.
+
+        Like sklearn's ``fit()`` (and :meth:`SampleFrame.fit_outcome_model`), it
+        does **not** produce predictions — call :meth:`predict_outcomes` (or
+        :meth:`fit_predict_outcomes`) to write the ``<outcome>_hat`` columns.
+
+        Args:
+            target: Optional target population to set before fitting (mirrors
+                :meth:`fit`).  When provided, ``set_target(target, inplace=False)``
+                is applied first so immutability is preserved; the fit then
+                proceeds on the returned object.
+            inplace: If ``True`` (default), mutate this object (store the model
+                on the responder) and return ``self``; if ``False``, return a
+                new copy with the model stored and leave ``self`` untouched —
+                matching :meth:`fit` / :meth:`SampleFrame.fit_outcome_model`.
+            **kwargs: Forwarded to :meth:`SampleFrame.fit_outcome_model`
+                (e.g. ``model``, ``outcome_columns``, ``variables``,
+                ``weighted``, ``formula``, ``na_action``, ``use_model_matrix``,
+                ``calibrate``).
+
+        Returns:
+            The BalanceFrame with the fitted outcome model stored on its
+            responder (``self`` when ``inplace``, else a new copy).
+
+        Raises:
+            ValueError: If there are no outcome columns to fit (and none are
+                passed), or for any underlying ``fit_outcome_model`` error.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": ["1", "2", "3", "4"],
+            ...                   "age": [25.0, 30.0, 35.0, 40.0],
+            ...                   "happiness": [50.0, 55.0, 65.0, 80.0],
+            ...                   "weight": [1.0, 1.0, 1.0, 1.0]}),
+            ...     outcome_columns=["happiness"])
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": ["5", "6"], "age": [28.0, 38.0],
+            ...                   "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
+            >>> _ = bf.fit_outcome_model()
+            >>> bf.outcome_model["method"]
+            'outcome_model'
+
+        End-to-end on the bundled ``load_data()`` dataset — the g-computation
+        estimate ``μ̂_OM`` (the weighted mean of the predicted outcome on the
+        target).  No ``adjust()`` is required: the outcome model is fit on the
+        responders independently of the weights.
+
+        .. code-block:: python
+
+            from balance import load_data, Sample
+
+            target_df, sample_df = load_data()
+            bf = Sample.from_frame(
+                sample_df, outcome_columns=["happiness"]
+            ).set_target(Sample.from_frame(target_df))
+            bf.fit_outcome_model(model="auto")   # fit ĝ(X) ≈ E[Y|X] on the responders
+            bf.predict_outcomes(on="target")     # score the target with the fitted model
+            bf.outcomes_hat().mean()             # target row = μ̂_OM (g-computation estimate)
+        """
+        if isinstance(target, (SampleFrame, BalanceFrame)):
+            based = self.set_target(target, inplace=False)
+            based.fit_outcome_model(inplace=True, **kwargs)
+            if inplace:
+                self._sf_sample = based._sf_sample
+                self._sf_sample_pre_adjust = based._sf_sample_pre_adjust
+                self._sf_target = based._sf_target
+                self._links = based._links
+                self._sync_sampleframe_state_from_responder(self._sf_sample)
+                return self
+            return based
+
+        bf = self if inplace else deepcopy(self)
+        # Delegate to the responder so the model lands on _sf_sample (single
+        # source of truth) and rides adjust()/set_target().
+        bf._sf_sample.fit_outcome_model(inplace=True, **kwargs)
+        bf._sync_sampleframe_state_from_responder(bf._sf_sample)
+        return bf
+
+    @overload
+    def predict_outcomes(  # noqa: E704
+        self,
+        *,
+        on: Literal["sample", "target"] | None = ...,
+        data: BalanceFrame | None = ...,
+        populate: bool = ...,
+    ) -> pd.DataFrame: ...
+
+    @overload
+    def predict_outcomes(  # noqa: E704
+        self,
+        *,
+        on: Literal["both"],
+        data: BalanceFrame | None = ...,
+        populate: bool = ...,
+    ) -> tuple[pd.DataFrame, pd.DataFrame]: ...
+
+    def predict_outcomes(
+        self,
+        *,
+        on: Literal["sample", "target", "both"] | None = None,
+        data: BalanceFrame | None = None,
+        populate: bool = True,
+    ) -> pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame]:
+        """Replay the fitted outcome model onto the sample and/or the target.
+
+        Requires a model fit on the responder (via :meth:`fit_outcome_model`).
+        The responder's stored preprocessing is replayed on the requested
+        population's covariates and the ``<outcome>_hat`` columns are populated.
+
+        - ``on="target"`` (the default when a target is set): replay on the
+            **target** covariates and populate the target's ``outcomes_hat``
+            columns.  The target frame is
+            **deep-copied before it is written** (and the populated copy is
+            stored back on ``self._sf_target``), so a caller's target object is
+            never mutated in place.  The weighted mean of the target's
+            ``outcomes_hat`` is the g-computation estimate ``μ̂_OM``, read via
+            ``outcomes_hat().mean()``.
+        - ``on="sample"``: populate the responder (``_sf_sample``) in place —
+            equivalent to ``_sf_sample.predict_outcomes()``.
+        - ``on="both"``: do both and return ``(sample_predictions,
+            target_predictions)`` — mirroring the ``on=`` return convention of
+            :meth:`predict_weights` / :meth:`design_matrix`.
+
+        Args:
+            on: Which population(s) to score/populate.  ``None`` (the default)
+                resolves to ``"target"`` when a target is set (the estimate
+                workflow) and to ``"sample"`` otherwise (so a target-less frame
+                behaves like ``SampleFrame.predict_outcomes``).
+            data: Reserved for parity with :meth:`predict_weights`; not yet
+                supported here — pass ``None`` (foreign-frame transfer is
+                :meth:`set_fitted_outcome_model`, a later change).
+            populate: When ``True`` (default), persist the predictions as
+                ``<outcome>_hat`` columns on the scored population.
+
+        Returns:
+            The predictions DataFrame (one ``<outcome>_hat`` column per fitted
+            outcome), or a ``(sample, target)`` tuple when ``on="both"``.
+
+        Raises:
+            ValueError: If no outcome model has been fit, if ``on="target"`` /
+                ``"both"`` but no target is set, or if ``data`` is passed.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": ["1", "2", "3", "4"],
+            ...                   "age": [25.0, 30.0, 35.0, 40.0],
+            ...                   "happiness": [50.0, 55.0, 65.0, 80.0],
+            ...                   "weight": [1.0, 1.0, 1.0, 1.0]}),
+            ...     outcome_columns=["happiness"])
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": ["5", "6"], "age": [28.0, 38.0],
+            ...                   "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
+            >>> _ = bf.fit_outcome_model()
+            >>> preds = bf.predict_outcomes(on="target")
+            >>> list(preds.columns)
+            ['happiness_hat']
+            >>> bf.outcomes_hat().df.columns.tolist()   # target now populated
+            ['happiness_hat']
+        """
+        if data is not None:
+            raise ValueError(
+                "BalanceFrame.predict_outcomes(data=...) is not supported; use "
+                "set_fitted_outcome_model(...) to transfer a fitted model from "
+                "another BalanceFrame, then predict_outcomes(on=...)."
+            )
+        if self._sf_sample._outcome_model is None:
+            raise ValueError(
+                "no outcome model has been fit; call fit_outcome_model(...) "
+                "(or fit_predict_outcomes(...)) before predict_outcomes()."
+            )
+
+        # Resolve the default: prefer the target (the estimate workflow) when
+        # one is set, otherwise fall back to the responder so a target-less
+        # frame/Sample behaves like SampleFrame.predict_outcomes().
+        if on is None:
+            on = "target" if self._sf_target is not None else "sample"
+
+        sample_predictions: pd.DataFrame | None = None
+        target_predictions: pd.DataFrame | None = None
+
+        if on in ("sample", "both"):
+            sample_predictions = self._sf_sample.predict_outcomes(populate=populate)
+
+        if on in ("target", "both"):
+            if self._sf_target is None:
+                raise ValueError(
+                    f"predict_outcomes(on={on!r}) requires a target population; "
+                    "call set_target(...) first."
+                )
+            target_predictions = self._predict_outcomes_on_target(populate=populate)
+
+        if on == "sample":
+            return _assert_type(sample_predictions)
+        if on == "target":
+            return _assert_type(target_predictions)
+        return _assert_type(sample_predictions), _assert_type(target_predictions)
+
+    def _predict_outcomes_on_target(self, *, populate: bool) -> pd.DataFrame:
+        """Replay the responder's model on the target; return ``<outcome>_hat``.
+
+        Predictions are computed on the target's covariates; when ``populate``
+        is True the target frame is deep-copied, populated in place on the copy
+        (so the caller's target object is untouched), and stored back on
+        ``self._sf_target``.
+        """
+        target = _assert_type(self._sf_target)
+        # predict-only (populate=False) returns a DataFrame indexed by the
+        # TARGET covariate rows without touching the responder.
+        predictions = self._sf_sample.predict_outcomes(data=target, populate=False)
+        if not populate:
+            return predictions
+
+        # Deep-copy the target before writing so the caller's target object is
+        # not mutated in place; store the populated copy back on self.
+        target_copy = deepcopy(target)
+        for column in predictions.columns:
+            column_name = str(column)
+            if column_name in target_copy._column_roles["outcomes_hat"]:
+                target_copy._drop_single_outcomes_hat_column(column_name)
+            target_copy.add_outcomes_hat_column(column_name, predictions[column_name])
+        self._sf_target = target_copy
+        # Keep the raw-SampleFrame target link in sync with the populated copy
+        # (a richer BalanceFrame/Sample link is left untouched).
+        # pyrefly: ignore [not-iterable]
+        target_link = self._links.get("target") if self._links else None
+        if target_link is not None and not isinstance(target_link, BalanceFrame):
+            # pyrefly: ignore [unsupported-operation]
+            self._links["target"] = target_copy
+        return predictions
+
+    def fit_predict_outcomes(
+        self,
+        *,
+        target: BalanceFrame | SampleFrame | None = None,
+        on: Literal["sample", "target", "both"] | None = None,
+        populate: bool = True,
+        **fit_kwargs: Any,
+    ) -> pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame]:
+        """Fit an outcome model then replay it (on the target by default).
+
+        Convenience wrapper: calls :meth:`fit_outcome_model` (in place, on the
+        responder) with ``**fit_kwargs`` and then :meth:`predict_outcomes` with
+        the given ``on`` / ``populate``.
+
+        Args:
+            target: Optional target to set before fitting (see
+                :meth:`fit_outcome_model`).
+            on: Which population(s) to predict on afterwards.  ``None`` (the
+                default) resolves to ``"target"`` when a target is set, else
+                ``"sample"`` (see :meth:`predict_outcomes`).
+            populate: Whether to persist the ``<outcome>_hat`` columns.
+            **fit_kwargs: Forwarded to :meth:`fit_outcome_model`.
+
+        Returns:
+            The predictions DataFrame (or a ``(sample, target)`` tuple when
+            ``on="both"``), from :meth:`predict_outcomes`.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": ["1", "2", "3", "4"],
+            ...                   "age": [25.0, 30.0, 35.0, 40.0],
+            ...                   "happiness": [50.0, 55.0, 65.0, 80.0],
+            ...                   "weight": [1.0, 1.0, 1.0, 1.0]}),
+            ...     outcome_columns=["happiness"])
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": ["5", "6"], "age": [28.0, 38.0],
+            ...                   "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
+            >>> preds = bf.fit_predict_outcomes(on="target")
+            >>> list(preds.columns)
+            ['happiness_hat']
+        """
+        fit_kwargs.pop("inplace", None)
+        self.fit_outcome_model(target=target, inplace=True, **fit_kwargs)
+        return self.predict_outcomes(on=on, populate=populate)
 
     def _require_fitted_model(self) -> dict[str, Any]:
         """Return the adjustment model dict, or raise.
@@ -2852,6 +3217,13 @@ class BalanceFrame:
                 self, deep=False
             )
 
+        # Carry the fitted outcome model onto the reconstructed Sample: the
+        # outcomes_hat role columns are carried above, but the fit behind them
+        # would otherwise be lost on a BalanceFrame -> Sample round-trip.
+        if self._sf_sample._outcome_model is not None:
+            result._sf_sample._outcome_model = self._sf_sample._outcome_model
+            result._sync_sampleframe_state_from_responder(result._sf_sample)
+
         return result
 
     # --- BalanceDF integration ---
@@ -2999,13 +3371,34 @@ class BalanceFrame:
             >>> bf2.outcomes_hat().df.columns.tolist()
             ['y_hat']
         """
-        if not self._sf_sample.outcomes_hat_columns:
+        # The view is available when EITHER the responder or a linked source
+        # (target / unadjusted) carries outcomes_hat columns: the pure
+        # outcome-model workflow populates only the TARGET (via
+        # predict_outcomes(on="target")), and μ̂_OM is read from the target row.
+        links = self._build_links_dict()
+        has_any_hat = bool(self._sf_sample.outcomes_hat_columns) or any(
+            bool(getattr(src, "outcomes_hat_columns", [])) for src in links.values()
+        )
+        if not has_any_hat:
+            # Estimate guard: when an outcome model is fit and a target is set
+            # but the target's outcomes_hat is unpopulated, returning None here
+            # would surface as an unhelpful AttributeError on .mean(). Raise an
+            # actionable error pointing at predict_outcomes(on="target").
+            if (
+                self._sf_sample._outcome_model is not None
+                and self._sf_target is not None
+            ):
+                raise ValueError(
+                    "outcomes_hat() cannot produce the outcome-model estimate "
+                    "(μ̂_OM): an outcome model is fit but the target's "
+                    "outcomes_hat columns are not populated. Call "
+                    "predict_outcomes(on='target') first, then read "
+                    "outcomes_hat().mean()."
+                )
             return None
         from balance.balancedf_class import BalanceDFOutcomesHat, BalanceDFSource
 
-        return BalanceDFOutcomesHat(
-            cast(BalanceDFSource, self), links=self._build_links_dict()
-        )
+        return BalanceDFOutcomesHat(cast(BalanceDFSource, self), links=links)
 
     # --- Summary & diagnostics ---
 
@@ -3434,6 +3827,23 @@ class BalanceFrame:
                             k,
                             exc,
                         )
+
+        # A row filter drops responders, so a stored outcome model's
+        # training_sample_index no longer matches the retained rows: invalidate
+        # it (the user must re-fit).  A column-only filter keeps every row, so
+        # the model stays valid.
+        if rows_to_keep is not None and new_bf._sf_sample._outcome_model is not None:
+            logger.warning(
+                "keep_only_some_rows_columns() dropped responder rows, so the "
+                "stored outcome model no longer matches the training rows and "
+                "has been discarded. Re-fit with fit_outcome_model() if needed."
+            )
+            new_bf._sf_sample._outcome_model = None
+            if (
+                new_bf._sf_sample_pre_adjust is not None
+                and new_bf._sf_sample_pre_adjust is not new_bf._sf_sample
+            ):
+                new_bf._sf_sample_pre_adjust._outcome_model = None
 
         return new_bf
 

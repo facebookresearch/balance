@@ -47,6 +47,14 @@
   sf.df_outcomes_hat["happiness_hat"].tolist()   # -> [...]  (in-sample ŷ on the responders)
   ```
 
+- **`BalanceFrame` outcome-model transfer to the target + the point estimate `μ̂_OM`.** The outcome model now works end-to-end through a `BalanceFrame` (and, via the MRO, a `Sample` with a target): fit on the responder, apply to the target, and read the g-computation / outcome-model estimate `μ̂_OM = outcomes_hat().mean()` (the target row = `Σ w_T ŷ_T / Σ w_T`). `BalanceFrame.fit_outcome_model(*, target=None, inplace=True, **kw)` and `fit_predict_outcomes(...)` **delegate to the responder** (`_sf_sample`), so the fitted model lives on the responder SampleFrame and is now the single source of truth exposed by the new read-only `BalanceFrame.outcome_model` property (which delegates to `_sf_sample`, mirroring `df_outcomes_hat` and paralleling `BalanceFrame.model`). Because the model lives on `_sf_sample`, it **survives `adjust()`** (which deep-copies `_sf_sample`) — closing a gap where a model fit on a `Sample`/`BalanceFrame` was lost after adjustment — and is **preserved across `set_target()`** (both fit-before-adjust and fit-after-adjust orders). `predict_outcomes(*, on="sample"|"target"|"both", populate=True)` replays the stored model: `on="target"` (the default when a target is set) scores the target's covariates and populates its `<outcome>_hat` columns, **deep-copying the target before writing** so a caller's target object is never mutated in place (`on="both"` returns a `(sample, target)` tuple, mirroring `predict_weights`/`design_matrix`). `outcomes_hat()` now also builds the view when only the target carries `outcomes_hat`, and `outcomes_hat().mean()` **raises an actionable error** (pointing at `predict_outcomes(on="target")`) when a model is fit but the target is not yet populated — never silently returning the responder's in-sample mean in place of the population estimate. Finally, `keep_only_some_rows_columns` that **drops responder rows invalidates** the stored outcome model (its `training_sample_index` no longer matches; a column-only filter keeps the model).
+
+  ```python
+  bf = sample.set_target(target)
+  bf.fit_outcome_model(); bf.predict_outcomes(on="target")
+  bf.outcomes_hat().mean()          # μ̂_OM: weighted mean of Ŷ on the target (target row)
+  ```
+
 ## Documentation
 
 - Add the outcome-modelling design doc: [architecture_0_23_0.md](https://github.com/facebookresearch/balance/blob/main/docs/architecture/architecture_0_23_0.md).

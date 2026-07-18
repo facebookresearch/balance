@@ -106,6 +106,17 @@ Note: the `_*` protocol accessors `_outcome_columns` and `_outcomes_hat_columns`
 │                          │    outcome_model (property)  │
 │ Predict/persist Ŷ        │ SampleFrame.predict_outcomes │
 │  from stored model       │  / fit_predict_outcomes      │
+│ Fit outcome model via BF │ BalanceFrame.fit_outcome_model│
+│  (delegate to responder) │  / fit_predict_outcomes      │
+│                          │  → _sf_sample._outcome_model │
+│ outcome_model (read)     │ BalanceFrame (property,      │
+│                          │  delegates to _sf_sample)    │
+│ Transfer ĝ to the target │ BalanceFrame.predict_outcomes│
+│  produce Ŷ_T             │  (on="target"; deep-copies   │
+│                          │  _sf_target before writing)  │
+│ Outcome-model estimate   │ outcomes_hat().mean()        │
+│  μ̂_OM (target row)       │  (raises if target Ŷ unpop.) │
+│ IPW/Hájek estimate μ̂_IPW │ outcomes().mean() (self)     │
 │ ID/weight columns        │ SampleFrame                  │
 │ Type standardization     │ SampleFrame.from_frame()     │
 │ Weight management        │ SampleFrame (canonical)      │
@@ -251,10 +262,37 @@ sklearn-style trio, which stores the fitted model on the frame:
 The new `_outcome_model` frame state is initialised in `SampleFrame._create`, reference-shares
 its fitted estimators on `SampleFrame.__deepcopy__` (immutable post-fit — the dict is shallow
 copied, the estimators are kept by reference), and is synced onto `Sample` via
-`BalanceFrame._sync_sampleframe_state_from_responder` (mirroring `_prediction_metadata`). This
-is the standalone (no-target) storage step; combining with a target so the weighted mean of the
-target's predicted outcomes is the g-computation / outcome-model population estimate `μ̂_OM`
-(`outcomes_hat().mean()`) arrives in a following change. See the design doc
+`BalanceFrame._sync_sampleframe_state_from_responder` (mirroring `_prediction_metadata`).
+
+`BalanceFrame` orchestrates the *transfer to the target* and the *estimate* (the counterpart to
+how it orchestrates `adjust()`/`set_fitted_model()` for weights). It **delegates** the fit to the
+responder so the model has a single home that rides the lifecycle:
+
+- `BalanceFrame.fit_outcome_model(*, target=None, inplace=True, **kw)` /
+  `fit_predict_outcomes(...)` call `_sf_sample.fit_outcome_model(...)`, so the model lands on
+  `_sf_sample._outcome_model`. Because a `Sample` is *both* a `BalanceFrame` and a `SampleFrame`,
+  this `BalanceFrame` method takes MRO precedence over `SampleFrame.fit_outcome_model`, so a model
+  fit on a `Sample` lands on `_sf_sample` (not the Sample's own inherited attribute) — this is what
+  lets it **survive `adjust()`** (which deep-copies `_sf_sample`).
+- `BalanceFrame.outcome_model` is a read-only property that **delegates to `_sf_sample`** (single
+  source of truth; mirrors `df_outcomes_hat` / `_outcomes_hat_columns`, and parallels
+  `BalanceFrame.model` for the weighting axis).
+- `BalanceFrame.predict_outcomes(*, on="sample"|"target"|"both", populate=True)` replays the
+  responder's stored model. `on="target"` (the default when a target is set) scores the target's
+  covariates and populates its `<outcome>_hat` columns, **deep-copying `_sf_target` before writing**
+  so the caller's target object is not mutated in place; `on="both"` returns a `(sample, target)`
+  tuple (mirroring `predict_weights`/`design_matrix`).
+- The estimate is `μ̂_OM = outcomes_hat().mean()` — the **target** row = `Σ w_T ŷ_T / Σ w_T`.
+  `BalanceFrame.outcomes_hat()` builds the view when *either* the responder or a linked source
+  (target/unadjusted) carries `outcomes_hat`, and it **raises an actionable error** (pointing at
+  `predict_outcomes(on="target")`) when a model is fit but the target's `outcomes_hat` is not
+  populated, so the population estimate is never silently replaced by the responder's in-sample mean.
+
+Lifecycle: `set_target()` **preserves** `_outcome_model` across its responder reset (a model fit
+before *or* after `adjust()` is not lost when the target is replaced); `keep_only_some_rows_columns`
+that **drops responder rows invalidates** the model (its `training_sample_index` no longer matches
+the retained rows), while a column-only filter keeps it. A doubly-robust / AIPW estimator combining
+`outcomes_hat` with the IPW weights is a later phase. See the design doc
 [architecture_0_23_0.md](docs/architecture/architecture_0_23_0.md).
 
 ## Weighting methods (`weighting_methods/`)

@@ -4334,3 +4334,85 @@ class TestBalanceDFOutcomesHat(BalanceTestCase):
             _assert_type(sample.outcomes_hat()).mean().to_dict(),
             {"happiness_hat": {"self": 64.25}},
         )
+
+    def _make_fitted_bf(self, n: int = 50) -> BalanceFrame:
+        rng = np.random.default_rng(7)
+        age_r = rng.normal(50, 10, n)
+        resp = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(n)],
+                    "age": age_r,
+                    "happiness": age_r + rng.normal(0, 1, n),
+                    "weight": np.ones(n),
+                }
+            ),
+            outcome_columns=["happiness"],
+        )
+        tgt = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(n, 2 * n)],
+                    "age": rng.normal(55, 10, n),
+                    "weight": np.ones(n),
+                }
+            )
+        )
+        bf = BalanceFrame(sample=resp, target=tgt)
+        bf.fit_outcome_model(model="auto")
+        return bf
+
+    def test_outcomes_hat_target_row_is_mu_hat_om(self) -> None:
+        """After predict_outcomes(on='target'), the target row is μ̂_OM."""
+        bf = self._make_fitted_bf()
+        bf.predict_outcomes(on="target")
+        means = _assert_type(bf.outcomes_hat()).mean()
+        self.assertIn("target", means.index)
+        preds = bf.predict_outcomes(on="target", populate=False)
+        w_t = _assert_type(bf._sf_target).weight_series
+        expected = float(np.average(preds["happiness_hat"], weights=w_t))
+        self.assertAlmostEqual(
+            float(means.loc["target", "happiness_hat"]), expected, places=6
+        )
+
+    def test_outcomes_hat_self_and_target_rows_present_when_only_target_populated(
+        self,
+    ) -> None:
+        """Only the target is populated -> both self and target rows appear,
+        and the target row (μ̂_OM) is the weighted mean of the target Ŷ."""
+        bf = self._make_fitted_bf()
+        bf.predict_outcomes(on="target")
+        means = _assert_type(bf.outcomes_hat()).mean()
+        self.assertIn("self", means.index)
+        self.assertIn("target", means.index)
+        preds = bf.predict_outcomes(on="target", populate=False)
+        w_t = _assert_type(bf._sf_target).weight_series
+        expected = float(np.average(preds["happiness_hat"], weights=w_t))
+        self.assertAlmostEqual(
+            float(means.loc["target", "happiness_hat"]), expected, places=6
+        )
+
+    def test_outcomes_hat_factory_raises_when_target_unpopulated(self) -> None:
+        """A fitted model + target but no populated Ŷ -> factory raises."""
+        bf = self._make_fitted_bf()
+        with self.assertRaises(ValueError) as ctx:
+            bf.outcomes_hat()
+        self.assertIn("predict_outcomes(on='target')", str(ctx.exception))
+
+    def test_outcomes_hat_mean_guard_when_only_sample_populated(self) -> None:
+        """Responder populated (on='sample') but target not -> mean() raises."""
+        bf = self._make_fitted_bf()
+        bf.predict_outcomes(on="sample")
+        # The view exists (responder has Ŷ), but the estimate would silently
+        # drop the target row -> mean() must raise.
+        with self.assertRaises(ValueError) as ctx:
+            _assert_type(bf.outcomes_hat()).mean()
+        self.assertIn("predict_outcomes(on='target')", str(ctx.exception))
+
+    def test_outcomes_hat_mean_on_linked_false_no_guard(self) -> None:
+        """on_linked_samples=False bypasses the target guard (self-only view)."""
+        bf = self._make_fitted_bf()
+        bf.predict_outcomes(on="sample")
+        # Self-only reduction is fine even without a populated target.
+        self_mean = _assert_type(bf.outcomes_hat()).mean(on_linked_samples=False)
+        self.assertIn("happiness_hat", self_mean.columns)

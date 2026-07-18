@@ -7068,3 +7068,436 @@ class TestBalanceFramePredictAndCbpsEdgeCoverage(BalanceTestCase):
         with self.assertLogs("balance", level="WARNING"):
             out = adjusted.keep_only_some_rows_columns(rows_to_keep="x > 0")
         self.assertIsNotNone(out)
+
+
+class TestBalanceFrameOutcomeModelTransfer(BalanceTestCase):
+    """BalanceFrame outcome-model transfer to the target + the μ̂_OM estimate."""
+
+    def _make_bf(self, n: int = 60) -> BalanceFrame:
+        rng = np.random.default_rng(0)
+        age_r = rng.normal(50, 10, n)
+        resp = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(n)],
+                    "age": age_r,
+                    "grp": rng.choice(["a", "b"], n),
+                    "happiness": age_r + rng.normal(0, 1, n),
+                    "weight": rng.uniform(0.5, 2.0, n),
+                }
+            ),
+            outcome_columns=["happiness"],
+        )
+        age_t = rng.normal(55, 10, n)
+        tgt = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(n, 2 * n)],
+                    "age": age_t,
+                    "grp": rng.choice(["a", "b"], n),
+                    "weight": rng.uniform(0.5, 2.0, n),
+                }
+            )
+        )
+        return BalanceFrame(sample=resp, target=tgt)
+
+    def test_fit_outcome_model_e2e_on_load_data(self) -> None:
+        # Basic end-to-end outcome model on the bundled load_data() dataset:
+        # fit ĝ(X) on the responders, score the target, read μ̂_OM. No adjust()
+        # is needed — the outcome model is fit independently of the weights.
+        from balance import load_data, Sample
+
+        target_df, sample_df = load_data()
+        assert target_df is not None and sample_df is not None
+        bf = Sample.from_frame(sample_df, outcome_columns=["happiness"]).set_target(
+            Sample.from_frame(target_df)
+        )
+        bf.fit_outcome_model(model="auto")
+        bf.predict_outcomes(on="target")
+        mu_om = _assert_type(bf.outcomes_hat()).mean().loc["target", "happiness_hat"]
+        # μ̂_OM is finite and within the responders' observed-outcome range (a
+        # boosting g-computation average of in-range predictions).
+        self.assertTrue(np.isfinite(mu_om))
+        self.assertGreaterEqual(mu_om, sample_df["happiness"].min())
+        self.assertLessEqual(mu_om, sample_df["happiness"].max())
+
+    def test_example_snippet_mu_hat_om(self) -> None:
+        # The diff's Example: fit on sample -> predict on target -> read μ̂_OM.
+        bf = self._make_bf()
+        bf.fit_outcome_model(model="auto")
+        bf.predict_outcomes(on="target")
+        means = _assert_type(bf.outcomes_hat()).mean()
+        self.assertIn("target", means.index)
+        # μ̂_OM = weighted mean of the target Ŷ (target row).
+        preds = bf.predict_outcomes(on="target", populate=False)
+        w_t = _assert_type(bf._sf_target).weight_series
+        expected = float(np.average(preds["happiness_hat"], weights=w_t))
+        self.assertAlmostEqual(
+            float(means.loc["target", "happiness_hat"]), expected, places=6
+        )
+
+    def test_fit_predict_outcomes_on_target(self) -> None:
+        bf = self._make_bf()
+        preds = bf.fit_predict_outcomes(model="auto", on="target")
+        assert isinstance(preds, pd.DataFrame)
+        self.assertEqual(list(preds.columns), ["happiness_hat"])
+        self.assertEqual(
+            _assert_type(bf.outcomes_hat()).df.columns.tolist(), ["happiness_hat"]
+        )
+
+    def test_outcome_model_property_delegates_to_responder(self) -> None:
+        bf = self._make_bf()
+        self.assertIsNone(bf.outcome_model)
+        bf.fit_outcome_model(model="auto")
+        self.assertEqual(_assert_type(bf.outcome_model)["method"], "outcome_model")
+        # Single source of truth: the model lives on _sf_sample.
+        self.assertIs(bf.outcome_model, bf._sf_sample._outcome_model)
+
+    def test_fit_outcome_model_inplace_false_leaves_self_unfit(self) -> None:
+        bf = self._make_bf()
+        fitted = bf.fit_outcome_model(model="auto", inplace=False)
+        self.assertIsNone(bf.outcome_model)
+        self.assertIsNotNone(fitted.outcome_model)
+
+    def test_mean_raises_when_target_unpopulated(self) -> None:
+        bf = self._make_bf()
+        bf.fit_outcome_model(model="auto")
+        # Model fit, target NOT populated -> the estimate must raise, not
+        # silently return only the responder row.
+        with self.assertRaises(ValueError) as ctx:
+            _assert_type(bf.outcomes_hat()).mean()
+        self.assertIn("predict_outcomes(on='target')", str(ctx.exception))
+
+    def test_mean_ok_after_populating_target(self) -> None:
+        bf = self._make_bf()
+        bf.fit_outcome_model(model="auto")
+        bf.predict_outcomes(on="target")
+        means = _assert_type(bf.outcomes_hat()).mean()  # no raise
+        self.assertIn("self", means.index)
+        self.assertIn("target", means.index)
+
+    def test_model_survives_adjust(self) -> None:
+        # Core fix: a model fit on the BalanceFrame lands on _sf_sample and
+        # rides adjust()'s deepcopy(_sf_sample).
+        bf = self._make_bf()
+        bf.fit_outcome_model(model="auto")
+        adjusted = bf.adjust(method="null")
+        self.assertIsNotNone(adjusted.outcome_model)
+        self.assertEqual(adjusted.outcome_model["method"], "outcome_model")
+
+    def test_model_survives_adjust_then_predict_on_target(self) -> None:
+        bf = self._make_bf()
+        bf.fit_outcome_model(model="auto")
+        adjusted = bf.adjust(method="null")
+        adjusted.predict_outcomes(on="target")
+        means = _assert_type(adjusted.outcomes_hat()).mean()
+        self.assertIn("target", means.index)
+
+    def test_set_target_preserves_model_fit_before_adjust(self) -> None:
+        # Fit -> adjust -> set_target(new): the model must survive the reset.
+        bf = self._make_bf()
+        bf.fit_outcome_model(model="auto")
+        adjusted = bf.adjust(method="null")
+        new_tgt = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["x1", "x2", "x3"],
+                    "age": [40.0, 50.0, 60.0],
+                    "grp": ["a", "b", "a"],
+                    "weight": [1.0, 1.0, 1.0],
+                }
+            )
+        )
+        rebased = adjusted.set_target(new_tgt)
+        self.assertIsNotNone(rebased.outcome_model)
+        self.assertEqual(rebased.outcome_model["method"], "outcome_model")
+
+    def test_set_target_preserves_model_fit_after_adjust(self) -> None:
+        # adjust -> fit (on the adjusted responder) -> set_target(new): the
+        # model fit after adjust must not be lost across the responder reset.
+        bf = self._make_bf()
+        adjusted = bf.adjust(method="null")
+        adjusted.fit_outcome_model(model="auto")
+        self.assertIsNotNone(adjusted.outcome_model)
+        new_tgt = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["x1", "x2", "x3"],
+                    "age": [40.0, 50.0, 60.0],
+                    "grp": ["a", "b", "a"],
+                    "weight": [1.0, 1.0, 1.0],
+                }
+            )
+        )
+        rebased = adjusted.set_target(new_tgt)
+        self.assertIsNotNone(rebased.outcome_model)
+
+    def test_keep_only_rows_drop_invalidates_model(self) -> None:
+        bf = self._make_bf()
+        bf.fit_outcome_model(model="auto")
+        with self.assertLogs("balance", level="WARNING"):
+            filtered = bf.keep_only_some_rows_columns(rows_to_keep="age > 45")
+        self.assertIsNone(filtered.outcome_model)
+        # Original is unchanged (immutable pattern).
+        self.assertIsNotNone(bf.outcome_model)
+
+    def test_keep_only_columns_preserves_model(self) -> None:
+        # A column-only filter keeps every row, so the model stays valid.
+        bf = self._make_bf()
+        bf.fit_outcome_model(model="auto")
+        filtered = bf.keep_only_some_rows_columns(columns_to_keep=["age", "grp"])
+        self.assertIsNotNone(filtered.outcome_model)
+
+    def test_predict_on_target_does_not_mutate_caller_target(self) -> None:
+        # The caller's original target object must not gain outcomes_hat columns.
+        rng = np.random.default_rng(1)
+        age_r = rng.normal(50, 10, 40)
+        resp = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(40)],
+                    "age": age_r,
+                    "happiness": age_r + rng.normal(0, 1, 40),
+                    "weight": np.ones(40),
+                }
+            ),
+            outcome_columns=["happiness"],
+        )
+        tgt = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(40, 80)],
+                    "age": rng.normal(55, 10, 40),
+                    "weight": np.ones(40),
+                }
+            )
+        )
+        bf = BalanceFrame(sample=resp, target=tgt)
+        bf.fit_outcome_model(model="auto")
+        bf.predict_outcomes(on="target")
+        # The externally-held target object is untouched.
+        self.assertEqual(tgt.outcomes_hat_columns, [])
+        self.assertNotIn("happiness_hat", tgt._df.columns)
+        # But the BalanceFrame's internal (copied) target is populated.
+        self.assertEqual(
+            _assert_type(bf._sf_target).outcomes_hat_columns, ["happiness_hat"]
+        )
+
+    def test_no_covariate_leak_after_populate_then_readjust(self) -> None:
+        # Populating the target's Ŷ must not turn it into a covariate for a
+        # subsequent adjust() (the round-trip covariate-leak guard).
+        bf = self._make_bf()
+        bf.fit_outcome_model(model="auto")
+        bf.predict_outcomes(on="target")
+        self.assertNotIn("happiness_hat", _assert_type(bf._sf_target).df_covars.columns)
+        readjusted = bf.adjust(method="null")
+        self.assertNotIn(
+            "happiness_hat",
+            _assert_type(readjusted._sf_target).df_covars.columns,
+        )
+
+    def test_predict_on_sample_populates_responder(self) -> None:
+        bf = self._make_bf()
+        bf.fit_outcome_model(model="auto")
+        preds = bf.predict_outcomes(on="sample")
+        self.assertEqual(list(preds.columns), ["happiness_hat"])
+        self.assertIn("happiness_hat", bf._sf_sample.outcomes_hat_columns)
+
+    def test_predict_on_both_returns_tuple(self) -> None:
+        bf = self._make_bf()
+        bf.fit_outcome_model(model="auto")
+        result = bf.predict_outcomes(on="both")
+        self.assertIsInstance(result, tuple)
+        sample_preds, target_preds = result
+        self.assertEqual(list(sample_preds.columns), ["happiness_hat"])
+        self.assertEqual(list(target_preds.columns), ["happiness_hat"])
+        self.assertIn("happiness_hat", bf._sf_sample.outcomes_hat_columns)
+        self.assertEqual(
+            _assert_type(bf._sf_target).outcomes_hat_columns, ["happiness_hat"]
+        )
+
+    def test_predict_before_fit_raises(self) -> None:
+        bf = self._make_bf()
+        with self.assertRaises(ValueError) as ctx:
+            bf.predict_outcomes(on="target")
+        self.assertIn("no outcome model has been fit", str(ctx.exception))
+
+    def test_predict_target_without_target_raises(self) -> None:
+        resp = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["1", "2", "3", "4"],
+                    "age": [25.0, 30.0, 35.0, 40.0],
+                    "happiness": [50.0, 55.0, 65.0, 80.0],
+                    "weight": [1.0, 1.0, 1.0, 1.0],
+                }
+            ),
+            outcome_columns=["happiness"],
+        )
+        bf = BalanceFrame(sample=resp)
+        bf.fit_outcome_model(model="auto")
+        with self.assertRaises(ValueError) as ctx:
+            bf.predict_outcomes(on="target")
+        self.assertIn("requires a target population", str(ctx.exception))
+
+    def test_predict_outcomes_rejects_data_kwarg(self) -> None:
+        bf = self._make_bf()
+        bf.fit_outcome_model(model="auto")
+        with self.assertRaises(ValueError) as ctx:
+            bf.predict_outcomes(on="target", data=bf)
+        self.assertIn("not supported", str(ctx.exception))
+
+    def test_fit_outcome_model_with_target_kwarg(self) -> None:
+        # fit_outcome_model(target=...) sets the target then fits (mirrors fit()).
+        resp = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["1", "2", "3", "4"],
+                    "age": [25.0, 30.0, 35.0, 40.0],
+                    "happiness": [50.0, 55.0, 65.0, 80.0],
+                    "weight": [1.0, 1.0, 1.0, 1.0],
+                }
+            ),
+            outcome_columns=["happiness"],
+        )
+        tgt = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["5", "6"],
+                    "age": [28.0, 38.0],
+                    "weight": [1.0, 1.0],
+                }
+            )
+        )
+        bf = BalanceFrame(sample=resp)
+        bf.fit_outcome_model(target=tgt, model="auto")
+        self.assertTrue(bf.has_target())
+        self.assertIsNotNone(bf.outcome_model)
+
+    def test_set_target_inplace_false_preserves_model_fit_after_adjust(self) -> None:
+        # Regression: the copy-returning (inplace=False) SampleFrame branch of
+        # set_target rebuilt from the pre-adjust baseline and dropped a model
+        # fit AFTER adjust(); it must preserve it like the inplace and
+        # BalanceFrame paths do.
+        bf = self._make_bf()
+        adjusted = bf.adjust(method="null")
+        adjusted.fit_outcome_model(model="auto")
+        new_tgt = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": ["x1", "x2", "x3"],
+                    "age": [40.0, 50.0, 60.0],
+                    "grp": ["a", "b", "a"],
+                    "weight": [1.0, 1.0, 1.0],
+                }
+            )
+        )
+        rebased = adjusted.set_target(new_tgt, inplace=False)
+        self.assertIsNotNone(rebased.outcome_model)
+        self.assertEqual(rebased.outcome_model["method"], "outcome_model")
+        # The source object is untouched and keeps its own model.
+        self.assertIsNotNone(adjusted.outcome_model)
+
+    def test_to_sample_carries_outcome_model(self) -> None:
+        # A BalanceFrame -> Sample round-trip must carry the fitted outcome
+        # model, not only the outcomes_hat role columns.
+        bf = self._make_bf()
+        bf.fit_outcome_model(model="auto")
+        s = bf.to_sample()
+        self.assertIsNotNone(s.outcome_model)
+        self.assertEqual(s.outcome_model["method"], "outcome_model")
+        # The round-tripped Sample can still score its target.
+        s.predict_outcomes(on="target")
+        self.assertIn("target", s.outcomes_hat().mean().index)
+
+    def test_prefit_bare_sampleframe_carries_into_balanceframe(self) -> None:
+        # Fit standalone on a BARE SampleFrame, THEN wrap it in a BalanceFrame:
+        # the fitted model must carry over (BalanceFrame(sample=fitted_sf, ...))
+        # so predict_outcomes(on="target") yields the same μ̂_OM as scoring the
+        # target directly with the standalone model.
+        rng = np.random.default_rng(0)
+        n = 80
+        age_r = rng.normal(50, 10, n)
+        sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(n)],
+                    "age": age_r,
+                    "happiness": age_r + rng.normal(0, 1, n),
+                    "weight": rng.uniform(0.5, 2.0, n),
+                }
+            ),
+            outcome_columns=["happiness"],
+        )
+        sf.fit_outcome_model(model="auto")
+        target = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(n, 2 * n)],
+                    "age": rng.normal(55, 10, n),
+                    "weight": rng.uniform(0.5, 2.0, n),
+                }
+            )
+        )
+        # μ̂_OM the "manual" way: score the target's covariates directly (diff 6).
+        direct = sf.predict_outcomes(data=target, populate=False)["happiness_hat"]
+        expected = float(np.average(direct, weights=target.weight_series))
+
+        # Wrapping the already-fitted SampleFrame in a BalanceFrame carries the model.
+        bf = BalanceFrame(sample=sf, target=target)
+        self.assertIsNotNone(bf.outcome_model)
+        self.assertEqual(bf.outcome_model["method"], "outcome_model")
+
+        bf.predict_outcomes(on="target")
+        got = float(
+            _assert_type(bf.outcomes_hat()).mean().loc["target", "happiness_hat"]
+        )
+        self.assertAlmostEqual(got, expected, places=6)
+
+
+class TestSampleOutcomeModelTransferMRO(BalanceTestCase):
+    """Sample end-to-end outcome-model transfer via the MRO facade."""
+
+    def _make_samples(self, n: int = 50) -> tuple[Sample, Sample]:
+        rng = np.random.default_rng(3)
+        age_r = rng.normal(50, 10, n)
+        s = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(n)],
+                    "age": age_r,
+                    "happiness": age_r + rng.normal(0, 1, n),
+                    "weight": rng.uniform(0.5, 2.0, n),
+                }
+            ),
+            outcome_columns=["happiness"],
+        )
+        t = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(n, 2 * n)],
+                    "age": rng.normal(55, 10, n),
+                    "weight": rng.uniform(0.5, 2.0, n),
+                }
+            )
+        )
+        return s, t
+
+    def test_sample_fit_predict_target_estimate(self) -> None:
+        s, t = self._make_samples()
+        bf = s.set_target(t)
+        bf.fit_outcome_model(model="auto")
+        bf.predict_outcomes(on="target")
+        means = _assert_type(bf.outcomes_hat()).mean()
+        self.assertIn("target", means.index)
+
+    def test_sample_fit_then_set_target_then_predict(self) -> None:
+        # Fit on a target-less Sample, then set_target, then predict on target.
+        s, t = self._make_samples()
+        s.fit_outcome_model(model="auto")
+        self.assertIsNotNone(s.outcome_model)
+        bf = s.set_target(t)
+        # The model must survive set_target on the Sample.
+        self.assertIsNotNone(bf.outcome_model)
+        bf.predict_outcomes(on="target")
+        self.assertIn("target", _assert_type(bf.outcomes_hat()).mean().index)
