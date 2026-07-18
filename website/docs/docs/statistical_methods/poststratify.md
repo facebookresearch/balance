@@ -116,6 +116,28 @@ totals ``905``). Unlike raking, which iteratively matches the marginal
 distributions of each variable, ``poststratify`` calculates weights per cell so
 that the final weighted sample matches the full two-dimensional distribution.
 
+### Diagnostics example
+
+When poststratification is fit through an API path that stores fit metadata,
+`diagnostics()` includes compact `model_glance` rows describing the persisted
+poststratification metadata.
+
+```python
+post_glance = adjusted_poststratify.diagnostics().query("metric == 'model_glance'")
+display(post_glance[["var", "val"]])
+```
+
+Example output:
+
+| var | val |
+| --- | ---: |
+| n_variables | 2 |
+| strict_matching | 1 |
+| n_cells | 2 |
+
+`n_variables` is the number of poststratification variables,
+`strict_matching` is stored as `1` for `True` and `0` for `False`, and
+`n_cells` is the number of persisted cell-weight ratios available for replay.
 
 ## References
 - More about post-stratification: [Introduction to post-stratification](https://docs.wfp.org/api/documents/WFP-0000121326/download/)

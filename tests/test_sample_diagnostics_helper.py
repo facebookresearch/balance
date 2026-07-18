@@ -13,6 +13,8 @@ import numpy as np
 import pandas as pd
 from balance.sample_class import Sample
 from balance.summary_utils import (
+    _append_poststratify_model_diagnostics,
+    _append_rake_model_diagnostics,
     _build_diagnostics,
     _build_summary,
     _concat_metric_val_var,
@@ -874,3 +876,40 @@ def test_build_diagnostics_handles_sparse_poststratify_metadata() -> None:
     assert np.isnan(float(glance["n_variables"]))
     assert glance["strict_matching"] == 0
     assert np.isnan(float(glance["n_cells"]))
+
+
+def test_rake_model_diagnostics_docstring_example_output() -> None:
+    diagnostics = pd.DataFrame(columns=["metric", "val", "var"])
+    model = {
+        "method": "rake",
+        "converged": 1,
+        "iterations": pd.DataFrame({"conv": [0.5, 0.01]}),
+        "variables": ["gender", "age_group"],
+    }
+
+    out = _append_rake_model_diagnostics(diagnostics, model)
+
+    assert out.to_dict("records") == [
+        {"metric": "model_glance", "val": 1, "var": "converged"},
+        {"metric": "model_glance", "val": 2, "var": "iterations"},
+        {"metric": "model_glance", "val": 0.01, "var": "final_conv"},
+        {"metric": "model_glance", "val": 2, "var": "n_variables"},
+    ]
+
+
+def test_poststratify_model_diagnostics_docstring_example_output() -> None:
+    diagnostics = pd.DataFrame(columns=["metric", "val", "var"])
+    model = {
+        "method": "poststratify",
+        "variables": ["gender", "age_group"],
+        "strict_matching": True,
+        "cell_weight_ratio": pd.Series([0.5, 2.0]),
+    }
+
+    out = _append_poststratify_model_diagnostics(diagnostics, model)
+
+    assert out.to_dict("records") == [
+        {"metric": "model_glance", "val": 2, "var": "n_variables"},
+        {"metric": "model_glance", "val": 1, "var": "strict_matching"},
+        {"metric": "model_glance", "val": 2, "var": "n_cells"},
+    ]

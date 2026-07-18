@@ -197,6 +197,20 @@ def _append_rake_model_diagnostics(
         A diagnostics table with any available rake ``model_glance`` rows
         appended. Missing optional metadata is skipped except for the rake
         convergence flag, which is emitted as ``NaN`` when absent.
+
+    Examples:
+        A rake model with two iterations emits compact convergence rows::
+
+            >>> import pandas as pd
+            >>> diagnostics = pd.DataFrame(columns=["metric", "val", "var"])
+            >>> model = {
+            ...     "method": "rake",
+            ...     "converged": 1,
+            ...     "iterations": pd.DataFrame({"conv": [0.5, 0.01]}),
+            ...     "variables": ["gender", "age_group"],
+            ... }
+            >>> _append_rake_model_diagnostics(diagnostics, model).to_dict("records")
+            [{'metric': 'model_glance', 'val': 1, 'var': 'converged'}, {'metric': 'model_glance', 'val': 2, 'var': 'iterations'}, {'metric': 'model_glance', 'val': 0.01, 'var': 'final_conv'}, {'metric': 'model_glance', 'val': 2, 'var': 'n_variables'}]
     """
     diagnostics = _concat_metric_val_var(
         diagnostics,
@@ -248,6 +262,21 @@ def _append_poststratify_model_diagnostics(
         A diagnostics table with any available poststratification
         ``model_glance`` rows appended. Rows that require persisted fit
         metadata are omitted when that metadata is unavailable.
+
+    Examples:
+        Persisted poststratification metadata emits variable, matching, and
+        cell-count rows::
+
+            >>> import pandas as pd
+            >>> diagnostics = pd.DataFrame(columns=["metric", "val", "var"])
+            >>> model = {
+            ...     "method": "poststratify",
+            ...     "variables": ["gender", "age_group"],
+            ...     "strict_matching": True,
+            ...     "cell_weight_ratio": pd.Series([0.5, 2.0]),
+            ... }
+            >>> _append_poststratify_model_diagnostics(diagnostics, model).to_dict("records")
+            [{'metric': 'model_glance', 'val': 2, 'var': 'n_variables'}, {'metric': 'model_glance', 'val': 1, 'var': 'strict_matching'}, {'metric': 'model_glance', 'val': 2, 'var': 'n_cells'}]
     """
     variables = model.get("variables")
     if variables is not None:

@@ -22,6 +22,32 @@ Raking is a valuable technique for addressing potential biases and enhancing the
 
 You can see a detailed example of how to perform raking in `balance` in the tutorial: [**quickstart_rake**](https://import-balance.org/docs/tutorials/quickstart_rake/).
 
+## Diagnostics example
+
+After fitting with the high-level `Sample.adjust(method="rake")` API, the
+regular diagnostics table includes compact `model_glance` rows for rake fit
+metadata. These rows are useful when you want to check convergence without
+inspecting the raw model dictionary.
+
+```python
+rake_glance = adjusted_rake.diagnostics().query("metric == 'model_glance'")
+display(rake_glance[["var", "val"]])
+```
+
+Example output:
+
+| var | val |
+| --- | ---: |
+| converged | 1 |
+| iterations | 2 |
+| final_conv | 0.01 |
+| n_variables | 2 |
+
+`converged` is `1` when iterative proportional fitting converged, `iterations`
+is the number of stored convergence-history rows, `final_conv` is the last
+recorded convergence value, and `n_variables` is the number of raking variables
+recorded in the model metadata.
+
 ## References
 - https://en.wikipedia.org/wiki/Raking
 - https://www.pewresearch.org/methods/2018/01/26/how-different-weighting-methods-work/
