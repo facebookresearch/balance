@@ -4252,11 +4252,16 @@ class TestBalanceDFOutcomesHat(BalanceTestCase):
         )
 
     def test_outcomes_hat_mean_with_ci(self) -> None:
-        """mean_with_ci() works on a standalone outcomes_hat view."""
+        """mean_with_ci(ci_method='analytic') works on a standalone view.
+
+        As of 0.23, ``mean_with_ci`` defaults to ``ci_method='bootstrap'`` which
+        requires a BalanceFrame + target (see the raising test below), so a lone
+        SampleFrame view must opt into the analytic path for a self-only CI.
+        """
         sf = _sf_with_outcomes_hat(
             (1, 2, 3, 4), (1.0, 1.0, 1.0, 1.0), (1.0, 2.0, 3.0, 4.0)
         )
-        out = _assert_type(sf.outcomes_hat()).mean_with_ci()
+        out = _assert_type(sf.outcomes_hat()).mean_with_ci(ci_method="analytic")
         # one row per Y_hat column, with a mean ("self") and a CI ("self_ci") column
         self.assertIn("self", out.columns)
         self.assertIn("self_ci", out.columns)
@@ -4416,3 +4421,253 @@ class TestBalanceDFOutcomesHat(BalanceTestCase):
         # Self-only reduction is fine even without a populated target.
         self_mean = _assert_type(bf.outcomes_hat()).mean(on_linked_samples=False)
         self.assertIn("happiness_hat", self_mean.columns)
+
+    # --- diff 8: bootstrap CI + scoped-DR summary -----------------------------
+
+    def _make_fitted_bf_weighted_linear(self, n: int = 60) -> BalanceFrame:
+        """Fitted BalanceFrame with a LINEAR + intercept learner, non-uniform fit weights."""
+        from sklearn.linear_model import LinearRegression
+
+        rng = np.random.default_rng(11)
+        age_r = rng.normal(50, 10, n)
+        resp = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(n)],
+                    "age": age_r,
+                    "happiness": 2.0 * age_r + rng.normal(0, 1, n),
+                    "weight": rng.uniform(0.5, 3.0, n),  # non-uniform fit weights
+                }
+            ),
+            outcome_columns=["happiness"],
+        )
+        tgt = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(n, 2 * n)],
+                    "age": rng.normal(55, 10, n),
+                    "weight": np.ones(n),
+                }
+            )
+        )
+        bf = BalanceFrame(sample=resp, target=tgt)
+        bf.fit_outcome_model(model=LinearRegression(), weighted=True)
+        bf.predict_outcomes(on="target")
+        return bf
+
+    def test_mean_with_ci_bootstrap_example_snippet(self) -> None:
+        """The diff's Example snippet: per-outcome estimate + (ci_low, ci_high)."""
+        bf = self._make_fitted_bf()
+        bf.predict_outcomes(on="target")
+        out = _assert_type(bf.outcomes_hat()).mean_with_ci(
+            ci_method="bootstrap", n_bootstrap=20, random_seed=2020
+        )
+        # target row only (μ̂_OM), shaped like the base mean_with_ci
+        self.assertEqual(list(out.columns), ["target", "target_ci"])
+        self.assertIn("happiness_hat", out.index)
+        estimate = out.loc["happiness_hat", "target"]
+        ci_low, ci_high = out.loc["happiness_hat", "target_ci"]
+        self.assertLessEqual(ci_low, estimate)
+        self.assertLessEqual(estimate, ci_high)
+
+    def test_mean_with_ci_bootstrap_is_default(self) -> None:
+        """ci_method defaults to bootstrap on a BalanceFrame+target-backed view."""
+        bf = self._make_fitted_bf()
+        bf.predict_outcomes(on="target")
+        out = _assert_type(bf.outcomes_hat()).mean_with_ci(
+            n_bootstrap=20, random_seed=2020
+        )
+        self.assertEqual(list(out.columns), ["target", "target_ci"])
+
+    def test_mean_with_ci_bootstrap_reproducible_same_seed(self) -> None:
+        """Same random_seed -> identical CI; different seed -> different CI."""
+        bf = self._make_fitted_bf()
+        bf.predict_outcomes(on="target")
+        a = _assert_type(bf.outcomes_hat()).mean_with_ci(
+            n_bootstrap=30, random_seed=2020
+        )
+        b = _assert_type(bf.outcomes_hat()).mean_with_ci(
+            n_bootstrap=30, random_seed=2020
+        )
+        self.assertEqual(
+            a.loc["happiness_hat", "target_ci"], b.loc["happiness_hat", "target_ci"]
+        )
+        c = _assert_type(bf.outcomes_hat()).mean_with_ci(n_bootstrap=30, random_seed=99)
+        self.assertNotEqual(
+            a.loc["happiness_hat", "target_ci"], c.loc["happiness_hat", "target_ci"]
+        )
+        # Different seeds still agree on the (seed-independent) point estimate,
+        # and both stay within a tolerance band of it.
+        self.assertEqual(
+            a.loc["happiness_hat", "target"], c.loc["happiness_hat", "target"]
+        )
+        estimate = a.loc["happiness_hat", "target"]
+        for ci in (
+            a.loc["happiness_hat", "target_ci"],
+            c.loc["happiness_hat", "target_ci"],
+        ):
+            self.assertLess(abs(ci[0] - estimate), 5.0)
+            self.assertLess(abs(ci[1] - estimate), 5.0)
+
+    def test_mean_with_ci_bootstrap_lone_sampleframe_raises(self) -> None:
+        """A lone SampleFrame-backed view raises for ci_method='bootstrap'."""
+        sf = _sf_with_outcomes_hat(
+            (1, 2, 3, 4), (1.0, 1.0, 1.0, 1.0), (1.0, 2.0, 3.0, 4.0)
+        )
+        with self.assertRaisesRegex(
+            ValueError, "bootstrap CI requires a BalanceFrame with a target"
+        ):
+            _assert_type(sf.outcomes_hat()).mean_with_ci(ci_method="bootstrap")
+
+    def test_mean_with_ci_bootstrap_targetless_sample_raises(self) -> None:
+        """A target-less Sample (which IS a BalanceFrame via MRO) still raises."""
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(20)],
+                    "age": np.linspace(20, 60, 20),
+                    "happiness": np.linspace(50, 90, 20),
+                    "w": np.ones(20),
+                }
+            ),
+            id_column="id",
+            weight_column="w",
+            outcome_columns=["happiness"],
+        )
+        sample.fit_outcome_model(model="auto")
+        sample.predict_outcomes()  # populate responder Ŷ so the view exists
+        with self.assertRaisesRegex(
+            ValueError, "bootstrap CI requires a BalanceFrame with a target"
+        ):
+            _assert_type(sample.outcomes_hat()).mean_with_ci(ci_method="bootstrap")
+
+    def test_mean_with_ci_bootstrap_no_model_raises(self) -> None:
+        """A BalanceFrame+target with a manually-attached Ŷ but no model raises."""
+        resp = _sf_with_outcomes_hat((1, 2), (1.0, 1.0), (0.3, 0.7), name="y_hat")
+        tgt = _sf_with_outcomes_hat((3, 4), (1.0, 1.0), (0.2, 0.4), name="y_hat")
+        bf = BalanceFrame(sample=resp, target=tgt)
+        with self.assertRaisesRegex(ValueError, "no outcome model has been fit"):
+            _assert_type(bf.outcomes_hat()).mean_with_ci(ci_method="bootstrap")
+
+    def test_mean_with_ci_bootstrap_respects_fit_weighting(self) -> None:
+        """A weighted fit gives a different bootstrap distribution than unweighted."""
+        from sklearn.linear_model import LinearRegression
+
+        rng = np.random.default_rng(21)
+        n = 80
+        age_r = rng.normal(50, 10, n)
+        base = pd.DataFrame(
+            {
+                "id": [str(i) for i in range(n)],
+                "age": age_r,
+                "happiness": 2.0 * age_r + rng.normal(0, 1, n),
+                "weight": rng.uniform(0.2, 5.0, n),
+            }
+        )
+        tgt = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(n, 2 * n)],
+                    "age": rng.normal(55, 10, n),
+                    "weight": np.ones(n),
+                }
+            )
+        )
+        bf_w = BalanceFrame(
+            sample=SampleFrame.from_frame(base.copy(), outcome_columns=["happiness"]),
+            target=deepcopy(tgt),
+        )
+        bf_w.fit_outcome_model(model=LinearRegression(), weighted=True)
+        bf_w.predict_outcomes(on="target")
+        bf_u = BalanceFrame(
+            sample=SampleFrame.from_frame(base.copy(), outcome_columns=["happiness"]),
+            target=deepcopy(tgt),
+        )
+        bf_u.fit_outcome_model(model=LinearRegression(), weighted=False)
+        bf_u.predict_outcomes(on="target")
+
+        out_w = _assert_type(bf_w.outcomes_hat()).mean_with_ci(
+            n_bootstrap=30, random_seed=2020
+        )
+        out_u = _assert_type(bf_u.outcomes_hat()).mean_with_ci(
+            n_bootstrap=30, random_seed=2020
+        )
+        # The stored fit-weighting flows into the refit: the weighted model's
+        # estimate + interval differ from the unweighted one.
+        self.assertNotEqual(
+            out_w.loc["happiness_hat", "target"],
+            out_u.loc["happiness_hat", "target"],
+        )
+
+    def test_mean_with_ci_analytic_vs_bootstrap_differ(self) -> None:
+        """The analytic and bootstrap CIs are not the same interval."""
+        bf = self._make_fitted_bf()
+        bf.predict_outcomes(on="target")
+        boot = _assert_type(bf.outcomes_hat()).mean_with_ci(
+            ci_method="bootstrap", n_bootstrap=30, random_seed=2020
+        )
+        analytic = _assert_type(bf.outcomes_hat()).mean_with_ci(ci_method="analytic")
+        boot_ci = boot.loc["happiness_hat", "target_ci"]
+        analytic_ci = analytic.loc["happiness_hat", "target_ci"]
+        self.assertNotEqual(tuple(boot_ci), tuple(analytic_ci))
+
+    def test_summary_plain_g_computation_for_boosting_default(self) -> None:
+        """The boosting default is reported as plain g-computation (not DR)."""
+        bf = self._make_fitted_bf()
+        bf.predict_outcomes(on="target")
+        text = _assert_type(bf.outcomes_hat()).summary()
+        self.assertIsInstance(text, str)
+        self.assertIn("g-computation", text)
+        self.assertIn("not doubly robust", text)
+        self.assertNotIn("doubly robust w.r.t.", text)
+
+    def test_summary_scopes_dr_for_linear_intercept_weighted(self) -> None:
+        """A linear + intercept learner fit with non-uniform weights scopes DR."""
+        bf = self._make_fitted_bf_weighted_linear()
+        text = _assert_type(bf.outcomes_hat()).summary()
+        self.assertIn("g-computation", text)
+        self.assertIn("doubly robust w.r.t.", text)
+        # It names the fit-weight column (the responder's active weight).
+        self.assertIn("weight", text)
+
+    def test_summary_linear_uniform_weight_is_not_dr(self) -> None:
+        """A linear + intercept learner fit UNWEIGHTED is not DR (uniform weights)."""
+        from sklearn.linear_model import LinearRegression
+
+        rng = np.random.default_rng(31)
+        n = 50
+        age_r = rng.normal(50, 10, n)
+        resp = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(n)],
+                    "age": age_r,
+                    "happiness": 2.0 * age_r + rng.normal(0, 1, n),
+                    "weight": np.ones(n),
+                }
+            ),
+            outcome_columns=["happiness"],
+        )
+        tgt = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(n, 2 * n)],
+                    "age": rng.normal(55, 10, n),
+                    "weight": np.ones(n),
+                }
+            )
+        )
+        bf = BalanceFrame(sample=resp, target=tgt)
+        bf.fit_outcome_model(model=LinearRegression(), weighted=False)
+        bf.predict_outcomes(on="target")
+        text = _assert_type(bf.outcomes_hat()).summary()
+        self.assertIn("not doubly robust", text)
+        self.assertNotIn("doubly robust w.r.t.", text)
+
+    def test_summary_no_model_manual_columns_not_dr(self) -> None:
+        """A manually-attached Ŷ (no stored model) is reported as not DR."""
+        sf = _sf_with_outcomes_hat(
+            (1, 2, 3, 4), (1.0, 1.0, 1.0, 1.0), (1.0, 2.0, 3.0, 4.0)
+        )
+        text = _assert_type(sf.outcomes_hat()).summary()
+        self.assertIn("not doubly robust", text)

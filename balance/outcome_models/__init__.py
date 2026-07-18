@@ -7,9 +7,16 @@
 
 from __future__ import annotations
 
-from balance.outcome_models.outcome_model import fit_outcome_model, predict_outcome
+from balance.outcome_models.outcome_model import (
+    bootstrap_outcome_estimate,
+    fit_outcome_model,
+    learner_from_model,
+    predict_outcome,
+)
 
 __all__ = [
+    "bootstrap_outcome_estimate",
     "fit_outcome_model",
+    "learner_from_model",
     "predict_outcome",
 ]

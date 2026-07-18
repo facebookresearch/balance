@@ -9,12 +9,18 @@ from __future__ import annotations
 
 import unittest
 import unittest.mock
+from typing import Any
 
 import balance.testutil
 import numpy as np
 import pandas as pd
 import pytest
-from balance.outcome_models import fit_outcome_model, predict_outcome
+from balance.outcome_models import (
+    bootstrap_outcome_estimate,
+    fit_outcome_model,
+    learner_from_model,
+    predict_outcome,
+)
 from balance.outcome_models.outcome_model import (
     _resolve_learner,
     _resolve_use_model_matrix,
@@ -620,3 +626,236 @@ class TestFitWeightColumn(balance.testutil.BalanceTestCase):
         model_u = fit_outcome_model(covars_R, outcomes_R)
         self.assertIsNone(model_u["fit_weight"]["column"])
         self.assertTrue(model_u["fit_weight"]["uniform"])
+
+
+class TestLearnerFromModel(balance.testutil.BalanceTestCase):
+    def test_reconstructs_per_outcome_unfitted_learner(self) -> None:
+        """learner_from_model returns an unfitted {col: est} matching the fit."""
+        covars_R, outcomes_R, w_R = _make_regression_data()
+        model = fit_outcome_model(
+            covars_R, outcomes_R, sample_weight=w_R, model=LinearRegression()
+        )
+        learner = learner_from_model(model)
+        self.assertEqual(list(learner.keys()), ["happiness"])
+        self.assertIsInstance(learner["happiness"], LinearRegression)
+        # It is an UNFITTED clone (no coef_ yet), reusable for a refit.
+        self.assertFalse(hasattr(learner["happiness"], "coef_"))
+
+    def test_refit_with_reconstructed_learner_matches(self) -> None:
+        """Passing the reconstructed learner back reproduces predictions."""
+        covars_R, outcomes_R, w_R = _make_regression_data()
+        model = fit_outcome_model(
+            covars_R, outcomes_R, sample_weight=w_R, model=LinearRegression()
+        )
+        refit = fit_outcome_model(
+            covars_R,
+            outcomes_R,
+            sample_weight=w_R,
+            model=learner_from_model(model),
+        )
+        target = _make_target()
+        np.testing.assert_allclose(
+            predict_outcome(model, target)["happiness"],
+            predict_outcome(refit, target)["happiness"],
+            rtol=1e-9,
+        )
+
+
+class TestBootstrapOutcomeEstimate(balance.testutil.BalanceTestCase):
+    def _data(
+        self,
+    ) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
+        covars_R, outcomes_R, w_R = _make_regression_data(n=200, seed=1)
+        target_covars = _make_target(n=40, seed=2)
+        target_weight = pd.Series(np.ones(40), index=target_covars.index)
+        return covars_R, outcomes_R, w_R, target_covars, target_weight
+
+    def test_returns_estimate_and_ci_per_outcome(self) -> None:
+        covars_R, outcomes_R, w_R, target_covars, target_weight = self._data()
+        res = bootstrap_outcome_estimate(
+            covars_R,
+            outcomes_R,
+            w_R,
+            target_covars,
+            target_weight,
+            fit_kwargs={"model": LinearRegression()},
+            n_bootstrap=30,
+            random_seed=2020,
+        )
+        self.assertEqual(list(res.keys()), ["happiness"])
+        self.assertCountEqual(
+            res["happiness"].keys(), ["estimate", "ci_low", "ci_high"]
+        )
+
+    def test_ci_brackets_point_estimate(self) -> None:
+        covars_R, outcomes_R, w_R, target_covars, target_weight = self._data()
+        res = bootstrap_outcome_estimate(
+            covars_R,
+            outcomes_R,
+            w_R,
+            target_covars,
+            target_weight,
+            fit_kwargs={"model": LinearRegression()},
+            n_bootstrap=40,
+            random_seed=2020,
+        )["happiness"]
+        self.assertLessEqual(res["ci_low"], res["estimate"])
+        self.assertLessEqual(res["estimate"], res["ci_high"])
+        self.assertLess(res["ci_low"], res["ci_high"])
+
+    def test_point_estimate_is_full_sample_mu_om(self) -> None:
+        """The reported estimate is the full-sample μ̂_OM, not a bootstrap mean."""
+        covars_R, outcomes_R, w_R, target_covars, target_weight = self._data()
+        full_model = fit_outcome_model(
+            covars_R, outcomes_R, sample_weight=w_R, model=LinearRegression()
+        )
+        full_preds = predict_outcome(full_model, target_covars)["happiness"]
+        expected = float(np.average(full_preds, weights=target_weight))
+        res = bootstrap_outcome_estimate(
+            covars_R,
+            outcomes_R,
+            w_R,
+            target_covars,
+            target_weight,
+            fit_kwargs={"model": LinearRegression()},
+            n_bootstrap=20,
+            random_seed=2020,
+        )["happiness"]
+        self.assertAlmostEqual(res["estimate"], expected, places=8)
+
+    def test_same_seed_is_reproducible(self) -> None:
+        covars_R, outcomes_R, w_R, target_covars, target_weight = self._data()
+        kwargs = {
+            "fit_kwargs": {"model": LinearRegression()},
+            "n_bootstrap": 25,
+            "random_seed": 2020,
+        }
+        a = bootstrap_outcome_estimate(
+            covars_R, outcomes_R, w_R, target_covars, target_weight, **kwargs
+        )["happiness"]
+        b = bootstrap_outcome_estimate(
+            covars_R, outcomes_R, w_R, target_covars, target_weight, **kwargs
+        )["happiness"]
+        self.assertEqual(a["ci_low"], b["ci_low"])
+        self.assertEqual(a["ci_high"], b["ci_high"])
+
+    def test_different_seed_differs_but_near_point(self) -> None:
+        covars_R, outcomes_R, w_R, target_covars, target_weight = self._data()
+
+        def run(seed: int) -> dict[str, float]:
+            return bootstrap_outcome_estimate(
+                covars_R,
+                outcomes_R,
+                w_R,
+                target_covars,
+                target_weight,
+                fit_kwargs={"model": LinearRegression()},
+                n_bootstrap=40,
+                random_seed=seed,
+            )["happiness"]
+
+        a = run(2020)
+        b = run(1234)
+        # Different seed -> different interval bounds ...
+        self.assertNotEqual(a["ci_low"], b["ci_low"])
+        # ... but the point estimate is seed-independent, and both intervals
+        # stay in a tolerance band around it.
+        self.assertEqual(a["estimate"], b["estimate"])
+        tol = 5.0
+        for res in (a, b):
+            self.assertLess(abs(res["ci_low"] - res["estimate"]), tol)
+            self.assertLess(abs(res["ci_high"] - res["estimate"]), tol)
+
+    def test_weighted_vs_unweighted_refit_differs(self) -> None:
+        """Passing sample_weight (weighted refit) yields a different distribution."""
+        covars_R, outcomes_R, _w, target_covars, target_weight = self._data()
+        rng = np.random.default_rng(5)
+        skewed = pd.Series(
+            rng.uniform(0.1, 5.0, len(outcomes_R)), index=outcomes_R.index
+        )
+        weighted = bootstrap_outcome_estimate(
+            covars_R,
+            outcomes_R,
+            skewed,
+            target_covars,
+            target_weight,
+            fit_kwargs={"model": LinearRegression()},
+            n_bootstrap=40,
+            random_seed=2020,
+        )["happiness"]
+        unweighted = bootstrap_outcome_estimate(
+            covars_R,
+            outcomes_R,
+            None,
+            target_covars,
+            target_weight,
+            fit_kwargs={"model": LinearRegression()},
+            n_bootstrap=40,
+            random_seed=2020,
+        )["happiness"]
+        # A weighted fit gives a different point estimate + interval than an
+        # unweighted one (the refit honours the passed weights).
+        self.assertNotAlmostEqual(
+            weighted["estimate"], unweighted["estimate"], places=4
+        )
+
+    def test_skips_degenerate_resamples(self) -> None:
+        """A resample that can't be fit (e.g. single-class) is skipped, not fatal."""
+        from balance.outcome_models import outcome_model as om
+
+        covars_R, outcomes_R, w_R, target_covars, target_weight = self._data()
+        real_fit = om.fit_outcome_model
+        calls = {"n": 0}
+
+        def flaky_fit(*args: Any, **kwargs: Any) -> Any:
+            calls["n"] += 1
+            # Fail two per-replicate refits (call 1 is the full-sample fit).
+            if calls["n"] in (3, 5):
+                raise ValueError("single observed class (simulated)")
+            return real_fit(*args, **kwargs)
+
+        with unittest.mock.patch.object(om, "fit_outcome_model", side_effect=flaky_fit):
+            with self.assertLogs("balance", level="WARNING") as logs:
+                res = om.bootstrap_outcome_estimate(
+                    covars_R,
+                    outcomes_R,
+                    w_R,
+                    target_covars,
+                    target_weight,
+                    fit_kwargs={"model": LinearRegression()},
+                    n_bootstrap=8,
+                    random_seed=2020,
+                )["happiness"]
+        self.assertTrue(any("skipped 2 of 8" in m for m in logs.output))
+        self.assertCountEqual(res.keys(), ["estimate", "ci_low", "ci_high"])
+        self.assertLessEqual(res["ci_low"], res["ci_high"])
+
+    def test_too_few_valid_resamples_raises(self) -> None:
+        """If nearly all resamples fail, raise a clear error (not a bare crash)."""
+        from balance.outcome_models import outcome_model as om
+
+        covars_R, outcomes_R, w_R, target_covars, target_weight = self._data()
+        real_fit = om.fit_outcome_model
+        calls = {"n": 0}
+
+        def mostly_failing_fit(*args: Any, **kwargs: Any) -> Any:
+            calls["n"] += 1
+            # Let the full-sample fit + one replicate through; fail the rest.
+            if calls["n"] > 2:
+                raise ValueError("single observed class (simulated)")
+            return real_fit(*args, **kwargs)
+
+        with unittest.mock.patch.object(
+            om, "fit_outcome_model", side_effect=mostly_failing_fit
+        ):
+            with self.assertRaisesRegex(ValueError, "could not fit enough"):
+                om.bootstrap_outcome_estimate(
+                    covars_R,
+                    outcomes_R,
+                    w_R,
+                    target_covars,
+                    target_weight,
+                    fit_kwargs={"model": LinearRegression()},
+                    n_bootstrap=6,
+                    random_seed=2020,
+                )

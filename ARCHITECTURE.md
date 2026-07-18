@@ -287,6 +287,20 @@ responder so the model has a single home that rides the lifecycle:
   (target/unadjusted) carries `outcomes_hat`, and it **raises an actionable error** (pointing at
   `predict_outcomes(on="target")`) when a model is fit but the target's `outcomes_hat` is not
   populated, so the population estimate is never silently replaced by the responder's in-sample mean.
+- Honest inference: `outcomes_hat().mean_with_ci(ci_method="bootstrap", n_bootstrap=200,
+  random_seed=2020)` (the **default** `ci_method`) computes a percentile CI for `μ̂_OM` via a
+  nonparametric bootstrap — resample the responders, refit `ĝ*` with the stored fit-configuration
+  (and fit-weighting), predict on the **fixed** target, re-average — capturing the outcome-model
+  estimation uncertainty the analytic `ci_of_weighted_mean` ignores. The reusable engine
+  (`bootstrap_outcome_estimate`) lives in `outcome_models/` and keeps only the `B` scalar outputs;
+  the override is a bespoke path on the BalanceFrame-backed view (it bypasses the linked-view
+  machinery, which can't reach the learner) and **raises on a lone/target-less view**. Deterministic
+  given `random_seed` (`numpy.random.default_rng`).
+- `outcomes_hat().summary()` reports the estimator type and **scopes any doubly-robust statement to
+  the fit weights** — never a blanket "doubly robust": a linear + intercept learner fit with
+  non-uniform weights is reported as `"doubly robust w.r.t. weights <col>"` (the WLS special case),
+  everything else (the non-linear default, a uniform-weight fit, or a no-intercept linear fit) as
+  plain `"g-computation (not doubly robust)"`.
 
 Lifecycle: `set_target()` **preserves** `_outcome_model` across its responder reset (a model fit
 before *or* after `adjust()` is not lost when the target is replaced); `keep_only_some_rows_columns`

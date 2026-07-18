@@ -60,11 +60,11 @@ Example:
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
-from balance.stats_and_plots.weighted_stats import weighted_r2
+from balance.stats_and_plots.weighted_stats import weighted_mean, weighted_r2
 from balance.typing import OutcomeLearner
 from balance.utils.input_validation import (
     _assert_type,
@@ -843,3 +843,209 @@ def predict_outcome(
                 estimator.predict(estimator_matrix), dtype=float
             )
     return out
+
+
+def _unwrap_calibrated(estimator: Any) -> Any:
+    """Return the inner estimator of a ``CalibratedClassifierCV`` wrapper.
+
+    The bootstrap refit re-applies the stored ``calibrate`` flag itself (which
+    re-wraps in :class:`~sklearn.calibration.CalibratedClassifierCV`), so the
+    learner it refits with must be the *unwrapped* estimator; otherwise the
+    classifier would be double-wrapped.  ``.estimator`` is the sklearn >= 1.2
+    attribute; ``.base_estimator`` covers older versions.
+    """
+    inner = getattr(estimator, "estimator", None)
+    if inner is None:
+        inner = getattr(estimator, "base_estimator", None)
+    return inner if inner is not None else estimator
+
+
+def learner_from_model(model: Dict[str, Any]) -> Dict[str, Any]:
+    """Reconstruct a per-outcome ``{col: unfitted estimator}`` learner from a model.
+
+    Clones each fitted estimator stored under ``model["fit"]`` (unwrapping any
+    :class:`~sklearn.calibration.CalibratedClassifierCV`) to recover an unfitted
+    estimator with the **same hyper-parameters**.  Passing this back as the
+    ``model`` to :func:`fit_outcome_model` reproduces the exact estimators used at
+    fit time — for both ``model="auto"`` and pluggable estimators — without
+    depending on the (lossy) stored ``"learner"`` repr in the model dict.
+
+    Args:
+        model: A dict produced by :func:`fit_outcome_model`.
+
+    Returns:
+        Dict[str, Any]: ``{outcome_column: unfitted sklearn estimator}`` suitable
+        as the ``model`` argument to :func:`fit_outcome_model`.
+    """
+    return {
+        outcome_col: clone(_unwrap_calibrated(estimator))
+        for outcome_col, estimator in model["fit"].items()
+    }
+
+
+def _percentile_ci(values: np.ndarray, conf_level: float) -> Tuple[float, float]:
+    """Percentile confidence interval from a 1-D array of bootstrap estimates."""
+    alpha = 1.0 - conf_level
+    low = float(np.percentile(values, 100.0 * (alpha / 2.0)))
+    high = float(np.percentile(values, 100.0 * (1.0 - alpha / 2.0)))
+    return low, high
+
+
+def bootstrap_outcome_estimate(
+    sample_covars: pd.DataFrame,
+    outcomes: pd.DataFrame,
+    sample_weight: pd.Series | np.ndarray | None,
+    target_covars: pd.DataFrame,
+    target_weight: pd.Series | np.ndarray | None,
+    *,
+    fit_kwargs: Dict[str, Any],
+    n_bootstrap: int = 200,
+    random_seed: int = 2020,
+    conf_level: float = 0.95,
+) -> Dict[str, Dict[str, float]]:
+    """Nonparametric bootstrap CI for the outcome-model estimate ``μ̂_OM``.
+
+    Captures the dominant uncertainty in ``μ̂_OM`` — the responder sample plus the
+    outcome-model fit — while treating the **target as a fixed, known
+    population** (only the responders resample).  For each of ``n_bootstrap``
+    replicates it resamples the responder rows **with replacement** (keeping each
+    resampled row's weight), refits ``ĝ*`` via :func:`fit_outcome_model` with the
+    **same fit configuration** as the full-sample model (``fit_kwargs`` — so the
+    resampled weights honour the stored ``weighted``/fit-weighting), predicts on
+    the fixed target covariates, and averages the predictions with the target
+    weights (:func:`~balance.stats_and_plots.weighted_stats.weighted_mean`) to get
+    one scalar ``μ̂_OM*(b)`` per outcome.  Only the ``B`` scalar outputs per
+    outcome are kept — never ``B`` fitted models — so memory stays flat in ``B``.
+
+    The reported **point estimate** is the full-sample ``μ̂_OM`` — ``ĝ`` refit once
+    on all responders (via ``fit_kwargs``) and averaged over the fixed target; for a
+    deterministic estimator this equals ``outcomes_hat().mean()``.  The bootstrap only
+    supplies the interval.  The interval is a **percentile** CI over ``{μ̂_OM*(b)}``.  The
+    routine is **deterministic** given ``random_seed`` (it uses
+    :func:`numpy.random.default_rng`), so the same seed yields identical CIs.
+
+    Args:
+        sample_covars: Responder covariates ``X_R`` (rows are resampled).
+        outcomes: Observed responder outcome(s) ``Y_R``; must be row-aligned to
+            ``sample_covars``.  One estimate is returned per outcome column.
+        sample_weight: Responder weights ``w_R`` (resampled alongside the rows),
+            or ``None`` for an unweighted fit.  Row-aligned to ``sample_covars``.
+        target_covars: The **fixed** target covariates ``X_T`` scored every
+            replicate.
+        target_weight: Target weights ``w_T`` used to average ``ĝ*(X_T)``, or
+            ``None`` for a simple mean.  Row-aligned to ``target_covars``.
+        fit_kwargs: Keyword arguments forwarded verbatim to
+            :func:`fit_outcome_model` on every replicate (e.g. ``model``,
+            ``formula``, ``na_action``, ``use_model_matrix``, ``calibrate``) so
+            the refit matches the stored model's configuration.  Whether the
+            refit is weighted is controlled by passing (or omitting)
+            ``sample_weight``, not by ``fit_kwargs``.
+        n_bootstrap: Number of bootstrap replicates ``B``.  Defaults to 200.
+        random_seed: Seed for the resampling RNG.  Defaults to 2020.
+        conf_level: Confidence level for the percentile interval.  Defaults to
+            0.95.
+
+    Returns:
+        Dict[str, Dict[str, float]]: ``{outcome_column: {"estimate": μ̂_OM,
+        "ci_low": ..., "ci_high": ...}}`` — the full-sample point estimate plus
+        the percentile CI bounds, per outcome.
+
+    Examples:
+    .. code-block:: python
+
+        import numpy as np
+        import pandas as pd
+        from balance.outcome_models.outcome_model import (
+            bootstrap_outcome_estimate,
+        )
+        from sklearn.linear_model import LinearRegression
+
+        rng = np.random.default_rng(0)
+        covars_R = pd.DataFrame({"age": rng.normal(50, 10, 200)})
+        outcomes_R = pd.DataFrame({"happiness": covars_R["age"] + rng.normal(0, 1, 200)})
+        w_R = pd.Series(np.ones(200))
+        covars_T = pd.DataFrame({"age": rng.normal(55, 10, 50)})
+        w_T = pd.Series(np.ones(50))
+
+        res = bootstrap_outcome_estimate(
+            covars_R, outcomes_R, w_R, covars_T, w_T,
+            fit_kwargs={"model": LinearRegression()},
+            n_bootstrap=25, random_seed=2020,
+        )
+        sorted(res["happiness"])  # -> ['ci_high', 'ci_low', 'estimate']
+    """
+    outcome_columns: List[str] = [str(c) for c in outcomes.columns]
+
+    # Full-sample point estimate: fit once on all responders, average over the
+    # fixed target with the target weights.
+    full_model = fit_outcome_model(
+        sample_covars, outcomes, sample_weight=sample_weight, **fit_kwargs
+    )
+    full_predictions = predict_outcome(full_model, target_covars)
+    point_estimate: Dict[str, float] = {
+        col: float(
+            weighted_mean(pd.Series(full_predictions[col]), target_weight).iloc[0]
+        )
+        for col in outcome_columns
+    }
+
+    n_responders = sample_covars.shape[0]
+    rng = np.random.default_rng(random_seed)
+    boot_estimates: Dict[str, List[float]] = {col: [] for col in outcome_columns}
+    skipped = 0
+
+    for _ in range(n_bootstrap):
+        idx = rng.integers(0, n_responders, size=n_responders)
+        # Resample rows (and weights) with replacement; fresh positional index
+        # so the design-matrix / weighting-input validators stay aligned.
+        boot_covars = sample_covars.iloc[idx].reset_index(drop=True)
+        boot_outcomes = outcomes.iloc[idx].reset_index(drop=True)
+        boot_weight: pd.Series | None = None
+        if sample_weight is not None:
+            weight_values = np.asarray(sample_weight, dtype=float)[idx]
+            boot_weight = pd.Series(weight_values, index=boot_covars.index)
+
+        try:
+            boot_model = fit_outcome_model(
+                boot_covars, boot_outcomes, sample_weight=boot_weight, **fit_kwargs
+            )
+        except ValueError:
+            # A resample can be degenerate (e.g. a single observed class for a
+            # rare binary outcome); skip it rather than aborting the whole CI.
+            skipped += 1
+            continue
+        boot_predictions = predict_outcome(boot_model, target_covars)
+        for col in outcome_columns:
+            mu_star = float(
+                weighted_mean(pd.Series(boot_predictions[col]), target_weight).iloc[0]
+            )
+            boot_estimates[col].append(mu_star)
+
+    if skipped:
+        logger.warning(
+            "bootstrap_outcome_estimate: skipped %d of %d resample(s) that could "
+            "not be fit (e.g. a degenerate single-class resample of a rare binary "
+            "outcome); the CI is formed from the %d successful replicate(s).",
+            skipped,
+            n_bootstrap,
+            n_bootstrap - skipped,
+        )
+
+    result: Dict[str, Dict[str, float]] = {}
+    for col in outcome_columns:
+        estimates = boot_estimates[col]
+        if len(estimates) < 2:
+            raise ValueError(
+                "bootstrap_outcome_estimate could not fit enough valid resamples "
+                f"({len(estimates)} of {n_bootstrap} succeeded) to form a "
+                "confidence interval — the outcome may be too rare or degenerate "
+                "for a nonparametric bootstrap. Use mean_with_ci(ci_method="
+                "'analytic') or provide more data."
+            )
+        ci_low, ci_high = _percentile_ci(np.asarray(estimates, dtype=float), conf_level)
+        result[col] = {
+            "estimate": point_estimate[col],
+            "ci_low": ci_low,
+            "ci_high": ci_high,
+        }
+    return result

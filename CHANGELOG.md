@@ -55,6 +55,14 @@
   bf.outcomes_hat().mean()          # μ̂_OM: weighted mean of Ŷ on the target (target row)
   ```
 
+- **Bootstrap CI for `μ̂_OM` + scoped-doubly-robust `summary()` on `outcomes_hat()`.** `BalanceDFOutcomesHat.mean_with_ci` now takes a `ci_method` selector defaulting to `ci_method="bootstrap"`, giving an *honest* confidence interval for the outcome-model estimate `μ̂_OM` that captures the outcome-model estimation uncertainty the analytic `ci_of_weighted_mean` ignores (it treats `ŷ` as fixed and under-covers `μ̂_OM`). The bootstrap resamples the responders with replacement (keeping their weights), refits `ĝ*` with the **same fit configuration as the stored model** (honouring the stored fit-weighting), predicts on the **fixed** target, and averages with the target weights — a percentile CI over the replicates, with the point estimate being the full-sample `μ̂_OM`. It is **deterministic** given `random_seed` (uses `numpy.random.default_rng`), keeps only the `B` scalar outputs (never `B` models), and is a bespoke path on the BalanceFrame-backed view (it bypasses the linked-view machinery, which cannot reach the learner). It **requires a `BalanceFrame` with a target and a fitted outcome model** — a lone `SampleFrame` or a target-less `Sample` raises (`"bootstrap CI requires a BalanceFrame with a target"`). **Behavior note:** because the default is now `ci_method="bootstrap"`, `outcomes_hat().mean_with_ci()` on a lone `SampleFrame` or target-less `Sample` raises unless you pass `ci_method="analytic"` — the analytic interval is opt-in because it treats `ŷ` as fixed and under-covers `μ̂_OM`. The reusable engine `bootstrap_outcome_estimate(...)` lives in `balance.outcome_models`. Separately, `outcomes_hat().summary()` reports the estimator type and **scopes any doubly-robust claim to the fit weights** — never a blanket "doubly robust": a **linear** learner with an **intercept** fit with **non-uniform** weights (the weighted-least-squares special case) is stated as `"doubly robust w.r.t. weights <col>"`, while the default (non-linear) learner, a uniform-weight fit, or a linear fit without an intercept is stated as plain `"g-computation (not doubly robust)"`.
+
+  ```python
+  bf.outcomes_hat().mean_with_ci(ci_method="bootstrap", n_bootstrap=200, random_seed=2020)
+  # -> per outcome: estimate + (ci_low, ci_high)  (target row = μ̂_OM)
+  bf.outcomes_hat().summary()   # text: "g-computation ..." with any DR claim scoped to the fit weights
+  ```
+
 ## Documentation
 
 - Add the outcome-modelling design doc: [architecture_0_23_0.md](https://github.com/facebookresearch/balance/blob/main/docs/architecture/architecture_0_23_0.md).

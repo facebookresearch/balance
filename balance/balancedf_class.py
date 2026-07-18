@@ -28,7 +28,7 @@ from balance.stats_and_plots import (
 from balance.stats_and_plots.weighted_comparisons_stats import (
     outcome_variance_ratio as _outcome_variance_ratio,
 )
-from balance.typing import FilePathOrBuffer
+from balance.typing import FilePathOrBuffer, OutcomeCIMethod
 from balance.util import find_items_index_in_list, get_items_from_list_via_indices
 from balance.utils.input_validation import _assert_type
 from IPython.lib.display import FileLink
@@ -2961,7 +2961,7 @@ class BalanceDFOutcomesHat(BalanceDF):
             ...     pd.DataFrame({"id": ["5", "6"], "age": [28.0, 38.0],
             ...                   "weight": [1.0, 1.0]}))
             >>> bf = BalanceFrame(sample=resp, target=tgt)
-            >>> _ = bf.fit_outcome_model(model="auto")
+            >>> _ = bf.fit_outcome_model()
             >>> _ = bf.predict_outcomes(on="target")
             >>> "target" in bf.outcomes_hat().mean().index
             True
@@ -2969,6 +2969,328 @@ class BalanceDFOutcomesHat(BalanceDF):
         if on_linked_samples:
             self._raise_if_target_unpopulated()
         return super().mean(on_linked_samples=on_linked_samples, **kwargs)
+
+    def _require_fitted_balanceframe_with_target(
+        self: "BalanceDFOutcomesHat",
+    ) -> "Any":
+        """Validate the bootstrap preconditions and return the backing BalanceFrame.
+
+        The bootstrap CI is a bespoke path that needs to reach the learner and
+        the fixed target, so it requires the view be backed by a
+        :class:`~balance.balance_frame.BalanceFrame` **that carries a target**
+        (``_sf_target is not None``) and has a **fitted outcome model**.  A lone
+        ``SampleFrame`` view, or a target-less ``Sample``/``BalanceFrame`` (a
+        ``Sample`` *is* a ``BalanceFrame`` via the MRO, so the guard keys off the
+        target, not ``isinstance``), raises.
+
+        Returns:
+            The backing ``BalanceFrame``.
+
+        Raises:
+            ValueError: If the view is not BalanceFrame-backed, has no target, or
+                has no fitted outcome model.
+        """
+        from balance.balance_frame import BalanceFrame
+
+        sample = self._sample
+        if not isinstance(sample, BalanceFrame) or sample._sf_target is None:
+            raise ValueError(
+                "bootstrap CI requires a BalanceFrame with a target: the "
+                "nonparametric bootstrap resamples the responders, refits the "
+                "outcome model, and averages over the fixed target, so a lone "
+                "SampleFrame (or a target-less Sample) has nothing to bootstrap. "
+                "Set a target (e.g. via set_target) and fit an outcome model "
+                "first, or pass ci_method='analytic'."
+            )
+        if sample.outcome_model is None:
+            raise ValueError(
+                "no outcome model has been fit; call fit_outcome_model(...) "
+                "(or fit_predict_outcomes(...)) before requesting a bootstrap CI."
+            )
+        return sample
+
+    @staticmethod
+    def _fit_kwargs_from_model(model: dict[str, Any]) -> dict[str, Any]:
+        """Build the ``fit_outcome_model`` kwargs that reproduce a stored model.
+
+        Reconstructs the learner from the stored fitted estimators (via
+        :func:`~balance.outcome_models.outcome_model.learner_from_model`, which
+        clones them so ``"auto"`` and pluggable learners alike are reproduced),
+        and forwards the stored preprocessing configuration so every bootstrap
+        refit matches the full-sample fit.  Note the fit-*weighting* is driven by
+        whether ``sample_weight`` is passed to the engine (from the stored
+        ``fit_weight``), not by these kwargs.
+        """
+        from balance.outcome_models.outcome_model import learner_from_model
+
+        return {
+            "model": learner_from_model(model),
+            "formula": model.get("formula"),
+            "na_action": str(model.get("na_action", "add_indicator")),
+            "use_model_matrix": bool(model.get("use_model_matrix", True)),
+            "calibrate": bool(model.get("calibrated", False)),
+        }
+
+    def mean_with_ci(
+        self: "BalanceDFOutcomesHat",
+        round_ndigits: int = 3,
+        on_linked_samples: bool = True,
+        *,
+        ci_method: OutcomeCIMethod = "bootstrap",
+        n_bootstrap: int = 200,
+        random_seed: int = 2020,
+        conf_level: float = 0.95,
+    ) -> pd.DataFrame:
+        """Means and CIs for the predicted outcomes; ``μ̂_OM`` with a bootstrap CI.
+
+        Extends :meth:`BalanceDF.mean_with_ci` with a ``ci_method`` selector:
+
+        - ``ci_method="bootstrap"`` (the **default**): an honest CI for the
+          outcome-model estimate ``μ̂_OM`` via a **nonparametric bootstrap** of the
+          fit → predict → average loop.  This requires the view be backed by a
+          :class:`~balance.balance_frame.BalanceFrame` **with a target** and a
+          **fitted outcome model** — otherwise it raises (a lone ``SampleFrame``
+          or a target-less ``Sample`` has nothing to bootstrap).  It resamples the
+          responders with replacement (keeping their weights), refits ``ĝ*`` with
+          the same fit configuration as the stored model (honouring the stored
+          fit-weighting), predicts on the **fixed** target, and averages with the
+          target weights; the returned interval is a percentile CI over the
+          replicates.  The point estimate is the full-sample ``μ̂_OM`` (the target
+          row).  It is **deterministic** given ``random_seed`` and bypasses
+          ``_call_on_linked`` (which cannot reach the learner), so the returned
+          table has just the **target** row (``target`` mean + ``target_ci``).
+        - any other ``ci_method`` (e.g. ``"analytic"``): the inherited analytic
+          path (:meth:`BalanceDF.mean_with_ci`), which treats ``ŷ`` as fixed and
+          therefore **under-covers** ``μ̂_OM`` — meaningful only for a standalone /
+          observed view, not the population estimate.
+
+        Args:
+            round_ndigits: Decimal places for the mean and CI.  Defaults to 3.
+            on_linked_samples: Forwarded to the analytic path.  Ignored by the
+                bootstrap path (which always reports the target row).
+            ci_method: ``"bootstrap"`` (default) or ``"analytic"``.
+            n_bootstrap: Number of bootstrap replicates (bootstrap path).
+                Defaults to 200.
+            random_seed: Seed for the bootstrap RNG (deterministic CI).  Defaults
+                to 2020.
+            conf_level: Confidence level for the percentile interval.  Defaults to
+                0.95.
+
+        Returns:
+            pd.DataFrame: For the bootstrap path, one row per predicted outcome
+            with a ``target`` (the estimate ``μ̂_OM``) and a ``target_ci`` column;
+            for the analytic path, the inherited source-indexed mean/CI table.
+
+        Raises:
+            ValueError: For ``ci_method="bootstrap"`` when the view is not
+                BalanceFrame-backed with a target, or no outcome model is fit.
+
+        Examples:
+            >>> import numpy as np, pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> rng = np.random.default_rng(0)
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [str(i) for i in range(60)],
+            ...                   "age": rng.normal(50, 10, 60),
+            ...                   "happiness": rng.normal(70, 5, 60),
+            ...                   "weight": np.ones(60)}),
+            ...     outcome_columns=["happiness"])
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [str(i) for i in range(60, 90)],
+            ...                   "age": rng.normal(55, 10, 30),
+            ...                   "weight": np.ones(30)}))
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
+            >>> _ = bf.fit_outcome_model()
+            >>> _ = bf.predict_outcomes(on="target")
+            >>> out = bf.outcomes_hat().mean_with_ci(n_bootstrap=20, random_seed=2020)
+            >>> list(out.columns)
+            ['target', 'target_ci']
+        """
+        if ci_method != "bootstrap":
+            return super().mean_with_ci(
+                round_ndigits=round_ndigits, on_linked_samples=on_linked_samples
+            )
+
+        from balance.outcome_models.outcome_model import bootstrap_outcome_estimate
+
+        bf = self._require_fitted_balanceframe_with_target()
+        model = _assert_type(bf.outcome_model, dict)
+        responder = bf._sf_sample
+        target = bf._sf_target
+
+        outcome_columns: list[str] = [str(c) for c in model["outcome_columns"]]
+        covars = responder.df_covars
+        outcomes = responder._df[outcome_columns].copy()
+        # Drop responder rows with a missing outcome so the resampled fit uses
+        # only complete observations (mirroring SampleFrame.fit_outcome_model).
+        complete = outcomes.notna().all(axis=1)
+        covars = covars.loc[complete].reset_index(drop=True)
+        outcomes = outcomes.loc[complete].reset_index(drop=True)
+
+        sample_weight: pd.Series | None = None
+        if bool(model.get("weighted", False)):
+            weight_values = responder.weight_series.loc[complete].to_numpy(dtype=float)
+            sample_weight = pd.Series(weight_values, index=covars.index)
+
+        target_weight = target.weight_series
+
+        results = bootstrap_outcome_estimate(
+            covars,
+            outcomes,
+            sample_weight,
+            target.df_covars,
+            target_weight,
+            fit_kwargs=self._fit_kwargs_from_model(model),
+            n_bootstrap=n_bootstrap,
+            random_seed=random_seed,
+            conf_level=conf_level,
+        )
+
+        # Shape the output like the base mean_with_ci for the TARGET row (μ̂_OM):
+        # index = the <outcome>_hat column names, columns = "target" (estimate)
+        # and "target_ci" (the percentile interval tuple).
+        index = [f"{col}_hat" for col in outcome_columns]
+        estimates = [
+            round(results[col]["estimate"], round_ndigits) for col in outcome_columns
+        ]
+        cis = [
+            (
+                round(results[col]["ci_low"], round_ndigits),
+                round(results[col]["ci_high"], round_ndigits),
+            )
+            for col in outcome_columns
+        ]
+        return pd.DataFrame(
+            {"target": estimates, "target_ci": cis},
+            index=index,
+        )
+
+    def summary(
+        self: "BalanceDFOutcomesHat",
+        on_linked_samples: bool | None = None,
+    ) -> str:
+        """Summarise ``μ̂_OM`` and **scope any doubly-robust claim to the fit weights**.
+
+        Reports the estimator (g-computation / outcome model) and the mean
+        predicted outcomes with confidence intervals.  Crucially it **never**
+        prints a blanket "doubly robust": the DR guarantee holds only for a
+        **linear** learner with an **intercept** fit with **non-uniform** weights
+        (the weighted-least-squares special case, where the weighted residuals
+        are orthogonal to the design).  For that case it states
+        ``"doubly robust w.r.t. fit weights"`` and names the weight column; for
+        the default (non-linear) learner, a uniform-weight fit, or a linear fit
+        without an intercept, it states plain ``"g-computation (not doubly
+        robust)"``.  All the facts are read off the stored ``_outcome_model``
+        (``learner`` repr, ``weighted``, ``fit_weight``) and the fitted estimators
+        (linear + intercept is detected pragmatically via ``coef_``/``intercept_``
+        and ``fit_intercept``).
+
+        Args:
+            self (BalanceDFOutcomesHat): Object.
+            on_linked_samples (bool | None): Ignored; present only because
+                ``summary`` overrides :meth:`BalanceDF.summary`.
+
+        Returns:
+            str: A printable summary with the (scoped) estimator statement and the
+            mean predicted outcomes with confidence intervals.
+
+        Examples:
+            >>> import numpy as np, pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> rng = np.random.default_rng(0)
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [str(i) for i in range(40)],
+            ...                   "age": rng.normal(50, 10, 40),
+            ...                   "happiness": rng.normal(70, 5, 40),
+            ...                   "weight": np.ones(40)}),
+            ...     outcome_columns=["happiness"])
+            >>> sf = resp.fit_outcome_model()
+            >>> _ = sf.predict_outcomes()
+            >>> "g-computation" in sf.outcomes_hat().summary()
+            True
+        """
+        model = self._resolve_outcome_model()
+        estimator_clause = self._estimator_statement(model)
+        mean_hat_with_ci = super().mean_with_ci(on_linked_samples=True)
+        n_outcomes = self.df.shape[1]
+        list_outcomes = np.array(self.df.columns, dtype=object)
+        return (
+            f"{n_outcomes} predicted outcome(s): {list_outcomes}\n"
+            f"Estimator: {estimator_clause}\n"
+            "Mean predicted outcomes (analytic 95% CIs — these treat the "
+            "predictions as fixed and under-cover the outcome-model estimate; "
+            "use mean_with_ci(ci_method='bootstrap') for an honest interval):\n"
+            f"{mean_hat_with_ci.to_string(max_cols=None)}\n"
+        )
+
+    def _resolve_outcome_model(
+        self: "BalanceDFOutcomesHat",
+    ) -> dict[str, Any] | None:
+        """Return the stored ``_outcome_model`` from the backing source, if any."""
+        outcome_model = getattr(self._sample, "outcome_model", None)
+        if outcome_model is not None:
+            return outcome_model
+        return getattr(self._sample, "_outcome_model", None)
+
+    @staticmethod
+    def _is_linear_with_intercept(model: dict[str, Any]) -> bool:
+        """True iff every fitted estimator is linear (``coef_``) with an intercept.
+
+        The design matrix drops the patsy intercept (``-1``), so the constant must
+        come from the learner: an estimator counts as DR-eligible only when it
+        exposes ``coef_``/``intercept_`` **and** ``fit_intercept=True``.  An empty
+        fit is not eligible.
+        """
+        fit = model.get("fit", {})
+        if not fit:
+            return False
+        for estimator in fit.values():
+            has_linear_coefs = hasattr(estimator, "coef_") and hasattr(
+                estimator, "intercept_"
+            )
+            if not (has_linear_coefs and getattr(estimator, "fit_intercept", False)):
+                return False
+        return True
+
+    def _estimator_statement(
+        self: "BalanceDFOutcomesHat", model: dict[str, Any] | None
+    ) -> str:
+        """Build the scoped estimator sentence (see :meth:`summary`)."""
+        if model is None:
+            return (
+                "g-computation (not doubly robust); no stored outcome model "
+                "(predicted outcomes were attached directly)"
+            )
+        model_repr = str(model.get("learner", "?"))
+        weighted = bool(model.get("weighted", False))
+        fit_weight = model.get("fit_weight", {}) or {}
+        uniform = bool(fit_weight.get("uniform", not weighted))
+        if weighted and not uniform and self._is_linear_with_intercept(model):
+            weight_col = self._fit_weight_column_name()
+            scope = (
+                f"weights `{weight_col}`"
+                if weight_col is not None
+                else "the fit weights"
+            )
+            return (
+                f"g-computation (model={model_repr}); doubly robust w.r.t. "
+                f"{scope} (linear + intercept fit by weighted least squares — the "
+                "residuals are orthogonal to the design for those weights)"
+            )
+        return f"g-computation (model={model_repr}) (not doubly robust)"
+
+    def _fit_weight_column_name(self: "BalanceDFOutcomesHat") -> str | None:
+        """Best-effort name of the weight column the model was fit with."""
+        fit_weight = getattr(self._sample, "outcome_model", None)
+        if isinstance(fit_weight, dict):
+            column = (fit_weight.get("fit_weight", {}) or {}).get("column")
+            if column is not None:
+                return str(column)
+        weight_series = getattr(self._sample, "weight_series", None)
+        name = getattr(weight_series, "name", None)
+        return str(name) if name is not None else None
 
 
 class BalanceDFCovars(BalanceDF):

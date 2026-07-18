@@ -325,6 +325,15 @@ bf.outcomes().mean()
 bf.fit_outcome_model()
 bf.predict_outcomes(on="target")
 bf.outcomes_hat().mean()
+
+# An honest confidence interval for μ̂_OM via a nonparametric bootstrap
+# (resample responders, refit ĝ*, predict on the fixed target, re-average):
+bf.outcomes_hat().mean_with_ci(ci_method="bootstrap", n_bootstrap=200, random_seed=2020)
+
+# outcomes_hat().summary() reports the estimator and *scopes* any doubly-robust
+# claim to the fit weights — it never prints a blanket "doubly robust" (a plain
+# g-computation for the non-linear default; DR only for a weighted linear+intercept fit):
+bf.outcomes_hat().summary()
 ```
 
 Separately, `bf.outcomes().weights_impact_on_outcome_ss()` is a *diagnostic*

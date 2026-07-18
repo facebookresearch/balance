@@ -45,3 +45,13 @@ OutcomeLearnerMode = Literal["auto"]
 # (typed ``Any`` to avoid a hard sklearn import here), or a per-outcome-column
 # mapping of estimators.
 OutcomeLearner = Union[OutcomeLearnerMode, Any, Dict[str, Any]]
+
+# Confidence-interval method for ``BalanceDFOutcomesHat.mean_with_ci``.
+# ``"bootstrap"`` (the default on a BalanceFrame-backed view with a target) runs
+# the nonparametric bootstrap of the fit->predict->average loop that honestly
+# captures outcome-model estimation uncertainty for ``μ̂_OM``; ``"analytic"`` uses
+# the inherited ``ci_of_weighted_mean`` (which treats ``ŷ`` as fixed and thus
+# under-covers ``μ̂_OM`` — only meaningful for a standalone/observed view).
+# NOTE: must use ``Literal``/``Union`` (not ``|``) — this alias is evaluated at
+# runtime and Python 3.9 rejects ``|`` in alias definitions (see note above).
+OutcomeCIMethod = Literal["bootstrap", "analytic"]
