@@ -1774,6 +1774,131 @@ class BalanceFrame:
         self.fit_outcome_model(target=target, inplace=True, **fit_kwargs)
         return self.predict_outcomes(on=on, populate=populate)
 
+    def set_fitted_outcome_model(
+        self, fitted: BalanceFrame | SampleFrame, *, inplace: bool = True
+    ) -> Self:
+        """Apply a fitted outcome model from another frame (train/holdout transfer).
+
+        This is the outcome-modelling counterpart to :meth:`set_fitted_model`
+        (the IPW weighting-axis train/holdout transfer): fit an outcome model
+        ``ĝ(X) ≈ E[Y|X]`` on one frame (the *train* frame) and apply the fitted
+        model to a *different* frame (the *holdout* / scoring frame) that shares
+        the same covariate schema.  Nothing is re-fit — the already-fitted model
+        (including its stored preprocessing) is copied onto ``self`` **sharing
+        the fitted estimator objects by identity** (exactly like
+        :meth:`set_fitted_model`), so ``self.predict_outcomes(on="target")`` then
+        replays the transferred model on ``self``'s own target and
+        ``self.outcomes_hat().mean()`` is the g-computation estimate ``μ̂_OM`` on
+        the holdout target.
+
+        On a :class:`~balance.sample_class.Sample`, this ``BalanceFrame`` method
+        is reached via the MRO; the model lands on ``self._sf_sample`` (the single
+        source of truth read back through :attr:`outcome_model`), so it rides
+        along :meth:`adjust` and is preserved across :meth:`set_target`.
+
+        Args:
+            fitted: Another ``BalanceFrame`` (or ``SampleFrame`` / ``Sample``)
+                that already carries a fitted outcome model (via
+                :meth:`fit_outcome_model`).  Its covariate columns must match
+                ``self``'s.
+            inplace: If ``True`` (default), mutate this object (store the model on
+                the responder) and return ``self``; if ``False``, return a new
+                copy with the model stored and leave ``self`` unchanged — matching
+                :meth:`set_fitted_model` / :meth:`fit_outcome_model`.
+
+        Returns:
+            The BalanceFrame with the transferred outcome model stored on its
+            responder (``self`` when ``inplace``, else a new copy).
+
+        Raises:
+            ValueError: If ``fitted`` has no stored outcome model; if the
+                covariate column names differ between ``self`` and ``fitted``; or
+                if the fitted model used a non-deterministic ``transformations``
+                (e.g. ``quantize`` / ``fct_lump``) or ``na_action="drop"`` that
+                cannot be replayed deterministically on ``self``.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> train_resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": ["1", "2", "3", "4"],
+            ...                   "age": [25.0, 30.0, 35.0, 40.0],
+            ...                   "happiness": [50.0, 55.0, 65.0, 80.0],
+            ...                   "weight": [1.0, 1.0, 1.0, 1.0]}),
+            ...     outcome_columns=["happiness"])
+            >>> holdout_resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": ["5", "6", "7", "8"],
+            ...                   "age": [26.0, 31.0, 36.0, 41.0],
+            ...                   "happiness": [51.0, 56.0, 66.0, 81.0],
+            ...                   "weight": [1.0, 1.0, 1.0, 1.0]}),
+            ...     outcome_columns=["happiness"])
+            >>> holdout_tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": ["9", "10"], "age": [28.0, 38.0],
+            ...                   "weight": [1.0, 1.0]}))
+            >>> train_bf = BalanceFrame(sample=train_resp)
+            >>> _ = train_bf.fit_outcome_model()
+            >>> holdout_bf = BalanceFrame(sample=holdout_resp, target=holdout_tgt)
+            >>> scored = holdout_bf.set_fitted_outcome_model(train_bf, inplace=False)
+            >>> _ = scored.predict_outcomes(on="target")
+            >>> scored.outcome_model["fit"]["happiness"] is train_bf.outcome_model["fit"]["happiness"]
+            True
+        """
+        # --- Validation ---
+        fitted_model = fitted.outcome_model
+        if fitted_model is None:
+            raise ValueError(
+                "fitted must carry a fitted outcome model; call "
+                "fit_outcome_model(...) on it before set_fitted_outcome_model()."
+            )
+        if set(self._sf_sample.covars().df.columns) != set(
+            fitted._sf_sample.covars().df.columns
+            if isinstance(fitted, BalanceFrame)
+            else fitted.covars().df.columns
+        ):
+            raise ValueError(
+                "self and fitted must have matching sample covariate column names."
+            )
+        # The transferred model is replayed on self's own target, so its
+        # covariates must line up too (mirrors set_fitted_model).
+        if self._sf_target is not None and isinstance(fitted, BalanceFrame):
+            fitted_target = fitted._sf_target
+            if fitted_target is not None and set(
+                _assert_type(self._sf_target).covars().df.columns
+            ) != set(fitted_target.covars().df.columns):
+                raise ValueError(
+                    "self and fitted must have matching target covariate column names."
+                )
+        # Reject a non-deterministic transfer: data-dependent transformations
+        # (quantize/fct_lump) and na_action="drop" cannot be replayed
+        # deterministically on a foreign frame (this mirrors fit_outcome_model's
+        # own fit-time guards, which reject the same configurations).
+        if fitted_model.get("transformations") is not None:
+            raise ValueError(
+                "cannot transfer an outcome model fit with non-deterministic "
+                "transformations (e.g. quantize/fct_lump): they are not freezable "
+                "for deterministic replay on a foreign frame. Refit with "
+                "transformations=None to enable set_fitted_outcome_model()."
+            )
+        if str(fitted_model.get("na_action")) == "drop":
+            raise ValueError(
+                "na_action='drop' is incompatible with outcome-model transfer: "
+                "replay of the stored preprocessing needs NA-indicator columns to "
+                "stay aligned across fit and score data. Refit with "
+                "na_action='add_indicator' (the default)."
+            )
+
+        # --- Build the result & store the transferred model ---
+        bf = self if inplace else deepcopy(self)
+        # Share the fitted estimators by identity (like set_fitted_model): a
+        # shallow copy of the model dict keeps the "fit" estimators as the same
+        # objects, so scored.outcome_model["fit"][c] is train.outcome_model["fit"][c].
+        bf._sf_sample._outcome_model = dict(fitted_model)
+        # A transferred model supersedes any Ŷ already on the responder.
+        bf._sf_sample._drop_outcomes_hat_columns()
+        bf._sync_sampleframe_state_from_responder(bf._sf_sample)
+        return bf
+
     def _require_fitted_model(self) -> dict[str, Any]:
         """Return the adjustment model dict, or raise.
 

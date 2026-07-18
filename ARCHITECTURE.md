@@ -114,6 +114,9 @@ Note: the `_*` protocol accessors `_outcome_columns` and `_outcomes_hat_columns`
 │ Transfer ĝ to the target │ BalanceFrame.predict_outcomes│
 │  produce Ŷ_T             │  (on="target"; deep-copies   │
 │                          │  _sf_target before writing)  │
+│ Apply a foreign fitted   │ BalanceFrame.                │
+│  model (train/holdout)   │  set_fitted_outcome_model    │
+│                          │  (shares fit by identity)    │
 │ Outcome-model estimate   │ outcomes_hat().mean()        │
 │  μ̂_OM (target row)       │  (raises if target Ŷ unpop.) │
 │ IPW/Hájek estimate μ̂_IPW │ outcomes().mean() (self)     │
@@ -282,6 +285,16 @@ responder so the model has a single home that rides the lifecycle:
   covariates and populates its `<outcome>_hat` columns, **deep-copying `_sf_target` before writing**
   so the caller's target object is not mutated in place; `on="both"` returns a `(sample, target)`
   tuple (mirroring `predict_weights`/`design_matrix`).
+- `BalanceFrame.set_fitted_outcome_model(fitted, *, inplace=True)` is the train/holdout transfer —
+  the outcome-axis counterpart to `set_fitted_model` for weights. It copies an already-fitted
+  outcome model from another frame (`fitted`, a `BalanceFrame`/`SampleFrame`/`Sample`) onto `self`'s
+  responder **sharing the fitted estimators by identity** (a shallow copy of the model dict, not a
+  refit or deep clone — `scored.outcome_model["fit"][c] is train.outcome_model["fit"][c]`), so a
+  subsequent `predict_outcomes(on="target")` replays the transferred model on `self`'s own target for
+  `μ̂_OM` on the holdout. It reuses the same `"matching sample covariate column names"` check as
+  `set_fitted_model`, and **rejects a non-deterministic transfer** (a stored `transformations` of
+  `quantize`/`fct_lump`, or `na_action="drop"`) that can't be replayed deterministically on a foreign
+  frame; `inplace` matches `set_fitted_model`.
 - The estimate is `μ̂_OM = outcomes_hat().mean()` — the **target** row = `Σ w_T ŷ_T / Σ w_T`.
   `BalanceFrame.outcomes_hat()` builds the view when *either* the responder or a linked source
   (target/unadjusted) carries `outcomes_hat`, and it **raises an actionable error** (pointing at

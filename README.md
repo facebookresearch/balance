@@ -336,6 +336,21 @@ bf.outcomes_hat().mean_with_ci(ci_method="bootstrap", n_bootstrap=200, random_se
 bf.outcomes_hat().summary()
 ```
 
+**Train/holdout transfer.** You can fit the outcome model on one frame (a *train*
+split) and apply it to a *different* frame (a *holdout* / scoring split) with the
+same covariate schema, mirroring how `set_fitted_model` transfers a fitted IPW
+model. `set_fitted_outcome_model` copies the already-fitted model onto the holdout
+**without re-fitting** (the fitted learner is shared by identity), so predicting on
+the holdout target gives `μ̂_OM` computed with the train model:
+
+```python
+# train_bf carries a fitted outcome model (train_bf.fit_outcome_model(...));
+# holdout_bf has the same covariates plus its own target to score:
+scored = holdout_bf.set_fitted_outcome_model(train_bf, inplace=False)
+scored.predict_outcomes(on="target")
+scored.outcomes_hat().mean()      # μ̂_OM on the holdout target via train_bf's model
+```
+
 Separately, `bf.outcomes().weights_impact_on_outcome_ss()` is a *diagnostic*
 (not a third estimator): it reports how much applying the weights moves the
 outcome mean (weighted vs. unweighted), with a significance test — useful for

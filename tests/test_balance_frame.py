@@ -7501,3 +7501,347 @@ class TestSampleOutcomeModelTransferMRO(BalanceTestCase):
         self.assertIsNotNone(bf.outcome_model)
         bf.predict_outcomes(on="target")
         self.assertIn("target", _assert_type(bf.outcomes_hat()).mean().index)
+
+
+class TestBalanceFrameSetFittedOutcomeModel(BalanceTestCase):
+    """Train/holdout transfer of a fitted outcome model (set_fitted_outcome_model)."""
+
+    def _make_train_bf(self, n: int = 60) -> BalanceFrame:
+        """A train frame (responders with an observed outcome; no target needed)."""
+        rng = np.random.default_rng(0)
+        age_r = rng.normal(50, 10, n)
+        resp = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(n)],
+                    "age": age_r,
+                    "grp": rng.choice(["a", "b"], n),
+                    "happiness": age_r + rng.normal(0, 1, n),
+                    "weight": rng.uniform(0.5, 2.0, n),
+                }
+            ),
+            outcome_columns=["happiness"],
+        )
+        return BalanceFrame(sample=resp)
+
+    def _make_holdout_bf(self, n: int = 40) -> BalanceFrame:
+        """A holdout frame (responders + a target) with the SAME covariate schema."""
+        rng = np.random.default_rng(1)
+        age_r = rng.normal(50, 10, n)
+        resp = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(100, 100 + n)],
+                    "age": age_r,
+                    "grp": rng.choice(["a", "b"], n),
+                    "happiness": age_r + rng.normal(0, 1, n),
+                    "weight": rng.uniform(0.5, 2.0, n),
+                }
+            ),
+            outcome_columns=["happiness"],
+        )
+        age_t = rng.normal(55, 10, n)
+        tgt = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(200, 200 + n)],
+                    "age": age_t,
+                    "grp": rng.choice(["a", "b"], n),
+                    "weight": rng.uniform(0.5, 2.0, n),
+                }
+            )
+        )
+        return BalanceFrame(sample=resp, target=tgt)
+
+    def test_example_snippet_transfer_to_holdout_target(self) -> None:
+        # The diff's Example: transfer train's fitted model to the holdout, then
+        # read μ̂_OM on the holdout target.
+        from sklearn.linear_model import LinearRegression
+
+        train_bf = self._make_train_bf()
+        train_bf.fit_outcome_model(model=LinearRegression())
+
+        holdout_bf = self._make_holdout_bf()
+        scored = holdout_bf.set_fitted_outcome_model(train_bf, inplace=False)
+        scored.predict_outcomes(on="target")
+        means = _assert_type(scored.outcomes_hat()).mean()
+        self.assertIn("target", means.index)
+
+        # μ̂_OM on the holdout target must equal replaying the TRAIN model on the
+        # holdout target covariates and averaging with the holdout target weights.
+        from balance.outcome_models.outcome_model import predict_outcome
+
+        holdout_target = _assert_type(scored._sf_target)
+        preds = predict_outcome(
+            _assert_type(train_bf.outcome_model), holdout_target.df_covars
+        )
+        w_t = holdout_target.weight_series
+        expected = float(np.average(preds["happiness"], weights=w_t))
+        self.assertAlmostEqual(
+            float(means.loc["target", "happiness_hat"]), expected, places=6
+        )
+
+    def test_transferred_fit_estimator_identity_shared(self) -> None:
+        # The transferred "fit" estimator must be the SAME object (identity), not
+        # a deep clone or a refit — mirroring set_fitted_model.
+        from sklearn.linear_model import LinearRegression
+
+        train_bf = self._make_train_bf()
+        train_bf.fit_outcome_model(model=LinearRegression())
+        holdout_bf = self._make_holdout_bf()
+        scored = holdout_bf.set_fitted_outcome_model(train_bf, inplace=False)
+
+        train_model = _assert_type(train_bf.outcome_model)
+        scored_model = _assert_type(scored.outcome_model)
+        # The model dict is a distinct object ...
+        self.assertIsNot(scored_model, train_model)
+        # ... but the fitted estimator is literally shared.
+        self.assertIs(scored_model["fit"]["happiness"], train_model["fit"]["happiness"])
+
+    def test_transfer_with_auto_learner(self) -> None:
+        # The default (boosting) learner transfers too (native-cat on sklearn>=1.4,
+        # one-hot fallback on <1.4 — both work end to end).
+        train_bf = self._make_train_bf()
+        train_bf.fit_outcome_model(model="auto")
+        holdout_bf = self._make_holdout_bf()
+        scored = holdout_bf.set_fitted_outcome_model(train_bf, inplace=False)
+        self.assertIs(
+            _assert_type(scored.outcome_model)["fit"]["happiness"],
+            _assert_type(train_bf.outcome_model)["fit"]["happiness"],
+        )
+        scored.predict_outcomes(on="target")
+        self.assertIn("target", _assert_type(scored.outcomes_hat()).mean().index)
+
+    def test_fitted_without_model_raises(self) -> None:
+        train_bf = self._make_train_bf()  # never fit
+        holdout_bf = self._make_holdout_bf()
+        with self.assertRaises(ValueError) as ctx:
+            holdout_bf.set_fitted_outcome_model(train_bf)
+        self.assertIn("fitted must carry a fitted outcome model", str(ctx.exception))
+
+    def test_covariate_name_mismatch_raises(self) -> None:
+        from sklearn.linear_model import LinearRegression
+
+        train_bf = self._make_train_bf()
+        train_bf.fit_outcome_model(model=LinearRegression())
+        # Holdout whose covariate is renamed (age -> age2) -> schema mismatch.
+        rng = np.random.default_rng(2)
+        resp = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(20)],
+                    "age2": rng.normal(50, 10, 20),
+                    "grp": rng.choice(["a", "b"], 20),
+                    "happiness": rng.normal(60, 5, 20),
+                    "weight": np.ones(20),
+                }
+            ),
+            outcome_columns=["happiness"],
+        )
+        holdout_bf = BalanceFrame(sample=resp)
+        with self.assertRaises(ValueError) as ctx:
+            holdout_bf.set_fitted_outcome_model(train_bf)
+        self.assertIn("matching sample covariate column names", str(ctx.exception))
+
+    def test_target_covariate_name_mismatch_raises(self) -> None:
+        # Sample covars match, but the two frames' TARGET covars differ -> the
+        # second (target) covariate guard fires. Both `fitted` and `self` must
+        # carry a target for this branch to be reachable.
+        from sklearn.linear_model import LinearRegression
+
+        rng = np.random.default_rng(3)
+
+        def _bf_with_target_covars(target_covars: list[str]) -> BalanceFrame:
+            n = 30
+            resp = SampleFrame.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": [str(i) for i in range(n)],
+                        "age": rng.normal(50, 10, n),
+                        "grp": rng.choice(["a", "b"], n),
+                        "happiness": rng.normal(60, 5, n),
+                        "weight": np.ones(n),
+                    }
+                ),
+                outcome_columns=["happiness"],
+            )
+            tgt = SampleFrame.from_frame(
+                pd.DataFrame(
+                    {
+                        "id": [str(i) for i in range(500, 500 + n)],
+                        "weight": np.ones(n),
+                        **{c: rng.normal(50, 10, n) for c in target_covars},
+                    }
+                )
+            )
+            return BalanceFrame(sample=resp, target=tgt)
+
+        train_bf = _bf_with_target_covars(["age", "grp"])
+        train_bf.fit_outcome_model(model=LinearRegression())
+        holdout_bf = _bf_with_target_covars(["age", "grp", "region"])
+        with self.assertRaises(ValueError) as ctx:
+            holdout_bf.set_fitted_outcome_model(train_bf)
+        self.assertIn("matching target covariate column names", str(ctx.exception))
+
+    def test_nondeterministic_transformations_transfer_raises(self) -> None:
+        # A model whose stored transformations are non-deterministic (quantize/
+        # fct_lump) cannot be replayed on a foreign frame.
+        from sklearn.linear_model import LinearRegression
+
+        train_bf = self._make_train_bf()
+        train_bf.fit_outcome_model(model=LinearRegression())
+        # fit_outcome_model forbids non-None transformations at fit time, so
+        # simulate a stored data-dependent transform to exercise the transfer
+        # guard directly (mirrors how set_fitted_model validation tests mutate
+        # the stored model dict).
+        _assert_type(train_bf.outcome_model)["transformations"] = {"age": "quantize"}
+        holdout_bf = self._make_holdout_bf()
+        with self.assertRaises(ValueError) as ctx:
+            holdout_bf.set_fitted_outcome_model(train_bf)
+        self.assertIn("non-deterministic", str(ctx.exception))
+
+    def test_na_action_drop_transfer_raises(self) -> None:
+        from sklearn.linear_model import LinearRegression
+
+        train_bf = self._make_train_bf()
+        train_bf.fit_outcome_model(model=LinearRegression())
+        _assert_type(train_bf.outcome_model)["na_action"] = "drop"
+        holdout_bf = self._make_holdout_bf()
+        with self.assertRaises(ValueError) as ctx:
+            holdout_bf.set_fitted_outcome_model(train_bf)
+        self.assertIn("na_action='drop'", str(ctx.exception))
+
+    def test_inplace_false_leaves_self_unchanged(self) -> None:
+        from sklearn.linear_model import LinearRegression
+
+        train_bf = self._make_train_bf()
+        train_bf.fit_outcome_model(model=LinearRegression())
+        holdout_bf = self._make_holdout_bf()
+        scored = holdout_bf.set_fitted_outcome_model(train_bf, inplace=False)
+        # A new object is returned and self is untouched.
+        self.assertIsNot(scored, holdout_bf)
+        self.assertIsNone(holdout_bf.outcome_model)
+        self.assertIsNotNone(scored.outcome_model)
+
+    def test_inplace_true_mutates_and_returns_self(self) -> None:
+        from sklearn.linear_model import LinearRegression
+
+        train_bf = self._make_train_bf()
+        train_bf.fit_outcome_model(model=LinearRegression())
+        holdout_bf = self._make_holdout_bf()
+        result = holdout_bf.set_fitted_outcome_model(train_bf, inplace=True)
+        self.assertIs(result, holdout_bf)
+        self.assertIsNotNone(holdout_bf.outcome_model)
+        self.assertEqual(holdout_bf.outcome_model["method"], "outcome_model")
+
+    def test_transfer_from_bare_sampleframe(self) -> None:
+        # fitted may be a lone SampleFrame (no _sf_sample) carrying the model.
+        from sklearn.linear_model import LinearRegression
+
+        rng = np.random.default_rng(4)
+        age_r = rng.normal(50, 10, 40)
+        train_sf = SampleFrame.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(40)],
+                    "age": age_r,
+                    "grp": rng.choice(["a", "b"], 40),
+                    "happiness": age_r + rng.normal(0, 1, 40),
+                    "weight": np.ones(40),
+                }
+            ),
+            outcome_columns=["happiness"],
+        )
+        train_sf.fit_outcome_model(model=LinearRegression())
+        holdout_bf = self._make_holdout_bf()
+        scored = holdout_bf.set_fitted_outcome_model(train_sf, inplace=False)
+        self.assertIs(
+            _assert_type(scored.outcome_model)["fit"]["happiness"],
+            _assert_type(train_sf.outcome_model)["fit"]["happiness"],
+        )
+        scored.predict_outcomes(on="target")
+        self.assertIn("target", _assert_type(scored.outcomes_hat()).mean().index)
+
+    def test_transfer_drops_stale_outcomes_hat_on_holdout(self) -> None:
+        # If the holdout responder already carries Ŷ, a transfer supersedes it.
+        from sklearn.linear_model import LinearRegression
+
+        train_bf = self._make_train_bf()
+        train_bf.fit_outcome_model(model=LinearRegression())
+        holdout_bf = self._make_holdout_bf()
+        holdout_bf._sf_sample.add_outcomes_hat_column(
+            "happiness_hat",
+            pd.Series(np.zeros(40), index=holdout_bf._sf_sample.df.index),
+        )
+        self.assertEqual(holdout_bf._sf_sample.outcomes_hat_columns, ["happiness_hat"])
+        scored = holdout_bf.set_fitted_outcome_model(train_bf, inplace=False)
+        # The scored copy's responder no longer carries the stale Ŷ.
+        self.assertEqual(scored._sf_sample.outcomes_hat_columns, [])
+
+    @pytest.mark.requires_sklearn_1_4  # pyre-ignore[56]
+    @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires sklearn >= 1.4")
+    def test_transfer_native_categorical_auto_learner(self) -> None:
+        # On sklearn>=1.4 the default learner uses the native-categorical path;
+        # the transferred model replays it on the holdout target via the stored
+        # categorical_levels.
+        train_bf = self._make_train_bf()
+        train_bf.fit_outcome_model(model="auto")
+        model = _assert_type(train_bf.outcome_model)
+        self.assertFalse(model["use_model_matrix"])  # native-categorical path
+        self.assertIsNotNone(model["categorical_levels"])
+        holdout_bf = self._make_holdout_bf()
+        scored = holdout_bf.set_fitted_outcome_model(train_bf, inplace=False)
+        scored.predict_outcomes(on="target")
+        self.assertIn("target", _assert_type(scored.outcomes_hat()).mean().index)
+
+
+class TestSampleSetFittedOutcomeModelMRO(BalanceTestCase):
+    """set_fitted_outcome_model reached via the Sample MRO facade."""
+
+    def test_sample_transfer_to_holdout(self) -> None:
+        from sklearn.linear_model import LinearRegression
+
+        rng = np.random.default_rng(5)
+        age_r = rng.normal(50, 10, 50)
+        train = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(50)],
+                    "age": age_r,
+                    "happiness": age_r + rng.normal(0, 1, 50),
+                    "weight": rng.uniform(0.5, 2.0, 50),
+                }
+            ),
+            outcome_columns=["happiness"],
+        )
+        train.fit_outcome_model(model=LinearRegression())
+
+        holdout_resp = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(100, 150)],
+                    "age": rng.normal(50, 10, 50),
+                    "happiness": rng.normal(60, 5, 50),
+                    "weight": rng.uniform(0.5, 2.0, 50),
+                }
+            ),
+            outcome_columns=["happiness"],
+        )
+        holdout_tgt = Sample.from_frame(
+            pd.DataFrame(
+                {
+                    "id": [str(i) for i in range(200, 250)],
+                    "age": rng.normal(55, 10, 50),
+                    "weight": rng.uniform(0.5, 2.0, 50),
+                }
+            )
+        )
+        holdout = holdout_resp.set_target(holdout_tgt)
+        scored = holdout.set_fitted_outcome_model(train, inplace=False)
+        # Estimator identity shared through the MRO (single source of truth).
+        self.assertIs(
+            _assert_type(scored.outcome_model)["fit"]["happiness"],
+            _assert_type(train.outcome_model)["fit"]["happiness"],
+        )
+        scored.predict_outcomes(on="target")
+        self.assertIn("target", _assert_type(scored.outcomes_hat()).mean().index)

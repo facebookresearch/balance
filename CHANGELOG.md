@@ -63,6 +63,14 @@
   bf.outcomes_hat().summary()   # text: "g-computation ..." with any DR claim scoped to the fit weights
   ```
 
+- **`BalanceFrame.set_fitted_outcome_model` — train/holdout outcome-model transfer.** New `BalanceFrame.set_fitted_outcome_model(fitted, *, inplace=True)` applies an already-fitted outcome model from one frame (the *train* frame) to another (the *holdout* / scoring frame) with the same covariate schema — the outcome-modelling counterpart to `set_fitted_model` (the IPW train/holdout transfer). Nothing is re-fit: the stored model (including its frozen preprocessing) is copied onto `self`'s responder **sharing the fitted estimator objects by identity** (`scored.outcome_model["fit"][c] is train.outcome_model["fit"][c]`), so `self.predict_outcomes(on="target")` then replays it on `self`'s own target and `self.outcomes_hat().mean()` is the g-computation estimate `μ̂_OM` on the holdout target. `fitted` may be a `BalanceFrame`, a `SampleFrame`, or a `Sample` (reached via the MRO). It raises an actionable error when `fitted` has no fitted outcome model, when the covariate column names differ (the same `"matching sample covariate column names"` check `set_fitted_model` uses), or when the fitted model used a non-deterministic `transformations` (`quantize`/`fct_lump`) or `na_action="drop"` that cannot be replayed deterministically on a foreign frame. `inplace` matches `set_fitted_model` / `fit_outcome_model` (`True` mutates and returns `self`; `False` returns a scored copy and leaves `self` unchanged).
+
+  ```python
+  scored = holdout_bf.set_fitted_outcome_model(train_bf, inplace=False)
+  scored.predict_outcomes(on="target")
+  scored.outcomes_hat().mean()      # μ̂_OM on the holdout target via train_bf's fitted model
+  ```
+
 ## Documentation
 
 - Add the outcome-modelling design doc: [architecture_0_23_0.md](https://github.com/facebookresearch/balance/blob/main/docs/architecture/architecture_0_23_0.md).
