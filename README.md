@@ -309,6 +309,8 @@ reassuring; disagreement points at a misspecified weighting or outcome model.
 (A doubly-robust / AIPW estimator that combines both is planned for a later
 release.)
 
+_For a runnable end-to-end walkthrough, see the [outcome-model tutorial](https://import-balance.org/docs/tutorials/outcome_model/)._
+
 ```python
 from balance import Sample
 

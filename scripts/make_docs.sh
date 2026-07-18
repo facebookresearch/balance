@@ -96,6 +96,8 @@ if [[ $ONLY_DOCUSAURUS == false ]]; then
     --output-dir website/static/html/tutorials
   jupyter nbconvert tutorials/balance_quickstart_new_api.ipynb --execute --to html \
     --output-dir website/static/html/tutorials
+  jupyter nbconvert tutorials/balance_outcome_model.ipynb --execute --to html \
+    --output-dir website/static/html/tutorials
   # The balance_diff_diff_brfss tutorial requires the optional `diff_diff`
   # package (`pip install "balance[did]"`). Skip with a clear notice when
   # diff-diff is not installed so contributors running `make_docs.sh -n`
