@@ -118,11 +118,32 @@ that the final weighted sample matches the full two-dimensional distribution.
 
 ### Diagnostics example
 
-When poststratification is fit through an API path that stores fit metadata,
-`diagnostics()` includes compact `model_glance` rows describing the persisted
-poststratification metadata.
+`BalanceFrame.fit(method="poststratify")` stores fit metadata by default, so
+`diagnostics()` includes compact `model_glance` rows. This example continues
+with the `sample_cells`, `target_cells`, and `covariates` defined immediately
+above.
 
 ```python
+from balance.balance_frame import BalanceFrame
+from balance.sample_frame import SampleFrame
+
+sample_cells = sample_cells.assign(weight=1.0)
+target_cells = target_cells.assign(weight=1.0)
+sample = SampleFrame.from_frame(
+    sample_cells[["id", "weight", *covariates]],
+    id_column="id",
+    weight_column="weight",
+)
+target = SampleFrame.from_frame(
+    target_cells[["id", "weight", *covariates]],
+    id_column="id",
+    weight_column="weight",
+)
+adjusted_poststratify = BalanceFrame(sample=sample, target=target).fit(
+    method="poststratify",
+    variables=covariates,
+    transformations=None,
+)
 post_glance = adjusted_poststratify.diagnostics().query("metric == 'model_glance'")
 display(post_glance[["var", "val"]])
 ```
@@ -133,7 +154,7 @@ Example output:
 | --- | ---: |
 | n_variables | 2 |
 | strict_matching | 1 |
-| n_cells | 2 |
+| n_cells | 8 |
 
 `n_variables` is the number of poststratification variables,
 `strict_matching` is stored as `1` for `True` and `0` for `False`, and
