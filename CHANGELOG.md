@@ -71,10 +71,19 @@
   scored.outcomes_hat().mean()      # μ̂_OM on the holdout target via train_bf's fitted model
   ```
 
+- **`BalanceFrame.aipw()` — doubly-robust (AIPW) estimate `μ̂_DR`.** New `BalanceFrame.aipw()` (and, via the MRO, `Sample.aipw()`) returns the augmented / one-sample AIPW estimate of the target-population mean, per outcome column, combining the fitted outcome model `ĝ` with the balance weights `w`: `μ̂_DR = wmean(ĝ(X_T), w_T) + wmean(Y − ĝ(X_S), w)` (the augmentation runs over responders with an observed `Y`). It is **doubly robust** — consistent if *either* the outcome model *or* the weighting model is correct — and completes the estimator trio alongside `outcomes().mean()` (`μ̂_IPW`) and `outcomes_hat().mean()` (`μ̂_OM`); equivalently it is a GREG (model-assisted) estimator with the balance weights as the design weights. It requires a fitted outcome model (`fit_outcome_model(...)`) **and** a target (`set_target(...)`), accepts any balance weights, and **warns** when the responder weights are constant (no weighting fitted → `μ̂_DR` reduces to `μ̂_OM`). The point-estimate arithmetic lives in the pure `balance.outcome_models.aipw_point_estimate(...)`. **This is the point estimate only** — no confidence interval yet; an honest AIPW interval must jointly capture the weighting- and outcome-model uncertainty (see the TODOs in `balance/outcome_models/aipw.py`: cross-fitting, an analytic influence-function / sandwich SE, and an end-to-end joint bootstrap).
+
+  ```python
+  bf = sample.adjust(method="ipw").set_target(target)   # or any balance weights
+  bf.fit_outcome_model()
+  bf.aipw()          # μ̂_DR per outcome (doubly robust); μ̂_IPW=outcomes().mean(), μ̂_OM=outcomes_hat().mean()
+  ```
+
 ## Documentation
 
 - Add the outcome-modelling design doc: [architecture_0_23_0.md](https://github.com/facebookresearch/balance/blob/main/docs/architecture/architecture_0_23_0.md).
 - Add an end-to-end [outcome-model tutorial](https://import-balance.org/docs/tutorials/outcome_model/) (`tutorials/balance_outcome_model.ipynb`) demonstrating the g-computation estimate `μ̂_OM` vs the IPW estimate `μ̂_IPW`, a bootstrap confidence interval, and train/holdout transfer via `set_fitted_outcome_model`.
+- Add R-oracle cross-check tests validating `μ̂_OM` and the doubly-robust `μ̂_DR` against base-R `lm` (checked-in fixtures `datasets/sim_data_outcome_model*.csv` and `datasets/sim_data_aipw*.csv`, with the R generators in `parent_balance/tests/r_oracles/`), mirroring the CBPS-vs-R precedent.
 
 # 0.22.0 (2026-07-15)
 

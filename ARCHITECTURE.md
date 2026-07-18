@@ -120,6 +120,8 @@ Note: the `_*` protocol accessors `_outcome_columns` and `_outcomes_hat_columns`
 │ Outcome-model estimate   │ outcomes_hat().mean()        │
 │  μ̂_OM (target row)       │  (raises if target Ŷ unpop.) │
 │ IPW/Hájek estimate μ̂_IPW │ outcomes().mean() (self)     │
+│ AIPW estimate μ̂_DR       │ BalanceFrame.aipw()          │
+│  (doubly robust)         │  (μ̂_OM + IPW-wtd residuals)  │
 │ ID/weight columns        │ SampleFrame                  │
 │ Type standardization     │ SampleFrame.from_frame()     │
 │ Weight management        │ SampleFrame (canonical)      │

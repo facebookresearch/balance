@@ -3525,6 +3525,98 @@ class BalanceFrame:
 
         return BalanceDFOutcomesHat(cast(BalanceDFSource, self), links=links)
 
+    def aipw(self) -> pd.Series:
+        """Doubly-robust (AIPW) estimate ``μ̂_DR`` of the target-population mean.
+
+        Combines the fitted outcome model ``ĝ`` (from :meth:`fit_outcome_model`)
+        with the responder weights ``w`` to form the augmented / one-sample AIPW
+        (doubly-robust) estimate of the target mean, per outcome column:
+
+            μ̂_DR = wmean(ĝ(X_T), w_T) + wmean(Y − ĝ(X_S), w)
+
+        (the augmentation runs over responders with an observed ``Y``). It is
+        consistent if *either* the outcome model *or* the weighting model is
+        correct. Companion to the other estimate accessors:
+        ``outcomes().mean()`` gives ``μ̂_IPW`` and ``outcomes_hat().mean()`` gives
+        ``μ̂_OM``; this gives ``μ̂_DR``.
+
+        Requires a fitted outcome model **and** a target (:meth:`set_target`).
+        Uses whatever weight columns are present (any balance weights). With
+        constant responder weights it warns and reduces to ``μ̂_OM``.
+
+        Point estimate only -- no confidence interval (an honest AIPW interval
+        must jointly capture the weighting- and outcome-model uncertainty; see
+        the TODOs in :mod:`balance.outcome_models.aipw`).
+
+        Returns:
+            pd.Series: ``μ̂_DR`` indexed by outcome column.
+
+        Raises:
+            ValueError: If no outcome model has been fit, if no target is set,
+                or if the responders carry no observed outcomes.
+
+        Examples:
+            >>> import pandas as pd
+            >>> from sklearn.linear_model import LinearRegression
+            >>> from balance.sample_frame import SampleFrame
+            >>> from balance.balance_frame import BalanceFrame
+            >>> resp = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [1, 2, 3, 4],
+            ...                   "x": [10.0, 20.0, 30.0, 40.0],
+            ...                   "y": [1.0, 2.0, 3.0, 4.0],
+            ...                   "weight": [1.0, 2.0, 1.0, 2.0]}),
+            ...     outcome_columns=["y"])
+            >>> tgt = SampleFrame.from_frame(
+            ...     pd.DataFrame({"id": [5, 6], "x": [15.0, 35.0],
+            ...                   "weight": [1.0, 1.0]}))
+            >>> bf = BalanceFrame(sample=resp, target=tgt)
+            >>> _ = bf.fit_outcome_model(model=LinearRegression())
+            >>> bf.aipw().index.tolist()
+            ['y']
+        """
+        from balance.outcome_models.aipw import aipw_point_estimate
+
+        model = self.outcome_model
+        if model is None:
+            raise ValueError(
+                "aipw() requires a fitted outcome model; call "
+                "fit_outcome_model(...) first."
+            )
+        if self._sf_target is None:
+            raise ValueError(
+                "aipw() requires a target population; call set_target(...) first."
+            )
+        observed_outcomes = self._outcome_columns
+        if observed_outcomes is None:
+            raise ValueError(
+                "aipw() requires observed outcomes on the responders, but none "
+                "are defined."
+            )
+
+        target = _assert_type(self._sf_target)
+        sample_weight = self.weight_series
+        if (
+            sample_weight is not None
+            and len(sample_weight) > 1
+            and sample_weight.nunique() == 1
+        ):
+            logger.warning(
+                "aipw(): responder weights are constant -- it appears no "
+                "weighting model was fit (adjust() was not run, or it produced "
+                "uniform weights); the AIPW estimate reduces to the "
+                "outcome-model estimate mu_OM."
+            )
+
+        estimates = aipw_point_estimate(
+            self._sf_sample.df_covars,
+            observed_outcomes,
+            sample_weight,
+            target.df_covars,
+            target.weight_series,
+            model,
+        )
+        return pd.Series(estimates, dtype=float)
+
     # --- Summary & diagnostics ---
 
     def _design_effect_diagnostics(
