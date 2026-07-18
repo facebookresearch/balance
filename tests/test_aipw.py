@@ -168,3 +168,25 @@ class AipwTest(balance.testutil.BalanceTestCase):
         s = s.fit_outcome_model(model=LinearRegression())
         with self.assertRaisesRegex(ValueError, "requires a target"):
             s.aipw()
+
+    def test_summary_shows_ipw_om_dr_when_model_fit(self) -> None:
+        sample_df, target_df = _make_aipw_fixture()
+        summary = _fitted_frame(sample_df, target_df).summary()
+        self.assertIn("Outcome estimates:", summary)
+        self.assertIn("mu_IPW", summary)
+        self.assertIn("mu_OM", summary)
+        self.assertIn("mu_DR", summary)
+        # the rich section replaces the plain "Outcome weighted means" block
+        self.assertNotIn("Outcome weighted means", summary)
+
+    def test_summary_unchanged_without_outcome_model(self) -> None:
+        sample_df, target_df = _make_aipw_fixture()
+        s = Sample.from_frame(
+            sample_df, id_column="id", weight_column="weight", outcome_columns=["y"]
+        )
+        t = Sample.from_frame(target_df, id_column="id", weight_column="weight")
+        st = s.set_target(t)  # target set, but NO outcome model fit
+        summary = st.summary()
+        self.assertIn("Outcome weighted means", summary)
+        self.assertNotIn("Outcome estimates:", summary)
+        self.assertNotIn("mu_DR", summary)

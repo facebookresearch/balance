@@ -79,6 +79,8 @@
   bf.aipw()          # μ̂_DR per outcome (doubly robust); μ̂_IPW=outcomes().mean(), μ̂_OM=outcomes_hat().mean()
   ```
 
+- **`summary()` reports the estimator trio when an outcome model is fit.** When a `BalanceFrame` / `Sample` has both a fitted outcome model and a target, `summary()` shows an "Outcome estimates" section (in place of the plain "Outcome weighted means") with `μ̂_IPW` and its analytic CI (`outcomes().mean_with_ci()`), plus `μ̂_OM` (g-computation) and `μ̂_DR` (AIPW) as **point estimates**. The `μ̂_OM` / `μ̂_DR` intervals are omitted for now (the `μ̂_OM` bootstrap CI is expensive and not cached — a code TODO tracks caching it to unblock this; `μ̂_DR` has no CI yet). **When no outcome model is fit, `summary()` output is unchanged.**
+
 ## Documentation
 
 - Add the outcome-modelling design doc: [architecture_0_23_0.md](https://github.com/facebookresearch/balance/blob/main/docs/architecture/architecture_0_23_0.md).

@@ -161,6 +161,19 @@ def _concat_metric_val_var(
     return pd.concat((diagnostics, rows), ignore_index=True)
 
 
+def _outcome_section(
+    outcome_estimates: str | None, outcome_means: pd.DataFrame | None
+) -> str | None:
+    """Return the outcome section for :func:`_build_summary`, or ``None``."""
+    if outcome_estimates is not None:
+        return outcome_estimates
+    if outcome_means is not None:
+        return "Outcome weighted means:\n" + outcome_means.to_string(
+            float_format="{:.3f}".format
+        )
+    return None
+
+
 def _build_summary(
     *,
     is_adjusted: bool,
@@ -174,6 +187,7 @@ def _build_summary(
     effective_sample_proportion: float | None,
     model_dict: dict[str, Any] | None,
     outcome_means: pd.DataFrame | None,
+    outcome_estimates: str | None = None,
 ) -> str:
     """Build a human-readable summary string from pre-computed diagnostics.
 
@@ -197,6 +211,9 @@ def _build_summary(
         effective_sample_proportion: Effective sample proportion or ``None``.
         model_dict: The adjustment model dictionary or ``None``.
         outcome_means: Result of ``outcomes().mean()`` or ``None``.
+        outcome_estimates: Pre-rendered "Outcome estimates" block (μ̂_IPW with
+            CI, μ̂_OM, μ̂_DR) or ``None``. When provided it replaces the plain
+            ``outcome_means`` section.
 
     Returns:
         A multi-line summary string.
@@ -315,11 +332,9 @@ def _build_summary(
 
         sections.append("Weight diagnostics:\n    " + "\n    ".join(weights_lines))
 
-    if outcome_means is not None:
-        sections.append(
-            "Outcome weighted means:\n"
-            + outcome_means.to_string(float_format="{:.3f}".format)
-        )
+    outcome_section = _outcome_section(outcome_estimates, outcome_means)
+    if outcome_section is not None:
+        sections.append(outcome_section)
 
     if model_summary is not None:
         sections.append(f"Model performance: {model_summary}")

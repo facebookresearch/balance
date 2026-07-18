@@ -3722,6 +3722,59 @@ class BalanceFrame:
 
         return details
 
+    def _outcome_estimates_summary(self) -> str | None:
+        """ "Outcome estimates" block for :meth:`summary`: μ̂_IPW (+CI), μ̂_OM, μ̂_DR.
+
+        Returns ``None`` unless an outcome model is fit **and** a target is set
+        (the outcome-estimation workflow) -- so when no outcome model is used
+        ``summary()`` is unchanged and falls back to the plain "Outcome weighted
+        means" section. When present it shows the IPW/Hájek weighted mean with
+        its analytic CI (``outcomes().mean_with_ci()``), plus the outcome-model /
+        g-computation ``μ̂_OM`` and the doubly-robust ``μ̂_DR`` as **point
+        estimates**. Their intervals are omitted: the ``μ̂_OM`` bootstrap CI is
+        expensive and not cached, and ``μ̂_DR`` has no CI yet (see the TODOs in
+        :mod:`balance.outcome_models.aipw`).
+        """
+        outcomes = self.outcomes()
+        if outcomes is None or self.outcome_model is None or self._sf_target is None:
+            return None
+        from balance.stats_and_plots.weighted_stats import weighted_mean
+
+        model = _assert_type(self.outcome_model)
+        target = _assert_type(self._sf_target)
+        target_predictions = self.predict_outcomes(on="target", populate=False)
+        target_weight = target.weight_series
+
+        om_estimates = {
+            str(col): float(
+                weighted_mean(target_predictions[f"{col}_hat"], target_weight).iloc[0]
+            )
+            for col in model["outcome_columns"]
+            if f"{col}_hat" in target_predictions.columns
+        }
+        dr_estimates = {str(col): float(v) for col, v in self.aipw().items()}
+
+        def _fmt_points(estimates: dict[str, float]) -> str:
+            return "\n".join(
+                f"    {col}    {val:.3f}" for col, val in estimates.items()
+            )
+
+        # TODO (OM CI cache): μ̂_OM's honest interval is the bootstrap CI from
+        # outcomes_hat().mean_with_ci(ci_method="bootstrap") -- expensive and
+        # currently recomputed on demand (never cached on the frame). Caching it
+        # (keyed by the fit config + n_bootstrap/seed) would let this summary
+        # show the μ̂_OM interval without a costly refit.
+        blocks = [
+            "IPW / Hajek weighted mean (mu_IPW), with CI:",
+            outcomes.mean_with_ci().to_string(float_format="{:.3f}".format),
+            "Outcome model / g-computation (mu_OM), point estimate "
+            "(CI not shown; not cached):",
+            _fmt_points(om_estimates),
+            "Doubly robust / AIPW (mu_DR), point estimate:",
+            _fmt_points(dr_estimates),
+        ]
+        return "Outcome estimates:\n" + "\n".join(blocks)
+
     def summary(self) -> str:
         """Consolidated summary of covariate balance, weight health, and outcomes.
 
@@ -3804,6 +3857,7 @@ class BalanceFrame:
             effective_sample_proportion=essp,
             model_dict=self.model,
             outcome_means=outcome_means,
+            outcome_estimates=self._outcome_estimates_summary(),
         )
 
     def diagnostics(
