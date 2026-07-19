@@ -22,6 +22,55 @@ Raking is a valuable technique for addressing potential biases and enhancing the
 
 You can see a detailed example of how to perform raking in `balance` in the tutorial: [**quickstart_rake**](https://import-balance.org/docs/tutorials/quickstart_rake/).
 
+## Diagnostics example
+
+`BalanceFrame.fit(method="rake")` stores fit metadata by default, so its
+diagnostics table includes compact `model_glance` rows. The complete example
+below uses the package's example data and removes missing adjustment values.
+
+```python
+from balance import load_data
+from balance.balance_frame import BalanceFrame
+from balance.sample_frame import SampleFrame
+
+target_df, sample_df = load_data()
+variables = ["gender", "age_group"]
+sample_cells = sample_df.dropna(subset=variables).assign(weight=1.0)
+target_cells = target_df.dropna(subset=variables).assign(weight=1.0)
+
+sample = SampleFrame.from_frame(
+    sample_cells[["id", "weight", *variables]],
+    id_column="id",
+    weight_column="weight",
+)
+target = SampleFrame.from_frame(
+    target_cells[["id", "weight", *variables]],
+    id_column="id",
+    weight_column="weight",
+)
+adjusted_rake = BalanceFrame(sample=sample, target=target).fit(
+    method="rake",
+    variables=variables,
+    transformations=None,
+)
+rake_glance = adjusted_rake.diagnostics().query("metric == 'model_glance'")
+display(rake_glance[["var", "val"]].round(4))
+```
+
+Example output:
+
+| var | val |
+| --- | ---: |
+| converged | 1 |
+| iterations | 3 |
+| final_conv | 0.0001 |
+| n_variables | 2 |
+
+`converged` is `1` when iterative proportional fitting converged, `iterations`
+is the number of stored convergence-history rows, `final_conv` is the last
+recorded convergence value, and `n_variables` is the number of raking variables
+recorded in the model metadata.
+
 ## References
 - https://en.wikipedia.org/wiki/Raking
 - https://www.pewresearch.org/methods/2018/01/26/how-different-weighting-methods-work/

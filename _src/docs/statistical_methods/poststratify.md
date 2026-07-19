@@ -116,6 +116,49 @@ totals ``905``). Unlike raking, which iteratively matches the marginal
 distributions of each variable, ``poststratify`` calculates weights per cell so
 that the final weighted sample matches the full two-dimensional distribution.
 
+### Diagnostics example
+
+`BalanceFrame.fit(method="poststratify")` stores fit metadata by default, so
+`diagnostics()` includes compact `model_glance` rows. This example continues
+with the `sample_cells`, `target_cells`, and `covariates` defined immediately
+above.
+
+```python
+from balance.balance_frame import BalanceFrame
+from balance.sample_frame import SampleFrame
+
+sample_cells = sample_cells.assign(weight=1.0)
+target_cells = target_cells.assign(weight=1.0)
+sample = SampleFrame.from_frame(
+    sample_cells[["id", "weight", *covariates]],
+    id_column="id",
+    weight_column="weight",
+)
+target = SampleFrame.from_frame(
+    target_cells[["id", "weight", *covariates]],
+    id_column="id",
+    weight_column="weight",
+)
+adjusted_poststratify = BalanceFrame(sample=sample, target=target).fit(
+    method="poststratify",
+    variables=covariates,
+    transformations=None,
+)
+post_glance = adjusted_poststratify.diagnostics().query("metric == 'model_glance'")
+display(post_glance[["var", "val"]])
+```
+
+Example output:
+
+| var | val |
+| --- | ---: |
+| n_variables | 2 |
+| strict_matching | 1 |
+| n_cells | 8 |
+
+`n_variables` is the number of poststratification variables,
+`strict_matching` is stored as `1` for `True` and `0` for `False`, and
+`n_cells` is the number of persisted cell-weight ratios available for replay.
 
 ## References
 - More about post-stratification: [Introduction to post-stratification](https://docs.wfp.org/api/documents/WFP-0000121326/download/)

@@ -7843,14 +7843,14 @@ a.anchor-link {
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-07-16 09:29:29,311) [__init__/&lt;module&gt; (line 76)]: Using balance version 0.22.0
+<pre>INFO (2026-07-19 13:08:48,810) [__init__/&lt;module&gt; (line 76)]: Using balance version 0.22.0
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-07-16 09:29:29,312) [__init__/&lt;module&gt; (line 81)]: 
+<pre>INFO (2026-07-19 13:08:48,811) [__init__/&lt;module&gt; (line 81)]: 
 balance (Version 0.22.0) loaded:
     📖 Documentation: https://import-balance.org/
     🛠️ Help / Issues: https://github.com/facebookresearch/balance/issues/
@@ -7990,21 +7990,21 @@ balance (Version 0.22.0) loaded:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-07-16 09:29:29,346) [adjustment/apply_transformations (line 435)]: Adding the variables: []
+<pre>INFO (2026-07-19 13:08:48,845) [adjustment/apply_transformations (line 435)]: Adding the variables: []
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-07-16 09:29:29,347) [adjustment/apply_transformations (line 436)]: Transforming the variables: ['gender']
+<pre>INFO (2026-07-19 13:08:48,846) [adjustment/apply_transformations (line 436)]: Transforming the variables: ['gender']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-07-16 09:29:29,350) [adjustment/apply_transformations (line 472)]: Final variables in output: ['gender']
+<pre>INFO (2026-07-19 13:08:48,849) [adjustment/apply_transformations (line 472)]: Final variables in output: ['gender']
 </pre>
 </div>
 </div>
@@ -8118,21 +8118,21 @@ balance (Version 0.22.0) loaded:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-07-16 09:29:29,375) [adjustment/apply_transformations (line 435)]: Adding the variables: []
+<pre>INFO (2026-07-19 13:08:48,874) [adjustment/apply_transformations (line 435)]: Adding the variables: []
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-07-16 09:29:29,376) [adjustment/apply_transformations (line 436)]: Transforming the variables: ['gender', 'age_group']
+<pre>INFO (2026-07-19 13:08:48,874) [adjustment/apply_transformations (line 436)]: Transforming the variables: ['gender', 'age_group']
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>INFO (2026-07-16 09:29:29,380) [adjustment/apply_transformations (line 472)]: Final variables in output: ['gender', 'age_group']
+<pre>INFO (2026-07-19 13:08:48,879) [adjustment/apply_transformations (line 472)]: Final variables in output: ['gender', 'age_group']
 </pre>
 </div>
 </div>
@@ -8226,6 +8226,148 @@ balance (Version 0.22.0) loaded:
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <p>Each row corresponds to a unique combination of gender and age group. The equality between the two columns confirms that <code>poststratify</code> matched the full joint distribution without reverting to raking.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ccb4fc1b">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="4.-Poststratification-model-glance-diagnostics">4. Poststratification model-glance diagnostics<a class="anchor-link" href="#4.-Poststratification-model-glance-diagnostics">¶</a></h2><p>The direct <code>poststratify()</code> function above returns weights and model metadata. When fitting through <code>BalanceFrame.fit(method="poststratify")</code>, the regular diagnostics table exposes compact <code>model_glance</code> rows for the persisted poststratification metadata: the number of variables, whether strict matching was used, and the number of stored cell ratios.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=2fd9e6a9">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.balance_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceFrame</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+
+<span class="n">post_resp</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">sample_cells</span><span class="p">[[</span><span class="s2">"id"</span><span class="p">,</span> <span class="s2">"gender"</span><span class="p">,</span> <span class="s2">"age_group"</span><span class="p">]],</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">"id"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">post_tgt</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">target_cells</span><span class="p">[[</span><span class="s2">"id"</span><span class="p">,</span> <span class="s2">"gender"</span><span class="p">,</span> <span class="s2">"age_group"</span><span class="p">]],</span>
+    <span class="n">id_column</span><span class="o">=</span><span class="s2">"id"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">adjusted_poststratify</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">post_resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">post_tgt</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">"poststratify"</span><span class="p">,</span>
+    <span class="n">variables</span><span class="o">=</span><span class="n">covariates</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">post_glance</span> <span class="o">=</span> <span class="n">adjusted_poststratify</span><span class="o">.</span><span class="n">diagnostics</span><span class="p">()</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">"metric == 'model_glance'"</span><span class="p">)</span>
+<span class="n">post_glance</span><span class="p">[[</span><span class="s2">"var"</span><span class="p">,</span> <span class="s2">"val"</span><span class="p">]]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>WARNING (2026-07-19 13:08:48,913) [sample_frame/from_frame (line 326)]: No weights passed. Adding a 'weight' column and setting all values to 1
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>WARNING (2026-07-19 13:08:48,926) [sample_frame/from_frame (line 326)]: No weights passed. Adding a 'weight' column and setting all values to 1
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2026-07-19 13:08:48,936) [adjustment/apply_transformations (line 435)]: Adding the variables: []
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2026-07-19 13:08:48,937) [adjustment/apply_transformations (line 436)]: Transforming the variables: ['gender', 'age_group']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2026-07-19 13:08:48,941) [adjustment/apply_transformations (line 472)]: Final variables in output: ['gender', 'age_group']
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2026-07-19 13:08:48,953) [balance_frame/diagnostics (line 3177)]: Starting computation of diagnostics of the fitting
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>INFO (2026-07-19 13:08:49,163) [balance_frame/diagnostics (line 3204)]: Done computing diagnostics
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[4]:</div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>var</th>
+<th>val</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>29</th>
+<td>n_variables</td>
+<td>2.0</td>
+</tr>
+<tr>
+<th>30</th>
+<td>strict_matching</td>
+<td>1.0</td>
+</tr>
+<tr>
+<th>31</th>
+<td>n_cells</td>
+<td>8.0</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </div>
 </div>
 </div>
