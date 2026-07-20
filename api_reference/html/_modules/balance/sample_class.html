@@ -142,7 +142,7 @@
         <span class="n">covar_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">weight_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">outcome_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">predicted_outcome_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">outcomes_hat_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">ignored_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">check_id_uniqueness</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">standardize_types</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -161,7 +161,7 @@
 <span class="sd">                covariates are inferred by exclusion.</span>
 <span class="sd">            weight_column: Column to treat as weight.</span>
 <span class="sd">            outcome_columns: Columns to treat as outcomes.</span>
-<span class="sd">            predicted_outcome_columns: Columns to treat as predicted outcomes.</span>
+<span class="sd">            outcomes_hat_columns: Columns to treat as predicted outcomes (Y_hat).</span>
 <span class="sd">            ignored_columns: Columns to ignore (excluded from covariates).</span>
 <span class="sd">            check_id_uniqueness: Whether to verify id uniqueness.</span>
 <span class="sd">            standardize_types: Whether to convert int types to float.</span>
@@ -178,7 +178,7 @@
             <span class="n">covar_columns</span><span class="o">=</span><span class="n">covar_columns</span><span class="p">,</span>
             <span class="n">weight_column</span><span class="o">=</span><span class="n">weight_column</span><span class="p">,</span>
             <span class="n">outcome_columns</span><span class="o">=</span><span class="n">outcome_columns</span><span class="p">,</span>
-            <span class="n">predicted_outcome_columns</span><span class="o">=</span><span class="n">predicted_outcome_columns</span><span class="p">,</span>
+            <span class="n">outcomes_hat_columns</span><span class="o">=</span><span class="n">outcomes_hat_columns</span><span class="p">,</span>
             <span class="n">ignored_columns</span><span class="o">=</span><span class="n">ignored_columns</span><span class="p">,</span>
             <span class="n">check_id_uniqueness</span><span class="o">=</span><span class="n">check_id_uniqueness</span><span class="p">,</span>
             <span class="n">standardize_types</span><span class="o">=</span><span class="n">standardize_types</span><span class="p">,</span>

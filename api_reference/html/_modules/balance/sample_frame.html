@@ -44,7 +44,7 @@
 
 <span class="sd">&quot;&quot;&quot;SampleFrame: an explicit-role DataFrame container for the Balance library.</span>
 
-<span class="sd">Stores covariates, weights, outcomes, predicted, and ignored columns with</span>
+<span class="sd">Stores covariates, weights, outcomes, outcomes_hat, and ignored columns with</span>
 <span class="sd">explicit role metadata, replacing the inference-by-exclusion pattern used</span>
 <span class="sd">in the legacy Sample class.</span>
 <span class="sd">&quot;&quot;&quot;</span>
@@ -63,6 +63,7 @@
     <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Self</span>
 
     <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceDFSource</span>  <span class="c1"># noqa: F401</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">balance.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">OutcomeLearner</span>  <span class="c1"># noqa: F401</span>
 
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
@@ -73,6 +74,32 @@
     <span class="k">return</span> <span class="n">series</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_validate_no_column_role_overlap</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">covars</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">outcomes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">outcomes_hat</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">ignored</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raise ValueError if any column appears in more than one role.&quot;&quot;&quot;</span>
+    <span class="n">role_to_columns</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;covars&quot;</span><span class="p">:</span> <span class="n">covars</span><span class="p">,</span>
+        <span class="s2">&quot;outcomes&quot;</span><span class="p">:</span> <span class="n">outcomes</span><span class="p">,</span>
+        <span class="s2">&quot;outcomes_hat&quot;</span><span class="p">:</span> <span class="n">outcomes_hat</span><span class="p">,</span>
+        <span class="s2">&quot;ignored&quot;</span><span class="p">:</span> <span class="n">ignored</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">roles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">role_to_columns</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">roles</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">roles</span><span class="p">)):</span>
+            <span class="n">role_a</span><span class="p">,</span> <span class="n">role_b</span> <span class="o">=</span> <span class="n">roles</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">roles</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">overlap</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">role_to_columns</span><span class="p">[</span><span class="n">role_a</span><span class="p">])</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">role_to_columns</span><span class="p">[</span><span class="n">role_b</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">overlap</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Column(s) </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">overlap</span><span class="p">)</span><span class="si">!r}</span><span class="s2"> appear in both &#39;</span><span class="si">{</span><span class="n">role_a</span><span class="si">}</span><span class="s2">&#39; and &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">role_b</span><span class="si">}</span><span class="s2">&#39; roles. Each column must have exactly one role.&quot;</span>
+                <span class="p">)</span>
+
+
 <div class="viewcode-block" id="SampleFrame">
 <a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SampleFrame</span><span class="p">:</span>
@@ -80,7 +107,7 @@
 
 <span class="sd">    SampleFrame stores data as a single internal pd.DataFrame but with</span>
 <span class="sd">    explicit metadata tracking which columns belong to which role:</span>
-<span class="sd">    covars (X), weights (W), outcomes (Y), predicted_outcomes (Y_hat), ignored.</span>
+<span class="sd">    covars (X), weights (W), outcomes (Y), outcomes_hat (Y_hat), ignored.</span>
 
 <span class="sd">    Must be constructed via SampleFrame.from_frame() or SampleFrame.from_sample().</span>
 
@@ -113,6 +140,10 @@
     <span class="n">_weight_column_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
     <span class="c1"># pyre-fixme[13]: Initialized in _create() which bypasses __init__</span>
     <span class="n">_weight_metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="c1"># pyre-fixme[13]: Initialized in _create() which bypasses __init__</span>
+    <span class="n">_prediction_metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="c1"># pyre-fixme[13]: Initialized in _create() which bypasses __init__</span>
+    <span class="n">_outcome_model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
     <span class="c1"># pyre-fixme[13]: Initialized in _create() which bypasses __init__</span>
     <span class="n">_links</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
     <span class="c1"># pyre-fixme[13]: Initialized in _create() which bypasses __init__</span>
@@ -165,6 +196,22 @@
         <span class="n">new_instance</span><span class="o">.</span><span class="n">_column_roles</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">,</span> <span class="n">memo</span><span class="p">)</span>
         <span class="n">new_instance</span><span class="o">.</span><span class="n">_weight_column_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight_column_name</span>
         <span class="n">new_instance</span><span class="o">.</span><span class="n">_weight_metadata</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weight_metadata</span><span class="p">,</span> <span class="n">memo</span><span class="p">)</span>
+        <span class="n">new_instance</span><span class="o">.</span><span class="n">_prediction_metadata</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_prediction_metadata&quot;</span><span class="p">,</span> <span class="p">{}),</span> <span class="n">memo</span>
+        <span class="p">)</span>
+        <span class="c1"># Reference-share the fitted estimators (immutable post-fit and possibly</span>
+        <span class="c1"># large, e.g. boosting models) but deep-copy the mutable metadata, so an</span>
+        <span class="c1"># in-place edit of one copy&#39;s metadata can&#39;t leak into another.  getattr</span>
+        <span class="c1"># default keeps older pickles loadable.</span>
+        <span class="n">outcome_model</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_outcome_model&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">outcome_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">new_instance</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fit</span> <span class="o">=</span> <span class="n">outcome_model</span><span class="p">[</span><span class="s2">&quot;fit&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">new_instance</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">key</span><span class="p">:</span> <span class="p">(</span><span class="n">fit</span> <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;fit&quot;</span> <span class="k">else</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">memo</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">outcome_model</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="p">}</span>
         <span class="n">new_instance</span><span class="o">.</span><span class="n">_links</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_links&quot;</span><span class="p">,</span> <span class="p">{}),</span> <span class="n">memo</span><span class="p">)</span>
         <span class="n">_df_dtypes</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_df_dtypes&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="n">new_instance</span><span class="o">.</span><span class="n">_df_dtypes</span> <span class="o">=</span> <span class="n">_df_dtypes</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="n">_df_dtypes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
@@ -178,7 +225,7 @@
         <span class="n">covar_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
         <span class="n">weight_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
         <span class="n">outcome_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">predicted_outcome_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">outcomes_hat_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">ignored_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">_skip_copy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">_df_dtypes</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -191,12 +238,16 @@
             <span class="s2">&quot;covars&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">covar_columns</span><span class="p">),</span>
             <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">weight_columns</span><span class="p">),</span>
             <span class="s2">&quot;outcomes&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">outcome_columns</span> <span class="ow">or</span> <span class="p">[]),</span>
-            <span class="s2">&quot;predicted&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">predicted_outcome_columns</span> <span class="ow">or</span> <span class="p">[]),</span>
+            <span class="s2">&quot;outcomes_hat&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">outcomes_hat_columns</span> <span class="ow">or</span> <span class="p">[]),</span>
             <span class="s2">&quot;ignored&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">ignored_columns</span> <span class="ow">or</span> <span class="p">[]),</span>
         <span class="p">}</span>
         <span class="n">instance</span><span class="o">.</span><span class="n">_weight_column_name</span> <span class="o">=</span> <span class="n">weight_columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">weight_columns</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="c1"># Defaults; set via set_weight_metadata() etc.</span>
         <span class="n">instance</span><span class="o">.</span><span class="n">_weight_metadata</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Per-outcomes_hat-column provenance; set via add_outcomes_hat_column().</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_prediction_metadata</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Fitted outcome-model dict; set via fit_outcome_model().</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">instance</span><span class="o">.</span><span class="n">_links</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">instance</span><span class="o">.</span><span class="n">_df_dtypes</span> <span class="o">=</span> <span class="n">_df_dtypes</span>
         <span class="k">return</span> <span class="n">instance</span>
@@ -213,7 +264,7 @@
         <span class="n">covar_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">weight_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">outcome_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">predicted_outcome_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">outcomes_hat_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">ignored_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">check_id_uniqueness</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">standardize_types</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -235,14 +286,14 @@
 <span class="sd">                (``&quot;id&quot;``, ``&quot;ID&quot;``, etc.).</span>
 <span class="sd">            covar_columns (list of str, optional): Explicit list of covariate</span>
 <span class="sd">                column names. If None, inferred by exclusion (all columns</span>
-<span class="sd">                minus id, weight, outcome, predicted, and ignored columns).</span>
+<span class="sd">                minus id, weight, outcome, outcomes_hat, and ignored columns).</span>
 <span class="sd">            weight_column (str, optional): Name of the column containing</span>
 <span class="sd">                sampling weights. If None, guesses ``&quot;weight&quot;``/``&quot;weights&quot;``</span>
 <span class="sd">                or creates one filled with 1.0.</span>
 <span class="sd">            outcome_columns (list of str or str, optional): Column names to</span>
 <span class="sd">                treat as outcome variables.</span>
-<span class="sd">            predicted_outcome_columns (list of str or str, optional): Column</span>
-<span class="sd">                names to treat as predicted outcome variables.</span>
+<span class="sd">            outcomes_hat_columns (list of str or str, optional): Column</span>
+<span class="sd">                names to treat as predicted-outcome (Y_hat) variables.</span>
 <span class="sd">            ignored_columns (list of str or str, optional): Column names to</span>
 <span class="sd">                ignore (excluded from covariates).</span>
 <span class="sd">            check_id_uniqueness (bool): Whether to verify id uniqueness.</span>
@@ -259,7 +310,7 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: If the id column contains nulls or duplicates, if the</span>
 <span class="sd">                weight column contains nulls or negative values, or if</span>
-<span class="sd">                specified outcome/predicted/ignore columns are missing from the</span>
+<span class="sd">                specified outcome/outcomes_hat/ignore columns are missing from the</span>
 <span class="sd">                DataFrame.</span>
 
 <span class="sd">        Examples:</span>
@@ -280,8 +331,8 @@
         <span class="c1"># Normalize string inputs to lists</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">outcome_columns</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="n">outcome_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">outcome_columns</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">predicted_outcome_columns</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="n">predicted_outcome_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">predicted_outcome_columns</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">outcomes_hat_columns</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">outcomes_hat_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">outcomes_hat_columns</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ignored_columns</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="n">ignored_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">ignored_columns</span><span class="p">]</span>
 
@@ -407,14 +458,14 @@
                     <span class="sa">f</span><span class="s2">&quot;outcome columns </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">missing_outcome</span><span class="p">)</span><span class="si">}</span><span class="s2"> not in df columns </span><span class="si">{</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
 
-        <span class="c1"># --- Predicted outcome columns validation ---</span>
-        <span class="n">predicted_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="n">predicted_outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">predicted_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">predicted_outcome_columns</span><span class="p">)</span>
-            <span class="n">missing_predicted</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">predicted_list</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">missing_predicted</span><span class="p">:</span>
+        <span class="c1"># --- outcomes_hat columns validation ---</span>
+        <span class="n">outcomes_hat_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">outcomes_hat_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">outcomes_hat_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">outcomes_hat_columns</span><span class="p">)</span>
+            <span class="n">missing_outcomes_hat</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">outcomes_hat_list</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">missing_outcomes_hat</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;predicted outcome columns </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">missing_predicted</span><span class="p">)</span><span class="si">}</span><span class="s2"> not in df columns </span><span class="si">{</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;outcomes_hat columns </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">missing_outcomes_hat</span><span class="p">)</span><span class="si">}</span><span class="s2"> not in df columns </span><span class="si">{</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
 
         <span class="c1"># --- Ignore columns validation ---</span>
@@ -444,29 +495,32 @@
                 <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Infer by exclusion</span>
-            <span class="n">ignored</span> <span class="o">=</span> <span class="p">(</span><span class="n">predicted_list</span> <span class="ow">or</span> <span class="p">[])</span> <span class="o">+</span> <span class="p">(</span><span class="n">ignore_list</span> <span class="ow">or</span> <span class="p">[])</span>
+            <span class="n">ignored</span> <span class="o">=</span> <span class="p">(</span><span class="n">outcomes_hat_list</span> <span class="ow">or</span> <span class="p">[])</span> <span class="o">+</span> <span class="p">(</span><span class="n">ignore_list</span> <span class="ow">or</span> <span class="p">[])</span>
             <span class="n">special</span> <span class="o">=</span> <span class="p">{</span><span class="n">id_col_name</span><span class="p">,</span> <span class="n">weight_column</span><span class="p">}</span>
             <span class="n">special</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">outcome_list</span> <span class="ow">or</span> <span class="p">[])</span>
             <span class="n">special</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">ignored</span> <span class="ow">or</span> <span class="p">[])</span>
             <span class="n">covar_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">_df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">special</span><span class="p">]</span>
+            <span class="c1"># Round-trip leak guard: an undeclared &quot;&lt;outcome&gt;_hat&quot; column would</span>
+            <span class="c1"># be inferred as a covariate and silently corrupt a later adjust()&#39;s</span>
+            <span class="c1"># propensity model. Warn (do not raise) — it is a naming convention.</span>
+            <span class="n">stray_hat</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">covar_list</span> <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;_hat&quot;</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="n">stray_hat</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;Inferred covariate column(s) </span><span class="si">%r</span><span class="s2"> end with &#39;_hat&#39; but were &quot;</span>
+                    <span class="s2">&quot;not declared as outcomes_hat_columns; they will be treated &quot;</span>
+                    <span class="s2">&quot;as covariates. If these are predicted-outcome (Y_hat) &quot;</span>
+                    <span class="s2">&quot;columns, pass them via outcomes_hat_columns= to keep them &quot;</span>
+                    <span class="s2">&quot;out of the covariate/propensity model.&quot;</span><span class="p">,</span>
+                    <span class="n">stray_hat</span><span class="p">,</span>
+                <span class="p">)</span>
 
         <span class="c1"># --- Column role overlap validation ---</span>
-        <span class="n">role_to_columns</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;covars&quot;</span><span class="p">:</span> <span class="n">covar_list</span><span class="p">,</span>
-            <span class="s2">&quot;outcomes&quot;</span><span class="p">:</span> <span class="n">outcome_list</span> <span class="ow">or</span> <span class="p">[],</span>
-            <span class="s2">&quot;predicted&quot;</span><span class="p">:</span> <span class="n">predicted_list</span> <span class="ow">or</span> <span class="p">[],</span>
-            <span class="s2">&quot;ignored&quot;</span><span class="p">:</span> <span class="n">ignore_list</span> <span class="ow">or</span> <span class="p">[],</span>
-        <span class="p">}</span>
-        <span class="n">roles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">role_to_columns</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">roles</span><span class="p">)):</span>
-            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">roles</span><span class="p">)):</span>
-                <span class="n">role_a</span><span class="p">,</span> <span class="n">role_b</span> <span class="o">=</span> <span class="n">roles</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">roles</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
-                <span class="n">overlap</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">role_to_columns</span><span class="p">[</span><span class="n">role_a</span><span class="p">])</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">role_to_columns</span><span class="p">[</span><span class="n">role_b</span><span class="p">])</span>
-                <span class="k">if</span> <span class="n">overlap</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Column(s) </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">overlap</span><span class="p">)</span><span class="si">!r}</span><span class="s2"> appear in both &#39;</span><span class="si">{</span><span class="n">role_a</span><span class="si">}</span><span class="s2">&#39; and &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">role_b</span><span class="si">}</span><span class="s2">&#39; roles. Each column must have exactly one role.&quot;</span>
-                    <span class="p">)</span>
+        <span class="n">_validate_no_column_role_overlap</span><span class="p">(</span>
+            <span class="n">covars</span><span class="o">=</span><span class="n">covar_list</span><span class="p">,</span>
+            <span class="n">outcomes</span><span class="o">=</span><span class="n">outcome_list</span> <span class="ow">or</span> <span class="p">[],</span>
+            <span class="n">outcomes_hat</span><span class="o">=</span><span class="n">outcomes_hat_list</span> <span class="ow">or</span> <span class="p">[],</span>
+            <span class="n">ignored</span><span class="o">=</span><span class="n">ignore_list</span> <span class="ow">or</span> <span class="p">[],</span>
+        <span class="p">)</span>
 
         <span class="c1"># M4: weight column must not overlap with outcome columns</span>
         <span class="k">if</span> <span class="n">outcome_list</span> <span class="ow">and</span> <span class="n">weight_column</span> <span class="ow">in</span> <span class="n">outcome_list</span><span class="p">:</span>
@@ -493,7 +547,7 @@
             <span class="n">covar_columns</span><span class="o">=</span><span class="n">covar_list</span><span class="p">,</span>
             <span class="n">weight_columns</span><span class="o">=</span><span class="p">[</span><span class="n">weight_column</span><span class="p">],</span>
             <span class="n">outcome_columns</span><span class="o">=</span><span class="n">outcome_list</span><span class="p">,</span>
-            <span class="n">predicted_outcome_columns</span><span class="o">=</span><span class="n">predicted_list</span><span class="p">,</span>
+            <span class="n">outcomes_hat_columns</span><span class="o">=</span><span class="n">outcomes_hat_list</span><span class="p">,</span>
             <span class="n">ignored_columns</span><span class="o">=</span><span class="n">ignore_list</span><span class="p">,</span>
             <span class="n">_skip_copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">_df_dtypes</span><span class="o">=</span><span class="n">df_dtypes</span><span class="p">,</span>
@@ -567,25 +621,57 @@
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes&quot;</span><span class="p">])</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">predicted_outcome_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Names of the predicted outcome columns.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">outcomes_hat_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Names of the predicted-outcome (Y_hat) columns.</span>
 
 <span class="sd">        Returns a copy so that callers cannot accidentally mutate the</span>
 <span class="sd">        internal column-role registry.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            list[str]: Predicted outcome column names (empty list if none).</span>
+<span class="sd">            list[str]: outcomes_hat column names (empty list if none).</span>
 
 <span class="sd">        Examples:</span>
 <span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
 <span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;], &quot;x&quot;: [10, 20],</span>
 <span class="sd">            ...                    &quot;weight&quot;: [1.0, 1.0], &quot;p_y&quot;: [0.3, 0.7]})</span>
-<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df, predicted_outcome_columns=[&quot;p_y&quot;])</span>
-<span class="sd">            &gt;&gt;&gt; sf.predicted_outcome_columns</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df, outcomes_hat_columns=[&quot;p_y&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; sf.outcomes_hat_columns</span>
 <span class="sd">            [&#39;p_y&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;predicted&quot;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes_hat&quot;</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">outcome_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The fitted outcome-model dictionary, or None if not fit.</span>
+
+<span class="sd">        Mirrors :attr:`~balance.balance_frame.BalanceFrame.model` (which holds</span>
+<span class="sd">        the *weighting* model) for the outcome-modelling axis.  The dict is</span>
+<span class="sd">        produced by :meth:`fit_outcome_model` and consumed by</span>
+<span class="sd">        :meth:`predict_outcomes`; its keys are documented on</span>
+<span class="sd">        :func:`balance.outcome_models.fit_outcome_model` (``&quot;method&quot;``,</span>
+<span class="sd">        ``&quot;fit&quot;``, ``&quot;X_matrix_columns&quot;``, ``&quot;perf&quot;``, …).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict[str, Any] | None: The stored ``_outcome_model`` dict, or</span>
+<span class="sd">                ``None`` when no outcome model has been fit.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;],</span>
+<span class="sd">            ...                    &quot;age&quot;: [25.0, 30.0, 35.0, 40.0],</span>
+<span class="sd">            ...                    &quot;happiness&quot;: [50.0, 55.0, 65.0, 80.0],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 1.0, 1.0, 1.0]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df, outcome_columns=[&quot;happiness&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; sf.outcome_model is None</span>
+<span class="sd">            True</span>
+<span class="sd">            &gt;&gt;&gt; sf.fit_outcome_model()  # doctest: +ELLIPSIS</span>
+<span class="sd">            &lt;balance.sample_frame.SampleFrame object at ...&gt;</span>
+<span class="sd">            &gt;&gt;&gt; sf.outcome_model[&quot;method&quot;]</span>
+<span class="sd">            &#39;outcome_model&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_model</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">ignored_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
@@ -706,6 +792,32 @@
 <span class="sd">            [5.0, 6.0]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">cols</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="n">cols</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">df_outcomes_hat</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Predicted-outcome (Y_hat) columns, or None if none.</span>
+
+<span class="sd">        Mirrors :attr:`df_outcomes` for the ``outcomes_hat`` role.  Returns a</span>
+<span class="sd">        copy so that callers cannot accidentally mutate the internal data.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame | None: A copy of the outcomes_hat columns, or None</span>
+<span class="sd">                if no outcomes_hat columns are registered.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;],</span>
+<span class="sd">            ...                    &quot;age&quot;: [25, 30, 35, 40],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 1.0, 1.0, 1.0]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df)</span>
+<span class="sd">            &gt;&gt;&gt; sf.add_outcomes_hat_column(&quot;happiness_hat&quot;,</span>
+<span class="sd">            ...                            pd.Series([52., 58., 68., 79.]))</span>
+<span class="sd">            &gt;&gt;&gt; sf.df_outcomes_hat[&quot;happiness_hat&quot;].tolist()</span>
+<span class="sd">            [52.0, 58.0, 68.0, 79.0]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes_hat&quot;</span><span class="p">]</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">cols</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="n">cols</span> <span class="k">else</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
@@ -851,6 +963,30 @@
 <span class="sd">            [&#39;y&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">df_outcomes</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_outcomes_hat_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;outcomes_hat columns as a DataFrame, or None (BalanceDFSource protocol).</span>
+
+<span class="sd">        This property satisfies the ``BalanceDFSource`` protocol.  Note the</span>
+<span class="sd">        codebase quirk it mirrors from :attr:`_outcome_columns`: this ``_*``</span>
+<span class="sd">        protocol accessor returns the *data* (a DataFrame), not the column</span>
+<span class="sd">        *names* (the names accessor is :attr:`outcomes_hat_columns`).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame | None: A copy of the outcomes_hat columns, or None</span>
+<span class="sd">                if no outcomes_hat columns are registered.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [1, 2], &quot;x&quot;: [10, 20],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 1.0], &quot;p_y&quot;: [0.3, 0.7]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df, outcomes_hat_columns=[&quot;p_y&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; sf._outcomes_hat_columns.columns.tolist()</span>
+<span class="sd">            [&#39;p_y&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">df_outcomes_hat</span>
 
 <div class="viewcode-block" id="SampleFrame.set_weights">
 <a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame.set_weights">[docs]</a>
@@ -1144,6 +1280,42 @@
         <span class="k">return</span> <span class="n">BalanceDFOutcomes</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="s2">&quot;BalanceDFSource&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span></div>
 
 
+<div class="viewcode-block" id="SampleFrame.outcomes_hat">
+<a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame.outcomes_hat">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">outcomes_hat</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a :class:`~balance.balancedf_class.BalanceDFOutcomesHat`, or None.</span>
+
+<span class="sd">        Returns ``None`` if this SampleFrame has no predicted-outcome</span>
+<span class="sd">        (``outcomes_hat`` / Y_hat) columns.  When present, the returned view</span>
+<span class="sd">        exposes the weighted mean / CI machinery over the Y_hat columns (one</span>
+<span class="sd">        column per predicted outcome), mirroring :meth:`outcomes`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            BalanceDFOutcomesHat or None: Predicted-outcome view backed by this</span>
+<span class="sd">                SampleFrame, or ``None`` if no outcomes_hat columns are defined.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;],</span>
+<span class="sd">            ...                    &quot;age&quot;: [25, 30, 35, 40],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 1.0, 1.0, 1.0]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df)</span>
+<span class="sd">            &gt;&gt;&gt; sf.add_outcomes_hat_column(&quot;happiness_hat&quot;,</span>
+<span class="sd">            ...                            pd.Series([52., 58., 68., 79.]))</span>
+<span class="sd">            &gt;&gt;&gt; sf.outcomes_hat().df.columns.tolist()</span>
+<span class="sd">            [&#39;happiness_hat&#39;]</span>
+<span class="sd">            &gt;&gt;&gt; SampleFrame.from_frame(df).outcomes_hat() is None</span>
+<span class="sd">            True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes_hat&quot;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="c1"># Deferred import to avoid circular dependency with balancedf_class</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceDFOutcomesHat</span>
+
+        <span class="k">return</span> <span class="n">BalanceDFOutcomesHat</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="s2">&quot;BalanceDFSource&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span></div>
+
+
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">df</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Full DataFrame reconstruction.&quot;&quot;&quot;</span>
@@ -1352,6 +1524,461 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_weight_metadata</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">metadata</span></div>
 
 
+<div class="viewcode-block" id="SampleFrame.add_outcomes_hat_column">
+<a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame.add_outcomes_hat_column">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_outcomes_hat_column</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">values</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Attach a predicted-outcome (Y_hat) column to the SampleFrame.</span>
+
+<span class="sd">        Mirrors :meth:`add_weight_column`: the column is appended to the</span>
+<span class="sd">        internal DataFrame in place, registered under the ``outcomes_hat``</span>
+<span class="sd">        role, and optionally associated with provenance metadata (stored in</span>
+<span class="sd">        ``_prediction_metadata``).  Because the column takes the</span>
+<span class="sd">        ``outcomes_hat`` role, it is *not* treated as a covariate.</span>
+
+<span class="sd">        By convention, predicted-outcome columns are named ``&quot;&lt;outcome&gt;_hat&quot;``</span>
+<span class="sd">        (e.g. ``&quot;happiness_hat&quot;``).  A ``logging.warning`` is emitted — but</span>
+<span class="sd">        no error raised — when *name* does not end in ``_hat``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): Name for the new outcomes_hat column.</span>
+<span class="sd">            values (pd.Series): Predicted values.  Must match the DataFrame</span>
+<span class="sd">                length, unless it is a shorter ``pd.Series`` — in which case</span>
+<span class="sd">                values are aligned by index and missing rows are filled with</span>
+<span class="sd">                NaN.</span>
+<span class="sd">            metadata (dict, optional): Provenance metadata for the new column</span>
+<span class="sd">                (e.g. the fitting method or learner).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If *name* is already an outcomes_hat column, if *name*</span>
+<span class="sd">                already exists in the DataFrame, or if *values* is longer than</span>
+<span class="sd">                the DataFrame (or is a non-Series with a different length).</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;],</span>
+<span class="sd">            ...                    &quot;age&quot;: [25, 30, 35, 40],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 1.0, 1.0, 1.0]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df)</span>
+<span class="sd">            &gt;&gt;&gt; sf.add_outcomes_hat_column(&quot;happiness_hat&quot;,</span>
+<span class="sd">            ...                            pd.Series([52., 58., 68., 79.]))</span>
+<span class="sd">            &gt;&gt;&gt; sf.df_outcomes_hat[&quot;happiness_hat&quot;].tolist()</span>
+<span class="sd">            [52.0, 58.0, 68.0, 79.0]</span>
+<span class="sd">            &gt;&gt;&gt; list(sf.df_covars.columns)</span>
+<span class="sd">            [&#39;age&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes_hat&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; is already an outcomes_hat column. &quot;</span>
+                <span class="s2">&quot;Choose a different name.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; already exists in the DataFrame. &quot;</span> <span class="s2">&quot;Choose a different name.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;_hat&quot;</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;outcomes_hat column </span><span class="si">%r</span><span class="s2"> does not follow the &#39;&lt;outcome&gt;_hat&#39; &quot;</span>
+                <span class="s2">&quot;naming convention (e.g. &#39;happiness_hat&#39;). It will still be &quot;</span>
+                <span class="s2">&quot;registered, but the convention keeps predicted columns &quot;</span>
+                <span class="s2">&quot;self-describing and discernible from covariates.&quot;</span><span class="p">,</span>
+                <span class="n">name</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">):</span>
+                <span class="c1"># Align by index, padding missing rows with NaN (mirrors</span>
+                <span class="c1"># add_weight_column, supporting learners that drop rows).</span>
+                <span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;&#39;values&#39; length (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="si">}</span><span class="s2">) doesn&#39;t match &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;DataFrame length (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes_hat&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">metadata</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_metadata</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">metadata</span></div>
+
+
+    <span class="c1"># --- Outcome-model fit / predict (sklearn-style trio) ---</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_outcome_columns_for_fit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">outcome_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve the outcome column(s) to fit, defaulting to all outcomes.</span>
+
+<span class="sd">        Raises an actionable ``ValueError`` when the resolved set is empty (no</span>
+<span class="sd">        outcome column to fit a model on) or when a requested column is not a</span>
+<span class="sd">        registered outcome column.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">outcome_columns</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">resolved</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes&quot;</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">outcome_columns</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">resolved</span> <span class="o">=</span> <span class="p">[</span><span class="n">outcome_columns</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">resolved</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">outcome_columns</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">resolved</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;outcome_columns= was given as an empty selection; pass None to &quot;</span>
+                    <span class="s2">&quot;use all registered outcome columns, or a non-empty subset.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;fit_outcome_model requires at least one outcome column, but this &quot;</span>
+                <span class="s2">&quot;SampleFrame has no registered outcome columns. Construct the frame &quot;</span>
+                <span class="s2">&quot;with outcome_columns=, or pass outcome_columns= explicitly.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">known</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes&quot;</span><span class="p">])</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">resolved</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">known</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;outcome_columns </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2"> are not registered outcome columns. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Available outcome columns: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">known</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">resolved</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_variables_for_fit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve the covariate subset to model on, or ``None`` for all covars.</span>
+
+<span class="sd">        Validates that every requested variable is a registered covariate column.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">resolved</span> <span class="o">=</span> <span class="p">[</span><span class="n">variables</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">resolved</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;variables= was given as an empty list; pass None to use all &quot;</span>
+                <span class="s2">&quot;covariates, or a non-empty subset of the covariate columns.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">known</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;covars&quot;</span><span class="p">])</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">resolved</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">known</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;variables </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2"> are not registered covariate columns. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Available covariate columns: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">known</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">resolved</span>
+
+<div class="viewcode-block" id="SampleFrame.fit_outcome_model">
+<a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame.fit_outcome_model">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_outcome_model</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">OutcomeLearner</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+        <span class="n">outcome_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">variables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">transformations</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">,</span>
+        <span class="n">use_model_matrix</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+        <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">calibrate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit an outcome model ``ĝ(X) ≈ E[Y|X]`` on the responders and store it.</span>
+
+<span class="sd">        This is the outcome-modelling counterpart to</span>
+<span class="sd">        :meth:`~balance.balance_frame.BalanceFrame.fit` (which fits the</span>
+<span class="sd">        *weighting* model).  It fits a regressor (continuous outcome) or</span>
+<span class="sd">        classifier (binary outcome) per resolved outcome column on this frame&#39;s</span>
+<span class="sd">        covariates and observed outcome(s), and stores the resulting model dict</span>
+<span class="sd">        (fitted estimators + preprocessing) on :attr:`outcome_model`.  Like</span>
+<span class="sd">        sklearn&#39;s ``fit()``, it does **not** produce predictions — call</span>
+<span class="sd">        :meth:`predict_outcomes` (or :meth:`fit_predict_outcomes`) to write the</span>
+<span class="sd">        ``&lt;outcome&gt;_hat`` columns.</span>
+
+<span class="sd">        The fit is **unweighted by default** (``weighted=False``): the outcome</span>
+<span class="sd">        model estimates ``E[Y|X]`` and is usually best left unbiased by the</span>
+<span class="sd">        design weights.  Pass ``weighted=True`` to fit with the frame&#39;s</span>
+<span class="sd">        currently-applied weight (weighted least squares / weighted boosting),</span>
+<span class="sd">        aligned to the covariate index before it is passed through.  Rows whose</span>
+<span class="sd">        outcome ``Y`` is missing (NaN) are dropped before fitting — the</span>
+<span class="sd">        covariates and weights are aligned to the retained rows, so the fit uses</span>
+<span class="sd">        only complete outcome observations.  Re-fitting drops any</span>
+<span class="sd">        ``&lt;outcome&gt;_hat`` columns left by a previous :meth:`predict_outcomes` so</span>
+<span class="sd">        a stale prediction cannot linger against a newly-fit model.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            model: ``&quot;auto&quot;`` (a ``HistGradientBoosting`` regressor/classifier</span>
+<span class="sd">                chosen by outcome type), a single sklearn estimator (cloned per</span>
+<span class="sd">                outcome column — one estimator type only when the outcomes are</span>
+<span class="sd">                mixed), a ``{&quot;_discrete&quot;: clf, &quot;_continuous&quot;: reg}`` type map, or</span>
+<span class="sd">                a ``{outcome_column: estimator}`` column map.</span>
+<span class="sd">            outcome_columns: Outcome column name(s) to model.  Defaults to all</span>
+<span class="sd">                of this frame&#39;s :attr:`outcome_columns`; raises if none exist.</span>
+<span class="sd">            variables: Covariate column name(s) to use as the model inputs ``X``.</span>
+<span class="sd">                Defaults to ``None`` (all of this frame&#39;s covariates); pass a</span>
+<span class="sd">                subset (validated against the covariate role) to restrict the</span>
+<span class="sd">                model to those columns.</span>
+<span class="sd">            formula: Optional patsy formula(s) forwarded to the one-hot path.</span>
+<span class="sd">            transformations: Reserved for parity with IPW; must be ``None`` (the</span>
+<span class="sd">                replay-safe default) — a non-``None`` value raises.</span>
+<span class="sd">            na_action: Missing-value handling for the design matrix; only</span>
+<span class="sd">                ``&quot;add_indicator&quot;`` (default) is supported (``&quot;drop&quot;`` raises).</span>
+<span class="sd">            use_model_matrix: ``&quot;auto&quot;`` (default) picks the native-categorical</span>
+<span class="sd">                path for tree/boosting learners on scikit-learn &gt;= 1.4 and the</span>
+<span class="sd">                one-hot + scaler path otherwise; pass ``True``/``False`` to force.</span>
+<span class="sd">            weighted: When ``True``, fit with the frame&#39;s currently-applied</span>
+<span class="sd">                weight (weighted least squares / weighted boosting).  Defaults to</span>
+<span class="sd">                ``False`` — the outcome model predicts ``E[Y|X]`` and is usually</span>
+<span class="sd">                best left unweighted.  A weighted fit whose estimator&#39;s ``fit``</span>
+<span class="sd">                does not accept ``sample_weight`` raises ``TypeError``.</span>
+<span class="sd">            calibrate: When ``True``, wrap each classifier in</span>
+<span class="sd">                ``CalibratedClassifierCV`` (binary outcomes only).</span>
+<span class="sd">            inplace: If ``True`` (default), mutate this frame (store the model)</span>
+<span class="sd">                and return ``self``; if ``False``, return a new copy with the</span>
+<span class="sd">                model stored and leave ``self`` untouched — mirroring</span>
+<span class="sd">                :meth:`~balance.balance_frame.BalanceFrame.fit`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The frame with the fitted outcome model stored (``self`` when</span>
+<span class="sd">            ``inplace``, else a new copy).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If there are no outcome columns to fit (and none are</span>
+<span class="sd">                passed), if a requested outcome/variable column is not registered,</span>
+<span class="sd">                or for the underlying ``fit_outcome_model`` errors</span>
+<span class="sd">                (``na_action=&quot;drop&quot;``, non-``None`` ``transformations``, a</span>
+<span class="sd">                ``model`` column map missing an outcome column, a single estimator</span>
+<span class="sd">                for mixed-type outcomes, etc.).</span>
+<span class="sd">            TypeError: If ``weighted=True`` but the resolved estimator&#39;s ``fit``</span>
+<span class="sd">                does not accept ``sample_weight``.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;],</span>
+<span class="sd">            ...                    &quot;age&quot;: [25.0, 30.0, 35.0, 40.0],</span>
+<span class="sd">            ...                    &quot;happiness&quot;: [50.0, 55.0, 65.0, 80.0],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 1.0, 1.0, 1.0]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df, outcome_columns=[&quot;happiness&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; sf.fit_outcome_model()  # doctest: +ELLIPSIS</span>
+<span class="sd">            &lt;balance.sample_frame.SampleFrame object at ...&gt;</span>
+<span class="sd">            &gt;&gt;&gt; sf.outcome_model[&quot;method&quot;]</span>
+<span class="sd">            &#39;outcome_model&#39;</span>
+<span class="sd">            &gt;&gt;&gt; sf.df_outcomes_hat is None  # fit does NOT persist Ŷ</span>
+<span class="sd">            True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.outcome_models.outcome_model</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">fit_outcome_model</span> <span class="k">as</span> <span class="n">_fit_outcome_model</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span> <span class="k">if</span> <span class="n">inplace</span> <span class="k">else</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="n">resolved_outcomes</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">_resolve_outcome_columns_for_fit</span><span class="p">(</span><span class="n">outcome_columns</span><span class="p">)</span>
+        <span class="n">resolved_variables</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">_resolve_variables_for_fit</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
+
+        <span class="n">covars</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">df_covars</span>
+        <span class="k">if</span> <span class="n">resolved_variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">covars</span> <span class="o">=</span> <span class="n">covars</span><span class="p">[</span><span class="n">resolved_variables</span><span class="p">]</span>
+        <span class="n">outcomes</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">resolved_outcomes</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Drop rows whose outcome Y is missing so the weighted fit uses only</span>
+        <span class="c1"># complete outcome observations; align covars (and weights) to match.</span>
+        <span class="n">complete</span> <span class="o">=</span> <span class="n">outcomes</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">covars</span> <span class="o">=</span> <span class="n">covars</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">complete</span><span class="p">]</span>
+        <span class="n">outcomes</span> <span class="o">=</span> <span class="n">outcomes</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">complete</span><span class="p">]</span>
+
+        <span class="n">sample_weight</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">weighted</span><span class="p">:</span>
+            <span class="c1"># Align the active weight to the (post-drop) covariate index — the</span>
+            <span class="c1"># weighting-methods input validator requires the weight index to</span>
+            <span class="c1"># match the covariate index exactly.</span>
+            <span class="n">sample_weight</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">weight_series</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">covars</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+
+        <span class="n">fitted_model</span> <span class="o">=</span> <span class="n">_fit_outcome_model</span><span class="p">(</span>
+            <span class="n">covars</span><span class="p">,</span>
+            <span class="n">outcomes</span><span class="p">,</span>
+            <span class="n">sample_weight</span><span class="o">=</span><span class="n">sample_weight</span><span class="p">,</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+            <span class="n">formula</span><span class="o">=</span><span class="n">formula</span><span class="p">,</span>
+            <span class="n">transformations</span><span class="o">=</span><span class="n">transformations</span><span class="p">,</span>
+            <span class="n">na_action</span><span class="o">=</span><span class="n">na_action</span><span class="p">,</span>
+            <span class="n">use_model_matrix</span><span class="o">=</span><span class="n">use_model_matrix</span><span class="p">,</span>
+            <span class="n">calibrate</span><span class="o">=</span><span class="n">calibrate</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Drop any superseded &lt;outcome&gt;_hat columns from a prior</span>
+        <span class="c1"># predict_outcomes so a stale Ŷ can&#39;t linger against the new model.</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">_drop_outcomes_hat_columns</span><span class="p">()</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="o">=</span> <span class="n">fitted_model</span>
+        <span class="k">return</span> <span class="n">target</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_drop_outcomes_hat_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Drop every registered ``outcomes_hat`` column from the frame in place.&quot;&quot;&quot;</span>
+        <span class="n">hat_columns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes_hat&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">hat_columns</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">hat_columns</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes_hat&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">hat_columns</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_metadata</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SampleFrame.predict_outcomes">
+<a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame.predict_outcomes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict_outcomes</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">SampleFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">populate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Predict ``outcomes_hat`` from the stored model, optionally persisting.</span>
+
+<span class="sd">        Requires a model fit by :meth:`fit_outcome_model`.  Predictions are</span>
+<span class="sd">        produced on this frame&#39;s covariates (or on ``data``&#39;s covariates when a</span>
+<span class="sd">        ``SampleFrame`` is passed via ``data=``) by replaying the model&#39;s stored</span>
+<span class="sd">        preprocessing.  The returned DataFrame has one column per fitted</span>
+<span class="sd">        outcome, named ``&quot;&lt;outcome&gt;_hat&quot;``.</span>
+
+<span class="sd">        When ``populate`` is ``True``, the predicted columns are written</span>
+<span class="sd">        onto **this** frame via :meth:`add_outcomes_hat_column` (a same-named Ŷ</span>
+<span class="sd">        column is dropped and re-added).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data: Optional ``SampleFrame`` whose covariates to score.  Defaults</span>
+<span class="sd">                to ``None``, meaning predict on this frame&#39;s own covariates.</span>
+<span class="sd">                When scoring a *different* frame, prefer ``populate=False``:</span>
+<span class="sd">                persisting predictions row-indexed by ``data`` onto this frame</span>
+<span class="sd">                would row-misalign (they are reindexed to this frame, NaN-padding</span>
+<span class="sd">                or dropping non-matching rows).</span>
+<span class="sd">            populate: Whether to persist the predictions onto this frame as</span>
+<span class="sd">                ``&lt;outcome&gt;_hat`` columns. Defaults to ``True`` when scoring this</span>
+<span class="sd">                frame (``data=None``) and ``False`` when ``data=`` is given, since a</span>
+<span class="sd">                different frame&#39;s row index would misalign onto this one.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: The predictions, one ``&quot;&lt;outcome&gt;_hat&quot;`` column per</span>
+<span class="sd">                fitted outcome, indexed by the scored covariate rows.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If no outcome model has been fit on this frame.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;],</span>
+<span class="sd">            ...                    &quot;age&quot;: [25.0, 30.0, 35.0, 40.0],</span>
+<span class="sd">            ...                    &quot;happiness&quot;: [50.0, 55.0, 65.0, 80.0],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 1.0, 1.0, 1.0]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df, outcome_columns=[&quot;happiness&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; _ = sf.fit_outcome_model()</span>
+<span class="sd">            &gt;&gt;&gt; preds = sf.predict_outcomes()</span>
+<span class="sd">            &gt;&gt;&gt; list(preds.columns)</span>
+<span class="sd">            [&#39;happiness_hat&#39;]</span>
+<span class="sd">            &gt;&gt;&gt; &quot;happiness_hat&quot; in sf.outcomes_hat_columns</span>
+<span class="sd">            True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.outcome_models.outcome_model</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">predict_outcome</span> <span class="k">as</span> <span class="n">_predict_outcome</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;no outcome model has been fit; call fit_outcome_model(...) &quot;</span>
+                <span class="s2">&quot;(or fit_predict_outcomes(...)) before predict_outcomes().&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Default: persist when scoring this frame, but not when scoring a</span>
+        <span class="c1"># different frame via data= (whose row index would misalign onto self).</span>
+        <span class="k">if</span> <span class="n">populate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">populate</span> <span class="o">=</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span>
+
+        <span class="c1"># populate=True writes predictions (indexed like the scored frame) onto</span>
+        <span class="c1"># THIS frame via add_outcomes_hat_column, which assigns equal-length</span>
+        <span class="c1"># values positionally. If `data` has this frame&#39;s length but a different</span>
+        <span class="c1"># row index/order that would silently misassign, so require an exact</span>
+        <span class="c1"># index match when persisting a different frame&#39;s predictions.</span>
+        <span class="k">if</span> <span class="n">populate</span> <span class="ow">and</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;predict_outcomes(data=..., populate=True) requires `data` to have &quot;</span>
+                <span class="s2">&quot;the same row index as this frame; otherwise the predictions &quot;</span>
+                <span class="s2">&quot;(indexed like `data`) would be misassigned onto this frame&#39;s rows. &quot;</span>
+                <span class="s2">&quot;Pass populate=False and use the returned predictions, or attach &quot;</span>
+                <span class="s2">&quot;them to `data` via data.add_outcomes_hat_column(...).&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">source</span><span class="p">:</span> <span class="n">SampleFrame</span> <span class="o">=</span> <span class="n">data</span> <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span>
+        <span class="n">covars</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">df_covars</span>
+
+        <span class="n">predictions</span> <span class="o">=</span> <span class="n">_predict_outcome</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_outcome_model</span><span class="p">,</span> <span class="n">covars</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">_hat&quot;</span><span class="p">:</span> <span class="n">values</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">predictions</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+            <span class="n">index</span><span class="o">=</span><span class="n">covars</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">populate</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="n">column_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">column</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">column_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes_hat&quot;</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_drop_single_outcomes_hat_column</span><span class="p">(</span><span class="n">column_name</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_outcomes_hat_column</span><span class="p">(</span><span class="n">column_name</span><span class="p">,</span> <span class="n">result</span><span class="p">[</span><span class="n">column_name</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_drop_single_outcomes_hat_column</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Drop one registered ``outcomes_hat`` column from the frame in place.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes_hat&quot;</span><span class="p">]:</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes_hat&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_metadata</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SampleFrame.fit_predict_outcomes">
+<a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame.fit_predict_outcomes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_predict_outcomes</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">populate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">fit_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit an outcome model then predict on this frame, in one call.</span>
+
+<span class="sd">        Convenience wrapper mirroring sklearn&#39;s ``fit_predict``: it calls</span>
+<span class="sd">        :meth:`fit_outcome_model` (in place) with ``**fit_kwargs`` and then</span>
+<span class="sd">        :meth:`predict_outcomes` on this frame, persisting ``&lt;outcome&gt;_hat`` when</span>
+<span class="sd">        ``populate=True`` (the default).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            populate: When ``True`` (default), persist the predictions onto this</span>
+<span class="sd">                frame as ``&lt;outcome&gt;_hat`` columns.</span>
+<span class="sd">            **fit_kwargs: Keyword arguments forwarded to</span>
+<span class="sd">                :meth:`fit_outcome_model` (e.g. ``model``, ``outcome_columns``,</span>
+<span class="sd">                ``variables``, ``weighted``).  ``inplace`` is always ``True``</span>
+<span class="sd">                here.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: The predictions, one ``&quot;&lt;outcome&gt;_hat&quot;`` column per</span>
+<span class="sd">                fitted outcome.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;],</span>
+<span class="sd">            ...                    &quot;age&quot;: [25.0, 30.0, 35.0, 40.0],</span>
+<span class="sd">            ...                    &quot;happiness&quot;: [50.0, 55.0, 65.0, 80.0],</span>
+<span class="sd">            ...                    &quot;weight&quot;: [1.0, 1.0, 1.0, 1.0]})</span>
+<span class="sd">            &gt;&gt;&gt; sf = SampleFrame.from_frame(df, outcome_columns=[&quot;happiness&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; preds = sf.fit_predict_outcomes()</span>
+<span class="sd">            &gt;&gt;&gt; list(preds.columns)</span>
+<span class="sd">            [&#39;happiness_hat&#39;]</span>
+<span class="sd">            &gt;&gt;&gt; sf.outcome_model[&quot;method&quot;]</span>
+<span class="sd">            &#39;outcome_model&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fit_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;inplace&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit_outcome_model</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">fit_kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_outcomes</span><span class="p">(</span><span class="n">populate</span><span class="o">=</span><span class="n">populate</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="SampleFrame.from_sample">
 <a class="viewcode-back" href="../../balance.sample_frame.html#balance.sample_frame.SampleFrame.from_sample">[docs]</a>
     <span class="nd">@classmethod</span>
@@ -1375,9 +2002,6 @@
 <span class="sd">           * ``_links`` — references to ``target``, ``unadjusted``, and other</span>
 <span class="sd">             linked Samples (used by :class:`~balance.balancedf_class.BalanceDF`</span>
 <span class="sd">             for comparative display).</span>
-<span class="sd">           * ``predicted_outcome_columns`` — Sample has no native concept of</span>
-<span class="sd">             predicted-outcome columns, so the resulting SampleFrame will</span>
-<span class="sd">             always have an empty ``predicted`` role.</span>
 <span class="sd">           * **Column ordering** may differ after a round-trip</span>
 <span class="sd">             (``Sample → SampleFrame → Sample``), since SampleFrame stores</span>
 <span class="sd">             columns grouped by role rather than preserving the original</span>
@@ -1428,18 +2052,29 @@
         <span class="k">if</span> <span class="n">sample</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">outcome_cols</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_outcome_columns</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
+        <span class="n">outcomes_hat_cols</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="s2">&quot;outcomes_hat_columns&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]</span>
+
         <span class="n">ignored_cols</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="s2">&quot;_ignored_column_names&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df</span>
         <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Sample has no DataFrame set.&quot;</span><span class="p">)</span>
 
+        <span class="c1"># ``_covar_columns_names()`` derives covariates by excluding special</span>
+        <span class="c1"># columns (id/weight/outcome/outcomes_hat/ignored); defensively drop</span>
+        <span class="c1"># any outcomes_hat columns again so each column keeps exactly one role.</span>
+        <span class="n">covar_cols</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_covar_columns_names</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">outcomes_hat_cols</span><span class="p">:</span>
+            <span class="n">hat_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">outcomes_hat_cols</span><span class="p">)</span>
+            <span class="n">covar_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">covar_cols</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">hat_set</span><span class="p">]</span>
+
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span>
             <span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
             <span class="n">id_column</span><span class="o">=</span><span class="n">id_col_name</span><span class="p">,</span>
-            <span class="n">covar_columns</span><span class="o">=</span><span class="n">sample</span><span class="o">.</span><span class="n">_covar_columns_names</span><span class="p">(),</span>
+            <span class="n">covar_columns</span><span class="o">=</span><span class="n">covar_cols</span><span class="p">,</span>
             <span class="n">weight_columns</span><span class="o">=</span><span class="p">[</span><span class="n">weight_col_name</span><span class="p">],</span>
             <span class="n">outcome_columns</span><span class="o">=</span><span class="n">outcome_cols</span><span class="p">,</span>
+            <span class="n">outcomes_hat_columns</span><span class="o">=</span><span class="n">outcomes_hat_cols</span> <span class="k">if</span> <span class="n">outcomes_hat_cols</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
             <span class="n">ignored_columns</span><span class="o">=</span><span class="n">ignored_cols</span> <span class="k">if</span> <span class="n">ignored_cols</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
         <span class="p">)</span></div>
 

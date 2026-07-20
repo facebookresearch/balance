@@ -221,6 +221,10 @@
             <span class="c1"># pyrefly: ignore [missing-attribute]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_weight_metadata</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_weight_metadata</span>
             <span class="c1"># pyrefly: ignore [missing-attribute]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_metadata</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_prediction_metadata</span>
+            <span class="c1"># pyrefly: ignore [missing-attribute]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_outcome_model</span>
+            <span class="c1"># pyrefly: ignore [missing-attribute]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_df_dtypes</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_df_dtypes</span>
 
     <span class="nd">@staticmethod</span>
@@ -347,6 +351,54 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_outcomes_hat_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;outcomes_hat columns as a DataFrame, delegated to ``_sf_sample``.</span>
+
+<span class="sd">        Satisfies the ``BalanceDFSource`` protocol.  Delegates to the wrapped</span>
+<span class="sd">        responder SampleFrame so there is a single source of truth (mirrors</span>
+<span class="sd">        how :attr:`_outcome_columns` reads through to ``_sf_sample``).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcomes_hat_columns</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">df_outcomes_hat</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Predicted-outcome (Y_hat) columns from the responder, or None.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df_outcomes_hat</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">outcome_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The fitted outcome-model dict, delegated to ``_sf_sample``.</span>
+
+<span class="sd">        Single source of truth: the outcome model lives on the wrapped</span>
+<span class="sd">        responder SampleFrame (``_sf_sample._outcome_model``), so it rides</span>
+<span class="sd">        along whenever ``_sf_sample`` is deep-copied (e.g. by :meth:`adjust`)</span>
+<span class="sd">        and a :class:`~balance.sample_class.Sample` — which is both a</span>
+<span class="sd">        BalanceFrame and a SampleFrame — never reports a stale inherited copy.</span>
+<span class="sd">        Mirrors how :attr:`_outcome_columns` / :attr:`df_outcomes_hat` read</span>
+<span class="sd">        through to ``_sf_sample``, and parallels :attr:`model` (the *weighting*</span>
+<span class="sd">        model) for the outcome-modelling axis.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict[str, Any] | None: The stored ``_outcome_model`` dict from the</span>
+<span class="sd">            responder, or ``None`` if no outcome model has been fit.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; from balance.balance_frame import BalanceFrame</span>
+<span class="sd">            &gt;&gt;&gt; resp = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [1, 2], &quot;x&quot;: [10.0, 20.0],</span>
+<span class="sd">            ...                   &quot;y&quot;: [1.0, 0.0], &quot;weight&quot;: [1.0, 1.0]}),</span>
+<span class="sd">            ...     outcome_columns=[&quot;y&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; tgt = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [3, 4], &quot;x&quot;: [15.0, 25.0], &quot;weight&quot;: [1.0, 1.0]}))</span>
+<span class="sd">            &gt;&gt;&gt; bf = BalanceFrame(sample=resp, target=tgt)</span>
+<span class="sd">            &gt;&gt;&gt; bf.outcome_model is None</span>
+<span class="sd">            True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_ignored_column_names</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
@@ -629,7 +681,13 @@
                     <span class="s2">&quot;weights to pre-adjust values and discards current &quot;</span>
                     <span class="s2">&quot;adjustment results on the returned copy.&quot;</span>
                 <span class="p">)</span>
+                <span class="c1"># Preserve a fitted outcome model across the responder reset:</span>
+                <span class="c1"># outcomes_hat = ĝ(X) is weight-invariant, so a model fit before</span>
+                <span class="c1"># OR after adjust() must survive replacing the target.</span>
+                <span class="n">preserved_model</span> <span class="o">=</span> <span class="n">new_copy</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span>
                 <span class="n">new_copy</span><span class="o">.</span><span class="n">_sf_sample</span> <span class="o">=</span> <span class="n">new_copy</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span>
+                <span class="k">if</span> <span class="n">preserved_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">new_copy</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="o">=</span> <span class="n">preserved_model</span>
                 <span class="n">new_copy</span><span class="o">.</span><span class="n">_clear_adjustment_state</span><span class="p">()</span>
             <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
             <span class="n">new_copy</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">target</span>
@@ -655,16 +713,32 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span> <span class="o">=</span> <span class="n">target</span>
                 <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">target</span>
+                <span class="c1"># Preserve a fitted outcome model across the responder reset:</span>
+                <span class="c1"># outcomes_hat = ĝ(X) is weight-invariant, so a model fit before</span>
+                <span class="c1"># OR after adjust() must survive replacing the target.</span>
+                <span class="n">preserved_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span>
                 <span class="c1"># Reset adjustment state — old adjustment is no longer valid.</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span>
+                <span class="k">if</span> <span class="n">preserved_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="o">=</span> <span class="n">preserved_model</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_clear_adjustment_state</span><span class="p">()</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_sync_sampleframe_state_from_responder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">)</span>
                 <span class="k">return</span> <span class="bp">self</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span>
+                <span class="c1"># Preserve a fitted outcome model (weight-invariant ĝ(X)) that</span>
+                <span class="c1"># may live only on the current responder — e.g. one fit AFTER</span>
+                <span class="c1"># adjust(), which is absent from _sf_sample_pre_adjust.</span>
+                <span class="n">preserved_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span>
+                <span class="n">new_frame</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span>
                     <span class="n">sample</span><span class="o">=</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span><span class="p">),</span>
                     <span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span>
                 <span class="p">)</span>
+                <span class="k">if</span> <span class="n">preserved_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">new_frame</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="o">=</span> <span class="n">preserved_model</span>
+                    <span class="n">new_frame</span><span class="o">.</span><span class="n">_sync_sampleframe_state_from_responder</span><span class="p">(</span>
+                        <span class="n">new_frame</span><span class="o">.</span><span class="n">_sf_sample</span>
+                    <span class="p">)</span>
+                <span class="k">return</span> <span class="n">new_frame</span>
 
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;A target, a Sample object, must be specified&quot;</span><span class="p">)</span></div>
 
@@ -1440,6 +1514,453 @@
             <span class="n">target</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">,</span>
         <span class="p">)</span>
 
+        <span class="n">bf</span><span class="o">.</span><span class="n">_sync_sampleframe_state_from_responder</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">bf</span></div>
+
+
+    <span class="c1"># --- Outcome-model fit / transfer / estimate ---</span>
+
+<div class="viewcode-block" id="BalanceFrame.fit_outcome_model">
+<a class="viewcode-back" href="../../balance.balance_frame.html#balance.balance_frame.BalanceFrame.fit_outcome_model">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_outcome_model</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">target</span><span class="p">:</span> <span class="n">BalanceFrame</span> <span class="o">|</span> <span class="n">SampleFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit an outcome model ``ĝ(X) ≈ E[Y|X]`` on the responders and store it.</span>
+
+<span class="sd">        This is the ``BalanceFrame`` entry point to the outcome-modelling axis</span>
+<span class="sd">        (the counterpart to :meth:`fit` for the *weighting* axis).  It</span>
+<span class="sd">        **delegates to the responder** (``self._sf_sample``): the fitted model</span>
+<span class="sd">        is stored on ``_sf_sample._outcome_model`` — the single source of truth</span>
+<span class="sd">        read back through :attr:`outcome_model`.  Because the model lives on the</span>
+<span class="sd">        responder SampleFrame, it rides along whenever ``_sf_sample`` is</span>
+<span class="sd">        deep-copied — in particular it **survives :meth:`adjust`** (which</span>
+<span class="sd">        deep-copies ``_sf_sample``) and is preserved across :meth:`set_target`.</span>
+
+<span class="sd">        On a :class:`~balance.sample_class.Sample`, this ``BalanceFrame`` method</span>
+<span class="sd">        takes MRO precedence over ``SampleFrame.fit_outcome_model`` (``Sample``</span>
+<span class="sd">        is both classes), so the model correctly lands on ``_sf_sample`` rather</span>
+<span class="sd">        than on the Sample&#39;s own inherited attribute.</span>
+
+<span class="sd">        Like sklearn&#39;s ``fit()`` (and :meth:`SampleFrame.fit_outcome_model`), it</span>
+<span class="sd">        does **not** produce predictions — call :meth:`predict_outcomes` (or</span>
+<span class="sd">        :meth:`fit_predict_outcomes`) to write the ``&lt;outcome&gt;_hat`` columns.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            target: Optional target population to set before fitting (mirrors</span>
+<span class="sd">                :meth:`fit`).  When provided, ``set_target(target, inplace=False)``</span>
+<span class="sd">                is applied first so immutability is preserved; the fit then</span>
+<span class="sd">                proceeds on the returned object.</span>
+<span class="sd">            inplace: If ``True`` (default), mutate this object (store the model</span>
+<span class="sd">                on the responder) and return ``self``; if ``False``, return a</span>
+<span class="sd">                new copy with the model stored and leave ``self`` untouched —</span>
+<span class="sd">                matching :meth:`fit` / :meth:`SampleFrame.fit_outcome_model`.</span>
+<span class="sd">            **kwargs: Forwarded to :meth:`SampleFrame.fit_outcome_model`</span>
+<span class="sd">                (e.g. ``model``, ``outcome_columns``, ``variables``,</span>
+<span class="sd">                ``weighted``, ``formula``, ``na_action``, ``use_model_matrix``,</span>
+<span class="sd">                ``calibrate``).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The BalanceFrame with the fitted outcome model stored on its</span>
+<span class="sd">            responder (``self`` when ``inplace``, else a new copy).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If there are no outcome columns to fit (and none are</span>
+<span class="sd">                passed), or for any underlying ``fit_outcome_model`` error.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; from balance.balance_frame import BalanceFrame</span>
+<span class="sd">            &gt;&gt;&gt; resp = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;],</span>
+<span class="sd">            ...                   &quot;age&quot;: [25.0, 30.0, 35.0, 40.0],</span>
+<span class="sd">            ...                   &quot;happiness&quot;: [50.0, 55.0, 65.0, 80.0],</span>
+<span class="sd">            ...                   &quot;weight&quot;: [1.0, 1.0, 1.0, 1.0]}),</span>
+<span class="sd">            ...     outcome_columns=[&quot;happiness&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; tgt = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [&quot;5&quot;, &quot;6&quot;], &quot;age&quot;: [28.0, 38.0],</span>
+<span class="sd">            ...                   &quot;weight&quot;: [1.0, 1.0]}))</span>
+<span class="sd">            &gt;&gt;&gt; bf = BalanceFrame(sample=resp, target=tgt)</span>
+<span class="sd">            &gt;&gt;&gt; _ = bf.fit_outcome_model()</span>
+<span class="sd">            &gt;&gt;&gt; bf.outcome_model[&quot;method&quot;]</span>
+<span class="sd">            &#39;outcome_model&#39;</span>
+
+<span class="sd">        End-to-end on the bundled ``load_data()`` dataset — the g-computation</span>
+<span class="sd">        estimate ``μ̂_OM`` (the weighted mean of the predicted outcome on the</span>
+<span class="sd">        target).  No ``adjust()`` is required: the outcome model is fit on the</span>
+<span class="sd">        responders independently of the weights.</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            from balance import load_data, Sample</span>
+
+<span class="sd">            target_df, sample_df = load_data()</span>
+<span class="sd">            bf = Sample.from_frame(</span>
+<span class="sd">                sample_df, outcome_columns=[&quot;happiness&quot;]</span>
+<span class="sd">            ).set_target(Sample.from_frame(target_df))</span>
+<span class="sd">            bf.fit_outcome_model(model=&quot;auto&quot;)   # fit ĝ(X) ≈ E[Y|X] on the responders</span>
+<span class="sd">            bf.predict_outcomes(on=&quot;target&quot;)     # score the target with the fitted model</span>
+<span class="sd">            bf.outcomes_hat().mean()             # target row = μ̂_OM (g-computation estimate)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="p">(</span><span class="n">SampleFrame</span><span class="p">,</span> <span class="n">BalanceFrame</span><span class="p">)):</span>
+            <span class="n">based</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">based</span><span class="o">.</span><span class="n">fit_outcome_model</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">inplace</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span> <span class="o">=</span> <span class="n">based</span><span class="o">.</span><span class="n">_sf_sample</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span> <span class="o">=</span> <span class="n">based</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span> <span class="o">=</span> <span class="n">based</span><span class="o">.</span><span class="n">_sf_target</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_links</span> <span class="o">=</span> <span class="n">based</span><span class="o">.</span><span class="n">_links</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sync_sampleframe_state_from_responder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">self</span>
+            <span class="k">return</span> <span class="n">based</span>
+
+        <span class="n">bf</span> <span class="o">=</span> <span class="bp">self</span> <span class="k">if</span> <span class="n">inplace</span> <span class="k">else</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c1"># Delegate to the responder so the model lands on _sf_sample (single</span>
+        <span class="c1"># source of truth) and rides adjust()/set_target().</span>
+        <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">fit_outcome_model</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">bf</span><span class="o">.</span><span class="n">_sync_sampleframe_state_from_responder</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">bf</span></div>
+
+
+    <span class="nd">@overload</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict_outcomes</span><span class="p">(</span>  <span class="c1"># noqa: E704</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">on</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">BalanceFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
+        <span class="n">populate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span> <span class="o">...</span>
+
+    <span class="nd">@overload</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict_outcomes</span><span class="p">(</span>  <span class="c1"># noqa: E704</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">on</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;both&quot;</span><span class="p">],</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">BalanceFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
+        <span class="n">populate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span> <span class="o">...</span>
+
+<div class="viewcode-block" id="BalanceFrame.predict_outcomes">
+<a class="viewcode-back" href="../../balance.balance_frame.html#balance.balance_frame.BalanceFrame.predict_outcomes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict_outcomes</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">on</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">BalanceFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">populate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Replay the fitted outcome model onto the sample and/or the target.</span>
+
+<span class="sd">        Requires a model fit on the responder (via :meth:`fit_outcome_model`).</span>
+<span class="sd">        The responder&#39;s stored preprocessing is replayed on the requested</span>
+<span class="sd">        population&#39;s covariates and the ``&lt;outcome&gt;_hat`` columns are populated.</span>
+
+<span class="sd">        - ``on=&quot;target&quot;`` (the default when a target is set): replay on the</span>
+<span class="sd">            **target** covariates and populate the target&#39;s ``outcomes_hat``</span>
+<span class="sd">            columns.  The target frame is</span>
+<span class="sd">            **deep-copied before it is written** (and the populated copy is</span>
+<span class="sd">            stored back on ``self._sf_target``), so a caller&#39;s target object is</span>
+<span class="sd">            never mutated in place.  The weighted mean of the target&#39;s</span>
+<span class="sd">            ``outcomes_hat`` is the g-computation estimate ``μ̂_OM``, read via</span>
+<span class="sd">            ``outcomes_hat().mean()``.</span>
+<span class="sd">        - ``on=&quot;sample&quot;``: populate the responder (``_sf_sample``) in place —</span>
+<span class="sd">            equivalent to ``_sf_sample.predict_outcomes()``.</span>
+<span class="sd">        - ``on=&quot;both&quot;``: do both and return ``(sample_predictions,</span>
+<span class="sd">            target_predictions)`` — mirroring the ``on=`` return convention of</span>
+<span class="sd">            :meth:`predict_weights` / :meth:`design_matrix`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            on: Which population(s) to score/populate.  ``None`` (the default)</span>
+<span class="sd">                resolves to ``&quot;target&quot;`` when a target is set (the estimate</span>
+<span class="sd">                workflow) and to ``&quot;sample&quot;`` otherwise (so a target-less frame</span>
+<span class="sd">                behaves like ``SampleFrame.predict_outcomes``).</span>
+<span class="sd">            data: Reserved for parity with :meth:`predict_weights`; not yet</span>
+<span class="sd">                supported here — pass ``None`` (foreign-frame transfer is</span>
+<span class="sd">                :meth:`set_fitted_outcome_model`, a later change).</span>
+<span class="sd">            populate: When ``True`` (default), persist the predictions as</span>
+<span class="sd">                ``&lt;outcome&gt;_hat`` columns on the scored population.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The predictions DataFrame (one ``&lt;outcome&gt;_hat`` column per fitted</span>
+<span class="sd">            outcome), or a ``(sample, target)`` tuple when ``on=&quot;both&quot;``.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If no outcome model has been fit, if ``on=&quot;target&quot;`` /</span>
+<span class="sd">                ``&quot;both&quot;`` but no target is set, or if ``data`` is passed.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; from balance.balance_frame import BalanceFrame</span>
+<span class="sd">            &gt;&gt;&gt; resp = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;],</span>
+<span class="sd">            ...                   &quot;age&quot;: [25.0, 30.0, 35.0, 40.0],</span>
+<span class="sd">            ...                   &quot;happiness&quot;: [50.0, 55.0, 65.0, 80.0],</span>
+<span class="sd">            ...                   &quot;weight&quot;: [1.0, 1.0, 1.0, 1.0]}),</span>
+<span class="sd">            ...     outcome_columns=[&quot;happiness&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; tgt = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [&quot;5&quot;, &quot;6&quot;], &quot;age&quot;: [28.0, 38.0],</span>
+<span class="sd">            ...                   &quot;weight&quot;: [1.0, 1.0]}))</span>
+<span class="sd">            &gt;&gt;&gt; bf = BalanceFrame(sample=resp, target=tgt)</span>
+<span class="sd">            &gt;&gt;&gt; _ = bf.fit_outcome_model()</span>
+<span class="sd">            &gt;&gt;&gt; preds = bf.predict_outcomes(on=&quot;target&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; list(preds.columns)</span>
+<span class="sd">            [&#39;happiness_hat&#39;]</span>
+<span class="sd">            &gt;&gt;&gt; bf.outcomes_hat().df.columns.tolist()   # target now populated</span>
+<span class="sd">            [&#39;happiness_hat&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;BalanceFrame.predict_outcomes(data=...) is not supported; use &quot;</span>
+                <span class="s2">&quot;set_fitted_outcome_model(...) to transfer a fitted model from &quot;</span>
+                <span class="s2">&quot;another BalanceFrame, then predict_outcomes(on=...).&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;no outcome model has been fit; call fit_outcome_model(...) &quot;</span>
+                <span class="s2">&quot;(or fit_predict_outcomes(...)) before predict_outcomes().&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Resolve the default: prefer the target (the estimate workflow) when</span>
+        <span class="c1"># one is set, otherwise fall back to the responder so a target-less</span>
+        <span class="c1"># frame/Sample behaves like SampleFrame.predict_outcomes().</span>
+        <span class="k">if</span> <span class="n">on</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">on</span> <span class="o">=</span> <span class="s2">&quot;target&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;sample&quot;</span>
+
+        <span class="n">sample_predictions</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">target_predictions</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">on</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">):</span>
+            <span class="n">sample_predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">predict_outcomes</span><span class="p">(</span><span class="n">populate</span><span class="o">=</span><span class="n">populate</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">on</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;predict_outcomes(on=</span><span class="si">{</span><span class="n">on</span><span class="si">!r}</span><span class="s2">) requires a target population; &quot;</span>
+                    <span class="s2">&quot;call set_target(...) first.&quot;</span>
+                <span class="p">)</span>
+            <span class="n">target_predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_outcomes_on_target</span><span class="p">(</span><span class="n">populate</span><span class="o">=</span><span class="n">populate</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">on</span> <span class="o">==</span> <span class="s2">&quot;sample&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">sample_predictions</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">on</span> <span class="o">==</span> <span class="s2">&quot;target&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">target_predictions</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">sample_predictions</span><span class="p">),</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">target_predictions</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_predict_outcomes_on_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">populate</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Replay the responder&#39;s model on the target; return ``&lt;outcome&gt;_hat``.</span>
+
+<span class="sd">        Predictions are computed on the target&#39;s covariates; when ``populate``</span>
+<span class="sd">        is True the target frame is deep-copied, populated in place on the copy</span>
+<span class="sd">        (so the caller&#39;s target object is untouched), and stored back on</span>
+<span class="sd">        ``self._sf_target``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span>
+        <span class="c1"># predict-only (populate=False) returns a DataFrame indexed by the</span>
+        <span class="c1"># TARGET covariate rows without touching the responder.</span>
+        <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">predict_outcomes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">populate</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">populate</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">predictions</span>
+
+        <span class="c1"># Deep-copy the target before writing so the caller&#39;s target object is</span>
+        <span class="c1"># not mutated in place; store the populated copy back on self.</span>
+        <span class="n">target_copy</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">predictions</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">column_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">column</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">column_name</span> <span class="ow">in</span> <span class="n">target_copy</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes_hat&quot;</span><span class="p">]:</span>
+                <span class="n">target_copy</span><span class="o">.</span><span class="n">_drop_single_outcomes_hat_column</span><span class="p">(</span><span class="n">column_name</span><span class="p">)</span>
+            <span class="n">target_copy</span><span class="o">.</span><span class="n">add_outcomes_hat_column</span><span class="p">(</span><span class="n">column_name</span><span class="p">,</span> <span class="n">predictions</span><span class="p">[</span><span class="n">column_name</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span> <span class="o">=</span> <span class="n">target_copy</span>
+        <span class="c1"># Keep the raw-SampleFrame target link in sync with the populated copy</span>
+        <span class="c1"># (a richer BalanceFrame/Sample link is left untouched).</span>
+        <span class="c1"># pyrefly: ignore [not-iterable]</span>
+        <span class="n">target_link</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_links</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">target_link</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_link</span><span class="p">,</span> <span class="n">BalanceFrame</span><span class="p">):</span>
+            <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_copy</span>
+        <span class="k">return</span> <span class="n">predictions</span>
+
+<div class="viewcode-block" id="BalanceFrame.fit_predict_outcomes">
+<a class="viewcode-back" href="../../balance.balance_frame.html#balance.balance_frame.BalanceFrame.fit_predict_outcomes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_predict_outcomes</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">target</span><span class="p">:</span> <span class="n">BalanceFrame</span> <span class="o">|</span> <span class="n">SampleFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">on</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">populate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">fit_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit an outcome model then replay it (on the target by default).</span>
+
+<span class="sd">        Convenience wrapper: calls :meth:`fit_outcome_model` (in place, on the</span>
+<span class="sd">        responder) with ``**fit_kwargs`` and then :meth:`predict_outcomes` with</span>
+<span class="sd">        the given ``on`` / ``populate``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            target: Optional target to set before fitting (see</span>
+<span class="sd">                :meth:`fit_outcome_model`).</span>
+<span class="sd">            on: Which population(s) to predict on afterwards.  ``None`` (the</span>
+<span class="sd">                default) resolves to ``&quot;target&quot;`` when a target is set, else</span>
+<span class="sd">                ``&quot;sample&quot;`` (see :meth:`predict_outcomes`).</span>
+<span class="sd">            populate: Whether to persist the ``&lt;outcome&gt;_hat`` columns.</span>
+<span class="sd">            **fit_kwargs: Forwarded to :meth:`fit_outcome_model`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The predictions DataFrame (or a ``(sample, target)`` tuple when</span>
+<span class="sd">            ``on=&quot;both&quot;``), from :meth:`predict_outcomes`.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; from balance.balance_frame import BalanceFrame</span>
+<span class="sd">            &gt;&gt;&gt; resp = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;],</span>
+<span class="sd">            ...                   &quot;age&quot;: [25.0, 30.0, 35.0, 40.0],</span>
+<span class="sd">            ...                   &quot;happiness&quot;: [50.0, 55.0, 65.0, 80.0],</span>
+<span class="sd">            ...                   &quot;weight&quot;: [1.0, 1.0, 1.0, 1.0]}),</span>
+<span class="sd">            ...     outcome_columns=[&quot;happiness&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; tgt = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [&quot;5&quot;, &quot;6&quot;], &quot;age&quot;: [28.0, 38.0],</span>
+<span class="sd">            ...                   &quot;weight&quot;: [1.0, 1.0]}))</span>
+<span class="sd">            &gt;&gt;&gt; bf = BalanceFrame(sample=resp, target=tgt)</span>
+<span class="sd">            &gt;&gt;&gt; preds = bf.fit_predict_outcomes(on=&quot;target&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; list(preds.columns)</span>
+<span class="sd">            [&#39;happiness_hat&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fit_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;inplace&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit_outcome_model</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">fit_kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_outcomes</span><span class="p">(</span><span class="n">on</span><span class="o">=</span><span class="n">on</span><span class="p">,</span> <span class="n">populate</span><span class="o">=</span><span class="n">populate</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BalanceFrame.set_fitted_outcome_model">
+<a class="viewcode-back" href="../../balance.balance_frame.html#balance.balance_frame.BalanceFrame.set_fitted_outcome_model">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_fitted_outcome_model</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">fitted</span><span class="p">:</span> <span class="n">BalanceFrame</span> <span class="o">|</span> <span class="n">SampleFrame</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply a fitted outcome model from another frame (train/holdout transfer).</span>
+
+<span class="sd">        This is the outcome-modelling counterpart to :meth:`set_fitted_model`</span>
+<span class="sd">        (the IPW weighting-axis train/holdout transfer): fit an outcome model</span>
+<span class="sd">        ``ĝ(X) ≈ E[Y|X]`` on one frame (the *train* frame) and apply the fitted</span>
+<span class="sd">        model to a *different* frame (the *holdout* / scoring frame) that shares</span>
+<span class="sd">        the same covariate schema.  Nothing is re-fit — the already-fitted model</span>
+<span class="sd">        (including its stored preprocessing) is copied onto ``self`` **sharing</span>
+<span class="sd">        the fitted estimator objects by identity** (exactly like</span>
+<span class="sd">        :meth:`set_fitted_model`), so ``self.predict_outcomes(on=&quot;target&quot;)`` then</span>
+<span class="sd">        replays the transferred model on ``self``&#39;s own target and</span>
+<span class="sd">        ``self.outcomes_hat().mean()`` is the g-computation estimate ``μ̂_OM`` on</span>
+<span class="sd">        the holdout target.</span>
+
+<span class="sd">        On a :class:`~balance.sample_class.Sample`, this ``BalanceFrame`` method</span>
+<span class="sd">        is reached via the MRO; the model lands on ``self._sf_sample`` (the single</span>
+<span class="sd">        source of truth read back through :attr:`outcome_model`), so it rides</span>
+<span class="sd">        along :meth:`adjust` and is preserved across :meth:`set_target`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            fitted: Another ``BalanceFrame`` (or ``SampleFrame`` / ``Sample``)</span>
+<span class="sd">                that already carries a fitted outcome model (via</span>
+<span class="sd">                :meth:`fit_outcome_model`).  Its covariate columns must match</span>
+<span class="sd">                ``self``&#39;s.</span>
+<span class="sd">            inplace: If ``True`` (default), mutate this object (store the model on</span>
+<span class="sd">                the responder) and return ``self``; if ``False``, return a new</span>
+<span class="sd">                copy with the model stored and leave ``self`` unchanged — matching</span>
+<span class="sd">                :meth:`set_fitted_model` / :meth:`fit_outcome_model`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The BalanceFrame with the transferred outcome model stored on its</span>
+<span class="sd">            responder (``self`` when ``inplace``, else a new copy).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If ``fitted`` has no stored outcome model; if the</span>
+<span class="sd">                covariate column names differ between ``self`` and ``fitted``; or</span>
+<span class="sd">                if the fitted model used a non-deterministic ``transformations``</span>
+<span class="sd">                (e.g. ``quantize`` / ``fct_lump``) or ``na_action=&quot;drop&quot;`` that</span>
+<span class="sd">                cannot be replayed deterministically on ``self``.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; from balance.balance_frame import BalanceFrame</span>
+<span class="sd">            &gt;&gt;&gt; train_resp = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;],</span>
+<span class="sd">            ...                   &quot;age&quot;: [25.0, 30.0, 35.0, 40.0],</span>
+<span class="sd">            ...                   &quot;happiness&quot;: [50.0, 55.0, 65.0, 80.0],</span>
+<span class="sd">            ...                   &quot;weight&quot;: [1.0, 1.0, 1.0, 1.0]}),</span>
+<span class="sd">            ...     outcome_columns=[&quot;happiness&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; holdout_resp = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [&quot;5&quot;, &quot;6&quot;, &quot;7&quot;, &quot;8&quot;],</span>
+<span class="sd">            ...                   &quot;age&quot;: [26.0, 31.0, 36.0, 41.0],</span>
+<span class="sd">            ...                   &quot;happiness&quot;: [51.0, 56.0, 66.0, 81.0],</span>
+<span class="sd">            ...                   &quot;weight&quot;: [1.0, 1.0, 1.0, 1.0]}),</span>
+<span class="sd">            ...     outcome_columns=[&quot;happiness&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; holdout_tgt = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [&quot;9&quot;, &quot;10&quot;], &quot;age&quot;: [28.0, 38.0],</span>
+<span class="sd">            ...                   &quot;weight&quot;: [1.0, 1.0]}))</span>
+<span class="sd">            &gt;&gt;&gt; train_bf = BalanceFrame(sample=train_resp)</span>
+<span class="sd">            &gt;&gt;&gt; _ = train_bf.fit_outcome_model()</span>
+<span class="sd">            &gt;&gt;&gt; holdout_bf = BalanceFrame(sample=holdout_resp, target=holdout_tgt)</span>
+<span class="sd">            &gt;&gt;&gt; scored = holdout_bf.set_fitted_outcome_model(train_bf, inplace=False)</span>
+<span class="sd">            &gt;&gt;&gt; _ = scored.predict_outcomes(on=&quot;target&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; scored.outcome_model[&quot;fit&quot;][&quot;happiness&quot;] is train_bf.outcome_model[&quot;fit&quot;][&quot;happiness&quot;]</span>
+<span class="sd">            True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># --- Validation ---</span>
+        <span class="n">fitted_model</span> <span class="o">=</span> <span class="n">fitted</span><span class="o">.</span><span class="n">outcome_model</span>
+        <span class="k">if</span> <span class="n">fitted_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;fitted must carry a fitted outcome model; call &quot;</span>
+                <span class="s2">&quot;fit_outcome_model(...) on it before set_fitted_outcome_model().&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span>
+            <span class="n">fitted</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fitted</span><span class="p">,</span> <span class="n">BalanceFrame</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">fitted</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;self and fitted must have matching sample covariate column names.&quot;</span>
+            <span class="p">)</span>
+        <span class="c1"># The transferred model is replayed on self&#39;s own target, so its</span>
+        <span class="c1"># covariates must line up too (mirrors set_fitted_model).</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fitted</span><span class="p">,</span> <span class="n">BalanceFrame</span><span class="p">):</span>
+            <span class="n">fitted_target</span> <span class="o">=</span> <span class="n">fitted</span><span class="o">.</span><span class="n">_sf_target</span>
+            <span class="k">if</span> <span class="n">fitted_target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">set</span><span class="p">(</span>
+                <span class="n">_assert_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span>
+            <span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="n">fitted_target</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;self and fitted must have matching target covariate column names.&quot;</span>
+                <span class="p">)</span>
+        <span class="c1"># Reject a non-deterministic transfer: data-dependent transformations</span>
+        <span class="c1"># (quantize/fct_lump) and na_action=&quot;drop&quot; cannot be replayed</span>
+        <span class="c1"># deterministically on a foreign frame (this mirrors fit_outcome_model&#39;s</span>
+        <span class="c1"># own fit-time guards, which reject the same configurations).</span>
+        <span class="k">if</span> <span class="n">fitted_model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;transformations&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;cannot transfer an outcome model fit with non-deterministic &quot;</span>
+                <span class="s2">&quot;transformations (e.g. quantize/fct_lump): they are not freezable &quot;</span>
+                <span class="s2">&quot;for deterministic replay on a foreign frame. Refit with &quot;</span>
+                <span class="s2">&quot;transformations=None to enable set_fitted_outcome_model().&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">fitted_model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;na_action&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="s2">&quot;drop&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;na_action=&#39;drop&#39; is incompatible with outcome-model transfer: &quot;</span>
+                <span class="s2">&quot;replay of the stored preprocessing needs NA-indicator columns to &quot;</span>
+                <span class="s2">&quot;stay aligned across fit and score data. Refit with &quot;</span>
+                <span class="s2">&quot;na_action=&#39;add_indicator&#39; (the default).&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># --- Build the result &amp; store the transferred model ---</span>
+        <span class="n">bf</span> <span class="o">=</span> <span class="bp">self</span> <span class="k">if</span> <span class="n">inplace</span> <span class="k">else</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c1"># Share the fitted estimators by identity (like set_fitted_model): a</span>
+        <span class="c1"># shallow copy of the model dict keeps the &quot;fit&quot; estimators as the same</span>
+        <span class="c1"># objects, so scored.outcome_model[&quot;fit&quot;][c] is train.outcome_model[&quot;fit&quot;][c].</span>
+        <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">fitted_model</span><span class="p">)</span>
+        <span class="c1"># A transferred model supersedes any Ŷ already on the responder.</span>
+        <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_drop_outcomes_hat_columns</span><span class="p">()</span>
         <span class="n">bf</span><span class="o">.</span><span class="n">_sync_sampleframe_state_from_responder</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">bf</span></div>
 
@@ -2866,6 +3387,7 @@
             <span class="n">id_column</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_id_column_name</span><span class="p">,</span>
             <span class="n">weight_column</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_weight_column_name</span><span class="p">,</span>
             <span class="n">outcome_columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">outcome_columns</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">outcomes_hat_columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">outcomes_hat_columns</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
             <span class="n">ignored_columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">ignored_columns</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
             <span class="n">standardize_types</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="p">)</span>
@@ -2874,6 +3396,7 @@
             <span class="n">id_column</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">_id_column_name</span><span class="p">,</span>
             <span class="n">weight_column</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">_weight_column_name</span><span class="p">,</span>
             <span class="n">outcome_columns</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">outcome_columns</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">outcomes_hat_columns</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">outcomes_hat_columns</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
             <span class="n">ignored_columns</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">ignored_columns</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
             <span class="n">standardize_types</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="p">)</span>
@@ -2885,6 +3408,9 @@
                 <span class="n">id_column</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span><span class="o">.</span><span class="n">_id_column_name</span><span class="p">,</span>
                 <span class="n">weight_column</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span><span class="o">.</span><span class="n">_weight_column_name</span><span class="p">,</span>
                 <span class="n">outcome_columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span><span class="o">.</span><span class="n">outcome_columns</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">outcomes_hat_columns</span><span class="o">=</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span><span class="o">.</span><span class="n">outcomes_hat_columns</span> <span class="ow">or</span> <span class="kc">None</span>
+                <span class="p">),</span>
                 <span class="n">ignored_columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span><span class="o">.</span><span class="n">ignored_columns</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="n">standardize_types</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="p">)</span>
@@ -2895,6 +3421,13 @@
             <span class="n">result</span><span class="o">.</span><span class="n">_adjustment_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy_adjustment_history_from</span><span class="p">(</span>
                 <span class="bp">self</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span>
             <span class="p">)</span>
+
+        <span class="c1"># Carry the fitted outcome model onto the reconstructed Sample: the</span>
+        <span class="c1"># outcomes_hat role columns are carried above, but the fit behind them</span>
+        <span class="c1"># would otherwise be lost on a BalanceFrame -&gt; Sample round-trip.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">_sync_sampleframe_state_from_responder</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">result</span></div>
 
@@ -3022,6 +3555,164 @@
         <span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="BalanceFrame.outcomes_hat">
+<a class="viewcode-back" href="../../balance.balance_frame.html#balance.balance_frame.BalanceFrame.outcomes_hat">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">outcomes_hat</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a :class:`~balance.balancedf_class.BalanceDFOutcomesHat`, or None.</span>
+
+<span class="sd">        Returns ``None`` if the responder SampleFrame has no predicted-outcome</span>
+<span class="sd">        (``outcomes_hat`` / Y_hat) columns.  The returned view carries linked</span>
+<span class="sd">        target (and unadjusted, if adjusted) sources so that ``.mean()`` and</span>
+<span class="sd">        ``.mean_with_ci()`` automatically expand across the sources that</span>
+<span class="sd">        actually carry predicted outcomes -- mirroring :meth:`outcomes`.  In</span>
+<span class="sd">        particular, the weighted mean of the target&#39;s Y_hat is the</span>
+<span class="sd">        g-computation / outcome-model estimate ``μ̂_OM``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            BalanceDFOutcomesHat or None: Predicted-outcome view with linked</span>
+<span class="sd">                sources, or ``None`` if no outcomes_hat columns are defined.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; from balance.balance_frame import BalanceFrame</span>
+<span class="sd">            &gt;&gt;&gt; resp = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [1, 2], &quot;x&quot;: [10.0, 20.0], &quot;weight&quot;: [1.0, 1.0]}))</span>
+<span class="sd">            &gt;&gt;&gt; tgt = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [3, 4], &quot;x&quot;: [15.0, 25.0], &quot;weight&quot;: [1.0, 1.0]}))</span>
+<span class="sd">            &gt;&gt;&gt; bf = BalanceFrame(sample=resp, target=tgt)</span>
+<span class="sd">            &gt;&gt;&gt; bf.outcomes_hat() is None</span>
+<span class="sd">            True</span>
+<span class="sd">            &gt;&gt;&gt; resp.add_outcomes_hat_column(&quot;y_hat&quot;, pd.Series([0.3, 0.7]))</span>
+<span class="sd">            &gt;&gt;&gt; bf2 = BalanceFrame(sample=resp, target=tgt)</span>
+<span class="sd">            &gt;&gt;&gt; bf2.outcomes_hat().df.columns.tolist()</span>
+<span class="sd">            [&#39;y_hat&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># The view is available when EITHER the responder or a linked source</span>
+        <span class="c1"># (target / unadjusted) carries outcomes_hat columns: the pure</span>
+        <span class="c1"># outcome-model workflow populates only the TARGET (via</span>
+        <span class="c1"># predict_outcomes(on=&quot;target&quot;)), and μ̂_OM is read from the target row.</span>
+        <span class="n">links</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_links_dict</span><span class="p">()</span>
+        <span class="n">has_any_hat</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">outcomes_hat_columns</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="nb">bool</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="s2">&quot;outcomes_hat_columns&quot;</span><span class="p">,</span> <span class="p">[]))</span> <span class="k">for</span> <span class="n">src</span> <span class="ow">in</span> <span class="n">links</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">has_any_hat</span><span class="p">:</span>
+            <span class="c1"># Estimate guard: when an outcome model is fit and a target is set</span>
+            <span class="c1"># but the target&#39;s outcomes_hat is unpopulated, returning None here</span>
+            <span class="c1"># would surface as an unhelpful AttributeError on .mean(). Raise an</span>
+            <span class="c1"># actionable error pointing at predict_outcomes(on=&quot;target&quot;).</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;outcomes_hat() cannot produce the outcome-model estimate &quot;</span>
+                    <span class="s2">&quot;(μ̂_OM): an outcome model is fit but the target&#39;s &quot;</span>
+                    <span class="s2">&quot;outcomes_hat columns are not populated. Call &quot;</span>
+                    <span class="s2">&quot;predict_outcomes(on=&#39;target&#39;) first, then read &quot;</span>
+                    <span class="s2">&quot;outcomes_hat().mean().&quot;</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balancedf_class</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceDFOutcomesHat</span><span class="p">,</span> <span class="n">BalanceDFSource</span>
+
+        <span class="k">return</span> <span class="n">BalanceDFOutcomesHat</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="n">BalanceDFSource</span><span class="p">,</span> <span class="bp">self</span><span class="p">),</span> <span class="n">links</span><span class="o">=</span><span class="n">links</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BalanceFrame.aipw">
+<a class="viewcode-back" href="../../balance.balance_frame.html#balance.balance_frame.BalanceFrame.aipw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">aipw</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Doubly-robust (AIPW) estimate ``μ̂_DR`` of the target-population mean.</span>
+
+<span class="sd">        Combines the fitted outcome model ``ĝ`` (from :meth:`fit_outcome_model`)</span>
+<span class="sd">        with the responder weights ``w`` to form the augmented / one-sample AIPW</span>
+<span class="sd">        (doubly-robust) estimate of the target mean, per outcome column:</span>
+
+<span class="sd">            μ̂_DR = wmean(ĝ(X_T), w_T) + wmean(Y − ĝ(X_S), w)</span>
+
+<span class="sd">        (the augmentation runs over responders with an observed ``Y``). It is</span>
+<span class="sd">        consistent if *either* the outcome model *or* the weighting model is</span>
+<span class="sd">        correct. Companion to the other estimate accessors:</span>
+<span class="sd">        ``outcomes().mean()`` gives ``μ̂_IPW`` and ``outcomes_hat().mean()`` gives</span>
+<span class="sd">        ``μ̂_OM``; this gives ``μ̂_DR``.</span>
+
+<span class="sd">        Requires a fitted outcome model **and** a target (:meth:`set_target`).</span>
+<span class="sd">        Uses whatever weight columns are present (any balance weights). With</span>
+<span class="sd">        constant responder weights it warns and reduces to ``μ̂_OM``.</span>
+
+<span class="sd">        Point estimate only -- no confidence interval (an honest AIPW interval</span>
+<span class="sd">        must jointly capture the weighting- and outcome-model uncertainty; see</span>
+<span class="sd">        the TODOs in :mod:`balance.outcome_models.aipw`).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.Series: ``μ̂_DR`` indexed by outcome column.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If no outcome model has been fit, if no target is set,</span>
+<span class="sd">                or if the responders carry no observed outcomes.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from sklearn.linear_model import LinearRegression</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; from balance.balance_frame import BalanceFrame</span>
+<span class="sd">            &gt;&gt;&gt; resp = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [1, 2, 3, 4],</span>
+<span class="sd">            ...                   &quot;x&quot;: [10.0, 20.0, 30.0, 40.0],</span>
+<span class="sd">            ...                   &quot;y&quot;: [1.0, 2.0, 3.0, 4.0],</span>
+<span class="sd">            ...                   &quot;weight&quot;: [1.0, 2.0, 1.0, 2.0]}),</span>
+<span class="sd">            ...     outcome_columns=[&quot;y&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; tgt = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [5, 6], &quot;x&quot;: [15.0, 35.0],</span>
+<span class="sd">            ...                   &quot;weight&quot;: [1.0, 1.0]}))</span>
+<span class="sd">            &gt;&gt;&gt; bf = BalanceFrame(sample=resp, target=tgt)</span>
+<span class="sd">            &gt;&gt;&gt; _ = bf.fit_outcome_model(model=LinearRegression())</span>
+<span class="sd">            &gt;&gt;&gt; bf.aipw().index.tolist()</span>
+<span class="sd">            [&#39;y&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.outcome_models.aipw</span><span class="w"> </span><span class="kn">import</span> <span class="n">aipw_point_estimate</span>
+
+        <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcome_model</span>
+        <span class="k">if</span> <span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;aipw() requires a fitted outcome model; call &quot;</span>
+                <span class="s2">&quot;fit_outcome_model(...) first.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;aipw() requires a target population; call set_target(...) first.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">observed_outcomes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span>
+        <span class="k">if</span> <span class="n">observed_outcomes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;aipw() requires observed outcomes on the responders, but none &quot;</span>
+                <span class="s2">&quot;are defined.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">target</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span>
+        <span class="n">sample_weight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_series</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">sample_weight</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample_weight</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
+            <span class="ow">and</span> <span class="n">sample_weight</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;aipw(): responder weights are constant -- it appears no &quot;</span>
+                <span class="s2">&quot;weighting model was fit (adjust() was not run, or it produced &quot;</span>
+                <span class="s2">&quot;uniform weights); the AIPW estimate reduces to the &quot;</span>
+                <span class="s2">&quot;outcome-model estimate mu_OM.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">estimates</span> <span class="o">=</span> <span class="n">aipw_point_estimate</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df_covars</span><span class="p">,</span>
+            <span class="n">observed_outcomes</span><span class="p">,</span>
+            <span class="n">sample_weight</span><span class="p">,</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">df_covars</span><span class="p">,</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">weight_series</span><span class="p">,</span>
+            <span class="n">model</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">estimates</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span></div>
+
+
     <span class="c1"># --- Summary &amp; diagnostics ---</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_design_effect_diagnostics</span><span class="p">(</span>
@@ -3127,6 +3818,59 @@
 
         <span class="k">return</span> <span class="n">details</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_outcome_estimates_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; &quot;Outcome estimates&quot; block for :meth:`summary`: μ̂_IPW (+CI), μ̂_OM, μ̂_DR.</span>
+
+<span class="sd">        Returns ``None`` unless an outcome model is fit **and** a target is set</span>
+<span class="sd">        (the outcome-estimation workflow) -- so when no outcome model is used</span>
+<span class="sd">        ``summary()`` is unchanged and falls back to the plain &quot;Outcome weighted</span>
+<span class="sd">        means&quot; section. When present it shows the IPW/Hájek weighted mean with</span>
+<span class="sd">        its analytic CI (``outcomes().mean_with_ci()``), plus the outcome-model /</span>
+<span class="sd">        g-computation ``μ̂_OM`` and the doubly-robust ``μ̂_DR`` as **point</span>
+<span class="sd">        estimates**. Their intervals are omitted: the ``μ̂_OM`` bootstrap CI is</span>
+<span class="sd">        expensive and not cached, and ``μ̂_DR`` has no CI yet (see the TODOs in</span>
+<span class="sd">        :mod:`balance.outcome_models.aipw`).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">outcomes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">outcomes</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcome_model</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weighted_stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">weighted_mean</span>
+
+        <span class="n">model</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outcome_model</span><span class="p">)</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span>
+        <span class="n">target_predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_outcomes</span><span class="p">(</span><span class="n">on</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="n">populate</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">target_weight</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">weight_series</span>
+
+        <span class="n">om_estimates</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">col</span><span class="p">):</span> <span class="nb">float</span><span class="p">(</span>
+                <span class="n">weighted_mean</span><span class="p">(</span><span class="n">target_predictions</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">_hat&quot;</span><span class="p">],</span> <span class="n">target_weight</span><span class="p">)</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;outcome_columns&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">_hat&quot;</span> <span class="ow">in</span> <span class="n">target_predictions</span><span class="o">.</span><span class="n">columns</span>
+        <span class="p">}</span>
+        <span class="n">dr_estimates</span> <span class="o">=</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">col</span><span class="p">):</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">aipw</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_fmt_points</span><span class="p">(</span><span class="n">estimates</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">    </span><span class="si">{</span><span class="n">val</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">estimates</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="p">)</span>
+
+        <span class="c1"># TODO (OM CI cache): μ̂_OM&#39;s honest interval is the bootstrap CI from</span>
+        <span class="c1"># outcomes_hat().mean_with_ci(ci_method=&quot;bootstrap&quot;) -- expensive and</span>
+        <span class="c1"># currently recomputed on demand (never cached on the frame). Caching it</span>
+        <span class="c1"># (keyed by the fit config + n_bootstrap/seed) would let this summary</span>
+        <span class="c1"># show the μ̂_OM interval without a costly refit.</span>
+        <span class="n">blocks</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;IPW / Hajek weighted mean (mu_IPW), with CI:&quot;</span><span class="p">,</span>
+            <span class="n">outcomes</span><span class="o">.</span><span class="n">mean_with_ci</span><span class="p">()</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">float_format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{:.3f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">),</span>
+            <span class="s2">&quot;Outcome model / g-computation (mu_OM), point estimate &quot;</span>
+            <span class="s2">&quot;(CI not shown; not cached):&quot;</span><span class="p">,</span>
+            <span class="n">_fmt_points</span><span class="p">(</span><span class="n">om_estimates</span><span class="p">),</span>
+            <span class="s2">&quot;Doubly robust / AIPW (mu_DR), point estimate:&quot;</span><span class="p">,</span>
+            <span class="n">_fmt_points</span><span class="p">(</span><span class="n">dr_estimates</span><span class="p">),</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="s2">&quot;Outcome estimates:</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">blocks</span><span class="p">)</span>
+
 <div class="viewcode-block" id="BalanceFrame.summary">
 <a class="viewcode-back" href="../../balance.balance_frame.html#balance.balance_frame.BalanceFrame.summary">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -3211,6 +3955,7 @@
             <span class="n">effective_sample_proportion</span><span class="o">=</span><span class="n">essp</span><span class="p">,</span>
             <span class="n">model_dict</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
             <span class="n">outcome_means</span><span class="o">=</span><span class="n">outcome_means</span><span class="p">,</span>
+            <span class="n">outcome_estimates</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_outcome_estimates_summary</span><span class="p">(),</span>
         <span class="p">)</span></div>
 
 
@@ -3458,6 +4203,23 @@
                             <span class="n">exc</span><span class="p">,</span>
                         <span class="p">)</span>
 
+        <span class="c1"># A row filter drops responders, so a stored outcome model&#39;s</span>
+        <span class="c1"># training_sample_index no longer matches the retained rows: invalidate</span>
+        <span class="c1"># it (the user must re-fit).  A column-only filter keeps every row, so</span>
+        <span class="c1"># the model stays valid.</span>
+        <span class="k">if</span> <span class="n">rows_to_keep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">new_bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;keep_only_some_rows_columns() dropped responder rows, so the &quot;</span>
+                <span class="s2">&quot;stored outcome model no longer matches the training rows and &quot;</span>
+                <span class="s2">&quot;has been discarded. Re-fit with fit_outcome_model() if needed.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">new_bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">new_bf</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="ow">and</span> <span class="n">new_bf</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">new_bf</span><span class="o">.</span><span class="n">_sf_sample</span>
+            <span class="p">):</span>
+                <span class="n">new_bf</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="o">=</span> <span class="kc">None</span>
+
         <span class="k">return</span> <span class="n">new_bf</span></div>
 
 
@@ -3521,9 +4283,9 @@
                 <span class="n">sf</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
                     <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">sf</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">keep_set</span>
                 <span class="p">]</span>
-            <span class="k">if</span> <span class="n">sf</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;predicted&quot;</span><span class="p">]:</span>
-                <span class="n">sf</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;predicted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">sf</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;predicted&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">keep_set</span>
+            <span class="k">if</span> <span class="n">sf</span><span class="o">.</span><span class="n">_column_roles</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;outcomes_hat&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+                <span class="n">sf</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;outcomes_hat&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">sf</span><span class="o">.</span><span class="n">_column_roles</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;outcomes_hat&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">keep_set</span>
                 <span class="p">]</span>
             <span class="k">if</span> <span class="n">sf</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;ignored&quot;</span><span class="p">]:</span>
                 <span class="n">sf</span><span class="o">.</span><span class="n">_column_roles</span><span class="p">[</span><span class="s2">&quot;ignored&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
@@ -3755,12 +4517,17 @@
     <span class="c1"># --- Column accessors (moved from Sample) ---</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_special_columns_names</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return names of all special columns (id, weight, outcome, ignored).&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return names of all special columns (id, weight, outcome, outcomes_hat, ignored).&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">(</span>
             <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">id_series</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_series</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
             <span class="o">+</span> <span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="k">else</span> <span class="p">[]</span>
+            <span class="p">)</span>
+            <span class="o">+</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_outcomes_hat_columns</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outcomes_hat_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
                 <span class="k">else</span> <span class="p">[]</span>
             <span class="p">)</span>
             <span class="o">+</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_ignored_column_names&quot;</span><span class="p">,</span> <span class="p">[])</span>

@@ -122,8 +122,8 @@ responders stored in <a class="reference internal" href="#balance.balance_frame.
 <p>The active weight column always keeps its original name (e.g.,
 <code class="docutils literal notranslate"><span class="pre">&quot;weight&quot;</span></code>).  Its values are overwritten with the new adjusted
 weights.  The full weight history is tracked via additional columns:</p>
-<table class="docutils align-default" id="id3">
-<caption><span class="caption-text">Weight columns after each adjustment</span><a class="headerlink" href="#id3" title="Link to this table">¶</a></caption>
+<table class="docutils align-default" id="id5">
+<caption><span class="caption-text">Weight columns after each adjustment</span><a class="headerlink" href="#id5" title="Link to this table">¶</a></caption>
 <thead>
 <tr class="row-odd"><th class="head"><p>After</p></th>
 <th class="head"><p>Weight columns in <code class="docutils literal notranslate"><span class="pre">responders</span></code></p></th>
@@ -240,6 +240,61 @@ mapping (when present).</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">bf</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">)</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;null&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">adjustment_history</span><span class="p">)</span>
 <span class="go">1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.aipw">
+<span class="sig-name descname"><span class="pre">aipw</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.aipw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.aipw" title="Link to this definition">¶</a></dt>
+<dd><p>Doubly-robust (AIPW) estimate <code class="docutils literal notranslate"><span class="pre">μ̂_DR</span></code> of the target-population mean.</p>
+<p>Combines the fitted outcome model <code class="docutils literal notranslate"><span class="pre">ĝ</span></code> (from <a class="reference internal" href="#balance.balance_frame.BalanceFrame.fit_outcome_model" title="balance.balance_frame.BalanceFrame.fit_outcome_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_outcome_model()</span></code></a>)
+with the responder weights <code class="docutils literal notranslate"><span class="pre">w</span></code> to form the augmented / one-sample AIPW
+(doubly-robust) estimate of the target mean, per outcome column:</p>
+<blockquote>
+<div><p>μ̂_DR = wmean(ĝ(X_T), w_T) + wmean(Y − ĝ(X_S), w)</p>
+</div></blockquote>
+<p>(the augmentation runs over responders with an observed <code class="docutils literal notranslate"><span class="pre">Y</span></code>). It is
+consistent if <em>either</em> the outcome model <em>or</em> the weighting model is
+correct. Companion to the other estimate accessors:
+<code class="docutils literal notranslate"><span class="pre">outcomes().mean()</span></code> gives <code class="docutils literal notranslate"><span class="pre">μ̂_IPW</span></code> and <code class="docutils literal notranslate"><span class="pre">outcomes_hat().mean()</span></code> gives
+<code class="docutils literal notranslate"><span class="pre">μ̂_OM</span></code>; this gives <code class="docutils literal notranslate"><span class="pre">μ̂_DR</span></code>.</p>
+<p>Requires a fitted outcome model <strong>and</strong> a target (<a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_target" title="balance.balance_frame.BalanceFrame.set_target"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_target()</span></code></a>).
+Uses whatever weight columns are present (any balance weights). With
+constant responder weights it warns and reduces to <code class="docutils literal notranslate"><span class="pre">μ̂_OM</span></code>.</p>
+<p>Point estimate only – no confidence interval (an honest AIPW interval
+must jointly capture the weighting- and outcome-model uncertainty; see
+the TODOs in <code class="xref py py-mod docutils literal notranslate"><span class="pre">balance.outcome_models.aipw</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">μ̂_DR</span></code> indexed by outcome column.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.Series</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If no outcome model has been fit, if no target is set,
+    or if the responders carry no observed outcomes.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.linear_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinearRegression</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.balance_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resp</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">,</span> <span class="mf">40.0</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">]}),</span>
+<span class="gp">... </span>    <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tgt</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">15.0</span><span class="p">,</span> <span class="mf">35.0</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bf</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">fit_outcome_model</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">LinearRegression</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bf</span><span class="o">.</span><span class="n">aipw</span><span class="p">()</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<span class="go">[&#39;y&#39;]</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -393,6 +448,12 @@ column.</p>
 <dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.df_ignored">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">df_ignored</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#balance.balance_frame.BalanceFrame.df_ignored" title="Link to this definition">¶</a></dt>
 <dd><p>Ignored columns from the responder SampleFrame, or None.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.df_outcomes_hat">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">df_outcomes_hat</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#balance.balance_frame.BalanceFrame.df_outcomes_hat" title="Link to this definition">¶</a></dt>
+<dd><p>Predicted-outcome (Y_hat) columns from the responder, or None.</p>
 </dd></dl>
 
 <dl class="py property">
@@ -570,6 +631,132 @@ at fit time or re-fit rake on the scoring data.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.fit_outcome_model">
+<span class="sig-name descname"><span class="pre">fit_outcome_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balance_frame.BalanceFrame" title="balance.balance_frame.BalanceFrame"><span class="pre">BalanceFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="balance.sample_frame.html#balance.sample_frame.SampleFrame" title="balance.sample_frame.SampleFrame"><span class="pre">SampleFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.fit_outcome_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.fit_outcome_model" title="Link to this definition">¶</a></dt>
+<dd><p>Fit an outcome model <code class="docutils literal notranslate"><span class="pre">ĝ(X)</span> <span class="pre">≈</span> <span class="pre">E[Y|X]</span></code> on the responders and store it.</p>
+<p>This is the <code class="docutils literal notranslate"><span class="pre">BalanceFrame</span></code> entry point to the outcome-modelling axis
+(the counterpart to <a class="reference internal" href="#balance.balance_frame.BalanceFrame.fit" title="balance.balance_frame.BalanceFrame.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a> for the <em>weighting</em> axis).  It
+<strong>delegates to the responder</strong> (<code class="docutils literal notranslate"><span class="pre">self._sf_sample</span></code>): the fitted model
+is stored on <code class="docutils literal notranslate"><span class="pre">_sf_sample._outcome_model</span></code> — the single source of truth
+read back through <a class="reference internal" href="#balance.balance_frame.BalanceFrame.outcome_model" title="balance.balance_frame.BalanceFrame.outcome_model"><code class="xref py py-attr docutils literal notranslate"><span class="pre">outcome_model</span></code></a>.  Because the model lives on the
+responder SampleFrame, it rides along whenever <code class="docutils literal notranslate"><span class="pre">_sf_sample</span></code> is
+deep-copied — in particular it <strong>survives :meth:`adjust`</strong> (which
+deep-copies <code class="docutils literal notranslate"><span class="pre">_sf_sample</span></code>) and is preserved across <a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_target" title="balance.balance_frame.BalanceFrame.set_target"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_target()</span></code></a>.</p>
+<p>On a <a class="reference internal" href="balance.sample_class.html#balance.sample_class.Sample" title="balance.sample_class.Sample"><code class="xref py py-class docutils literal notranslate"><span class="pre">Sample</span></code></a>, this <code class="docutils literal notranslate"><span class="pre">BalanceFrame</span></code> method
+takes MRO precedence over <code class="docutils literal notranslate"><span class="pre">SampleFrame.fit_outcome_model</span></code> (<code class="docutils literal notranslate"><span class="pre">Sample</span></code>
+is both classes), so the model correctly lands on <code class="docutils literal notranslate"><span class="pre">_sf_sample</span></code> rather
+than on the Sample’s own inherited attribute.</p>
+<p>Like sklearn’s <code class="docutils literal notranslate"><span class="pre">fit()</span></code> (and <code class="xref py py-meth docutils literal notranslate"><span class="pre">SampleFrame.fit_outcome_model()</span></code>), it
+does <strong>not</strong> produce predictions — call <a class="reference internal" href="#balance.balance_frame.BalanceFrame.predict_outcomes" title="balance.balance_frame.BalanceFrame.predict_outcomes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict_outcomes()</span></code></a> (or
+<a class="reference internal" href="#balance.balance_frame.BalanceFrame.fit_predict_outcomes" title="balance.balance_frame.BalanceFrame.fit_predict_outcomes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_predict_outcomes()</span></code></a>) to write the <code class="docutils literal notranslate"><span class="pre">&lt;outcome&gt;_hat</span></code> columns.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target</strong> – Optional target population to set before fitting (mirrors
+<a class="reference internal" href="#balance.balance_frame.BalanceFrame.fit" title="balance.balance_frame.BalanceFrame.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a>).  When provided, <code class="docutils literal notranslate"><span class="pre">set_target(target,</span> <span class="pre">inplace=False)</span></code>
+is applied first so immutability is preserved; the fit then
+proceeds on the returned object.</p></li>
+<li><p><strong>inplace</strong> – If <code class="docutils literal notranslate"><span class="pre">True</span></code> (default), mutate this object (store the model
+on the responder) and return <code class="docutils literal notranslate"><span class="pre">self</span></code>; if <code class="docutils literal notranslate"><span class="pre">False</span></code>, return a
+new copy with the model stored and leave <code class="docutils literal notranslate"><span class="pre">self</span></code> untouched —
+matching <a class="reference internal" href="#balance.balance_frame.BalanceFrame.fit" title="balance.balance_frame.BalanceFrame.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a> / <code class="xref py py-meth docutils literal notranslate"><span class="pre">SampleFrame.fit_outcome_model()</span></code>.</p></li>
+<li><p><strong>**kwargs</strong> – Forwarded to <code class="xref py py-meth docutils literal notranslate"><span class="pre">SampleFrame.fit_outcome_model()</span></code>
+(e.g. <code class="docutils literal notranslate"><span class="pre">model</span></code>, <code class="docutils literal notranslate"><span class="pre">outcome_columns</span></code>, <code class="docutils literal notranslate"><span class="pre">variables</span></code>,
+<code class="docutils literal notranslate"><span class="pre">weighted</span></code>, <code class="docutils literal notranslate"><span class="pre">formula</span></code>, <code class="docutils literal notranslate"><span class="pre">na_action</span></code>, <code class="docutils literal notranslate"><span class="pre">use_model_matrix</span></code>,
+<code class="docutils literal notranslate"><span class="pre">calibrate</span></code>).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The BalanceFrame with the fitted outcome model stored on its
+responder (<code class="docutils literal notranslate"><span class="pre">self</span></code> when <code class="docutils literal notranslate"><span class="pre">inplace</span></code>, else a new copy).</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If there are no outcome columns to fit (and none are
+    passed), or for any underlying <code class="docutils literal notranslate"><span class="pre">fit_outcome_model</span></code> error.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.balance_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resp</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="s2">&quot;4&quot;</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">25.0</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">,</span> <span class="mf">35.0</span><span class="p">,</span> <span class="mf">40.0</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;happiness&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">50.0</span><span class="p">,</span> <span class="mf">55.0</span><span class="p">,</span> <span class="mf">65.0</span><span class="p">,</span> <span class="mf">80.0</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}),</span>
+<span class="gp">... </span>    <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;happiness&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tgt</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;5&quot;</span><span class="p">,</span> <span class="s2">&quot;6&quot;</span><span class="p">],</span> <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">28.0</span><span class="p">,</span> <span class="mf">38.0</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bf</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">fit_outcome_model</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bf</span><span class="o">.</span><span class="n">outcome_model</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span>
+<span class="go">&#39;outcome_model&#39;</span>
+</pre></div>
+</div>
+<p>End-to-end on the bundled <code class="docutils literal notranslate"><span class="pre">load_data()</span></code> dataset — the g-computation
+estimate <code class="docutils literal notranslate"><span class="pre">μ̂_OM</span></code> (the weighted mean of the predicted outcome on the
+target).  No <code class="docutils literal notranslate"><span class="pre">adjust()</span></code> is required: the outcome model is fit on the
+responders independently of the weights.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_data</span><span class="p">,</span> <span class="n">Sample</span>
+
+<span class="n">target_df</span><span class="p">,</span> <span class="n">sample_df</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
+<span class="n">bf</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+    <span class="n">sample_df</span><span class="p">,</span> <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;happiness&quot;</span><span class="p">]</span>
+<span class="p">)</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">target_df</span><span class="p">))</span>
+<span class="n">bf</span><span class="o">.</span><span class="n">fit_outcome_model</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">)</span>   <span class="c1"># fit ĝ(X) ≈ E[Y|X] on the responders</span>
+<span class="n">bf</span><span class="o">.</span><span class="n">predict_outcomes</span><span class="p">(</span><span class="n">on</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>     <span class="c1"># score the target with the fitted model</span>
+<span class="n">bf</span><span class="o">.</span><span class="n">outcomes_hat</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>             <span class="c1"># target row = μ̂_OM (g-computation estimate)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.fit_predict_outcomes">
+<span class="sig-name descname"><span class="pre">fit_predict_outcomes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balance_frame.BalanceFrame" title="balance.balance_frame.BalanceFrame"><span class="pre">BalanceFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="balance.sample_frame.html#balance.sample_frame.SampleFrame" title="balance.sample_frame.SampleFrame"><span class="pre">SampleFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">on</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'sample'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'target'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'both'</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">populate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">fit_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.fit_predict_outcomes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.fit_predict_outcomes" title="Link to this definition">¶</a></dt>
+<dd><p>Fit an outcome model then replay it (on the target by default).</p>
+<p>Convenience wrapper: calls <a class="reference internal" href="#balance.balance_frame.BalanceFrame.fit_outcome_model" title="balance.balance_frame.BalanceFrame.fit_outcome_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_outcome_model()</span></code></a> (in place, on the
+responder) with <code class="docutils literal notranslate"><span class="pre">**fit_kwargs</span></code> and then <a class="reference internal" href="#balance.balance_frame.BalanceFrame.predict_outcomes" title="balance.balance_frame.BalanceFrame.predict_outcomes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict_outcomes()</span></code></a> with
+the given <code class="docutils literal notranslate"><span class="pre">on</span></code> / <code class="docutils literal notranslate"><span class="pre">populate</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target</strong> – Optional target to set before fitting (see
+<a class="reference internal" href="#balance.balance_frame.BalanceFrame.fit_outcome_model" title="balance.balance_frame.BalanceFrame.fit_outcome_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_outcome_model()</span></code></a>).</p></li>
+<li><p><strong>on</strong> – Which population(s) to predict on afterwards.  <code class="docutils literal notranslate"><span class="pre">None</span></code> (the
+default) resolves to <code class="docutils literal notranslate"><span class="pre">&quot;target&quot;</span></code> when a target is set, else
+<code class="docutils literal notranslate"><span class="pre">&quot;sample&quot;</span></code> (see <a class="reference internal" href="#balance.balance_frame.BalanceFrame.predict_outcomes" title="balance.balance_frame.BalanceFrame.predict_outcomes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict_outcomes()</span></code></a>).</p></li>
+<li><p><strong>populate</strong> – Whether to persist the <code class="docutils literal notranslate"><span class="pre">&lt;outcome&gt;_hat</span></code> columns.</p></li>
+<li><p><strong>**fit_kwargs</strong> – Forwarded to <a class="reference internal" href="#balance.balance_frame.BalanceFrame.fit_outcome_model" title="balance.balance_frame.BalanceFrame.fit_outcome_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_outcome_model()</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The predictions DataFrame (or a <code class="docutils literal notranslate"><span class="pre">(sample,</span> <span class="pre">target)</span></code> tuple when
+<code class="docutils literal notranslate"><span class="pre">on=&quot;both&quot;</span></code>), from <a class="reference internal" href="#balance.balance_frame.BalanceFrame.predict_outcomes" title="balance.balance_frame.BalanceFrame.predict_outcomes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict_outcomes()</span></code></a>.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.balance_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resp</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="s2">&quot;4&quot;</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">25.0</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">,</span> <span class="mf">35.0</span><span class="p">,</span> <span class="mf">40.0</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;happiness&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">50.0</span><span class="p">,</span> <span class="mf">55.0</span><span class="p">,</span> <span class="mf">65.0</span><span class="p">,</span> <span class="mf">80.0</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}),</span>
+<span class="gp">... </span>    <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;happiness&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tgt</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;5&quot;</span><span class="p">,</span> <span class="s2">&quot;6&quot;</span><span class="p">],</span> <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">28.0</span><span class="p">,</span> <span class="mf">38.0</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bf</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">preds</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">fit_predict_outcomes</span><span class="p">(</span><span class="n">on</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">preds</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+<span class="go">[&#39;happiness_hat&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.from_sample">
 <span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#balance.balance_frame.BalanceFrame" title="balance.balance_frame.BalanceFrame"><span class="pre">BalanceFrame</span></a></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.from_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.from_sample" title="Link to this definition">¶</a></dt>
 <dd><p>Convert a <a class="reference internal" href="balance.sample_class.html#balance.sample_class.Sample" title="balance.sample_class.Sample"><code class="xref py py-class docutils literal notranslate"><span class="pre">Sample</span></code></a> to a BalanceFrame.</p>
@@ -743,6 +930,44 @@ adding NA indicators for null values.</p>
 </dl>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.outcome_model">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">outcome_model</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#balance.balance_frame.BalanceFrame.outcome_model" title="Link to this definition">¶</a></dt>
+<dd><p>The fitted outcome-model dict, delegated to <code class="docutils literal notranslate"><span class="pre">_sf_sample</span></code>.</p>
+<p>Single source of truth: the outcome model lives on the wrapped
+responder SampleFrame (<code class="docutils literal notranslate"><span class="pre">_sf_sample._outcome_model</span></code>), so it rides
+along whenever <code class="docutils literal notranslate"><span class="pre">_sf_sample</span></code> is deep-copied (e.g. by <a class="reference internal" href="#balance.balance_frame.BalanceFrame.adjust" title="balance.balance_frame.BalanceFrame.adjust"><code class="xref py py-meth docutils literal notranslate"><span class="pre">adjust()</span></code></a>)
+and a <a class="reference internal" href="balance.sample_class.html#balance.sample_class.Sample" title="balance.sample_class.Sample"><code class="xref py py-class docutils literal notranslate"><span class="pre">Sample</span></code></a> — which is both a
+BalanceFrame and a SampleFrame — never reports a stale inherited copy.
+Mirrors how <code class="xref py py-attr docutils literal notranslate"><span class="pre">_outcome_columns</span></code> / <a class="reference internal" href="#balance.balance_frame.BalanceFrame.df_outcomes_hat" title="balance.balance_frame.BalanceFrame.df_outcomes_hat"><code class="xref py py-attr docutils literal notranslate"><span class="pre">df_outcomes_hat</span></code></a> read
+through to <code class="docutils literal notranslate"><span class="pre">_sf_sample</span></code>, and parallels <a class="reference internal" href="#balance.balance_frame.BalanceFrame.model" title="balance.balance_frame.BalanceFrame.model"><code class="xref py py-attr docutils literal notranslate"><span class="pre">model</span></code></a> (the <em>weighting</em>
+model) for the outcome-modelling axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The stored <code class="docutils literal notranslate"><span class="pre">_outcome_model</span></code> dict from the
+responder, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if no outcome model has been fit.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict[str, Any] | None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.balance_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resp</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}),</span>
+<span class="gp">... </span>    <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tgt</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">15.0</span><span class="p">,</span> <span class="mf">25.0</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bf</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bf</span><span class="o">.</span><span class="n">outcome_model</span> <span class="ow">is</span> <span class="kc">None</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.outcomes">
 <span class="sig-name descname"><span class="pre">outcomes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.outcomes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.outcomes" title="Link to this definition">¶</a></dt>
@@ -773,6 +998,128 @@ adding NA indicators for null values.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">bf</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">bf</span><span class="o">.</span><span class="n">outcomes</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 <span class="go">[&#39;y&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.outcomes_hat">
+<span class="sig-name descname"><span class="pre">outcomes_hat</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.outcomes_hat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.outcomes_hat" title="Link to this definition">¶</a></dt>
+<dd><p>Return a <a class="reference internal" href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFOutcomesHat" title="balance.balancedf_class.BalanceDFOutcomesHat"><code class="xref py py-class docutils literal notranslate"><span class="pre">BalanceDFOutcomesHat</span></code></a>, or None.</p>
+<p>Returns <code class="docutils literal notranslate"><span class="pre">None</span></code> if the responder SampleFrame has no predicted-outcome
+(<code class="docutils literal notranslate"><span class="pre">outcomes_hat</span></code> / Y_hat) columns.  The returned view carries linked
+target (and unadjusted, if adjusted) sources so that <code class="docutils literal notranslate"><span class="pre">.mean()</span></code> and
+<code class="docutils literal notranslate"><span class="pre">.mean_with_ci()</span></code> automatically expand across the sources that
+actually carry predicted outcomes – mirroring <a class="reference internal" href="#balance.balance_frame.BalanceFrame.outcomes" title="balance.balance_frame.BalanceFrame.outcomes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">outcomes()</span></code></a>.  In
+particular, the weighted mean of the target’s Y_hat is the
+g-computation / outcome-model estimate <code class="docutils literal notranslate"><span class="pre">μ̂_OM</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>Predicted-outcome view with linked</dt><dd><p>sources, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if no outcomes_hat columns are defined.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFOutcomesHat" title="balance.balancedf_class.BalanceDFOutcomesHat">BalanceDFOutcomesHat</a> or None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.balance_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resp</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tgt</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">15.0</span><span class="p">,</span> <span class="mf">25.0</span><span class="p">],</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bf</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bf</span><span class="o">.</span><span class="n">outcomes_hat</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resp</span><span class="o">.</span><span class="n">add_outcomes_hat_column</span><span class="p">(</span><span class="s2">&quot;y_hat&quot;</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">]))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bf2</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bf2</span><span class="o">.</span><span class="n">outcomes_hat</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<span class="go">[&#39;y_hat&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.predict_outcomes">
+<span class="sig-name descname"><span class="pre">predict_outcomes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">on</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'sample'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'target'</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balance_frame.BalanceFrame" title="balance.balance_frame.BalanceFrame"><span class="pre">BalanceFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">populate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.predict_outcomes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.predict_outcomes" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">predict_outcomes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">on</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'both'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balance_frame.BalanceFrame" title="balance.balance_frame.BalanceFrame"><span class="pre">BalanceFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">populate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">]</span></span></span></span></dt>
+<dd><p>Replay the fitted outcome model onto the sample and/or the target.</p>
+<p>Requires a model fit on the responder (via <a class="reference internal" href="#balance.balance_frame.BalanceFrame.fit_outcome_model" title="balance.balance_frame.BalanceFrame.fit_outcome_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_outcome_model()</span></code></a>).
+The responder’s stored preprocessing is replayed on the requested
+population’s covariates and the <code class="docutils literal notranslate"><span class="pre">&lt;outcome&gt;_hat</span></code> columns are populated.</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">on=&quot;target&quot;</span></code> (the default when a target is set): replay on the</dt><dd><p><strong>target</strong> covariates and populate the target’s <code class="docutils literal notranslate"><span class="pre">outcomes_hat</span></code>
+columns.  The target frame is
+<strong>deep-copied before it is written</strong> (and the populated copy is
+stored back on <code class="docutils literal notranslate"><span class="pre">self._sf_target</span></code>), so a caller’s target object is
+never mutated in place.  The weighted mean of the target’s
+<code class="docutils literal notranslate"><span class="pre">outcomes_hat</span></code> is the g-computation estimate <code class="docutils literal notranslate"><span class="pre">μ̂_OM</span></code>, read via
+<code class="docutils literal notranslate"><span class="pre">outcomes_hat().mean()</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">on=&quot;sample&quot;</span></code>: populate the responder (<code class="docutils literal notranslate"><span class="pre">_sf_sample</span></code>) in place —</dt><dd><p>equivalent to <code class="docutils literal notranslate"><span class="pre">_sf_sample.predict_outcomes()</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">on=&quot;both&quot;</span></code>: do both and return <a href="#id1"><span class="problematic" id="id2">``</span></a>(sample_predictions,</dt><dd><p>target_predictions)`` — mirroring the <code class="docutils literal notranslate"><span class="pre">on=</span></code> return convention of
+<a class="reference internal" href="#balance.balance_frame.BalanceFrame.predict_weights" title="balance.balance_frame.BalanceFrame.predict_weights"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict_weights()</span></code></a> / <a class="reference internal" href="#balance.balance_frame.BalanceFrame.design_matrix" title="balance.balance_frame.BalanceFrame.design_matrix"><code class="xref py py-meth docutils literal notranslate"><span class="pre">design_matrix()</span></code></a>.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>on</strong> – Which population(s) to score/populate.  <code class="docutils literal notranslate"><span class="pre">None</span></code> (the default)
+resolves to <code class="docutils literal notranslate"><span class="pre">&quot;target&quot;</span></code> when a target is set (the estimate
+workflow) and to <code class="docutils literal notranslate"><span class="pre">&quot;sample&quot;</span></code> otherwise (so a target-less frame
+behaves like <code class="docutils literal notranslate"><span class="pre">SampleFrame.predict_outcomes</span></code>).</p></li>
+<li><p><strong>data</strong> – Reserved for parity with <a class="reference internal" href="#balance.balance_frame.BalanceFrame.predict_weights" title="balance.balance_frame.BalanceFrame.predict_weights"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict_weights()</span></code></a>; not yet
+supported here — pass <code class="docutils literal notranslate"><span class="pre">None</span></code> (foreign-frame transfer is
+<a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_fitted_outcome_model" title="balance.balance_frame.BalanceFrame.set_fitted_outcome_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_fitted_outcome_model()</span></code></a>, a later change).</p></li>
+<li><p><strong>populate</strong> – When <code class="docutils literal notranslate"><span class="pre">True</span></code> (default), persist the predictions as
+<code class="docutils literal notranslate"><span class="pre">&lt;outcome&gt;_hat</span></code> columns on the scored population.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The predictions DataFrame (one <code class="docutils literal notranslate"><span class="pre">&lt;outcome&gt;_hat</span></code> column per fitted
+outcome), or a <code class="docutils literal notranslate"><span class="pre">(sample,</span> <span class="pre">target)</span></code> tuple when <code class="docutils literal notranslate"><span class="pre">on=&quot;both&quot;</span></code>.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If no outcome model has been fit, if <code class="docutils literal notranslate"><span class="pre">on=&quot;target&quot;</span></code> /
+    <code class="docutils literal notranslate"><span class="pre">&quot;both&quot;</span></code> but no target is set, or if <code class="docutils literal notranslate"><span class="pre">data</span></code> is passed.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.balance_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resp</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="s2">&quot;4&quot;</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">25.0</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">,</span> <span class="mf">35.0</span><span class="p">,</span> <span class="mf">40.0</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;happiness&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">50.0</span><span class="p">,</span> <span class="mf">55.0</span><span class="p">,</span> <span class="mf">65.0</span><span class="p">,</span> <span class="mf">80.0</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}),</span>
+<span class="gp">... </span>    <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;happiness&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tgt</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;5&quot;</span><span class="p">,</span> <span class="s2">&quot;6&quot;</span><span class="p">],</span> <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">28.0</span><span class="p">,</span> <span class="mf">38.0</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bf</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">fit_outcome_model</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">preds</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">predict_outcomes</span><span class="p">(</span><span class="n">on</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">preds</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+<span class="go">[&#39;happiness_hat&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bf</span><span class="o">.</span><span class="n">outcomes_hat</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>   <span class="c1"># target now populated</span>
+<span class="go">[&#39;happiness_hat&#39;]</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -905,8 +1252,8 @@ and poststratify.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="id1">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">responders</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="balance.sample_frame.html#balance.sample_frame.SampleFrame" title="balance.sample_frame.SampleFrame"><span class="pre">SampleFrame</span></a></span><a class="headerlink" href="#id1" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="id3">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">responders</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="balance.sample_frame.html#balance.sample_frame.SampleFrame" title="balance.sample_frame.SampleFrame"><span class="pre">SampleFrame</span></a></span><a class="headerlink" href="#id3" title="Link to this definition">¶</a></dt>
 <dd><p>Alias for <code class="docutils literal notranslate"><span class="pre">_sf_sample</span></code> (backward compat, will be removed).</p>
 </dd></dl>
 
@@ -1014,6 +1361,80 @@ leaving <code class="docutils literal notranslate"><span class="pre">self</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">scored</span><span class="o">.</span><span class="n">is_adjusted</span>
 <span class="go">True</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">scored</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.set_fitted_outcome_model">
+<span class="sig-name descname"><span class="pre">set_fitted_outcome_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fitted</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.balance_frame.BalanceFrame" title="balance.balance_frame.BalanceFrame"><span class="pre">BalanceFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="balance.sample_frame.html#balance.sample_frame.SampleFrame" title="balance.sample_frame.SampleFrame"><span class="pre">SampleFrame</span></a></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.set_fitted_outcome_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.set_fitted_outcome_model" title="Link to this definition">¶</a></dt>
+<dd><p>Apply a fitted outcome model from another frame (train/holdout transfer).</p>
+<p>This is the outcome-modelling counterpart to <a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_fitted_model" title="balance.balance_frame.BalanceFrame.set_fitted_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_fitted_model()</span></code></a>
+(the IPW weighting-axis train/holdout transfer): fit an outcome model
+<code class="docutils literal notranslate"><span class="pre">ĝ(X)</span> <span class="pre">≈</span> <span class="pre">E[Y|X]</span></code> on one frame (the <em>train</em> frame) and apply the fitted
+model to a <em>different</em> frame (the <em>holdout</em> / scoring frame) that shares
+the same covariate schema.  Nothing is re-fit — the already-fitted model
+(including its stored preprocessing) is copied onto <code class="docutils literal notranslate"><span class="pre">self</span></code> <strong>sharing
+the fitted estimator objects by identity</strong> (exactly like
+<a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_fitted_model" title="balance.balance_frame.BalanceFrame.set_fitted_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_fitted_model()</span></code></a>), so <code class="docutils literal notranslate"><span class="pre">self.predict_outcomes(on=&quot;target&quot;)</span></code> then
+replays the transferred model on <code class="docutils literal notranslate"><span class="pre">self</span></code>’s own target and
+<code class="docutils literal notranslate"><span class="pre">self.outcomes_hat().mean()</span></code> is the g-computation estimate <code class="docutils literal notranslate"><span class="pre">μ̂_OM</span></code> on
+the holdout target.</p>
+<p>On a <a class="reference internal" href="balance.sample_class.html#balance.sample_class.Sample" title="balance.sample_class.Sample"><code class="xref py py-class docutils literal notranslate"><span class="pre">Sample</span></code></a>, this <code class="docutils literal notranslate"><span class="pre">BalanceFrame</span></code> method
+is reached via the MRO; the model lands on <code class="docutils literal notranslate"><span class="pre">self._sf_sample</span></code> (the single
+source of truth read back through <a class="reference internal" href="#balance.balance_frame.BalanceFrame.outcome_model" title="balance.balance_frame.BalanceFrame.outcome_model"><code class="xref py py-attr docutils literal notranslate"><span class="pre">outcome_model</span></code></a>), so it rides
+along <a class="reference internal" href="#balance.balance_frame.BalanceFrame.adjust" title="balance.balance_frame.BalanceFrame.adjust"><code class="xref py py-meth docutils literal notranslate"><span class="pre">adjust()</span></code></a> and is preserved across <a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_target" title="balance.balance_frame.BalanceFrame.set_target"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_target()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fitted</strong> – Another <code class="docutils literal notranslate"><span class="pre">BalanceFrame</span></code> (or <code class="docutils literal notranslate"><span class="pre">SampleFrame</span></code> / <code class="docutils literal notranslate"><span class="pre">Sample</span></code>)
+that already carries a fitted outcome model (via
+<a class="reference internal" href="#balance.balance_frame.BalanceFrame.fit_outcome_model" title="balance.balance_frame.BalanceFrame.fit_outcome_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_outcome_model()</span></code></a>).  Its covariate columns must match
+<code class="docutils literal notranslate"><span class="pre">self</span></code>’s.</p></li>
+<li><p><strong>inplace</strong> – If <code class="docutils literal notranslate"><span class="pre">True</span></code> (default), mutate this object (store the model on
+the responder) and return <code class="docutils literal notranslate"><span class="pre">self</span></code>; if <code class="docutils literal notranslate"><span class="pre">False</span></code>, return a new
+copy with the model stored and leave <code class="docutils literal notranslate"><span class="pre">self</span></code> unchanged — matching
+<a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_fitted_model" title="balance.balance_frame.BalanceFrame.set_fitted_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_fitted_model()</span></code></a> / <a class="reference internal" href="#balance.balance_frame.BalanceFrame.fit_outcome_model" title="balance.balance_frame.BalanceFrame.fit_outcome_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_outcome_model()</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The BalanceFrame with the transferred outcome model stored on its
+responder (<code class="docutils literal notranslate"><span class="pre">self</span></code> when <code class="docutils literal notranslate"><span class="pre">inplace</span></code>, else a new copy).</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">fitted</span></code> has no stored outcome model; if the
+    covariate column names differ between <code class="docutils literal notranslate"><span class="pre">self</span></code> and <code class="docutils literal notranslate"><span class="pre">fitted</span></code>; or
+    if the fitted model used a non-deterministic <code class="docutils literal notranslate"><span class="pre">transformations</span></code>
+    (e.g. <code class="docutils literal notranslate"><span class="pre">quantize</span></code> / <code class="docutils literal notranslate"><span class="pre">fct_lump</span></code>) or <code class="docutils literal notranslate"><span class="pre">na_action=&quot;drop&quot;</span></code> that
+    cannot be replayed deterministically on <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.balance_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">train_resp</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="s2">&quot;4&quot;</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">25.0</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">,</span> <span class="mf">35.0</span><span class="p">,</span> <span class="mf">40.0</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;happiness&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">50.0</span><span class="p">,</span> <span class="mf">55.0</span><span class="p">,</span> <span class="mf">65.0</span><span class="p">,</span> <span class="mf">80.0</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}),</span>
+<span class="gp">... </span>    <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;happiness&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">holdout_resp</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;5&quot;</span><span class="p">,</span> <span class="s2">&quot;6&quot;</span><span class="p">,</span> <span class="s2">&quot;7&quot;</span><span class="p">,</span> <span class="s2">&quot;8&quot;</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">26.0</span><span class="p">,</span> <span class="mf">31.0</span><span class="p">,</span> <span class="mf">36.0</span><span class="p">,</span> <span class="mf">41.0</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;happiness&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">51.0</span><span class="p">,</span> <span class="mf">56.0</span><span class="p">,</span> <span class="mf">66.0</span><span class="p">,</span> <span class="mf">81.0</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}),</span>
+<span class="gp">... </span>    <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;happiness&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">holdout_tgt</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;9&quot;</span><span class="p">,</span> <span class="s2">&quot;10&quot;</span><span class="p">],</span> <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">28.0</span><span class="p">,</span> <span class="mf">38.0</span><span class="p">],</span>
+<span class="gp">... </span>                  <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">train_bf</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">train_resp</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span> <span class="o">=</span> <span class="n">train_bf</span><span class="o">.</span><span class="n">fit_outcome_model</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">holdout_bf</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">holdout_resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">holdout_tgt</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">scored</span> <span class="o">=</span> <span class="n">holdout_bf</span><span class="o">.</span><span class="n">set_fitted_outcome_model</span><span class="p">(</span><span class="n">train_bf</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span> <span class="o">=</span> <span class="n">scored</span><span class="o">.</span><span class="n">predict_outcomes</span><span class="p">(</span><span class="n">on</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">scored</span><span class="o">.</span><span class="n">outcome_model</span><span class="p">[</span><span class="s2">&quot;fit&quot;</span><span class="p">][</span><span class="s2">&quot;happiness&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="n">train_bf</span><span class="o">.</span><span class="n">outcome_model</span><span class="p">[</span><span class="s2">&quot;fit&quot;</span><span class="p">][</span><span class="s2">&quot;happiness&quot;</span><span class="p">]</span>
 <span class="go">True</span>
 </pre></div>
 </div>
@@ -1153,8 +1574,8 @@ diagnostics and outcome means only.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="id2">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">target</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="balance.sample_frame.html#balance.sample_frame.SampleFrame" title="balance.sample_frame.SampleFrame"><span class="pre">SampleFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id2" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="id4">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">target</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="balance.sample_frame.html#balance.sample_frame.SampleFrame" title="balance.sample_frame.SampleFrame"><span class="pre">SampleFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id4" title="Link to this definition">¶</a></dt>
 <dd><p>Alias for <code class="docutils literal notranslate"><span class="pre">_sf_target</span></code> (backward compat, will be removed).</p>
 </dd></dl>
 
@@ -1358,16 +1779,20 @@ adjusted) views for comparative weight analysis.</p>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.is_adjusted"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.is_adjusted</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.adjust"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.adjust()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.adjustment_history"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.adjustment_history</span></code></a></li>
+<li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.aipw"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.aipw()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.covars"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.covars()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.design_matrix"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.design_matrix()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.df"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.df</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.df_all"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.df_all</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.df_ignored"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.df_ignored</span></code></a></li>
+<li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.df_outcomes_hat"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.df_outcomes_hat</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.df_responders"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.df_responders</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.df_responders_unadjusted"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.df_responders_unadjusted</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.df_target"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.df_target</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.diagnostics"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.diagnostics()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.fit"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.fit()</span></code></a></li>
+<li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.fit_outcome_model"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.fit_outcome_model()</span></code></a></li>
+<li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.fit_predict_outcomes"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.fit_predict_outcomes()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.from_sample"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.from_sample()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.has_target"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.has_target</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.id_column"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.id_column</span></code></a></li>
@@ -1376,17 +1801,21 @@ adjusted) views for comparative weight analysis.</p>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.keep_only_some_rows_columns"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.keep_only_some_rows_columns()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.model"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.model</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.model_matrix"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.model_matrix()</span></code></a></li>
+<li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.outcome_model"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.outcome_model</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.outcomes"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.outcomes()</span></code></a></li>
+<li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.outcomes_hat"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.outcomes_hat()</span></code></a></li>
+<li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.predict_outcomes"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.predict_outcomes()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.predict_proba"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.predict_proba()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.predict_weights"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.predict_weights()</span></code></a></li>
-<li><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.responders</span></code></a></li>
+<li><a class="reference internal" href="#id3"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.responders</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_as_pre_adjust"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.set_as_pre_adjust()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_fitted_model"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.set_fitted_model()</span></code></a></li>
+<li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_fitted_outcome_model"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.set_fitted_outcome_model()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_target"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.set_target()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_unadjusted"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.set_unadjusted()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_weights"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.set_weights()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.summary"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.summary()</span></code></a></li>
-<li><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.target</span></code></a></li>
+<li><a class="reference internal" href="#id4"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.target</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.to_csv"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.to_csv()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.to_download"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.to_download()</span></code></a></li>
 <li><a class="reference internal" href="#balance.balance_frame.BalanceFrame.to_sample"><code class="docutils literal notranslate"><span class="pre">BalanceFrame.to_sample()</span></code></a></li>

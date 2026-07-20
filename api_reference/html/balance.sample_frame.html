@@ -45,7 +45,7 @@
   <section id="module-balance.sample_frame">
 <span id="balance-sample-frame"></span><h1>balance.sample_frame<a class="headerlink" href="#module-balance.sample_frame" title="Link to this heading">¶</a></h1>
 <p>SampleFrame: an explicit-role DataFrame container for the Balance library.</p>
-<p>Stores covariates, weights, outcomes, predicted, and ignored columns with
+<p>Stores covariates, weights, outcomes, outcomes_hat, and ignored columns with
 explicit role metadata, replacing the inference-by-exclusion pattern used
 in the legacy Sample class.</p>
 <dl class="py class">
@@ -54,7 +54,7 @@ in the legacy Sample class.</p>
 <dd><p>A DataFrame container with explicit column-role metadata.</p>
 <p>SampleFrame stores data as a single internal pd.DataFrame but with
 explicit metadata tracking which columns belong to which role:
-covars (X), weights (W), outcomes (Y), predicted_outcomes (Y_hat), ignored.</p>
+covars (X), weights (W), outcomes (Y), outcomes_hat (Y_hat), ignored.</p>
 <p>Must be constructed via SampleFrame.from_frame() or SampleFrame.from_sample().</p>
 <dl>
 <dt>Mutability:</dt><dd><p>SampleFrame is mostly-immutable at the data level.  The underlying
@@ -74,6 +74,53 @@ instance in-place):</p>
 methods the object behaves as immutable.</p>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_frame.SampleFrame.add_outcomes_hat_column">
+<span class="sig-name descname"><span class="pre">add_outcomes_hat_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/sample_frame.html#SampleFrame.add_outcomes_hat_column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_frame.SampleFrame.add_outcomes_hat_column" title="Link to this definition">¶</a></dt>
+<dd><p>Attach a predicted-outcome (Y_hat) column to the SampleFrame.</p>
+<p>Mirrors <a class="reference internal" href="#balance.sample_frame.SampleFrame.add_weight_column" title="balance.sample_frame.SampleFrame.add_weight_column"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_weight_column()</span></code></a>: the column is appended to the
+internal DataFrame in place, registered under the <code class="docutils literal notranslate"><span class="pre">outcomes_hat</span></code>
+role, and optionally associated with provenance metadata (stored in
+<code class="docutils literal notranslate"><span class="pre">_prediction_metadata</span></code>).  Because the column takes the
+<code class="docutils literal notranslate"><span class="pre">outcomes_hat</span></code> role, it is <em>not</em> treated as a covariate.</p>
+<p>By convention, predicted-outcome columns are named <code class="docutils literal notranslate"><span class="pre">&quot;&lt;outcome&gt;_hat&quot;</span></code>
+(e.g. <code class="docutils literal notranslate"><span class="pre">&quot;happiness_hat&quot;</span></code>).  A <code class="docutils literal notranslate"><span class="pre">logging.warning</span></code> is emitted — but
+no error raised — when <em>name</em> does not end in <code class="docutils literal notranslate"><span class="pre">_hat</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Name for the new outcomes_hat column.</p></li>
+<li><p><strong>values</strong> (<em>pd.Series</em>) – Predicted values.  Must match the DataFrame
+length, unless it is a shorter <code class="docutils literal notranslate"><span class="pre">pd.Series</span></code> — in which case
+values are aligned by index and missing rows are filled with
+NaN.</p></li>
+<li><p><strong>metadata</strong> (<em>dict</em><em>, </em><em>optional</em>) – Provenance metadata for the new column
+(e.g. the fitting method or learner).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If <em>name</em> is already an outcomes_hat column, if <em>name</em>
+    already exists in the DataFrame, or if <em>values</em> is longer than
+    the DataFrame (or is a non-Series with a different length).</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="s2">&quot;4&quot;</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">25</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">35</span><span class="p">,</span> <span class="mi">40</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span><span class="o">.</span><span class="n">add_outcomes_hat_column</span><span class="p">(</span><span class="s2">&quot;happiness_hat&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                           <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mf">52.</span><span class="p">,</span> <span class="mf">58.</span><span class="p">,</span> <span class="mf">68.</span><span class="p">,</span> <span class="mf">79.</span><span class="p">]))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span><span class="o">.</span><span class="n">df_outcomes_hat</span><span class="p">[</span><span class="s2">&quot;happiness_hat&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<span class="go">[52.0, 58.0, 68.0, 79.0]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">sf</span><span class="o">.</span><span class="n">df_covars</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+<span class="go">[&#39;age&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="balance.sample_frame.SampleFrame.add_weight_column">
 <span class="sig-name descname"><span class="pre">add_weight_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/sample_frame.html#SampleFrame.add_weight_column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_frame.SampleFrame.add_weight_column" title="Link to this definition">¶</a></dt>
@@ -271,6 +318,39 @@ internal data.</p>
 </dd></dl>
 
 <dl class="py property">
+<dt class="sig sig-object py" id="balance.sample_frame.SampleFrame.df_outcomes_hat">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">df_outcomes_hat</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#balance.sample_frame.SampleFrame.df_outcomes_hat" title="Link to this definition">¶</a></dt>
+<dd><p>Predicted-outcome (Y_hat) columns, or None if none.</p>
+<p>Mirrors <a class="reference internal" href="#balance.sample_frame.SampleFrame.df_outcomes" title="balance.sample_frame.SampleFrame.df_outcomes"><code class="xref py py-attr docutils literal notranslate"><span class="pre">df_outcomes</span></code></a> for the <code class="docutils literal notranslate"><span class="pre">outcomes_hat</span></code> role.  Returns a
+copy so that callers cannot accidentally mutate the internal data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>A copy of the outcomes_hat columns, or None</dt><dd><p>if no outcomes_hat columns are registered.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame | None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="s2">&quot;4&quot;</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">25</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">35</span><span class="p">,</span> <span class="mi">40</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span><span class="o">.</span><span class="n">add_outcomes_hat_column</span><span class="p">(</span><span class="s2">&quot;happiness_hat&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                           <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mf">52.</span><span class="p">,</span> <span class="mf">58.</span><span class="p">,</span> <span class="mf">68.</span><span class="p">,</span> <span class="mf">79.</span><span class="p">]))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span><span class="o">.</span><span class="n">df_outcomes_hat</span><span class="p">[</span><span class="s2">&quot;happiness_hat&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<span class="go">[52.0, 58.0, 68.0, 79.0]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="balance.sample_frame.SampleFrame.df_weights">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">df_weights</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></span><a class="headerlink" href="#balance.sample_frame.SampleFrame.df_weights" title="Link to this definition">¶</a></dt>
 <dd><p>Active weight column as a single-column DataFrame.</p>
@@ -303,8 +383,148 @@ internal data.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_frame.SampleFrame.fit_outcome_model">
+<span class="sig-name descname"><span class="pre">fit_outcome_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">OutcomeLearner</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcome_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formula</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">na_action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'add_indicator'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_model_matrix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighted</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calibrate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="_modules/balance/sample_frame.html#SampleFrame.fit_outcome_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_frame.SampleFrame.fit_outcome_model" title="Link to this definition">¶</a></dt>
+<dd><p>Fit an outcome model <code class="docutils literal notranslate"><span class="pre">ĝ(X)</span> <span class="pre">≈</span> <span class="pre">E[Y|X]</span></code> on the responders and store it.</p>
+<p>This is the outcome-modelling counterpart to
+<a class="reference internal" href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.fit" title="balance.balance_frame.BalanceFrame.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a> (which fits the
+<em>weighting</em> model).  It fits a regressor (continuous outcome) or
+classifier (binary outcome) per resolved outcome column on this frame’s
+covariates and observed outcome(s), and stores the resulting model dict
+(fitted estimators + preprocessing) on <a class="reference internal" href="#balance.sample_frame.SampleFrame.outcome_model" title="balance.sample_frame.SampleFrame.outcome_model"><code class="xref py py-attr docutils literal notranslate"><span class="pre">outcome_model</span></code></a>.  Like
+sklearn’s <code class="docutils literal notranslate"><span class="pre">fit()</span></code>, it does <strong>not</strong> produce predictions — call
+<a class="reference internal" href="#balance.sample_frame.SampleFrame.predict_outcomes" title="balance.sample_frame.SampleFrame.predict_outcomes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict_outcomes()</span></code></a> (or <a class="reference internal" href="#balance.sample_frame.SampleFrame.fit_predict_outcomes" title="balance.sample_frame.SampleFrame.fit_predict_outcomes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_predict_outcomes()</span></code></a>) to write the
+<code class="docutils literal notranslate"><span class="pre">&lt;outcome&gt;_hat</span></code> columns.</p>
+<p>The fit is <strong>unweighted by default</strong> (<code class="docutils literal notranslate"><span class="pre">weighted=False</span></code>): the outcome
+model estimates <code class="docutils literal notranslate"><span class="pre">E[Y|X]</span></code> and is usually best left unbiased by the
+design weights.  Pass <code class="docutils literal notranslate"><span class="pre">weighted=True</span></code> to fit with the frame’s
+currently-applied weight (weighted least squares / weighted boosting),
+aligned to the covariate index before it is passed through.  Rows whose
+outcome <code class="docutils literal notranslate"><span class="pre">Y</span></code> is missing (NaN) are dropped before fitting — the
+covariates and weights are aligned to the retained rows, so the fit uses
+only complete outcome observations.  Re-fitting drops any
+<code class="docutils literal notranslate"><span class="pre">&lt;outcome&gt;_hat</span></code> columns left by a previous <a class="reference internal" href="#balance.sample_frame.SampleFrame.predict_outcomes" title="balance.sample_frame.SampleFrame.predict_outcomes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict_outcomes()</span></code></a> so
+a stale prediction cannot linger against a newly-fit model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – <code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code> (a <code class="docutils literal notranslate"><span class="pre">HistGradientBoosting</span></code> regressor/classifier
+chosen by outcome type), a single sklearn estimator (cloned per
+outcome column — one estimator type only when the outcomes are
+mixed), a <code class="docutils literal notranslate"><span class="pre">{&quot;_discrete&quot;:</span> <span class="pre">clf,</span> <span class="pre">&quot;_continuous&quot;:</span> <span class="pre">reg}</span></code> type map, or
+a <code class="docutils literal notranslate"><span class="pre">{outcome_column:</span> <span class="pre">estimator}</span></code> column map.</p></li>
+<li><p><strong>outcome_columns</strong> – Outcome column name(s) to model.  Defaults to all
+of this frame’s <a class="reference internal" href="#balance.sample_frame.SampleFrame.outcome_columns" title="balance.sample_frame.SampleFrame.outcome_columns"><code class="xref py py-attr docutils literal notranslate"><span class="pre">outcome_columns</span></code></a>; raises if none exist.</p></li>
+<li><p><strong>variables</strong> – Covariate column name(s) to use as the model inputs <code class="docutils literal notranslate"><span class="pre">X</span></code>.
+Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code> (all of this frame’s covariates); pass a
+subset (validated against the covariate role) to restrict the
+model to those columns.</p></li>
+<li><p><strong>formula</strong> – Optional patsy formula(s) forwarded to the one-hot path.</p></li>
+<li><p><strong>transformations</strong> – Reserved for parity with IPW; must be <code class="docutils literal notranslate"><span class="pre">None</span></code> (the
+replay-safe default) — a non-<code class="docutils literal notranslate"><span class="pre">None</span></code> value raises.</p></li>
+<li><p><strong>na_action</strong> – Missing-value handling for the design matrix; only
+<code class="docutils literal notranslate"><span class="pre">&quot;add_indicator&quot;</span></code> (default) is supported (<code class="docutils literal notranslate"><span class="pre">&quot;drop&quot;</span></code> raises).</p></li>
+<li><p><strong>use_model_matrix</strong> – <code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code> (default) picks the native-categorical
+path for tree/boosting learners on scikit-learn &gt;= 1.4 and the
+one-hot + scaler path otherwise; pass <code class="docutils literal notranslate"><span class="pre">True</span></code>/<code class="docutils literal notranslate"><span class="pre">False</span></code> to force.</p></li>
+<li><p><strong>weighted</strong> – When <code class="docutils literal notranslate"><span class="pre">True</span></code>, fit with the frame’s currently-applied
+weight (weighted least squares / weighted boosting).  Defaults to
+<code class="docutils literal notranslate"><span class="pre">False</span></code> — the outcome model predicts <code class="docutils literal notranslate"><span class="pre">E[Y|X]</span></code> and is usually
+best left unweighted.  A weighted fit whose estimator’s <code class="docutils literal notranslate"><span class="pre">fit</span></code>
+does not accept <code class="docutils literal notranslate"><span class="pre">sample_weight</span></code> raises <code class="docutils literal notranslate"><span class="pre">TypeError</span></code>.</p></li>
+<li><p><strong>calibrate</strong> – When <code class="docutils literal notranslate"><span class="pre">True</span></code>, wrap each classifier in
+<code class="docutils literal notranslate"><span class="pre">CalibratedClassifierCV</span></code> (binary outcomes only).</p></li>
+<li><p><strong>inplace</strong> – If <code class="docutils literal notranslate"><span class="pre">True</span></code> (default), mutate this frame (store the model)
+and return <code class="docutils literal notranslate"><span class="pre">self</span></code>; if <code class="docutils literal notranslate"><span class="pre">False</span></code>, return a new copy with the
+model stored and leave <code class="docutils literal notranslate"><span class="pre">self</span></code> untouched — mirroring
+<a class="reference internal" href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.fit" title="balance.balance_frame.BalanceFrame.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The frame with the fitted outcome model stored (<code class="docutils literal notranslate"><span class="pre">self</span></code> when
+<code class="docutils literal notranslate"><span class="pre">inplace</span></code>, else a new copy).</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ValueError</strong> – If there are no outcome columns to fit (and none are
+    passed), if a requested outcome/variable column is not registered,
+    or for the underlying <code class="docutils literal notranslate"><span class="pre">fit_outcome_model</span></code> errors
+    (<code class="docutils literal notranslate"><span class="pre">na_action=&quot;drop&quot;</span></code>, non-<code class="docutils literal notranslate"><span class="pre">None</span></code> <code class="docutils literal notranslate"><span class="pre">transformations</span></code>, a
+    <code class="docutils literal notranslate"><span class="pre">model</span></code> column map missing an outcome column, a single estimator
+    for mixed-type outcomes, etc.).</p></li>
+<li><p><strong>TypeError</strong> – If <code class="docutils literal notranslate"><span class="pre">weighted=True</span></code> but the resolved estimator’s <code class="docutils literal notranslate"><span class="pre">fit</span></code>
+    does not accept <code class="docutils literal notranslate"><span class="pre">sample_weight</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="s2">&quot;4&quot;</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">25.0</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">,</span> <span class="mf">35.0</span><span class="p">,</span> <span class="mf">40.0</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="s2">&quot;happiness&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">50.0</span><span class="p">,</span> <span class="mf">55.0</span><span class="p">,</span> <span class="mf">65.0</span><span class="p">,</span> <span class="mf">80.0</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;happiness&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span><span class="o">.</span><span class="n">fit_outcome_model</span><span class="p">()</span>
+<span class="go">&lt;balance.sample_frame.SampleFrame object at ...&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span><span class="o">.</span><span class="n">outcome_model</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span>
+<span class="go">&#39;outcome_model&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span><span class="o">.</span><span class="n">df_outcomes_hat</span> <span class="ow">is</span> <span class="kc">None</span>  <span class="c1"># fit does NOT persist Ŷ</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_frame.SampleFrame.fit_predict_outcomes">
+<span class="sig-name descname"><span class="pre">fit_predict_outcomes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">populate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">fit_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/sample_frame.html#SampleFrame.fit_predict_outcomes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_frame.SampleFrame.fit_predict_outcomes" title="Link to this definition">¶</a></dt>
+<dd><p>Fit an outcome model then predict on this frame, in one call.</p>
+<p>Convenience wrapper mirroring sklearn’s <code class="docutils literal notranslate"><span class="pre">fit_predict</span></code>: it calls
+<a class="reference internal" href="#balance.sample_frame.SampleFrame.fit_outcome_model" title="balance.sample_frame.SampleFrame.fit_outcome_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_outcome_model()</span></code></a> (in place) with <code class="docutils literal notranslate"><span class="pre">**fit_kwargs</span></code> and then
+<a class="reference internal" href="#balance.sample_frame.SampleFrame.predict_outcomes" title="balance.sample_frame.SampleFrame.predict_outcomes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict_outcomes()</span></code></a> on this frame, persisting <code class="docutils literal notranslate"><span class="pre">&lt;outcome&gt;_hat</span></code> when
+<code class="docutils literal notranslate"><span class="pre">populate=True</span></code> (the default).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>populate</strong> – When <code class="docutils literal notranslate"><span class="pre">True</span></code> (default), persist the predictions onto this
+frame as <code class="docutils literal notranslate"><span class="pre">&lt;outcome&gt;_hat</span></code> columns.</p></li>
+<li><p><strong>**fit_kwargs</strong> – Keyword arguments forwarded to
+<a class="reference internal" href="#balance.sample_frame.SampleFrame.fit_outcome_model" title="balance.sample_frame.SampleFrame.fit_outcome_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_outcome_model()</span></code></a> (e.g. <code class="docutils literal notranslate"><span class="pre">model</span></code>, <code class="docutils literal notranslate"><span class="pre">outcome_columns</span></code>,
+<code class="docutils literal notranslate"><span class="pre">variables</span></code>, <code class="docutils literal notranslate"><span class="pre">weighted</span></code>).  <code class="docutils literal notranslate"><span class="pre">inplace</span></code> is always <code class="docutils literal notranslate"><span class="pre">True</span></code>
+here.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>The predictions, one <code class="docutils literal notranslate"><span class="pre">&quot;&lt;outcome&gt;_hat&quot;</span></code> column per</dt><dd><p>fitted outcome.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="s2">&quot;4&quot;</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">25.0</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">,</span> <span class="mf">35.0</span><span class="p">,</span> <span class="mf">40.0</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="s2">&quot;happiness&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">50.0</span><span class="p">,</span> <span class="mf">55.0</span><span class="p">,</span> <span class="mf">65.0</span><span class="p">,</span> <span class="mf">80.0</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;happiness&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">preds</span> <span class="o">=</span> <span class="n">sf</span><span class="o">.</span><span class="n">fit_predict_outcomes</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">preds</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+<span class="go">[&#39;happiness_hat&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span><span class="o">.</span><span class="n">outcome_model</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span>
+<span class="go">&#39;outcome_model&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="balance.sample_frame.SampleFrame.from_frame">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_frame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">covar_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcome_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicted_outcome_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignored_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_id_uniqueness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">standardize_types</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_deepcopy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_column_candidates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#balance.sample_frame.SampleFrame" title="balance.sample_frame.SampleFrame"><span class="pre">SampleFrame</span></a></span></span><a class="reference internal" href="_modules/balance/sample_frame.html#SampleFrame.from_frame"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_frame.SampleFrame.from_frame" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_frame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">covar_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcome_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcomes_hat_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignored_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_id_uniqueness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">standardize_types</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_deepcopy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_column_candidates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#balance.sample_frame.SampleFrame" title="balance.sample_frame.SampleFrame"><span class="pre">SampleFrame</span></a></span></span><a class="reference internal" href="_modules/balance/sample_frame.html#SampleFrame.from_frame"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_frame.SampleFrame.from_frame" title="Link to this definition">¶</a></dt>
 <dd><p>Create a SampleFrame from a pandas DataFrame with auto-detection.</p>
 <p>Infers id, weight, and covariate columns from column names when not
 explicitly provided.  Validates the data (e.g., unique IDs,
@@ -320,14 +540,14 @@ identifier. If None, guessed from common names
 (<code class="docutils literal notranslate"><span class="pre">&quot;id&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;ID&quot;</span></code>, etc.).</p></li>
 <li><p><strong>covar_columns</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Explicit list of covariate
 column names. If None, inferred by exclusion (all columns
-minus id, weight, outcome, predicted, and ignored columns).</p></li>
+minus id, weight, outcome, outcomes_hat, and ignored columns).</p></li>
 <li><p><strong>weight_column</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the column containing
 sampling weights. If None, guesses <code class="docutils literal notranslate"><span class="pre">&quot;weight&quot;</span></code>/<code class="docutils literal notranslate"><span class="pre">&quot;weights&quot;</span></code>
 or creates one filled with 1.0.</p></li>
 <li><p><strong>outcome_columns</strong> (<em>list</em><em> of </em><em>str</em><em> or </em><em>str</em><em>, </em><em>optional</em>) – Column names to
 treat as outcome variables.</p></li>
-<li><p><strong>predicted_outcome_columns</strong> (<em>list</em><em> of </em><em>str</em><em> or </em><em>str</em><em>, </em><em>optional</em>) – Column
-names to treat as predicted outcome variables.</p></li>
+<li><p><strong>outcomes_hat_columns</strong> (<em>list</em><em> of </em><em>str</em><em> or </em><em>str</em><em>, </em><em>optional</em>) – Column
+names to treat as predicted-outcome (Y_hat) variables.</p></li>
 <li><p><strong>ignored_columns</strong> (<em>list</em><em> of </em><em>str</em><em> or </em><em>str</em><em>, </em><em>optional</em>) – Column names to
 ignore (excluded from covariates).</p></li>
 <li><p><strong>check_id_uniqueness</strong> (<em>bool</em>) – Whether to verify id uniqueness.
@@ -349,7 +569,7 @@ names to try when <code class="docutils literal notranslate"><span class="pre">i
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>ValueError</strong> – If the id column contains nulls or duplicates, if the
     weight column contains nulls or negative values, or if
-    specified outcome/predicted/ignore columns are missing from the
+    specified outcome/outcomes_hat/ignore columns are missing from the
     DataFrame.</p>
 </dd>
 </dl>
@@ -384,9 +604,6 @@ SampleFrame is fully independent of the original Sample.</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">_links</span></code> — references to <code class="docutils literal notranslate"><span class="pre">target</span></code>, <code class="docutils literal notranslate"><span class="pre">unadjusted</span></code>, and other
 linked Samples (used by <a class="reference internal" href="balance.balancedf_class.html#balance.balancedf_class.BalanceDF" title="balance.balancedf_class.BalanceDF"><code class="xref py py-class docutils literal notranslate"><span class="pre">BalanceDF</span></code></a>
 for comparative display).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">predicted_outcome_columns</span></code> — Sample has no native concept of
-predicted-outcome columns, so the resulting SampleFrame will
-always have an empty <code class="docutils literal notranslate"><span class="pre">predicted</span></code> role.</p></li>
 <li><p><strong>Column ordering</strong> may differ after a round-trip
 (<code class="docutils literal notranslate"><span class="pre">Sample</span> <span class="pre">→</span> <span class="pre">SampleFrame</span> <span class="pre">→</span> <span class="pre">Sample</span></code>), since SampleFrame stores
 columns grouped by role rather than preserving the original
@@ -535,6 +752,46 @@ internal column-role registry.</p>
 </div>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="balance.sample_frame.SampleFrame.outcome_model">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">outcome_model</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#balance.sample_frame.SampleFrame.outcome_model" title="Link to this definition">¶</a></dt>
+<dd><p>The fitted outcome-model dictionary, or None if not fit.</p>
+<p>Mirrors <a class="reference internal" href="balance.balance_frame.html#balance.balance_frame.BalanceFrame.model" title="balance.balance_frame.BalanceFrame.model"><code class="xref py py-attr docutils literal notranslate"><span class="pre">model</span></code></a> (which holds
+the <em>weighting</em> model) for the outcome-modelling axis.  The dict is
+produced by <a class="reference internal" href="#balance.sample_frame.SampleFrame.fit_outcome_model" title="balance.sample_frame.SampleFrame.fit_outcome_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_outcome_model()</span></code></a> and consumed by
+<a class="reference internal" href="#balance.sample_frame.SampleFrame.predict_outcomes" title="balance.sample_frame.SampleFrame.predict_outcomes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict_outcomes()</span></code></a>; its keys are documented on
+<code class="xref py py-func docutils literal notranslate"><span class="pre">balance.outcome_models.fit_outcome_model()</span></code> (<code class="docutils literal notranslate"><span class="pre">&quot;method&quot;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&quot;fit&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;X_matrix_columns&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;perf&quot;</span></code>, …).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>The stored <code class="docutils literal notranslate"><span class="pre">_outcome_model</span></code> dict, or</dt><dd><p><code class="docutils literal notranslate"><span class="pre">None</span></code> when no outcome model has been fit.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict[str, Any] | None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="s2">&quot;4&quot;</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">25.0</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">,</span> <span class="mf">35.0</span><span class="p">,</span> <span class="mf">40.0</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="s2">&quot;happiness&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">50.0</span><span class="p">,</span> <span class="mf">55.0</span><span class="p">,</span> <span class="mf">65.0</span><span class="p">,</span> <span class="mf">80.0</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;happiness&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span><span class="o">.</span><span class="n">outcome_model</span> <span class="ow">is</span> <span class="kc">None</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span><span class="o">.</span><span class="n">fit_outcome_model</span><span class="p">()</span>
+<span class="go">&lt;balance.sample_frame.SampleFrame object at ...&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span><span class="o">.</span><span class="n">outcome_model</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span>
+<span class="go">&#39;outcome_model&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="balance.sample_frame.SampleFrame.outcomes">
 <span class="sig-name descname"><span class="pre">outcomes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/sample_frame.html#SampleFrame.outcomes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_frame.SampleFrame.outcomes" title="Link to this definition">¶</a></dt>
@@ -565,15 +822,52 @@ internal column-role registry.</p>
 </div>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_frame.SampleFrame.outcomes_hat">
+<span class="sig-name descname"><span class="pre">outcomes_hat</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/balance/sample_frame.html#SampleFrame.outcomes_hat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_frame.SampleFrame.outcomes_hat" title="Link to this definition">¶</a></dt>
+<dd><p>Return a <a class="reference internal" href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFOutcomesHat" title="balance.balancedf_class.BalanceDFOutcomesHat"><code class="xref py py-class docutils literal notranslate"><span class="pre">BalanceDFOutcomesHat</span></code></a>, or None.</p>
+<p>Returns <code class="docutils literal notranslate"><span class="pre">None</span></code> if this SampleFrame has no predicted-outcome
+(<code class="docutils literal notranslate"><span class="pre">outcomes_hat</span></code> / Y_hat) columns.  When present, the returned view
+exposes the weighted mean / CI machinery over the Y_hat columns (one
+column per predicted outcome), mirroring <a class="reference internal" href="#balance.sample_frame.SampleFrame.outcomes" title="balance.sample_frame.SampleFrame.outcomes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">outcomes()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>Predicted-outcome view backed by this</dt><dd><p>SampleFrame, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if no outcomes_hat columns are defined.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="balance.balancedf_class.html#balance.balancedf_class.BalanceDFOutcomesHat" title="balance.balancedf_class.BalanceDFOutcomesHat">BalanceDFOutcomesHat</a> or None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="s2">&quot;4&quot;</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">25</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">35</span><span class="p">,</span> <span class="mi">40</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span><span class="o">.</span><span class="n">add_outcomes_hat_column</span><span class="p">(</span><span class="s2">&quot;happiness_hat&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                           <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mf">52.</span><span class="p">,</span> <span class="mf">58.</span><span class="p">,</span> <span class="mf">68.</span><span class="p">,</span> <span class="mf">79.</span><span class="p">]))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span><span class="o">.</span><span class="n">outcomes_hat</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<span class="go">[&#39;happiness_hat&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="o">.</span><span class="n">outcomes_hat</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
 <dl class="py property">
-<dt class="sig sig-object py" id="balance.sample_frame.SampleFrame.predicted_outcome_columns">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">predicted_outcome_columns</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#balance.sample_frame.SampleFrame.predicted_outcome_columns" title="Link to this definition">¶</a></dt>
-<dd><p>Names of the predicted outcome columns.</p>
+<dt class="sig sig-object py" id="balance.sample_frame.SampleFrame.outcomes_hat_columns">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">outcomes_hat_columns</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#balance.sample_frame.SampleFrame.outcomes_hat_columns" title="Link to this definition">¶</a></dt>
+<dd><p>Names of the predicted-outcome (Y_hat) columns.</p>
 <p>Returns a copy so that callers cannot accidentally mutate the
 internal column-role registry.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Predicted outcome column names (empty list if none).</p>
+<dd class="field-odd"><p>outcomes_hat column names (empty list if none).</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>list[str]</p>
@@ -584,9 +878,68 @@ internal column-role registry.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">],</span>
 <span class="gp">... </span>                   <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="s2">&quot;p_y&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">]})</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">predicted_outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;p_y&quot;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span><span class="o">.</span><span class="n">predicted_outcome_columns</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">outcomes_hat_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;p_y&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span><span class="o">.</span><span class="n">outcomes_hat_columns</span>
 <span class="go">[&#39;p_y&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="balance.sample_frame.SampleFrame.predict_outcomes">
+<span class="sig-name descname"><span class="pre">predict_outcomes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#balance.sample_frame.SampleFrame" title="balance.sample_frame.SampleFrame"><span class="pre">SampleFrame</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">populate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/balance/sample_frame.html#SampleFrame.predict_outcomes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.sample_frame.SampleFrame.predict_outcomes" title="Link to this definition">¶</a></dt>
+<dd><p>Predict <code class="docutils literal notranslate"><span class="pre">outcomes_hat</span></code> from the stored model, optionally persisting.</p>
+<p>Requires a model fit by <a class="reference internal" href="#balance.sample_frame.SampleFrame.fit_outcome_model" title="balance.sample_frame.SampleFrame.fit_outcome_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_outcome_model()</span></code></a>.  Predictions are
+produced on this frame’s covariates (or on <code class="docutils literal notranslate"><span class="pre">data</span></code>’s covariates when a
+<code class="docutils literal notranslate"><span class="pre">SampleFrame</span></code> is passed via <code class="docutils literal notranslate"><span class="pre">data=</span></code>) by replaying the model’s stored
+preprocessing.  The returned DataFrame has one column per fitted
+outcome, named <code class="docutils literal notranslate"><span class="pre">&quot;&lt;outcome&gt;_hat&quot;</span></code>.</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">populate</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>, the predicted columns are written
+onto <strong>this</strong> frame via <a class="reference internal" href="#balance.sample_frame.SampleFrame.add_outcomes_hat_column" title="balance.sample_frame.SampleFrame.add_outcomes_hat_column"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_outcomes_hat_column()</span></code></a> (a same-named Ŷ
+column is dropped and re-added).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – Optional <code class="docutils literal notranslate"><span class="pre">SampleFrame</span></code> whose covariates to score.  Defaults
+to <code class="docutils literal notranslate"><span class="pre">None</span></code>, meaning predict on this frame’s own covariates.
+When scoring a <em>different</em> frame, prefer <code class="docutils literal notranslate"><span class="pre">populate=False</span></code>:
+persisting predictions row-indexed by <code class="docutils literal notranslate"><span class="pre">data</span></code> onto this frame
+would row-misalign (they are reindexed to this frame, NaN-padding
+or dropping non-matching rows).</p></li>
+<li><p><strong>populate</strong> – Whether to persist the predictions onto this frame as
+<code class="docutils literal notranslate"><span class="pre">&lt;outcome&gt;_hat</span></code> columns. Defaults to <code class="docutils literal notranslate"><span class="pre">True</span></code> when scoring this
+frame (<code class="docutils literal notranslate"><span class="pre">data=None</span></code>) and <code class="docutils literal notranslate"><span class="pre">False</span></code> when <code class="docutils literal notranslate"><span class="pre">data=</span></code> is given, since a
+different frame’s row index would misalign onto this one.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>The predictions, one <code class="docutils literal notranslate"><span class="pre">&quot;&lt;outcome&gt;_hat&quot;</span></code> column per</dt><dd><p>fitted outcome, indexed by the scored covariate rows.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If no outcome model has been fit on this frame.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="s2">&quot;4&quot;</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">25.0</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">,</span> <span class="mf">35.0</span><span class="p">,</span> <span class="mf">40.0</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="s2">&quot;happiness&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">50.0</span><span class="p">,</span> <span class="mf">55.0</span><span class="p">,</span> <span class="mf">65.0</span><span class="p">,</span> <span class="mf">80.0</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sf</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">outcome_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;happiness&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span> <span class="o">=</span> <span class="n">sf</span><span class="o">.</span><span class="n">fit_outcome_model</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">preds</span> <span class="o">=</span> <span class="n">sf</span><span class="o">.</span><span class="n">predict_outcomes</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">preds</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+<span class="go">[&#39;happiness_hat&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s2">&quot;happiness_hat&quot;</span> <span class="ow">in</span> <span class="n">sf</span><span class="o">.</span><span class="n">outcomes_hat_columns</span>
+<span class="go">True</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -920,6 +1273,7 @@ inheriting any linked sources set via <code class="docutils literal notranslate"
     <ul>
 <li><a class="reference internal" href="#">balance.sample_frame</a><ul>
 <li><a class="reference internal" href="#balance.sample_frame.SampleFrame"><code class="docutils literal notranslate"><span class="pre">SampleFrame</span></code></a><ul>
+<li><a class="reference internal" href="#balance.sample_frame.SampleFrame.add_outcomes_hat_column"><code class="docutils literal notranslate"><span class="pre">SampleFrame.add_outcomes_hat_column()</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_frame.SampleFrame.add_weight_column"><code class="docutils literal notranslate"><span class="pre">SampleFrame.add_weight_column()</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_frame.SampleFrame.covar_columns"><code class="docutils literal notranslate"><span class="pre">SampleFrame.covar_columns</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_frame.SampleFrame.covars"><code class="docutils literal notranslate"><span class="pre">SampleFrame.covars()</span></code></a></li>
@@ -927,15 +1281,21 @@ inheriting any linked sources set via <code class="docutils literal notranslate"
 <li><a class="reference internal" href="#balance.sample_frame.SampleFrame.df_covars"><code class="docutils literal notranslate"><span class="pre">SampleFrame.df_covars</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_frame.SampleFrame.df_ignored"><code class="docutils literal notranslate"><span class="pre">SampleFrame.df_ignored</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_frame.SampleFrame.df_outcomes"><code class="docutils literal notranslate"><span class="pre">SampleFrame.df_outcomes</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_frame.SampleFrame.df_outcomes_hat"><code class="docutils literal notranslate"><span class="pre">SampleFrame.df_outcomes_hat</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_frame.SampleFrame.df_weights"><code class="docutils literal notranslate"><span class="pre">SampleFrame.df_weights</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_frame.SampleFrame.fit_outcome_model"><code class="docutils literal notranslate"><span class="pre">SampleFrame.fit_outcome_model()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_frame.SampleFrame.fit_predict_outcomes"><code class="docutils literal notranslate"><span class="pre">SampleFrame.fit_predict_outcomes()</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_frame.SampleFrame.from_frame"><code class="docutils literal notranslate"><span class="pre">SampleFrame.from_frame()</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_frame.SampleFrame.from_sample"><code class="docutils literal notranslate"><span class="pre">SampleFrame.from_sample()</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_frame.SampleFrame.id_column"><code class="docutils literal notranslate"><span class="pre">SampleFrame.id_column</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_frame.SampleFrame.id_series"><code class="docutils literal notranslate"><span class="pre">SampleFrame.id_series</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_frame.SampleFrame.ignored_columns"><code class="docutils literal notranslate"><span class="pre">SampleFrame.ignored_columns</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_frame.SampleFrame.outcome_columns"><code class="docutils literal notranslate"><span class="pre">SampleFrame.outcome_columns</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_frame.SampleFrame.outcome_model"><code class="docutils literal notranslate"><span class="pre">SampleFrame.outcome_model</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_frame.SampleFrame.outcomes"><code class="docutils literal notranslate"><span class="pre">SampleFrame.outcomes()</span></code></a></li>
-<li><a class="reference internal" href="#balance.sample_frame.SampleFrame.predicted_outcome_columns"><code class="docutils literal notranslate"><span class="pre">SampleFrame.predicted_outcome_columns</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_frame.SampleFrame.outcomes_hat"><code class="docutils literal notranslate"><span class="pre">SampleFrame.outcomes_hat()</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_frame.SampleFrame.outcomes_hat_columns"><code class="docutils literal notranslate"><span class="pre">SampleFrame.outcomes_hat_columns</span></code></a></li>
+<li><a class="reference internal" href="#balance.sample_frame.SampleFrame.predict_outcomes"><code class="docutils literal notranslate"><span class="pre">SampleFrame.predict_outcomes()</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_frame.SampleFrame.rename_weight_column"><code class="docutils literal notranslate"><span class="pre">SampleFrame.rename_weight_column()</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_frame.SampleFrame.set_active_weight"><code class="docutils literal notranslate"><span class="pre">SampleFrame.set_active_weight()</span></code></a></li>
 <li><a class="reference internal" href="#balance.sample_frame.SampleFrame.set_weight_metadata"><code class="docutils literal notranslate"><span class="pre">SampleFrame.set_weight_metadata()</span></code></a></li>

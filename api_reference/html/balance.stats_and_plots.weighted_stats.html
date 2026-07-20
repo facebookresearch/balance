@@ -459,6 +459,60 @@ weighted_quantile([1, 2, 3], [0.5], w=[1, 1, 1]).iloc[0, 0]
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="balance.stats_and_plots.weighted_stats.weighted_r2">
+<span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_stats.</span></span><span class="sig-name descname"><span class="pre">weighted_r2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_true</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">NDArray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pred</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">NDArray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">NDArray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inf_rm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_stats.html#weighted_r2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_stats.weighted_r2" title="Link to this definition">¶</a></dt>
+<dd><p>Computes the weighted coefficient of determination (weighted R²).</p>
+<p>Defined as <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">-</span> <span class="pre">SS_res</span> <span class="pre">/</span> <span class="pre">SS_tot</span></code> where
+<code class="docutils literal notranslate"><span class="pre">SS_res</span> <span class="pre">=</span> <span class="pre">Σ</span> <span class="pre">wᵢ</span> <span class="pre">(yᵢ</span> <span class="pre">−</span> <span class="pre">ŷᵢ)²</span></code> (weighted residual sum of squares) and
+<code class="docutils literal notranslate"><span class="pre">SS_tot</span> <span class="pre">=</span> <span class="pre">Σ</span> <span class="pre">wᵢ</span> <span class="pre">(yᵢ</span> <span class="pre">−</span> <span class="pre">ȳ_w)²</span></code> (weighted total sum of squares), with
+<code class="docutils literal notranslate"><span class="pre">ȳ_w</span></code> the <a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_mean" title="balance.stats_and_plots.weighted_stats.weighted_mean"><code class="xref py py-func docutils literal notranslate"><span class="pre">weighted_mean()</span></code></a> of <code class="docutils literal notranslate"><span class="pre">y_true</span></code>.</p>
+<p>For a Gaussian/regression target this is also the (weighted) fraction of
+deviance explained. When no weights are supplied (or all weights are equal)
+this reduces to <code class="xref py py-func docutils literal notranslate"><span class="pre">sklearn.metrics.r2_score()</span></code>.</p>
+<p>See: <a class="reference external" href="https://en.wikipedia.org/wiki/Coefficient_of_determination">https://en.wikipedia.org/wiki/Coefficient_of_determination</a></p>
+<p>Rows that are missing (NaN) or infinite in any of <code class="docutils literal notranslate"><span class="pre">y_true</span></code>, <code class="docutils literal notranslate"><span class="pre">y_pred</span></code>, or
+<code class="docutils literal notranslate"><span class="pre">w</span></code> are dropped before the computation (using <code class="xref py py-func docutils literal notranslate"><span class="pre">rm_mutual_nas()</span></code>),
+matching the mutual-NA handling of the other weighted-stats helpers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>y_true</strong> (<em>Union</em><em>[</em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>]</em>) – the observed target values.</p></li>
+<li><p><strong>y_pred</strong> (<em>Union</em><em>[</em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>]</em>) – the predicted target values, aligned with <code class="docutils literal notranslate"><span class="pre">y_true</span></code>.</p></li>
+<li><p><strong>w</strong> (<em>Union</em><em>[</em><em>List</em><em>, </em><em>pd.Series</em><em>, </em><em>np.ndarray</em><em>, </em><em>None</em><em>]</em><em>, </em><em>optional</em>) – weights to apply. If None, all rows are weighted equally (uniform weights of 1.0). Defaults to None.</p></li>
+<li><p><strong>inf_rm</strong> (<em>bool</em><em>, </em><em>optional</em>) – kept for signature parity with the other weighted-stats helpers. Infinite values in the inputs are always removed together with NaNs regardless of this flag. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the weighted R². Matches <code class="xref py py-func docutils literal notranslate"><span class="pre">sklearn.metrics.r2_score()</span></code> on the degenerate <code class="docutils literal notranslate"><span class="pre">SS_tot</span> <span class="pre">==</span> <span class="pre">0</span></code> case: returns <code class="docutils literal notranslate"><span class="pre">1.0</span></code> when the predictions are perfect (<code class="docutils literal notranslate"><span class="pre">SS_res</span> <span class="pre">==</span> <span class="pre">0</span></code>) and <code class="docutils literal notranslate"><span class="pre">0.0</span></code> otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<p>Examples:
+.. code-block:: python</p>
+<blockquote>
+<div><p>import pandas as pd
+from balance.stats_and_plots.weighted_stats import weighted_r2</p>
+<dl class="simple">
+<dt>weighted_r2(</dt><dd><p>pd.Series([1.0, 2.0, 3.0]),
+pd.Series([1.1, 1.9, 3.2]),
+w=pd.Series([1.0, 1.0, 2.0]),</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>)</dt><dd><p># 0.9636363636363636</p>
+</dd>
+</dl>
+<p># Without weights it matches sklearn.metrics.r2_score:
+weighted_r2(pd.Series([1.0, 2.0, 3.0]), pd.Series([1.1, 1.9, 3.2]))</p>
+<blockquote>
+<div><p># 0.97</p>
+</div></blockquote>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="balance.stats_and_plots.weighted_stats.weighted_sd">
 <span class="sig-prename descclassname"><span class="pre">balance.stats_and_plots.weighted_stats.</span></span><span class="sig-name descname"><span class="pre">weighted_sd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">NDArray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inf_rm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/stats_and_plots/weighted_stats.html#weighted_sd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.stats_and_plots.weighted_stats.weighted_sd" title="Link to this definition">¶</a></dt>
 <dd><p>Calculate the sample weighted standard deviation</p>
@@ -550,6 +604,7 @@ weighted_var(pd.DataFrame({“x”: [1, 2, 3]}), [1, 1, 1]).tolist()
 <li><a class="reference internal" href="#balance.stats_and_plots.weighted_stats.var_of_weighted_mean"><code class="docutils literal notranslate"><span class="pre">var_of_weighted_mean()</span></code></a></li>
 <li><a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_mean"><code class="docutils literal notranslate"><span class="pre">weighted_mean()</span></code></a></li>
 <li><a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_quantile"><code class="docutils literal notranslate"><span class="pre">weighted_quantile()</span></code></a></li>
+<li><a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_r2"><code class="docutils literal notranslate"><span class="pre">weighted_r2()</span></code></a></li>
 <li><a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_sd"><code class="docutils literal notranslate"><span class="pre">weighted_sd()</span></code></a></li>
 <li><a class="reference internal" href="#balance.stats_and_plots.weighted_stats.weighted_var"><code class="docutils literal notranslate"><span class="pre">weighted_var()</span></code></a></li>
 </ul>

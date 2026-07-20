@@ -433,6 +433,83 @@
 
 
 
+<div class="viewcode-block" id="weighted_r2">
+<a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.weighted_r2">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">weighted_r2</span><span class="p">(</span>
+    <span class="n">y_true</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">y_pred</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">w</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">inf_rm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the weighted coefficient of determination (weighted R²).</span>
+
+<span class="sd">    Defined as ``1 - SS_res / SS_tot`` where</span>
+<span class="sd">    ``SS_res = Σ wᵢ (yᵢ − ŷᵢ)²`` (weighted residual sum of squares) and</span>
+<span class="sd">    ``SS_tot = Σ wᵢ (yᵢ − ȳ_w)²`` (weighted total sum of squares), with</span>
+<span class="sd">    ``ȳ_w`` the :func:`weighted_mean` of ``y_true``.</span>
+
+<span class="sd">    For a Gaussian/regression target this is also the (weighted) fraction of</span>
+<span class="sd">    deviance explained. When no weights are supplied (or all weights are equal)</span>
+<span class="sd">    this reduces to :func:`sklearn.metrics.r2_score`.</span>
+
+<span class="sd">    See: https://en.wikipedia.org/wiki/Coefficient_of_determination</span>
+
+<span class="sd">    Rows that are missing (NaN) or infinite in any of ``y_true``, ``y_pred``, or</span>
+<span class="sd">    ``w`` are dropped before the computation (using :func:`rm_mutual_nas`),</span>
+<span class="sd">    matching the mutual-NA handling of the other weighted-stats helpers.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        y_true (Union[List, pd.Series, np.ndarray]): the observed target values.</span>
+<span class="sd">        y_pred (Union[List, pd.Series, np.ndarray]): the predicted target values, aligned with ``y_true``.</span>
+<span class="sd">        w (Union[List, pd.Series, np.ndarray, None], optional): weights to apply. If None, all rows are weighted equally (uniform weights of 1.0). Defaults to None.</span>
+<span class="sd">        inf_rm (bool, optional): kept for signature parity with the other weighted-stats helpers. Infinite values in the inputs are always removed together with NaNs regardless of this flag. Defaults to False.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: the weighted R². Matches :func:`sklearn.metrics.r2_score` on the degenerate ``SS_tot == 0`` case: returns ``1.0`` when the predictions are perfect (``SS_res == 0``) and ``0.0`` otherwise.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.stats_and_plots.weighted_stats import weighted_r2</span>
+
+<span class="sd">            weighted_r2(</span>
+<span class="sd">                pd.Series([1.0, 2.0, 3.0]),</span>
+<span class="sd">                pd.Series([1.1, 1.9, 3.2]),</span>
+<span class="sd">                w=pd.Series([1.0, 1.0, 2.0]),</span>
+<span class="sd">            )</span>
+<span class="sd">                # 0.9636363636363636</span>
+
+<span class="sd">            # Without weights it matches sklearn.metrics.r2_score:</span>
+<span class="sd">            weighted_r2(pd.Series([1.0, 2.0, 3.0]), pd.Series([1.1, 1.9, 3.2]))</span>
+<span class="sd">                # 0.97</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">del</span> <span class="n">inf_rm</span>  <span class="c1"># infinite values are always removed together with NaNs below</span>
+    <span class="k">if</span> <span class="n">w</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y_true</span><span class="p">))</span>
+
+    <span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">rm_mutual_nas</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_true</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># Every row was NaN/inf in some input; R² is undefined for empty input.</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
+    <span class="n">_check_weights_are_valid</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">w</span><span class="p">))</span>
+
+    <span class="n">y_bar</span> <span class="o">=</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">y_true</span><span class="p">),</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">w</span><span class="p">))</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">ss_res</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">w</span> <span class="o">*</span> <span class="p">(</span><span class="n">y_true</span> <span class="o">-</span> <span class="n">y_pred</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">ss_tot</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">w</span> <span class="o">*</span> <span class="p">(</span><span class="n">y_true</span> <span class="o">-</span> <span class="n">y_bar</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">ss_tot</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># Matches sklearn.metrics.r2_score: a constant y_true yields 1.0 when the</span>
+        <span class="c1"># residuals are also zero (perfect prediction) and 0.0 otherwise.</span>
+        <span class="k">return</span> <span class="mf">1.0</span> <span class="k">if</span> <span class="n">ss_res</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span>
+    <span class="k">return</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">ss_res</span> <span class="o">/</span> <span class="n">ss_tot</span></div>
+
+
+
 <div class="viewcode-block" id="weighted_quantile">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weighted_stats.html#balance.stats_and_plots.weighted_stats.weighted_quantile">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">weighted_quantile</span><span class="p">(</span>

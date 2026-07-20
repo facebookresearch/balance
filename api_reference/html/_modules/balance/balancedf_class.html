@@ -65,7 +65,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.stats_and_plots.weighted_comparisons_stats</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">outcome_variance_ratio</span> <span class="k">as</span> <span class="n">_outcome_variance_ratio</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">balance.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">FilePathOrBuffer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">FilePathOrBuffer</span><span class="p">,</span> <span class="n">OutcomeCIMethod</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_items_index_in_list</span><span class="p">,</span> <span class="n">get_items_from_list_via_indices</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.input_validation</span><span class="w"> </span><span class="kn">import</span> <span class="n">_assert_type</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.lib.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileLink</span>
@@ -85,9 +85,10 @@
 <span class="sd">    ``SampleFrame`` implement this protocol, allowing BalanceDF to work with</span>
 <span class="sd">    either backing class without modification.</span>
 
-<span class="sd">    The seven members below are the complete set of attributes and methods that</span>
-<span class="sd">    BalanceDF and its subclasses access on the backing object (``self._sample``).</span>
-<span class="sd">    They were identified by auditing every ``self._sample.*`` access in</span>
+<span class="sd">    The eight members below are the complete set of attributes and methods that</span>
+<span class="sd">    BalanceDF and its subclasses access on the backing object (``self._sample``),</span>
+<span class="sd">    plus the role accessors that complete the data-source contract.  They were</span>
+<span class="sd">    identified by auditing every ``self._sample.*`` access in</span>
 <span class="sd">    ``balancedf_class.py``.</span>
 
 <span class="sd">    Attributes:</span>
@@ -96,6 +97,8 @@
 <span class="sd">        _links: Dict mapping relationship names (e.g. ``&quot;target&quot;``,</span>
 <span class="sd">            ``&quot;unadjusted&quot;``) to other ``BalanceDFSource`` instances.</span>
 <span class="sd">        _outcome_columns: Outcome DataFrame, or ``None`` if no outcomes.</span>
+<span class="sd">        _outcomes_hat_columns: Predicted-outcome (Y_hat) DataFrame, or</span>
+<span class="sd">            ``None`` if no outcomes_hat columns.</span>
 
 <span class="sd">    Methods:</span>
 <span class="sd">        _covar_columns: Return the covariate DataFrame.</span>
@@ -123,6 +126,10 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_outcome_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># noqa: E704</span>
+        <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_outcomes_hat_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># noqa: E704</span>
         <span class="o">...</span>
 
 <div class="viewcode-block" id="BalanceDFSource.set_weights">
@@ -164,16 +171,16 @@
         <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDF&quot;</span><span class="p">,</span>
         <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
         <span class="n">sample</span><span class="p">:</span> <span class="n">BalanceDFSource</span><span class="p">,</span>
-        <span class="n">name</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;outcomes&quot;</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">,</span> <span class="s2">&quot;covars&quot;</span><span class="p">],</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;outcomes&quot;</span><span class="p">,</span> <span class="s2">&quot;outcomes_hat&quot;</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">,</span> <span class="s2">&quot;covars&quot;</span><span class="p">],</span>
         <span class="n">links</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;BalanceDFSource&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;A basic init method used by BalanceDFOutcomes,BalanceDFCovars, and BalanceDFWeights</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A basic init method used by BalanceDFOutcomes,BalanceDFOutcomesHat,BalanceDFCovars, and BalanceDFWeights</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            self (BalanceDF): The object that is initiated.</span>
 <span class="sd">            df (pd.DataFrame): a df from a sample object.</span>
 <span class="sd">            sample (BalanceDFSource): A BalanceDFSource-compatible object (e.g. Sample, SampleFrame) to be stored as reference.</span>
-<span class="sd">            name (Literal[&quot;outcomes&quot;, &quot;weights&quot;, &quot;covars&quot;]): The type of object that will be created. In practice, used for &quot;outcomes&quot;, &quot;weights&quot; and &quot;covars&quot;.</span>
+<span class="sd">            name (Literal[&quot;outcomes&quot;, &quot;outcomes_hat&quot;, &quot;weights&quot;, &quot;covars&quot;]): The type of object that will be created. In practice, used for &quot;outcomes&quot;, &quot;outcomes_hat&quot;, &quot;weights&quot; and &quot;covars&quot;.</span>
 <span class="sd">            links (dict[str, BalanceDFSource] | None): Optional explicit links dict</span>
 <span class="sd">                (e.g. {&quot;target&quot;: ..., &quot;unadjusted&quot;: ...}).  When provided,</span>
 <span class="sd">                _balancedf_child_from_linked_samples uses this instead of</span>
@@ -2893,6 +2900,543 @@
             <span class="n">unadjusted_weights</span><span class="p">,</span>
         <span class="p">)</span></div>
 </div>
+
+
+
+<div class="viewcode-block" id="BalanceDFOutcomesHat">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFOutcomesHat">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BalanceDFOutcomesHat</span><span class="p">(</span><span class="n">BalanceDF</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A view over the predicted-outcome (Y_hat / ``outcomes_hat``) columns.</span>
+
+<span class="sd">    Mirrors :class:`BalanceDFOutcomes` but backs onto the ``outcomes_hat``</span>
+<span class="sd">    role (the ``ŷ`` columns produced by an outcome model) instead of the</span>
+<span class="sd">    observed outcomes.  It inherits the weighted ``mean`` / ``std`` /</span>
+<span class="sd">    ``var_of_mean`` / ``ci_of_mean`` / ``mean_with_ci`` / ``plot`` / ``summary``</span>
+<span class="sd">    machinery from :class:`BalanceDF` unchanged, so ``outcomes_hat().mean()``</span>
+<span class="sd">    is the weighted mean of the predicted outcomes (one column per ``ŷ``,</span>
+<span class="sd">    source-indexed exactly like ``outcomes().mean()``).  When backed by a</span>
+<span class="sd">    :class:`~balance.balance_frame.BalanceFrame` that carries a target, the</span>
+<span class="sd">    weighted mean of the target&#39;s ``ŷ`` is the g-computation / outcome-model</span>
+<span class="sd">    estimate ``μ̂_OM``.</span>
+
+<span class="sd">    Construct it through :meth:`SampleFrame.outcomes_hat` /</span>
+<span class="sd">    :meth:`BalanceFrame.outcomes_hat` (which return ``None`` when there are no</span>
+<span class="sd">    predicted-outcome columns) rather than directly.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">            import pandas as pd</span>
+<span class="sd">            from balance.sample_frame import SampleFrame</span>
+
+<span class="sd">            df = pd.DataFrame(</span>
+<span class="sd">                {</span>
+<span class="sd">                    &quot;id&quot;: [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;],</span>
+<span class="sd">                    &quot;age&quot;: [25, 30, 35, 40],</span>
+<span class="sd">                    &quot;weight&quot;: [1.0, 1.0, 1.0, 1.0],</span>
+<span class="sd">                }</span>
+<span class="sd">            )</span>
+<span class="sd">            sf = SampleFrame.from_frame(df)</span>
+<span class="sd">            sf.add_outcomes_hat_column(&quot;happiness_hat&quot;, pd.Series([52.0, 58.0, 68.0, 79.0]))</span>
+
+<span class="sd">            sf.outcomes_hat().mean()  # weighted mean of Y_hat, one column per Y_hat</span>
+<span class="sd">            #         happiness_hat</span>
+<span class="sd">            # source</span>
+<span class="sd">            # self            64.25</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFOutcomesHat&quot;</span><span class="p">,</span>
+        <span class="n">sample</span><span class="p">:</span> <span class="n">BalanceDFSource</span><span class="p">,</span>
+        <span class="n">links</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">BalanceDFSource</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initiate a BalanceDFOutcomesHat.</span>
+
+<span class="sd">        This is used through :func:`SampleFrame.outcomes_hat` /</span>
+<span class="sd">        :func:`BalanceFrame.outcomes_hat`.  It reads the backing object&#39;s</span>
+<span class="sd">        ``_outcomes_hat_columns`` (the predicted-outcome DataFrame) and passes</span>
+<span class="sd">        the relevant arguments to :func:`BalanceDF.__init__` with</span>
+<span class="sd">        ``name=&quot;outcomes_hat&quot;``.</span>
+
+<span class="sd">        The ``name=&quot;outcomes_hat&quot;`` is load-bearing: it must equal the factory</span>
+<span class="sd">        method name so that ``_call_on_linked`` can call</span>
+<span class="sd">        ``getattr(linked_source, &quot;outcomes_hat&quot;)()`` when expanding across</span>
+<span class="sd">        linked sources (self / target / unadjusted).</span>
+
+<span class="sd">        The outcome-model estimate workflow populates only the **target&#39;s**</span>
+<span class="sd">        ``outcomes_hat`` (via ``predict_outcomes(on=&quot;target&quot;)``), leaving the</span>
+<span class="sd">        responder with none.  So when the responder itself has no ``outcomes_hat``</span>
+<span class="sd">        columns but a linked source (target / unadjusted) does, this builds an</span>
+<span class="sd">        all-``NaN`` responder frame carrying the union of the linked sources&#39;</span>
+<span class="sd">        ``outcomes_hat`` column names, so ``mean()`` still expands to the linked</span>
+<span class="sd">        rows (the responder row is ``NaN``, the **target** row is ``μ̂_OM``) —</span>
+<span class="sd">        mirroring how ``covars().mean()`` fills absent categories with ``NaN``.</span>
+<span class="sd">        Only when *no* source anywhere has ``outcomes_hat`` columns does this</span>
+<span class="sd">        raise.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (BalanceDFOutcomesHat): Object that is initiated.</span>
+<span class="sd">            sample (BalanceDFSource): A BalanceDFSource-compatible object (e.g. Sample, SampleFrame).</span>
+<span class="sd">            links (Dict | None): Optional explicit links for BalanceDF.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If neither the backing object nor any linked source has</span>
+<span class="sd">                ``outcomes_hat`` columns.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">outcomes_hat_df</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_outcomes_hat_columns</span>
+        <span class="k">if</span> <span class="n">outcomes_hat_df</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Fall back to the union of the linked sources&#39; outcomes_hat columns</span>
+            <span class="c1"># (the estimate workflow populates only the target).</span>
+            <span class="n">linked_hat_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">src</span> <span class="ow">in</span> <span class="p">(</span><span class="n">links</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">src_hat</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="s2">&quot;_outcomes_hat_columns&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">src_hat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">src_hat</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">linked_hat_columns</span><span class="p">:</span>
+                            <span class="n">linked_hat_columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">col</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">linked_hat_columns</span><span class="p">:</span>
+                <span class="n">source_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Cannot create BalanceDFOutcomesHat: no outcomes_hat columns &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;are defined on the provided </span><span class="si">{</span><span class="n">source_type</span><span class="si">}</span><span class="s2"> or any linked &quot;</span>
+                    <span class="s2">&quot;source. Populate the underlying object with outcomes_hat &quot;</span>
+                    <span class="s2">&quot;columns (e.g. via add_outcomes_hat_column, or &quot;</span>
+                    <span class="s2">&quot;predict_outcomes(on=&#39;target&#39;)) before constructing or &quot;</span>
+                    <span class="s2">&quot;accessing outcomes_hat.&quot;</span>
+                <span class="p">)</span>
+            <span class="c1"># All-NaN responder frame with the linked Ŷ column names, indexed by</span>
+            <span class="c1"># the responder rows.</span>
+            <span class="n">responder_index</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">weight_series</span><span class="o">.</span><span class="n">index</span>
+            <span class="n">outcomes_hat_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">responder_index</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">linked_hat_columns</span>
+            <span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">outcomes_hat_df</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;outcomes_hat&quot;</span><span class="p">,</span> <span class="n">links</span><span class="o">=</span><span class="n">links</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_raise_if_target_unpopulated</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFOutcomesHat&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Guard the ``μ̂_OM`` estimate against a silently-missing target row.</span>
+
+<span class="sd">        When the view is backed by a :class:`~balance.balance_frame.BalanceFrame`</span>
+<span class="sd">        that has (a) a fitted outcome model and (b) a target, but the target&#39;s</span>
+<span class="sd">        ``outcomes_hat`` columns have **not** been populated, an</span>
+<span class="sd">        ``on_linked_samples`` reduction (e.g. :meth:`mean`) would silently omit</span>
+<span class="sd">        the target row and return only the responder&#39;s in-sample value — a</span>
+<span class="sd">        wrong answer masquerading as the population estimate ``μ̂_OM``.  Raise an</span>
+<span class="sd">        actionable error instead, telling the user to populate the target first.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balance_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceFrame</span>
+
+        <span class="n">sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">BalanceFrame</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">sample</span><span class="o">.</span><span class="n">_sf_target</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">sample</span><span class="o">.</span><span class="n">outcome_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">target_hat</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_sf_target</span><span class="o">.</span><span class="n">_column_roles</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;outcomes_hat&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">target_hat</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;outcomes_hat().mean() cannot compute the outcome-model estimate &quot;</span>
+                <span class="s2">&quot;(μ̂_OM): an outcome model is fit but the target&#39;s outcomes_hat &quot;</span>
+                <span class="s2">&quot;columns are not populated, so the target row would be silently &quot;</span>
+                <span class="s2">&quot;dropped. Call predict_outcomes(on=&#39;target&#39;) first to populate &quot;</span>
+                <span class="s2">&quot;the target&#39;s predicted outcomes, then read outcomes_hat().mean().&quot;</span>
+            <span class="p">)</span>
+
+<div class="viewcode-block" id="BalanceDFOutcomesHat.mean">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFOutcomesHat.mean">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mean</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFOutcomesHat&quot;</span><span class="p">,</span>
+        <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Weighted mean of the predicted outcomes; the target row is ``μ̂_OM``.</span>
+
+<span class="sd">        Overrides :meth:`BalanceDF.mean` only to add the estimate guard: when</span>
+<span class="sd">        backed by a :class:`~balance.balance_frame.BalanceFrame` that has a</span>
+<span class="sd">        fitted outcome model and a target whose ``outcomes_hat`` is not yet</span>
+<span class="sd">        populated, this raises (instead of silently returning only the</span>
+<span class="sd">        responder row) — see :meth:`_raise_if_target_unpopulated`.  Otherwise it</span>
+<span class="sd">        behaves exactly like the inherited weighted mean: with</span>
+<span class="sd">        ``on_linked_samples=True`` (the default) it returns one row per source</span>
+<span class="sd">        (``self`` / ``target`` / ``unadjusted``), one column per predicted</span>
+<span class="sd">        outcome, and the **target** row is the g-computation / outcome-model</span>
+<span class="sd">        population estimate ``μ̂_OM`` = ``Σ w_T ŷ_T / Σ w_T``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            on_linked_samples: When ``True`` (default), expand across the linked</span>
+<span class="sd">                sources (self / target / unadjusted); when ``False``, return</span>
+<span class="sd">                only this view&#39;s own weighted mean.</span>
+<span class="sd">            **kwargs: Forwarded to :meth:`BalanceDF.mean`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: The source-indexed weighted means (one column per</span>
+<span class="sd">            predicted outcome).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If a model is fit and a target is set but the target&#39;s</span>
+<span class="sd">                ``outcomes_hat`` is unpopulated (call</span>
+<span class="sd">                ``predict_outcomes(on=&#39;target&#39;)`` first).</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; from balance.balance_frame import BalanceFrame</span>
+<span class="sd">            &gt;&gt;&gt; resp = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;],</span>
+<span class="sd">            ...                   &quot;age&quot;: [25.0, 30.0, 35.0, 40.0],</span>
+<span class="sd">            ...                   &quot;happiness&quot;: [50.0, 55.0, 65.0, 80.0],</span>
+<span class="sd">            ...                   &quot;weight&quot;: [1.0, 1.0, 1.0, 1.0]}),</span>
+<span class="sd">            ...     outcome_columns=[&quot;happiness&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; tgt = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [&quot;5&quot;, &quot;6&quot;], &quot;age&quot;: [28.0, 38.0],</span>
+<span class="sd">            ...                   &quot;weight&quot;: [1.0, 1.0]}))</span>
+<span class="sd">            &gt;&gt;&gt; bf = BalanceFrame(sample=resp, target=tgt)</span>
+<span class="sd">            &gt;&gt;&gt; _ = bf.fit_outcome_model()</span>
+<span class="sd">            &gt;&gt;&gt; _ = bf.predict_outcomes(on=&quot;target&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; &quot;target&quot; in bf.outcomes_hat().mean().index</span>
+<span class="sd">            True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">on_linked_samples</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_if_target_unpopulated</span><span class="p">()</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">on_linked_samples</span><span class="o">=</span><span class="n">on_linked_samples</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># __init__ builds an all-NaN responder Ŷ frame when only a linked source</span>
+        <span class="c1"># (the target) carries outcomes_hat; weighted_mean sums those NaNs as 0,</span>
+        <span class="c1"># so the &quot;self&quot; row would read as 0.0 rather than NaN. Force it back to NaN</span>
+        <span class="c1"># so an empty responder can&#39;t masquerade as a real in-sample estimate.</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">on_linked_samples</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="o">.</span><span class="n">_outcomes_hat_columns</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="s2">&quot;self&quot;</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">index</span>
+        <span class="p">):</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="k">return</span> <span class="n">out</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_require_fitted_balanceframe_with_target</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFOutcomesHat&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Any&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate the bootstrap preconditions and return the backing BalanceFrame.</span>
+
+<span class="sd">        The bootstrap CI is a bespoke path that needs to reach the learner and</span>
+<span class="sd">        the fixed target, so it requires the view be backed by a</span>
+<span class="sd">        :class:`~balance.balance_frame.BalanceFrame` **that carries a target**</span>
+<span class="sd">        (``_sf_target is not None``) and has a **fitted outcome model**.  A lone</span>
+<span class="sd">        ``SampleFrame`` view, or a target-less ``Sample``/``BalanceFrame`` (a</span>
+<span class="sd">        ``Sample`` *is* a ``BalanceFrame`` via the MRO, so the guard keys off the</span>
+<span class="sd">        target, not ``isinstance``), raises.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The backing ``BalanceFrame``.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the view is not BalanceFrame-backed, has no target, or</span>
+<span class="sd">                has no fitted outcome model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balance_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceFrame</span>
+
+        <span class="n">sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">BalanceFrame</span><span class="p">)</span> <span class="ow">or</span> <span class="n">sample</span><span class="o">.</span><span class="n">_sf_target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;bootstrap CI requires a BalanceFrame with a target: the &quot;</span>
+                <span class="s2">&quot;nonparametric bootstrap resamples the responders, refits the &quot;</span>
+                <span class="s2">&quot;outcome model, and averages over the fixed target, so a lone &quot;</span>
+                <span class="s2">&quot;SampleFrame (or a target-less Sample) has nothing to bootstrap. &quot;</span>
+                <span class="s2">&quot;Set a target (e.g. via set_target) and fit an outcome model &quot;</span>
+                <span class="s2">&quot;first, or pass ci_method=&#39;analytic&#39;.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">sample</span><span class="o">.</span><span class="n">outcome_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;no outcome model has been fit; call fit_outcome_model(...) &quot;</span>
+                <span class="s2">&quot;(or fit_predict_outcomes(...)) before requesting a bootstrap CI.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">sample</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_fit_kwargs_from_model</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build the ``fit_outcome_model`` kwargs that reproduce a stored model.</span>
+
+<span class="sd">        Reconstructs the learner from the stored fitted estimators (via</span>
+<span class="sd">        :func:`~balance.outcome_models.outcome_model.learner_from_model`, which</span>
+<span class="sd">        clones them so ``&quot;auto&quot;`` and pluggable learners alike are reproduced),</span>
+<span class="sd">        and forwards the stored preprocessing configuration so every bootstrap</span>
+<span class="sd">        refit matches the full-sample fit.  Note the fit-*weighting* is driven by</span>
+<span class="sd">        whether ``sample_weight`` is passed to the engine (from the stored</span>
+<span class="sd">        ``fit_weight``), not by these kwargs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.outcome_models.outcome_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">learner_from_model</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">learner_from_model</span><span class="p">(</span><span class="n">model</span><span class="p">),</span>
+            <span class="s2">&quot;formula&quot;</span><span class="p">:</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;formula&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;na_action&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;na_action&quot;</span><span class="p">,</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">)),</span>
+            <span class="s2">&quot;use_model_matrix&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;use_model_matrix&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)),</span>
+            <span class="s2">&quot;calibrate&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;calibrated&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)),</span>
+        <span class="p">}</span>
+
+<div class="viewcode-block" id="BalanceDFOutcomesHat.mean_with_ci">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFOutcomesHat.mean_with_ci">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mean_with_ci</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFOutcomesHat&quot;</span><span class="p">,</span>
+        <span class="n">round_ndigits</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">ci_method</span><span class="p">:</span> <span class="n">OutcomeCIMethod</span> <span class="o">=</span> <span class="s2">&quot;bootstrap&quot;</span><span class="p">,</span>
+        <span class="n">n_bootstrap</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span>
+        <span class="n">random_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2020</span><span class="p">,</span>
+        <span class="n">conf_level</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.95</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Means and CIs for the predicted outcomes; ``μ̂_OM`` with a bootstrap CI.</span>
+
+<span class="sd">        Extends :meth:`BalanceDF.mean_with_ci` with a ``ci_method`` selector:</span>
+
+<span class="sd">        - ``ci_method=&quot;bootstrap&quot;`` (the **default**): an honest CI for the</span>
+<span class="sd">          outcome-model estimate ``μ̂_OM`` via a **nonparametric bootstrap** of the</span>
+<span class="sd">          fit → predict → average loop.  This requires the view be backed by a</span>
+<span class="sd">          :class:`~balance.balance_frame.BalanceFrame` **with a target** and a</span>
+<span class="sd">          **fitted outcome model** — otherwise it raises (a lone ``SampleFrame``</span>
+<span class="sd">          or a target-less ``Sample`` has nothing to bootstrap).  It resamples the</span>
+<span class="sd">          responders with replacement (keeping their weights), refits ``ĝ*`` with</span>
+<span class="sd">          the same fit configuration as the stored model (honouring the stored</span>
+<span class="sd">          fit-weighting), predicts on the **fixed** target, and averages with the</span>
+<span class="sd">          target weights; the returned interval is a percentile CI over the</span>
+<span class="sd">          replicates.  The point estimate is the full-sample ``μ̂_OM`` (the target</span>
+<span class="sd">          row).  It is **deterministic** given ``random_seed`` and bypasses</span>
+<span class="sd">          ``_call_on_linked`` (which cannot reach the learner), so the returned</span>
+<span class="sd">          table has just the **target** row (``target`` mean + ``target_ci``).</span>
+<span class="sd">        - any other ``ci_method`` (e.g. ``&quot;analytic&quot;``): the inherited analytic</span>
+<span class="sd">          path (:meth:`BalanceDF.mean_with_ci`), which treats ``ŷ`` as fixed and</span>
+<span class="sd">          therefore **under-covers** ``μ̂_OM`` — meaningful only for a standalone /</span>
+<span class="sd">          observed view, not the population estimate.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            round_ndigits: Decimal places for the mean and CI.  Defaults to 3.</span>
+<span class="sd">            on_linked_samples: Forwarded to the analytic path.  Ignored by the</span>
+<span class="sd">                bootstrap path (which always reports the target row).</span>
+<span class="sd">            ci_method: ``&quot;bootstrap&quot;`` (default) or ``&quot;analytic&quot;``.</span>
+<span class="sd">            n_bootstrap: Number of bootstrap replicates (bootstrap path).</span>
+<span class="sd">                Defaults to 200.</span>
+<span class="sd">            random_seed: Seed for the bootstrap RNG (deterministic CI).  Defaults</span>
+<span class="sd">                to 2020.</span>
+<span class="sd">            conf_level: Confidence level for the percentile interval.  Defaults to</span>
+<span class="sd">                0.95.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: For the bootstrap path, one row per predicted outcome</span>
+<span class="sd">            with a ``target`` (the estimate ``μ̂_OM``) and a ``target_ci`` column;</span>
+<span class="sd">            for the analytic path, the inherited source-indexed mean/CI table.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: For ``ci_method=&quot;bootstrap&quot;`` when the view is not</span>
+<span class="sd">                BalanceFrame-backed with a target, or no outcome model is fit.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import numpy as np, pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; from balance.balance_frame import BalanceFrame</span>
+<span class="sd">            &gt;&gt;&gt; rng = np.random.default_rng(0)</span>
+<span class="sd">            &gt;&gt;&gt; resp = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [str(i) for i in range(60)],</span>
+<span class="sd">            ...                   &quot;age&quot;: rng.normal(50, 10, 60),</span>
+<span class="sd">            ...                   &quot;happiness&quot;: rng.normal(70, 5, 60),</span>
+<span class="sd">            ...                   &quot;weight&quot;: np.ones(60)}),</span>
+<span class="sd">            ...     outcome_columns=[&quot;happiness&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; tgt = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [str(i) for i in range(60, 90)],</span>
+<span class="sd">            ...                   &quot;age&quot;: rng.normal(55, 10, 30),</span>
+<span class="sd">            ...                   &quot;weight&quot;: np.ones(30)}))</span>
+<span class="sd">            &gt;&gt;&gt; bf = BalanceFrame(sample=resp, target=tgt)</span>
+<span class="sd">            &gt;&gt;&gt; _ = bf.fit_outcome_model()</span>
+<span class="sd">            &gt;&gt;&gt; _ = bf.predict_outcomes(on=&quot;target&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; out = bf.outcomes_hat().mean_with_ci(n_bootstrap=20, random_seed=2020)</span>
+<span class="sd">            &gt;&gt;&gt; list(out.columns)</span>
+<span class="sd">            [&#39;target&#39;, &#39;target_ci&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ci_method</span> <span class="o">!=</span> <span class="s2">&quot;bootstrap&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">mean_with_ci</span><span class="p">(</span>
+                <span class="n">round_ndigits</span><span class="o">=</span><span class="n">round_ndigits</span><span class="p">,</span> <span class="n">on_linked_samples</span><span class="o">=</span><span class="n">on_linked_samples</span>
+            <span class="p">)</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.outcome_models.outcome_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">bootstrap_outcome_estimate</span>
+
+        <span class="n">bf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_require_fitted_balanceframe_with_target</span><span class="p">()</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">outcome_model</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+        <span class="n">responder</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">_sf_target</span>
+
+        <span class="n">outcome_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;outcome_columns&quot;</span><span class="p">]]</span>
+        <span class="n">covars</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">df_covars</span>
+        <span class="n">outcomes</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">outcome_columns</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="c1"># Drop responder rows with a missing outcome so the resampled fit uses</span>
+        <span class="c1"># only complete observations (mirroring SampleFrame.fit_outcome_model).</span>
+        <span class="n">complete</span> <span class="o">=</span> <span class="n">outcomes</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">covars</span> <span class="o">=</span> <span class="n">covars</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">complete</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">outcomes</span> <span class="o">=</span> <span class="n">outcomes</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">complete</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">sample_weight</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weighted&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)):</span>
+            <span class="n">weight_values</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">weight_series</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">complete</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+            <span class="n">sample_weight</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">weight_values</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">covars</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+        <span class="n">target_weight</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">weight_series</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="n">bootstrap_outcome_estimate</span><span class="p">(</span>
+            <span class="n">covars</span><span class="p">,</span>
+            <span class="n">outcomes</span><span class="p">,</span>
+            <span class="n">sample_weight</span><span class="p">,</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">df_covars</span><span class="p">,</span>
+            <span class="n">target_weight</span><span class="p">,</span>
+            <span class="n">fit_kwargs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_fit_kwargs_from_model</span><span class="p">(</span><span class="n">model</span><span class="p">),</span>
+            <span class="n">n_bootstrap</span><span class="o">=</span><span class="n">n_bootstrap</span><span class="p">,</span>
+            <span class="n">random_seed</span><span class="o">=</span><span class="n">random_seed</span><span class="p">,</span>
+            <span class="n">conf_level</span><span class="o">=</span><span class="n">conf_level</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Shape the output like the base mean_with_ci for the TARGET row (μ̂_OM):</span>
+        <span class="c1"># index = the &lt;outcome&gt;_hat column names, columns = &quot;target&quot; (estimate)</span>
+        <span class="c1"># and &quot;target_ci&quot; (the percentile interval tuple).</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">_hat&quot;</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">outcome_columns</span><span class="p">]</span>
+        <span class="n">estimates</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="nb">round</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="s2">&quot;estimate&quot;</span><span class="p">],</span> <span class="n">round_ndigits</span><span class="p">)</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">outcome_columns</span>
+        <span class="p">]</span>
+        <span class="n">cis</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span>
+                <span class="nb">round</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="s2">&quot;ci_low&quot;</span><span class="p">],</span> <span class="n">round_ndigits</span><span class="p">),</span>
+                <span class="nb">round</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="s2">&quot;ci_high&quot;</span><span class="p">],</span> <span class="n">round_ndigits</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">outcome_columns</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span><span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="n">estimates</span><span class="p">,</span> <span class="s2">&quot;target_ci&quot;</span><span class="p">:</span> <span class="n">cis</span><span class="p">},</span>
+            <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BalanceDFOutcomesHat.summary">
+<a class="viewcode-back" href="../../balance.balancedf_class.html#balance.balancedf_class.BalanceDFOutcomesHat.summary">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFOutcomesHat&quot;</span><span class="p">,</span>
+        <span class="n">on_linked_samples</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Summarise ``μ̂_OM`` and **scope any doubly-robust claim to the fit weights**.</span>
+
+<span class="sd">        Reports the estimator (g-computation / outcome model) and the mean</span>
+<span class="sd">        predicted outcomes with confidence intervals.  Crucially it **never**</span>
+<span class="sd">        prints a blanket &quot;doubly robust&quot;: the DR guarantee holds only for a</span>
+<span class="sd">        **linear** learner with an **intercept** fit with **non-uniform** weights</span>
+<span class="sd">        (the weighted-least-squares special case, where the weighted residuals</span>
+<span class="sd">        are orthogonal to the design).  For that case it states</span>
+<span class="sd">        ``&quot;doubly robust w.r.t. fit weights&quot;`` and names the weight column; for</span>
+<span class="sd">        the default (non-linear) learner, a uniform-weight fit, or a linear fit</span>
+<span class="sd">        without an intercept, it states plain ``&quot;g-computation (not doubly</span>
+<span class="sd">        robust)&quot;``.  All the facts are read off the stored ``_outcome_model``</span>
+<span class="sd">        (``learner`` repr, ``weighted``, ``fit_weight``) and the fitted estimators</span>
+<span class="sd">        (linear + intercept is detected pragmatically via ``coef_``/``intercept_``</span>
+<span class="sd">        and ``fit_intercept``).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self (BalanceDFOutcomesHat): Object.</span>
+<span class="sd">            on_linked_samples (bool | None): Ignored; present only because</span>
+<span class="sd">                ``summary`` overrides :meth:`BalanceDF.summary`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: A printable summary with the (scoped) estimator statement and the</span>
+<span class="sd">            mean predicted outcomes with confidence intervals.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import numpy as np, pandas as pd</span>
+<span class="sd">            &gt;&gt;&gt; from balance.sample_frame import SampleFrame</span>
+<span class="sd">            &gt;&gt;&gt; from balance.balance_frame import BalanceFrame</span>
+<span class="sd">            &gt;&gt;&gt; rng = np.random.default_rng(0)</span>
+<span class="sd">            &gt;&gt;&gt; resp = SampleFrame.from_frame(</span>
+<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [str(i) for i in range(40)],</span>
+<span class="sd">            ...                   &quot;age&quot;: rng.normal(50, 10, 40),</span>
+<span class="sd">            ...                   &quot;happiness&quot;: rng.normal(70, 5, 40),</span>
+<span class="sd">            ...                   &quot;weight&quot;: np.ones(40)}),</span>
+<span class="sd">            ...     outcome_columns=[&quot;happiness&quot;])</span>
+<span class="sd">            &gt;&gt;&gt; sf = resp.fit_outcome_model()</span>
+<span class="sd">            &gt;&gt;&gt; _ = sf.predict_outcomes()</span>
+<span class="sd">            &gt;&gt;&gt; &quot;g-computation&quot; in sf.outcomes_hat().summary()</span>
+<span class="sd">            True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_outcome_model</span><span class="p">()</span>
+        <span class="n">estimator_clause</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_estimator_statement</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">mean_hat_with_ci</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">mean_with_ci</span><span class="p">(</span><span class="n">on_linked_samples</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">n_outcomes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">list_outcomes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">n_outcomes</span><span class="si">}</span><span class="s2"> predicted outcome(s): </span><span class="si">{</span><span class="n">list_outcomes</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Estimator: </span><span class="si">{</span><span class="n">estimator_clause</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;Mean predicted outcomes (analytic 95% CIs — these treat the &quot;</span>
+            <span class="s2">&quot;predictions as fixed and under-cover the outcome-model estimate; &quot;</span>
+            <span class="s2">&quot;use mean_with_ci(ci_method=&#39;bootstrap&#39;) for an honest interval):</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mean_hat_with_ci</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">max_cols</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_outcome_model</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFOutcomesHat&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the stored ``_outcome_model`` from the backing source, if any.&quot;&quot;&quot;</span>
+        <span class="n">outcome_model</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="p">,</span> <span class="s2">&quot;outcome_model&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">outcome_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">outcome_model</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="p">,</span> <span class="s2">&quot;_outcome_model&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_linear_with_intercept</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;True iff every fitted estimator is linear (``coef_``) with an intercept.</span>
+
+<span class="sd">        The design matrix drops the patsy intercept (``-1``), so the constant must</span>
+<span class="sd">        come from the learner: an estimator counts as DR-eligible only when it</span>
+<span class="sd">        exposes ``coef_``/``intercept_`` **and** ``fit_intercept=True``.  An empty</span>
+<span class="sd">        fit is not eligible.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fit</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fit&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">fit</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">estimator</span> <span class="ow">in</span> <span class="n">fit</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">has_linear_coefs</span> <span class="o">=</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">estimator</span><span class="p">,</span> <span class="s2">&quot;coef_&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span>
+                <span class="n">estimator</span><span class="p">,</span> <span class="s2">&quot;intercept_&quot;</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">has_linear_coefs</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">estimator</span><span class="p">,</span> <span class="s2">&quot;fit_intercept&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_estimator_statement</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFOutcomesHat&quot;</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build the scoped estimator sentence (see :meth:`summary`).&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="s2">&quot;g-computation (not doubly robust); no stored outcome model &quot;</span>
+                <span class="s2">&quot;(predicted outcomes were attached directly)&quot;</span>
+            <span class="p">)</span>
+        <span class="n">model_repr</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;learner&quot;</span><span class="p">,</span> <span class="s2">&quot;?&quot;</span><span class="p">))</span>
+        <span class="n">weighted</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weighted&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+        <span class="n">fit_weight</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fit_weight&quot;</span><span class="p">,</span> <span class="p">{})</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">uniform</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">fit_weight</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;uniform&quot;</span><span class="p">,</span> <span class="ow">not</span> <span class="n">weighted</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">weighted</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">uniform</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_linear_with_intercept</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+            <span class="n">weight_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit_weight_column_name</span><span class="p">()</span>
+            <span class="n">scope</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;weights `</span><span class="si">{</span><span class="n">weight_col</span><span class="si">}</span><span class="s2">`&quot;</span>
+                <span class="k">if</span> <span class="n">weight_col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="k">else</span> <span class="s2">&quot;the fit weights&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;g-computation (model=</span><span class="si">{</span><span class="n">model_repr</span><span class="si">}</span><span class="s2">); doubly robust w.r.t. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">scope</span><span class="si">}</span><span class="s2"> (linear + intercept fit by weighted least squares — the &quot;</span>
+                <span class="s2">&quot;residuals are orthogonal to the design for those weights)&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;g-computation (model=</span><span class="si">{</span><span class="n">model_repr</span><span class="si">}</span><span class="s2">) (not doubly robust)&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_fit_weight_column_name</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;BalanceDFOutcomesHat&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Best-effort name of the weight column the model was fit with.&quot;&quot;&quot;</span>
+        <span class="n">fit_weight</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="p">,</span> <span class="s2">&quot;outcome_model&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fit_weight</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">column</span> <span class="o">=</span> <span class="p">(</span><span class="n">fit_weight</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fit_weight&quot;</span><span class="p">,</span> <span class="p">{})</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;column&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">column</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">column</span><span class="p">)</span>
+        <span class="n">weight_series</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="p">,</span> <span class="s2">&quot;weight_series&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">weight_series</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span></div>
 
 
 

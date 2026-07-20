@@ -298,6 +298,78 @@ _You can read more on evaluation of the post-adjusted data in the
 [Evaluating and using the adjustment weights](https://import-balance.org/docs/docs/general_framework/evaluation_of_results/)
 page._
 
+## Estimating a population outcome: IPW vs. outcome-model estimators
+
+Once a sample is reweighted to a target, _balance_ offers more than one way to
+estimate the target-population mean of an outcome. They use the same covariates
+differently, so comparing them is a useful robustness check:
+
+- **μ̂_IPW — inverse-propensity (Hájek) weighted mean:** `outcomes().mean()`
+  (the adjusted `self` row). The weighted average of the responders' *observed*
+  outcome using the adjusted weights. Consistent when the **weights** (propensity
+  model) are correct.
+- **μ̂_OM — outcome-model / g-computation estimate:** `outcomes_hat().mean()`
+  (the target-population row). Fit a learner `ĝ(X) ≈ E[Y|X]` on the responders,
+  apply it to the **target** covariates, and average the predicted outcomes `ŷ_T`
+  with the target weights. Consistent when the **outcome model** is correct.
+  Added in v0.23.
+
+The two estimators are complementary — agreement between μ̂_IPW and μ̂_OM is
+reassuring; disagreement points at a misspecified weighting or outcome model.
+A doubly-robust / AIPW estimator that combines both is available as `bf.aipw()`
+(point estimate only; variance/CI and cross-fitting remain deferred).
+
+_For a runnable end-to-end walkthrough, see the [outcome-model tutorial](https://import-balance.org/docs/tutorials/outcome_model/)._
+
+```python
+from balance import Sample
+
+bf = (
+    Sample.from_frame(sample_df, outcome_columns=["happiness"])
+    .set_target(Sample.from_frame(target_df))
+    .adjust(method="ipw")
+)
+
+# μ̂_IPW — weighted mean of the observed outcome (`self` row):
+bf.outcomes().mean()
+
+# μ̂_OM — fit ĝ(X) on responders, apply to the target, average ŷ_T (target row):
+bf.fit_outcome_model()
+bf.predict_outcomes(on="target")
+bf.outcomes_hat().mean()
+
+# An honest confidence interval for μ̂_OM via a nonparametric bootstrap
+# (resample responders, refit ĝ*, predict on the fixed target, re-average):
+bf.outcomes_hat().mean_with_ci(ci_method="bootstrap", n_bootstrap=200, random_seed=2020)
+
+# outcomes_hat().summary() reports the estimator and *scopes* any doubly-robust
+# claim to the fit weights — it never prints a blanket "doubly robust" (a plain
+# g-computation for the non-linear default; DR only for a weighted linear+intercept fit):
+bf.outcomes_hat().summary()
+```
+
+**Train/holdout transfer.** You can fit the outcome model on one frame (a *train*
+split) and apply it to a *different* frame (a *holdout* / scoring split) with the
+same covariate schema, mirroring how `set_fitted_model` transfers a fitted IPW
+model. `set_fitted_outcome_model` copies the already-fitted model onto the holdout
+**without re-fitting** (the fitted learner is shared by identity), so predicting on
+the holdout target gives `μ̂_OM` computed with the train model:
+
+```python
+# train_bf carries a fitted outcome model (train_bf.fit_outcome_model(...));
+# holdout_bf has the same covariates plus its own target to score:
+scored = holdout_bf.set_fitted_outcome_model(train_bf, inplace=False)
+scored.predict_outcomes(on="target")
+scored.outcomes_hat().mean()      # μ̂_OM on the holdout target via train_bf's model
+```
+
+Separately, `bf.outcomes().weights_impact_on_outcome_ss()` is a *diagnostic*
+(not a third estimator): it reports how much applying the weights moves the
+outcome mean (weighted vs. unweighted), with a significance test — useful for
+judging whether the reweighting materially changed the outcome estimate. See the
+[outcome-model design doc](https://github.com/facebookresearch/balance/blob/main/docs/architecture/architecture_0_23_0.md)
+for the estimator theory and the AIPW roadmap.
+
 ## Design-based inference
 
 _balance_ complements an adjacent library that handles the design-based
