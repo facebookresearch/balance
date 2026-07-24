@@ -22,6 +22,7 @@ from balance.outcome_models import (
     predict_outcome,
 )
 from balance.outcome_models.outcome_model import (
+    _prepare_sample_weight,
     _resolve_learner,
     _resolve_use_model_matrix,
 )
@@ -56,6 +57,77 @@ def _make_target(n: int = 5, seed: int = 99) -> pd.DataFrame:
             "grp": rng.choice(["a", "b", "c"], n),
         }
     )
+
+
+@pytest.mark.parametrize(
+    "invalid_weights",
+    (
+        [1.0, 0.0, 1.0],
+        [1.0, -1.0, 1.0],
+        [1.0, np.nan, 1.0],
+        [1.0, np.inf, 1.0],
+        [1.0, -np.inf, 1.0],
+        [1.0, "not-a-number", 1.0],
+        [1.0, "2.0", 1.0],
+        [1.0, True, 1.0],
+        [1.0, 2.0 + 0.0j, 1.0],
+    ),
+)
+def test_fit_rejects_invalid_sample_weights(invalid_weights: list[Any]) -> None:
+    """Estimator weights must be numeric, finite, and strictly positive."""
+    covars = pd.DataFrame({"x": [1.0, 2.0, 3.0]})
+    outcomes = pd.DataFrame({"y": [2.0, 4.0, 6.0]})
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "sample_weight must contain only finite, strictly positive real "
+            "numeric values"
+        ),
+    ):
+        fit_outcome_model(
+            covars,
+            outcomes,
+            sample_weight=pd.Series(invalid_weights),
+            model=LinearRegression(),
+        )
+
+
+@pytest.mark.parametrize(
+    "invalid_weights, expected_message",
+    (
+        (np.ones((3, 1)), "one-dimensional.*shape \\(3, 1\\)"),
+        (np.ones((1, 3)), "one-dimensional.*shape \\(1, 3\\)"),
+        (np.array(1.0), "one-dimensional.*shape \\(\\)"),
+        (np.ones(2), "same length.*3, 2"),
+        (np.ones(4), "same length.*3, 4"),
+    ),
+)
+def test_fit_rejects_invalid_sample_weight_shape(
+    invalid_weights: np.ndarray, expected_message: str
+) -> None:
+    covars = pd.DataFrame({"x": [1.0, 2.0, 3.0]})
+    outcomes = pd.DataFrame({"y": [2.0, 4.0, 6.0]})
+
+    with pytest.raises(ValueError, match=expected_message):
+        fit_outcome_model(
+            covars,
+            outcomes,
+            sample_weight=invalid_weights,
+            model=LinearRegression(),
+        )
+
+
+def test_prepare_sample_weight_preserves_series_metadata_and_none() -> None:
+    """Validation must preserve the weight name and covariate row order."""
+    covars = pd.DataFrame({"x": [1, 2]}, index=pd.Index([20, 10]))
+    weights = pd.Series([1, 2], index=covars.index, name="design_weight")
+
+    weighted, values, column = _prepare_sample_weight(weights, covars)
+    assert weighted is True
+    np.testing.assert_array_equal(values, np.array([1.0, 2.0]))
+    assert column == "design_weight"
+    assert _prepare_sample_weight(None, covars) == (False, None, None)
 
 
 class TestResolveLearner(balance.testutil.BalanceTestCase):
