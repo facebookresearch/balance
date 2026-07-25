@@ -454,12 +454,18 @@ def _prepare_sample_weight(
     # Do not silently coerce strings, booleans, datetimes, or complex numbers.
     # Although some of them can be cast to float, they are not real-valued
     # estimator weights and accepting them would hide malformed input.
-    if not all(
+    weight_dtype = sample_weight_series.dtype
+    invalid_numeric_dtype = pd.api.types.is_bool_dtype(
+        weight_dtype
+    ) or pd.api.types.is_complex_dtype(weight_dtype)
+    needs_element_validation = not pd.api.types.is_numeric_dtype(weight_dtype)
+    invalid_object_values = needs_element_validation and not all(
         isinstance(value, numbers.Number)
         and not isinstance(value, (bool, np.bool_))
         and not isinstance(value, (complex, np.complexfloating))
         for value in sample_weight_series.array
-    ):
+    )
+    if invalid_numeric_dtype or invalid_object_values:
         raise ValueError(invalid_value_message)
     try:
         sample_weight_arr = sample_weight_series.to_numpy(dtype=float)

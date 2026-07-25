@@ -130,6 +130,18 @@ def test_prepare_sample_weight_preserves_series_metadata_and_none() -> None:
     assert _prepare_sample_weight(None, covars) == (False, None, None)
 
 
+def test_prepare_sample_weight_numeric_dtype_uses_vectorized_validation() -> None:
+    """Ordinary numeric Series must not take the object-dtype elementwise path."""
+    covars = pd.DataFrame({"x": [1, 2]})
+    weights = pd.Series([1.0, 2.0])
+
+    with unittest.mock.patch("builtins.all", side_effect=AssertionError):
+        weighted, values, _column = _prepare_sample_weight(weights, covars)
+
+    assert weighted is True
+    np.testing.assert_array_equal(values, weights.to_numpy())
+
+
 class TestResolveLearner(balance.testutil.BalanceTestCase):
     def test_auto_dispatches_regressor_for_continuous(self) -> None:
         est, note = _resolve_learner("auto", pd.Series([1.0, 2.5, 3.1, 4.9], name="y"))
