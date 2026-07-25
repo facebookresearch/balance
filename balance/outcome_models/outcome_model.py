@@ -441,8 +441,8 @@ def _prepare_sample_weight(
             )
         if len(weight_values) != len(covars_df):
             raise ValueError(
-                "sample_weights must be the same length as sample_df: "
-                f"{len(covars_df)}, {len(weight_values)}"
+                "sample_weight must be the same length as covars_df: "
+                f"expected {len(covars_df)}, got {len(weight_values)}."
             )
         sample_weight_series = pd.Series(weight_values, index=covars_df.index)
 

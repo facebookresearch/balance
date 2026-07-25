@@ -99,8 +99,8 @@ def test_fit_rejects_invalid_sample_weights(invalid_weights: list[Any]) -> None:
         (np.ones((3, 1)), "one-dimensional.*shape \\(3, 1\\)"),
         (np.ones((1, 3)), "one-dimensional.*shape \\(1, 3\\)"),
         (np.array(1.0), "one-dimensional.*shape \\(\\)"),
-        (np.ones(2), "same length.*3, 2"),
-        (np.ones(4), "same length.*3, 4"),
+        (np.ones(2), "same length as covars_df: expected 3, got 2"),
+        (np.ones(4), "same length as covars_df: expected 3, got 4"),
     ),
 )
 def test_fit_rejects_invalid_sample_weight_shape(
