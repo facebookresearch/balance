@@ -80,6 +80,13 @@ class TestBalance_weights_stats(
             zero_w = [0, 0, 0]
             _check_weights_are_valid(zero_w, require_positive=True)
 
+        with self.assertRaisesRegex(ValueError, "must contain only finite values"):
+            _check_weights_are_valid([1.0, np.inf], require_finite=True)
+        with self.assertRaisesRegex(ValueError, "must contain only finite values"):
+            _check_weights_are_valid([1.0, np.nan], require_finite=True)
+        with self.assertRaisesRegex(ValueError, "must all be strictly positive"):
+            _check_weights_are_valid([1.0, 0.0], require_strictly_positive=True)
+
         # Zeros are allowed when positive weights are not required, but the
         # canonical seam now warns so the silent-NaN failure mode of
         # downstream weighted statistics (descriptive_stats -> asmd, etc.) is

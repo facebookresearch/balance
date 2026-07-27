@@ -61,6 +61,8 @@ def _check_weights_series_are_valid(
     w: pd.Series,
     *,
     require_positive: bool = False,
+    require_finite: bool = False,
+    require_strictly_positive: bool = False,
 ) -> None:
     """Validate a normalized weight Series.
 
@@ -71,12 +73,19 @@ def _check_weights_series_are_valid(
             ``UserWarning`` instead so the silent-NaN failure mode of
             downstream weighted statistics (e.g. ``descriptive_stats``,
             ``asmd``) is visible to the caller. Defaults to False.
+        require_finite (bool, optional): If True, reject NaN and infinite
+            entries. Defaults to False for backward compatibility.
+        require_strictly_positive (bool, optional): If True, reject every zero
+            or negative entry. Defaults to False for backward compatibility.
 
     Raises:
         ValueError: If ``w`` is empty (zero-length).
         TypeError: If ``w`` is not numeric.
         ValueError: If ``w`` includes any negative value.
         ValueError: If ``require_positive`` is True and all weights are zero.
+        ValueError: If ``require_finite`` is True and a weight is non-finite.
+        ValueError: If ``require_strictly_positive`` is True and a weight is
+            zero or negative.
 
     Warns:
         UserWarning: If ``require_positive`` is False and the input has no
@@ -97,10 +106,18 @@ def _check_weights_series_are_valid(
         # emit a ``UserWarning``). Reject empty inputs deterministically up
         # front so the contract is stable across supported pandas versions.
         raise ValueError("weights (w) must be non-empty.")
-    if not pd.api.types.is_numeric_dtype(w):
+    if (
+        not pd.api.types.is_numeric_dtype(w)
+        or pd.api.types.is_bool_dtype(w.dtype)
+        or pd.api.types.is_complex_dtype(w.dtype)
+    ):
         raise TypeError(
             f"weights (w) must be a number but instead they are of type: {w.dtype}."
         )
+    if require_finite:
+        numeric_weights = w.to_numpy(dtype=float, na_value=np.nan)
+        if not np.isfinite(numeric_weights).all():
+            raise ValueError("weights (w) must contain only finite values.")
     # Use pandas ``.any()`` (not Python's built-in ``any()``) so the
     # comparison is robust under nullable dtypes: ``Float64`` / ``Int64``
     # produce ``pd.NA`` from comparisons with ``NA`` entries, and
@@ -110,6 +127,8 @@ def _check_weights_series_are_valid(
     # ``skipna=True`` and treats NA as False for the boolean reduction.
     if (w < 0).any():
         raise ValueError("weights (w) must all be non-negative values.")
+    if require_strictly_positive and (w <= 0).any():
+        raise ValueError("weights (w) must all be strictly positive values.")
     if not (w > 0).any():
         if require_positive:
             raise ValueError("weights (w) must include at least one positive value.")
@@ -143,6 +162,8 @@ def _check_weights_are_valid(
     w: list[Any] | pd.Series | npt.NDArray | pd.DataFrame | None,
     *,
     require_positive: bool = False,
+    require_finite: bool = False,
+    require_strictly_positive: bool = False,
 ) -> None:
     """Check weights.
 
@@ -152,11 +173,18 @@ def _check_weights_are_valid(
             If input is None, then the function returns None with no errors (since None is a valid weights input for various functions).
         require_positive (bool, optional): If True, require at least one weight
             to be strictly positive. Defaults to False.
+        require_finite (bool, optional): If True, reject NaN and infinite
+            entries. Defaults to False.
+        require_strictly_positive (bool, optional): If True, require every
+            weight to be strictly positive. Defaults to False.
 
     Raises:
         TypeError: if weights are not numeric, or if ``w`` is an empty DataFrame.
         ValueError: if weights include a negative value.
         ValueError: if ``require_positive`` is True and all weights are zero.
+        ValueError: if ``require_finite`` is True and a weight is non-finite.
+        ValueError: if ``require_strictly_positive`` is True and a weight is
+            zero or negative.
 
     Returns:
         _type_: None
@@ -164,7 +192,12 @@ def _check_weights_are_valid(
     if w is None:
         return None
     w_series = _weights_to_series(w)
-    _check_weights_series_are_valid(w_series, require_positive=require_positive)
+    _check_weights_series_are_valid(
+        w_series,
+        require_positive=require_positive,
+        require_finite=require_finite,
+        require_strictly_positive=require_strictly_positive,
+    )
 
     return None
 

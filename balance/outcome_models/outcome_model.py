@@ -61,12 +61,12 @@ from __future__ import annotations
 
 import contextlib
 import logging
-import numbers
 from typing import Any, Dict, Iterator, List, Tuple
 
 import numpy as np
 import pandas as pd
 from balance.stats_and_plots.weighted_stats import weighted_mean, weighted_r2
+from balance.stats_and_plots.weights_stats import _check_weights_series_are_valid
 from balance.typing import OutcomeLearner
 from balance.utils.input_validation import (
     _assert_type,
@@ -451,28 +451,17 @@ def _prepare_sample_weight(
     invalid_value_message = (
         "sample_weight must contain only finite, strictly positive real numeric values."
     )
-    # Do not silently coerce strings, booleans, datetimes, or complex numbers.
-    # Although some of them can be cast to float, they are not real-valued
-    # estimator weights and accepting them would hide malformed input.
-    weight_dtype = sample_weight_series.dtype
-    invalid_numeric_dtype = pd.api.types.is_bool_dtype(
-        weight_dtype
-    ) or pd.api.types.is_complex_dtype(weight_dtype)
-    needs_element_validation = not pd.api.types.is_numeric_dtype(weight_dtype)
-    invalid_object_values = needs_element_validation and not all(
-        isinstance(value, numbers.Number)
-        and not isinstance(value, (bool, np.bool_))
-        and not isinstance(value, (complex, np.complexfloating))
-        for value in sample_weight_series.array
-    )
-    if invalid_numeric_dtype or invalid_object_values:
-        raise ValueError(invalid_value_message)
     try:
-        sample_weight_arr = sample_weight_series.to_numpy(dtype=float)
-    except (OverflowError, TypeError, ValueError) as exc:
+        _check_weights_series_are_valid(
+            sample_weight_series,
+            require_finite=True,
+            require_strictly_positive=True,
+        )
+    except (TypeError, ValueError) as exc:
         raise ValueError(invalid_value_message) from exc
-    if not np.isfinite(sample_weight_arr).all() or (sample_weight_arr <= 0).any():
-        raise ValueError(invalid_value_message)
+    # The shared validator has already proved conversion is safe and all
+    # values satisfy the requested finite/strictly-positive contract.
+    sample_weight_arr = sample_weight_series.to_numpy(dtype=float, na_value=np.nan)
     fit_weight_column: str | None = (
         str(sample_weight_series.name)
         if sample_weight_series.name is not None

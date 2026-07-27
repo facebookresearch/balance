@@ -130,16 +130,24 @@ def test_prepare_sample_weight_preserves_series_metadata_and_none() -> None:
     assert _prepare_sample_weight(None, covars) == (False, None, None)
 
 
-def test_prepare_sample_weight_numeric_dtype_uses_vectorized_validation() -> None:
-    """Ordinary numeric Series must not take the object-dtype elementwise path."""
+def test_prepare_sample_weight_reuses_canonical_weight_validation() -> None:
+    """Outcome fitting delegates value checks to the shared weight validator."""
     covars = pd.DataFrame({"x": [1, 2]})
     weights = pd.Series([1.0, 2.0])
 
-    with unittest.mock.patch("builtins.all", side_effect=AssertionError):
+    with unittest.mock.patch(
+        "balance.outcome_models.outcome_model._check_weights_series_are_valid",
+        wraps=_prepare_sample_weight.__globals__["_check_weights_series_are_valid"],
+    ) as check_weights:
         weighted, values, _column = _prepare_sample_weight(weights, covars)
 
     assert weighted is True
     np.testing.assert_array_equal(values, weights.to_numpy())
+    check_weights.assert_called_once_with(
+        weights,
+        require_finite=True,
+        require_strictly_positive=True,
+    )
 
 
 class TestResolveLearner(balance.testutil.BalanceTestCase):
