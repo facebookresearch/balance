@@ -458,7 +458,7 @@ def _prepare_sample_weight(
             require_strictly_positive=True,
         )
     except (TypeError, ValueError) as exc:
-        raise ValueError(invalid_value_message) from exc
+        raise ValueError(f"{invalid_value_message} Validation failed: {exc}") from exc
     # The shared validator has already proved conversion is safe and all
     # values satisfy the requested finite/strictly-positive contract.
     sample_weight_arr = sample_weight_series.to_numpy(dtype=float, na_value=np.nan)

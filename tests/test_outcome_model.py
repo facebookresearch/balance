@@ -60,20 +60,22 @@ def _make_target(n: int = 5, seed: int = 99) -> pd.DataFrame:
 
 
 @pytest.mark.parametrize(
-    "invalid_weights",
+    "invalid_weights, reason",
     (
-        [1.0, 0.0, 1.0],
-        [1.0, -1.0, 1.0],
-        [1.0, np.nan, 1.0],
-        [1.0, np.inf, 1.0],
-        [1.0, -np.inf, 1.0],
-        [1.0, "not-a-number", 1.0],
-        [1.0, "2.0", 1.0],
-        [1.0, True, 1.0],
-        [1.0, 2.0 + 0.0j, 1.0],
+        ([1.0, 0.0, 1.0], "strictly positive"),
+        ([1.0, -1.0, 1.0], "non-negative"),
+        ([1.0, np.nan, 1.0], "finite"),
+        ([1.0, np.inf, 1.0], "finite"),
+        ([1.0, -np.inf, 1.0], "finite"),
+        ([1.0, "not-a-number", 1.0], "must be a number"),
+        ([1.0, "2.0", 1.0], "must be a number"),
+        ([True, True, True], "must be a number"),
+        ([1.0 + 0.0j, 2.0 + 0.0j, 3.0 + 0.0j], "must be a number"),
     ),
 )
-def test_fit_rejects_invalid_sample_weights(invalid_weights: list[Any]) -> None:
+def test_fit_rejects_invalid_sample_weights(
+    invalid_weights: list[Any], reason: str
+) -> None:
     """Estimator weights must be numeric, finite, and strictly positive."""
     covars = pd.DataFrame({"x": [1.0, 2.0, 3.0]})
     outcomes = pd.DataFrame({"y": [2.0, 4.0, 6.0]})
@@ -84,13 +86,14 @@ def test_fit_rejects_invalid_sample_weights(invalid_weights: list[Any]) -> None:
             "sample_weight must contain only finite, strictly positive real "
             "numeric values"
         ),
-    ):
+    ) as exc_info:
         fit_outcome_model(
             covars,
             outcomes,
             sample_weight=pd.Series(invalid_weights),
             model=LinearRegression(),
         )
+    assert reason in str(exc_info.value)
 
 
 @pytest.mark.parametrize(
