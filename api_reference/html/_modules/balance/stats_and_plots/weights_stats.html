@@ -101,6 +101,8 @@
     <span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">require_positive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">require_finite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">require_strictly_positive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate a normalized weight Series.</span>
 
@@ -111,12 +113,19 @@
 <span class="sd">            ``UserWarning`` instead so the silent-NaN failure mode of</span>
 <span class="sd">            downstream weighted statistics (e.g. ``descriptive_stats``,</span>
 <span class="sd">            ``asmd``) is visible to the caller. Defaults to False.</span>
+<span class="sd">        require_finite (bool, optional): If True, reject NaN and infinite</span>
+<span class="sd">            entries. Defaults to False for backward compatibility.</span>
+<span class="sd">        require_strictly_positive (bool, optional): If True, reject every zero</span>
+<span class="sd">            or negative entry. Defaults to False for backward compatibility.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: If ``w`` is empty (zero-length).</span>
 <span class="sd">        TypeError: If ``w`` is not numeric.</span>
 <span class="sd">        ValueError: If ``w`` includes any negative value.</span>
 <span class="sd">        ValueError: If ``require_positive`` is True and all weights are zero.</span>
+<span class="sd">        ValueError: If ``require_finite`` is True and a weight is non-finite.</span>
+<span class="sd">        ValueError: If ``require_strictly_positive`` is True and a weight is</span>
+<span class="sd">            zero or negative.</span>
 
 <span class="sd">    Warns:</span>
 <span class="sd">        UserWarning: If ``require_positive`` is False and the input has no</span>
@@ -137,10 +146,18 @@
         <span class="c1"># emit a ``UserWarning``). Reject empty inputs deterministically up</span>
         <span class="c1"># front so the contract is stable across supported pandas versions.</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights (w) must be non-empty.&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_numeric_dtype</span><span class="p">(</span><span class="n">w</span><span class="p">):</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_numeric_dtype</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_bool_dtype</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_complex_dtype</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;weights (w) must be a number but instead they are of type: </span><span class="si">{</span><span class="n">w</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
+    <span class="k">if</span> <span class="n">require_finite</span><span class="p">:</span>
+        <span class="n">numeric_weights</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">na_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">numeric_weights</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights (w) must contain only finite values.&quot;</span><span class="p">)</span>
     <span class="c1"># Use pandas ``.any()`` (not Python&#39;s built-in ``any()``) so the</span>
     <span class="c1"># comparison is robust under nullable dtypes: ``Float64`` / ``Int64``</span>
     <span class="c1"># produce ``pd.NA`` from comparisons with ``NA`` entries, and</span>
@@ -150,6 +167,8 @@
     <span class="c1"># ``skipna=True`` and treats NA as False for the boolean reduction.</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">w</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights (w) must all be non-negative values.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">require_strictly_positive</span> <span class="ow">and</span> <span class="p">(</span><span class="n">w</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights (w) must all be strictly positive values.&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">w</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">require_positive</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights (w) must include at least one positive value.&quot;</span><span class="p">)</span>
@@ -183,6 +202,8 @@
     <span class="n">w</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">require_positive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">require_finite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">require_strictly_positive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check weights.</span>
 
@@ -192,11 +213,18 @@
 <span class="sd">            If input is None, then the function returns None with no errors (since None is a valid weights input for various functions).</span>
 <span class="sd">        require_positive (bool, optional): If True, require at least one weight</span>
 <span class="sd">            to be strictly positive. Defaults to False.</span>
+<span class="sd">        require_finite (bool, optional): If True, reject NaN and infinite</span>
+<span class="sd">            entries. Defaults to False.</span>
+<span class="sd">        require_strictly_positive (bool, optional): If True, require every</span>
+<span class="sd">            weight to be strictly positive. Defaults to False.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        TypeError: if weights are not numeric, or if ``w`` is an empty DataFrame.</span>
 <span class="sd">        ValueError: if weights include a negative value.</span>
 <span class="sd">        ValueError: if ``require_positive`` is True and all weights are zero.</span>
+<span class="sd">        ValueError: if ``require_finite`` is True and a weight is non-finite.</span>
+<span class="sd">        ValueError: if ``require_strictly_positive`` is True and a weight is</span>
+<span class="sd">            zero or negative.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        _type_: None</span>
@@ -204,7 +232,12 @@
     <span class="k">if</span> <span class="n">w</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="n">w_series</span> <span class="o">=</span> <span class="n">_weights_to_series</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
-    <span class="n">_check_weights_series_are_valid</span><span class="p">(</span><span class="n">w_series</span><span class="p">,</span> <span class="n">require_positive</span><span class="o">=</span><span class="n">require_positive</span><span class="p">)</span>
+    <span class="n">_check_weights_series_are_valid</span><span class="p">(</span>
+        <span class="n">w_series</span><span class="p">,</span>
+        <span class="n">require_positive</span><span class="o">=</span><span class="n">require_positive</span><span class="p">,</span>
+        <span class="n">require_finite</span><span class="o">=</span><span class="n">require_finite</span><span class="p">,</span>
+        <span class="n">require_strictly_positive</span><span class="o">=</span><span class="n">require_strictly_positive</span><span class="p">,</span>
+    <span class="p">)</span>
 
     <span class="k">return</span> <span class="kc">None</span>
 
