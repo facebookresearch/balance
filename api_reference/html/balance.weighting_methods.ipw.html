@@ -90,8 +90,8 @@ dev_mean &gt; 0
 <dd><p>Searches through the regularisation parameters of the model and weight
 trimming levels to find the combination with the highest covariate
 ASMD reduction (in sample_df and target_df, NOT in the model matrix used for modeling
-the response) subject to the design effect being lower than max_de (deafults to 1.5).
-The function preforms a grid search over the n_asmd_candidates (deafults to 10) models
+the response) subject to the design effect being lower than max_de (defaults to 1.5).
+The function performs a grid search over the n_asmd_candidates (defaults to 10) models
 with highest DE lower than max_de (assuming higher DE means more bias reduction).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -211,7 +211,7 @@ concatenated together. Defaults to None.</p>
 Smaller penalty on some formula will lead to elements in that formula to get more adjusted, i.e. to have a higher chance to get into the model (and not zero out). A penalty of 0 will make sure the element is included in the model.
 If not provided, assume the same penalty (1) for all variables. Defaults to None.</p>
 </dd>
-<dt>one_hot_encoding (bool, optional): whether to encode all factor variables in the model matrix with</dt><dd><p>almost_one_hot_encoding. This is recomended in case of using
+<dt>one_hot_encoding (bool, optional): whether to encode all factor variables in the model matrix with</dt><dd><p>almost_one_hot_encoding. This is recommended in case of using
 LASSO on the data (Default: False).
 one_hot_encoding_greater_3 creates one-hot-encoding for all
 categorical variables with more than 2 categories (i.e. the
@@ -474,7 +474,7 @@ the weights, then normalize the weights to have sum equal to the sum of the targ
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A vecotr of normalized weights (for sum of target weights)</p>
+<dd class="field-even"><p>A vector of normalized weights (for sum of target weights)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>pd.Series</p>

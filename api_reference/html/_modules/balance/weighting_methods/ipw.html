@@ -322,7 +322,7 @@
 <span class="sd">        keep_sum_of_weights (bool, optional): to be used in :func:`trim_weights`. Defaults to True.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        pd.Series: A vecotr of normalized weights (for sum of target weights)</span>
+<span class="sd">        pd.Series: A vector of normalized weights (for sum of target weights)</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">    .. code-block:: python</span>
@@ -373,8 +373,8 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Searches through the regularisation parameters of the model and weight</span>
 <span class="sd">    trimming levels to find the combination with the highest covariate</span>
 <span class="sd">    ASMD reduction (in sample_df and target_df, NOT in the model matrix used for modeling</span>
-<span class="sd">    the response) subject to the design effect being lower than max_de (deafults to 1.5).</span>
-<span class="sd">    The function preforms a grid search over the n_asmd_candidates (deafults to 10) models</span>
+<span class="sd">    the response) subject to the design effect being lower than max_de (defaults to 1.5).</span>
+<span class="sd">    The function performs a grid search over the n_asmd_candidates (defaults to 10) models</span>
 <span class="sd">    with highest DE lower than max_de (assuming higher DE means more bias reduction).</span>
 
 <span class="sd">    Args:</span>
@@ -601,7 +601,7 @@
 <span class="sd">            Smaller penalty on some formula will lead to elements in that formula to get more adjusted, i.e. to have a higher chance to get into the model (and not zero out). A penalty of 0 will make sure the element is included in the model.</span>
 <span class="sd">            If not provided, assume the same penalty (1) for all variables. Defaults to None.</span>
 <span class="sd">        one_hot_encoding (bool, optional): whether to encode all factor variables in the model matrix with</span>
-<span class="sd">            almost_one_hot_encoding. This is recomended in case of using</span>
+<span class="sd">            almost_one_hot_encoding. This is recommended in case of using</span>
 <span class="sd">            LASSO on the data (Default: False).</span>
 <span class="sd">            one_hot_encoding_greater_3 creates one-hot-encoding for all</span>
 <span class="sd">            categorical variables with more than 2 categories (i.e. the</span>
@@ -923,7 +923,7 @@
     <span class="n">foldids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
     <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span>
         <span class="n">foldids</span>
-    <span class="p">)</span>  <span class="c1"># shuffels the values of foldid - note that we set the seed in the beginning of the function, so this order is fixed</span>
+    <span class="p">)</span>  <span class="c1"># shuffles the values of foldid - note that we set the seed in the beginning of the function, so this order is fixed</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
         <span class="sa">f</span><span class="s2">&quot;foldid frequency table </span><span class="si">{</span><span class="n">pd</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">foldids</span><span class="p">,</span><span class="w"> </span><span class="n">columns</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="p">)</span>
