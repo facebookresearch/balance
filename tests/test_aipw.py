@@ -24,6 +24,8 @@ linear ``ĝ`` fit with the same weights, ``μ̂_DR`` collapses to ``μ̂_OM``).
 
 from __future__ import annotations
 
+from unittest import mock
+
 import balance.testutil
 import numpy as np
 import pandas as pd
@@ -140,6 +142,15 @@ class AipwTest(balance.testutil.BalanceTestCase):
             _validate_aipw_weight_scale(
                 np.array([1_000_001.0]), np.array([1_000_000.0])
             )
+
+    def test_weight_scale_validation_rejects_nonfinite_computed_totals(self) -> None:
+        with mock.patch(
+            "balance.outcome_models.aipw.math.fsum", return_value=float("inf")
+        ):
+            with self.assertRaisesRegex(
+                ValueError, "finite responder and target weight totals"
+            ):
+                _validate_aipw_weight_scale(np.array([1.0]), np.array([1.0]))
 
     def test_aipw_matches_independent_numpy_oracle(self) -> None:
         sample_df, target_df = _make_aipw_fixture()

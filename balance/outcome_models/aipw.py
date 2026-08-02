@@ -123,6 +123,8 @@ def _validate_aipw_weight_scale(
         raise ValueError(
             "aipw() requires finite responder and target weight totals."
         ) from exc
+    if not math.isfinite(sample_weight_total) or not math.isfinite(target_weight_total):
+        raise ValueError("aipw() requires finite responder and target weight totals.")
     if sample_weight_total <= 0 or target_weight_total <= 0:
         raise ValueError("aipw() requires positive responder and target weight totals.")
 
