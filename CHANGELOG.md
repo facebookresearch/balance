@@ -4,6 +4,14 @@
 
 - **Breaking:** the previously-inert `predicted_outcome_columns` parameter (`Sample.from_frame` / `SampleFrame.from_frame` / `SampleFrame._create`) and the `SampleFrame.predicted_outcome_columns` property are renamed to `outcomes_hat_columns` (internal `_column_roles` key `"predicted"` → `"outcomes_hat"`). The old names are removed outright with no alias — the role was reserved scaffolding, never populated or consumed, so no migration is provided.
 
+- **Breaking:** `BalanceFrame.aipw()` now requires responder weights produced by
+  `adjust()`, validates both weight vectors as non-empty, one-dimensional,
+  finite, and non-negative with positive finite totals, and verifies that the
+  responder total matches the target-weight total to a relative tolerance of
+  `1e-6`. This enforces the estimator's same-population-scale normalization
+  contract instead of accepting arbitrary, uncalibrated weights; call
+  `adjust(...)` before `aipw()` and do not rescale its output.
+
 ## New Features
 
 - **Outcome-model input and replay validation is hardened.** `fit_outcome_model(..., sample_weight=...)` rejects incorrectly shaped arrays and zero, negative, NaN, infinite, non-real, or non-numeric weights with actionable `ValueError` messages; accepted weights must be one-dimensional, finite, strictly positive real numbers aligned to the covariates. Replaying categorical covariates now explicitly maps novel levels to missing before constructing the frozen categorical dtype, avoiding the pandas deprecation warning while preserving the existing novel-level behavior.
@@ -74,7 +82,7 @@
   scored.outcomes_hat().mean()      # μ̂_OM on the holdout target via train_bf's fitted model
   ```
 
-- **`BalanceFrame.aipw()` — doubly-robust (AIPW) estimate `μ̂_DR`.** New `BalanceFrame.aipw()` (and, via the MRO, `Sample.aipw()`) returns the augmented / one-sample AIPW estimate of the target-population mean, per outcome column, combining the fitted outcome model `ĝ` with the balance weights `w`: `μ̂_DR = wmean(ĝ(X_T), w_T) + wmean(Y − ĝ(X_S), w)` (the augmentation runs over responders with an observed `Y`). It is **doubly robust** — consistent if *either* the outcome model *or* the weighting model is correct — and completes the estimator trio alongside `outcomes().mean()` (`μ̂_IPW`) and `outcomes_hat().mean()` (`μ̂_OM`); equivalently it is a GREG (model-assisted) estimator with the balance weights as the design weights. It requires a fitted outcome model (`fit_outcome_model(...)`) **and** a target (`set_target(...)`), accepts any balance weights, and **warns** when the responder weights are constant (no weighting fitted → `μ̂_DR` reduces to `μ̂_OM`). The point-estimate arithmetic lives in the pure `balance.outcome_models.aipw_point_estimate(...)`. **This is the point estimate only** — no confidence interval yet; an honest AIPW interval must jointly capture the weighting- and outcome-model uncertainty (see the TODOs in `balance/outcome_models/aipw.py`: cross-fitting, an analytic influence-function / sandwich SE, and an end-to-end joint bootstrap).
+- **`BalanceFrame.aipw()` — doubly-robust (AIPW) estimate `μ̂_DR`.** New `BalanceFrame.aipw()` (and, via the MRO, `Sample.aipw()`) returns the augmented / one-sample AIPW estimate of the target-population mean, per outcome column, combining the fitted outcome model `ĝ` with the balance weights `w`: `μ̂_DR = wmean(ĝ(X_T), w_T) + wmean(Y − ĝ(X_S), w)` (the augmentation runs over responders with an observed `Y`). It is **doubly robust** — consistent if *either* the outcome model *or* the weighting model is correct — and completes the estimator trio alongside `outcomes().mean()` (`μ̂_IPW`) and `outcomes_hat().mean()` (`μ̂_OM`); equivalently it is a GREG (model-assisted) estimator with the balance weights as the design weights. It requires a fitted outcome model (`fit_outcome_model(...)`), a target (`set_target(...)`), and `adjust()`-calibrated responder weights whose total matches the target-weight total within relative tolerance `1e-6`; this same-population-scale requirement makes the doubly-robust claim asymptotic under the Hájek normalization used by balance (ratio bias is `O(1/n)`). It **warns** when the calibrated responder weights are constant (`μ̂_DR` reduces to `μ̂_OM`). The point-estimate arithmetic lives in the pure `balance.outcome_models.aipw_point_estimate(...)`. **This is the point estimate only** — no confidence interval yet; an honest AIPW interval must jointly capture the weighting- and outcome-model uncertainty (see the TODOs in `balance/outcome_models/aipw.py`: cross-fitting, an analytic influence-function / sandwich SE, and an end-to-end joint bootstrap).
 
   ```python
   bf = sample.adjust(method="ipw").set_target(target)   # or any balance weights

@@ -3540,9 +3540,12 @@ class BalanceFrame:
         ``outcomes().mean()`` gives ``μ̂_IPW`` and ``outcomes_hat().mean()`` gives
         ``μ̂_OM``; this gives ``μ̂_DR``.
 
-        Requires a fitted outcome model **and** a target (:meth:`set_target`).
-        Uses whatever weight columns are present (any balance weights). With
-        constant responder weights it warns and reduces to ``μ̂_OM``.
+        Requires a fitted outcome model, a target (:meth:`set_target`), and
+        responder weights produced by :meth:`adjust`. The adjusted responder
+        weights and target weights must have matching totals (within a relative
+        tolerance of ``1e-6``), ensuring that both terms use weights on the
+        same target-population scale. With constant responder weights it warns
+        and reduces to ``μ̂_OM``.
 
         Point estimate only -- no confidence interval (an honest AIPW interval
         must jointly capture the weighting- and outcome-model uncertainty; see
@@ -3553,7 +3556,9 @@ class BalanceFrame:
 
         Raises:
             ValueError: If no outcome model has been fit, if no target is set,
-                or if the responders carry no observed outcomes.
+                if the responders have not been adjusted, if the responder and
+                target weight totals are not on the same scale, or if the
+                responders carry no observed outcomes.
 
         Examples:
             >>> import pandas as pd
@@ -3569,12 +3574,15 @@ class BalanceFrame:
             >>> tgt = SampleFrame.from_frame(
             ...     pd.DataFrame({"id": [5, 6], "x": [15.0, 35.0],
             ...                   "weight": [1.0, 1.0]}))
-            >>> bf = BalanceFrame(sample=resp, target=tgt)
+            >>> bf = BalanceFrame(sample=resp, target=tgt).adjust(method="ipw")
             >>> _ = bf.fit_outcome_model(model=LinearRegression())
             >>> bf.aipw().index.tolist()
             ['y']
         """
-        from balance.outcome_models.aipw import aipw_point_estimate
+        from balance.outcome_models.aipw import (
+            _validate_aipw_weight_scale,
+            aipw_point_estimate,
+        )
 
         model = self.outcome_model
         if model is None:
@@ -3586,6 +3594,12 @@ class BalanceFrame:
             raise ValueError(
                 "aipw() requires a target population; call set_target(...) first."
             )
+        if not self.is_adjusted:
+            raise ValueError(
+                "aipw() requires adjust()-calibrated responder weights; call "
+                "adjust(...) before aipw() so responder and target weights are "
+                "on the same population scale."
+            )
         observed_outcomes = self._outcome_columns
         if observed_outcomes is None:
             raise ValueError(
@@ -3595,16 +3609,17 @@ class BalanceFrame:
 
         target = _assert_type(self._sf_target)
         sample_weight = self.weight_series
-        if (
-            sample_weight is not None
-            and len(sample_weight) > 1
-            and sample_weight.nunique() == 1
-        ):
+        target_weight = target.weight_series
+        if sample_weight is None or target_weight is None:
+            raise ValueError(
+                "aipw() requires responder and target weight columns on the same "
+                "population scale."
+            )
+        _validate_aipw_weight_scale(sample_weight, target_weight)
+        if len(sample_weight) > 1 and sample_weight.nunique() == 1:
             logger.warning(
-                "aipw(): responder weights are constant -- it appears no "
-                "weighting model was fit (adjust() was not run, or it produced "
-                "uniform weights); the AIPW estimate reduces to the "
-                "outcome-model estimate mu_OM."
+                "aipw(): adjusted responder weights are constant; the AIPW "
+                "estimate reduces to the outcome-model estimate mu_OM."
             )
 
         estimates = aipw_point_estimate(
@@ -3612,7 +3627,7 @@ class BalanceFrame:
             observed_outcomes,
             sample_weight,
             target.df_covars,
-            target.weight_series,
+            target_weight,
             model,
         )
         return pd.Series(estimates, dtype=float)

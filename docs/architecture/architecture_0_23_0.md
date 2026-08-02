@@ -18,6 +18,7 @@
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
+| 2026-08-01 | **AIPW normalization contract: implemented.** The augmentation is valid only when `w_R` and `w_T` are on the same population scale; Hájek self-normalization gives *asymptotic* DR (ratio bias `O(1/n)`). `aipw()` requires valid, non-negative `adjust()`-calibrated responder weights and asserts `|Σw_R−Σw_T|/Σw_T < 1e-6`. | Enforces the correctness precondition at the estimator boundary and reports an actionable error for malformed, arbitrary, or subsequently rescaled weights. |
 | 2026-07-15 | **`outcomes_hat` is the canonical spelling everywhere — public and internal — as a clean rename (no alias, no `FutureWarning`, no migration).** Public: `outcomes_hat()`, `df_outcomes_hat`, `outcomes_hat_columns`. Internal: `_column_roles` key `"predicted"` → `"outcomes_hat"`, the `_create()`/`from_frame()` parameter `predicted_outcome_columns` → `outcomes_hat_columns`, internal locals (`predicted_list` → `outcomes_hat_list`, etc.), the overlap-validation dict key, and the protocol member `_outcomes_hat_columns`. The old `predicted_outcome_columns` param/property and the `"predicted"` role key are **removed outright**. | One vocabulary end-to-end; removes the overload with predicted-*weights* (`predict_weights`); distinct from `.outcomes()` (observed Y). No deprecation needed — the `predicted` role was reserved scaffolding **unused by any code or user** (only storage/validation/tests referenced it) and was never populated, so there is nothing to keep back-compatible and nothing to migrate. |
 | 2026-07-15 | **Scope: outcome model now, AIPW later.** Ship IPW/Hájek (exists) + outcome-model / g-computation estimate (`μ̂_OM`) in 0.23.0; defer explicit AIPW/DR to a follow-up. Phase 1 delivers **no general DR** — only the linear-WLS special case (§1). | Smaller, reviewable diff stack that delivers the core ask (average `outcomes_hat` on the target). AIPW variance/CI + the normalization contract get their own design pass. (superseded 2026-07-18: explicit AIPW shipped as `bf.aipw()` — general for any learner, not only the linear-WLS special case; only AIPW variance/CI + cross-fitting remain deferred.) |
 | 2026-07-15 | **Estimate lives on the `outcomes_hat()` view:** `μ̂_OM = bf.outcomes_hat().mean()` (target row). Not under `.outcomes()`, no separate `outcome_estimate(method=)` dispatcher for phase 1. | Keeps the estimate where the predicted outcomes live; reuses the existing weighted-mean/CI machinery for free. |
@@ -813,7 +814,7 @@ absolute GitHub URLs; the tutorial notebook (created in diff 7, extended in 8–
 end-to-end in CI.
 
 **Phase 2 (separate later stack):**
-- **`[balance] Add doubly-robust AIPW estimate bf.aipw() + R oracles`** (D112679814) — **shipped** the AIPW point estimate (combine `outcomes_hat` + IPW weights). Still deferred on top of it: the same-scale `w_R`/`w_T` normalization **assert**, **cross-fitted** (out-of-fold) responder residuals, and AIPW variance/CI.
+- **`[balance] Add doubly-robust AIPW estimate bf.aipw() + R oracles`** (D112679814) — **shipped** the AIPW point estimate (combine `outcomes_hat` + IPW weights) and its same-scale `w_R`/`w_T` normalization assertion. Still deferred on top of it: **cross-fitted** (out-of-fold) responder residuals and AIPW variance/CI.
 - Optional follow-ons: weighted/Bayesian bootstrap; BCa intervals.
 
 ---
@@ -845,7 +846,7 @@ guard; CLI out-of-scope; expanded tests/errors/docs (§12).
 default — `summary()` reports the fit-weights and *scopes* any DR statement to them; `outcomes_hat`
 columns use the `<outcome>_hat` convention + a `from_frame` leak-warning; `mean_with_ci` defaults to
 bootstrap and **raises on a lone/target-less view**; the AIPW normalization contract (same-scale
-weights; asymptotic Hájek DR) is documented for phase 2; and lifecycle fixes — deepcopy preserves
+weights; asymptotic Hájek DR) is enforced; and lifecycle fixes — deepcopy preserves
 the model (**reference-sharing** the estimator), `set_target` preserves it, re-fit drops stale Ŷ,
 and the bootstrap refits with the stored fit-weighting. Plus coherence fixes: Hájek sweep, demoted
 the special case, marked `mean_with_ci` overridden, disambiguated `w_R^fit` vs `w_R`, and added a
@@ -863,9 +864,9 @@ Deferred to implementation / later phases (not blocking this design):
 - **AIPW / doubly-robust** — the point estimate has **shipped** as `bf.aipw()` (BalanceFrame/Sample;
   pure `aipw_point_estimate`), general for any learner; only its **variance/CI** and **cross-fitting**
   remain deferred (each needs its own design).
-- **AIPW normalization contract** — **not yet enforced**: the shipped `aipw()` uses the present
-  balance weights and only warns on constant responder weights; the same-scale `w_R`/`w_T`
-  requirement + the `|Σw_R−Σw_T|/Σw_T < tol` tolerance assert remain a TODO (treat DR as asymptotic, Hájek `O(1/n)`).
+- **AIPW normalization contract** — **implemented**: `aipw()` requires an adjusted frame and
+  rejects responder/target weight totals when `|Σw_R−Σw_T|/Σw_T >= 1e-6`, enforcing same-scale
+  `w_R`/`w_T` (with DR asymptotic under Hájek normalization and ratio bias `O(1/n)`).
 - **Weighted / Bayesian bootstrap** — a robustness upgrade over the nonparametric bootstrap.
 - **BCa intervals** — an accuracy upgrade over percentile CIs if warranted.
 - **Cross-fitting** — to reduce own-observation bias when the same responders fit `ĝ` and enter

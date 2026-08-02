@@ -57,7 +57,20 @@ class AipwVsRTest(balance.testutil.BalanceTestCase):
         t = Sample.from_frame(
             target[["id", "x1", "x2", "w"]], id_column="id", weight_column="w"
         )
-        st = s.set_target(t)
+
+        def calibrate(
+            sample_df: pd.DataFrame,
+            sample_weights: pd.Series,
+            target_df: pd.DataFrame,
+            target_weights: pd.Series,
+        ) -> dict[str, object]:
+            del sample_df, target_df
+            return {
+                "weight": sample_weights * target_weights.sum() / sample_weights.sum(),
+                "model": {"method": "test_calibration"},
+            }
+
+        st = s.set_target(t).adjust(method=calibrate)
         # UNWEIGHTED ĝ, matching the R oracle's lm().
         st = st.fit_outcome_model(model=LinearRegression())
 

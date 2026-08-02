@@ -28,6 +28,10 @@ import balance.testutil
 import numpy as np
 import pandas as pd
 from balance.outcome_models import aipw_point_estimate
+from balance.outcome_models.aipw import (
+    _AIPW_WEIGHT_SUM_RTOL,
+    _validate_aipw_weight_scale,
+)
 from balance.sample_class import Sample
 from sklearn.linear_model import LinearRegression
 
@@ -67,8 +71,20 @@ def _fitted_frame(sample_df: pd.DataFrame, target_df: pd.DataFrame) -> Sample:
         sample_df, id_column="id", weight_column="weight", outcome_columns=["y"]
     )
     t = Sample.from_frame(target_df, id_column="id", weight_column="weight")
-    st = s.set_target(t)
+    st = s.set_target(t).adjust(method=_calibrate_existing_weights)
     return st.fit_outcome_model(model=LinearRegression())
+
+
+def _calibrate_existing_weights(
+    sample_df: pd.DataFrame,
+    sample_weights: pd.Series,
+    target_df: pd.DataFrame,
+    target_weights: pd.Series,
+) -> dict[str, object]:
+    """Preserve relative fixture weights while calibrating to target total."""
+    del sample_df, target_df
+    calibrated = sample_weights * target_weights.sum() / sample_weights.sum()
+    return {"weight": calibrated, "model": {"method": "test_calibration"}}
 
 
 def _numpy_mu_dr(sample_df: pd.DataFrame, target_df: pd.DataFrame) -> float:
@@ -90,6 +106,41 @@ def _numpy_mu_dr(sample_df: pd.DataFrame, target_df: pd.DataFrame) -> float:
 
 
 class AipwTest(balance.testutil.BalanceTestCase):
+    def test_weight_scale_validation_accepts_valid_edge_cases(self) -> None:
+        _validate_aipw_weight_scale(np.array([0.0, 1.0]), np.array([0.25, 0.75]))
+        _validate_aipw_weight_scale(
+            np.array([1.0]),
+            np.array([1.0 + _AIPW_WEIGHT_SUM_RTOL / 2]),
+        )
+
+    def test_weight_scale_validation_rejects_invalid_vectors(self) -> None:
+        invalid_cases = (
+            (np.array([]), np.array([1.0]), "non-empty"),
+            (np.array([[1.0]]), np.array([1.0]), "one-dimensional"),
+            (np.array(["bad"]), np.array([1.0]), "numeric responder"),
+            (np.array([np.nan]), np.array([1.0]), "finite responder"),
+            (np.array([1.0]), np.array([np.inf]), "finite target"),
+            (
+                np.array([np.finfo(float).max, np.finfo(float).max]),
+                np.array([1.0]),
+                "finite responder and target weight totals",
+            ),
+            (np.array([-1.0, 2.0]), np.array([1.0]), "non-negative responder"),
+            (np.array([1.0]), np.array([-1.0, 2.0]), "non-negative target"),
+            (np.array([0.0]), np.array([1.0]), "positive responder and target"),
+            (np.array([1.0]), np.array([0.0]), "positive responder and target"),
+        )
+        for sample_weight, target_weight, message in invalid_cases:
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    _validate_aipw_weight_scale(sample_weight, target_weight)
+
+    def test_weight_scale_validation_rejects_tolerance_boundary(self) -> None:
+        with self.assertRaisesRegex(ValueError, "relative weight-total difference"):
+            _validate_aipw_weight_scale(
+                np.array([1_000_001.0]), np.array([1_000_000.0])
+            )
+
     def test_aipw_matches_independent_numpy_oracle(self) -> None:
         sample_df, target_df = _make_aipw_fixture()
         dr = _fitted_frame(sample_df, target_df).aipw()
@@ -225,6 +276,23 @@ class AipwTest(balance.testutil.BalanceTestCase):
         s = s.fit_outcome_model(model=LinearRegression())
         with self.assertRaisesRegex(ValueError, "requires a target"):
             s.aipw()
+
+    def test_aipw_requires_adjusted_weights(self) -> None:
+        sample_df, target_df = _make_aipw_fixture()
+        s = Sample.from_frame(
+            sample_df, id_column="id", weight_column="weight", outcome_columns=["y"]
+        )
+        t = Sample.from_frame(target_df, id_column="id", weight_column="weight")
+        st = s.set_target(t).fit_outcome_model(model=LinearRegression())
+        with self.assertRaisesRegex(ValueError, "adjust\\(\\)-calibrated"):
+            st.aipw()
+
+    def test_aipw_rejects_adjusted_weights_on_different_scale(self) -> None:
+        sample_df, target_df = _make_aipw_fixture()
+        st = _fitted_frame(sample_df, target_df)
+        st._sf_sample._df.loc[:, st.weight_column] *= 2.0
+        with self.assertRaisesRegex(ValueError, "same population scale"):
+            st.aipw()
 
     def test_summary_shows_ipw_om_dr_when_model_fit(self) -> None:
         sample_df, target_df = _make_aipw_fixture()

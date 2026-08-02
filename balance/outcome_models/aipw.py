@@ -30,11 +30,18 @@ an unweighted ``ĝ`` combined with non-uniform balance weights).
 
 This module provides the **point estimate only** (see the TODOs below for
 cross-fitting and honest variance/CI).
+
+The public :meth:`balance.balance_frame.BalanceFrame.aipw` entry point enforces
+the estimator's normalization contract: responder weights must come from
+``adjust()`` and their total must match the target-weight total. Direct callers
+of :func:`aipw_point_estimate` are responsible for supplying weights on that
+same target-population scale.
 """
 
 from __future__ import annotations
 
 import logging
+import math
 from typing import Any, Dict, List
 
 import numpy as np
@@ -43,6 +50,8 @@ from balance.outcome_models.outcome_model import predict_outcome
 from balance.stats_and_plots.weighted_stats import weighted_mean
 
 logger: logging.Logger = logging.getLogger(__package__)
+
+_AIPW_WEIGHT_SUM_RTOL: float = 1e-6
 
 # TODO (cross-fitting): the augmentation uses in-sample ĝ(X_S) — the model was
 # fit on these same responders — which is optimistic for flexible learners. Add
@@ -68,6 +77,68 @@ logger: logging.Logger = logging.getLogger(__package__)
 #   harness; it is a prerequisite for a fully honest .summary() interval.
 
 
+def _validate_aipw_weight_scale(
+    sample_weight: pd.Series | np.ndarray,
+    target_weight: pd.Series | np.ndarray,
+) -> None:
+    """Validate the same-population-scale contract for public AIPW estimates.
+
+    Zero-valued row weights are valid (for example, uncovered cells can receive
+    zero weight), but both vectors must be non-empty, one-dimensional, finite,
+    non-negative, and have positive totals. Their totals must differ by less
+    than the internal ``1e-6`` tolerance, relative to the target total.
+
+    Args:
+        sample_weight: Adjusted responder weights.
+        target_weight: Target design weights.
+
+    Raises:
+        ValueError: If either vector or the relationship between their totals
+            violates the AIPW normalization contract.
+    """
+
+    arrays: dict[str, np.ndarray] = {}
+    for name, weight in (
+        ("responder", sample_weight),
+        ("target", target_weight),
+    ):
+        try:
+            array = np.asarray(weight, dtype=float)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"aipw() requires numeric {name} weights.") from exc
+        if array.ndim != 1 or array.size == 0:
+            raise ValueError(
+                f"aipw() requires a non-empty, one-dimensional {name} weight vector."
+            )
+        if not np.isfinite(array).all():
+            raise ValueError(f"aipw() requires finite {name} weights.")
+        if (array < 0).any():
+            raise ValueError(f"aipw() requires non-negative {name} weights.")
+        arrays[name] = array
+
+    try:
+        sample_weight_total = math.fsum(arrays["responder"])
+        target_weight_total = math.fsum(arrays["target"])
+    except OverflowError as exc:
+        raise ValueError(
+            "aipw() requires finite responder and target weight totals."
+        ) from exc
+    if sample_weight_total <= 0 or target_weight_total <= 0:
+        raise ValueError("aipw() requires positive responder and target weight totals.")
+
+    relative_difference = (
+        abs(sample_weight_total - target_weight_total) / target_weight_total
+    )
+    if relative_difference >= _AIPW_WEIGHT_SUM_RTOL:
+        raise ValueError(
+            "aipw() requires adjust()-calibrated responder and target weights "
+            "on the same population scale: the relative weight-total "
+            f"difference is {relative_difference:.6g}, which must be less than "
+            f"{_AIPW_WEIGHT_SUM_RTOL:g}. Re-run adjust(...) without changing "
+            "the resulting weights."
+        )
+
+
 def aipw_point_estimate(
     sample_covars: pd.DataFrame,
     outcomes: pd.DataFrame,
@@ -91,7 +162,8 @@ def aipw_point_estimate(
             ``model["outcome_columns"]``. ``NaN`` rows are dropped from the
             residual term (weights realigned), matching ``fit_outcome_model``.
         sample_weight: Responder (balance) weights ``w``, or ``None`` for an
-            unweighted augmentation.
+            unweighted augmentation. Direct callers must ensure that these are
+            on the same population scale as ``target_weight``.
         target_covars: Target covariates ``X_T``.
         target_weight: Target weights ``w_T``, or ``None`` for a simple mean.
         model: A fitted model dict from :func:`fit_outcome_model`.
