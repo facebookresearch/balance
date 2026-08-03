@@ -259,9 +259,12 @@ consistent if <em>either</em> the outcome model <em>or</em> the weighting model 
 correct. Companion to the other estimate accessors:
 <code class="docutils literal notranslate"><span class="pre">outcomes().mean()</span></code> gives <code class="docutils literal notranslate"><span class="pre">μ̂_IPW</span></code> and <code class="docutils literal notranslate"><span class="pre">outcomes_hat().mean()</span></code> gives
 <code class="docutils literal notranslate"><span class="pre">μ̂_OM</span></code>; this gives <code class="docutils literal notranslate"><span class="pre">μ̂_DR</span></code>.</p>
-<p>Requires a fitted outcome model <strong>and</strong> a target (<a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_target" title="balance.balance_frame.BalanceFrame.set_target"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_target()</span></code></a>).
-Uses whatever weight columns are present (any balance weights). With
-constant responder weights it warns and reduces to <code class="docutils literal notranslate"><span class="pre">μ̂_OM</span></code>.</p>
+<p>Requires a fitted outcome model, a target (<a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_target" title="balance.balance_frame.BalanceFrame.set_target"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_target()</span></code></a>), and
+responder weights produced by <a class="reference internal" href="#balance.balance_frame.BalanceFrame.adjust" title="balance.balance_frame.BalanceFrame.adjust"><code class="xref py py-meth docutils literal notranslate"><span class="pre">adjust()</span></code></a>. The adjusted responder
+weights and target weights must have matching totals (within a relative
+tolerance of <code class="docutils literal notranslate"><span class="pre">1e-6</span></code>), ensuring that both terms use weights on the
+same target-population scale. With constant responder weights it warns
+and reduces to <code class="docutils literal notranslate"><span class="pre">μ̂_OM</span></code>.</p>
 <p>Point estimate only – no confidence interval (an honest AIPW interval
 must jointly capture the weighting- and outcome-model uncertainty; see
 the TODOs in <code class="xref py py-mod docutils literal notranslate"><span class="pre">balance.outcome_models.aipw</span></code>).</p>
@@ -274,7 +277,9 @@ the TODOs in <code class="xref py py-mod docutils literal notranslate"><span cla
 </dd>
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>ValueError</strong> – If no outcome model has been fit, if no target is set,
-    or if the responders carry no observed outcomes.</p>
+    if the responders have not been adjusted, if the responder and
+    target weight totals are not on the same scale, or if the
+    responders carry no observed outcomes.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
@@ -291,7 +296,7 @@ the TODOs in <code class="xref py py-mod docutils literal notranslate"><span cla
 <span class="gp">&gt;&gt;&gt; </span><span class="n">tgt</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">15.0</span><span class="p">,</span> <span class="mf">35.0</span><span class="p">],</span>
 <span class="gp">... </span>                  <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]}))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">bf</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bf</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">resp</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">tgt</span><span class="p">)</span><span class="o">.</span><span class="n">adjust</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;ipw&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">_</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">fit_outcome_model</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">LinearRegression</span><span class="p">())</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">bf</span><span class="o">.</span><span class="n">aipw</span><span class="p">()</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 <span class="go">[&#39;y&#39;]</span>

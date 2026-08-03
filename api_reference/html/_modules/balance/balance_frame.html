@@ -3635,9 +3635,12 @@
 <span class="sd">        ``outcomes().mean()`` gives ``μ̂_IPW`` and ``outcomes_hat().mean()`` gives</span>
 <span class="sd">        ``μ̂_OM``; this gives ``μ̂_DR``.</span>
 
-<span class="sd">        Requires a fitted outcome model **and** a target (:meth:`set_target`).</span>
-<span class="sd">        Uses whatever weight columns are present (any balance weights). With</span>
-<span class="sd">        constant responder weights it warns and reduces to ``μ̂_OM``.</span>
+<span class="sd">        Requires a fitted outcome model, a target (:meth:`set_target`), and</span>
+<span class="sd">        responder weights produced by :meth:`adjust`. The adjusted responder</span>
+<span class="sd">        weights and target weights must have matching totals (within a relative</span>
+<span class="sd">        tolerance of ``1e-6``), ensuring that both terms use weights on the</span>
+<span class="sd">        same target-population scale. With constant responder weights it warns</span>
+<span class="sd">        and reduces to ``μ̂_OM``.</span>
 
 <span class="sd">        Point estimate only -- no confidence interval (an honest AIPW interval</span>
 <span class="sd">        must jointly capture the weighting- and outcome-model uncertainty; see</span>
@@ -3648,7 +3651,9 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: If no outcome model has been fit, if no target is set,</span>
-<span class="sd">                or if the responders carry no observed outcomes.</span>
+<span class="sd">                if the responders have not been adjusted, if the responder and</span>
+<span class="sd">                target weight totals are not on the same scale, or if the</span>
+<span class="sd">                responders carry no observed outcomes.</span>
 
 <span class="sd">        Examples:</span>
 <span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
@@ -3664,12 +3669,15 @@
 <span class="sd">            &gt;&gt;&gt; tgt = SampleFrame.from_frame(</span>
 <span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [5, 6], &quot;x&quot;: [15.0, 35.0],</span>
 <span class="sd">            ...                   &quot;weight&quot;: [1.0, 1.0]}))</span>
-<span class="sd">            &gt;&gt;&gt; bf = BalanceFrame(sample=resp, target=tgt)</span>
+<span class="sd">            &gt;&gt;&gt; bf = BalanceFrame(sample=resp, target=tgt).adjust(method=&quot;ipw&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; _ = bf.fit_outcome_model(model=LinearRegression())</span>
 <span class="sd">            &gt;&gt;&gt; bf.aipw().index.tolist()</span>
 <span class="sd">            [&#39;y&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.outcome_models.aipw</span><span class="w"> </span><span class="kn">import</span> <span class="n">aipw_point_estimate</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.outcome_models.aipw</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">_validate_aipw_weight_scale</span><span class="p">,</span>
+            <span class="n">aipw_point_estimate</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcome_model</span>
         <span class="k">if</span> <span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -3681,6 +3689,12 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;aipw() requires a target population; call set_target(...) first.&quot;</span>
             <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;aipw() requires adjust()-calibrated responder weights; call &quot;</span>
+                <span class="s2">&quot;adjust(...) before aipw() so responder and target weights are &quot;</span>
+                <span class="s2">&quot;on the same population scale.&quot;</span>
+            <span class="p">)</span>
         <span class="n">observed_outcomes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span>
         <span class="k">if</span> <span class="n">observed_outcomes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -3690,16 +3704,17 @@
 
         <span class="n">target</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span>
         <span class="n">sample_weight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_series</span>
-        <span class="k">if</span> <span class="p">(</span>
-            <span class="n">sample_weight</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample_weight</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
-            <span class="ow">and</span> <span class="n">sample_weight</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span>
-        <span class="p">):</span>
+        <span class="n">target_weight</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">weight_series</span>
+        <span class="k">if</span> <span class="n">sample_weight</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">target_weight</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;aipw() requires responder and target weight columns on the same &quot;</span>
+                <span class="s2">&quot;population scale.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">_validate_aipw_weight_scale</span><span class="p">(</span><span class="n">sample_weight</span><span class="p">,</span> <span class="n">target_weight</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample_weight</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">sample_weight</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;aipw(): responder weights are constant -- it appears no &quot;</span>
-                <span class="s2">&quot;weighting model was fit (adjust() was not run, or it produced &quot;</span>
-                <span class="s2">&quot;uniform weights); the AIPW estimate reduces to the &quot;</span>
-                <span class="s2">&quot;outcome-model estimate mu_OM.&quot;</span>
+                <span class="s2">&quot;aipw(): adjusted responder weights are constant; the AIPW &quot;</span>
+                <span class="s2">&quot;estimate reduces to the outcome-model estimate mu_OM.&quot;</span>
             <span class="p">)</span>
 
         <span class="n">estimates</span> <span class="o">=</span> <span class="n">aipw_point_estimate</span><span class="p">(</span>
@@ -3707,7 +3722,7 @@
             <span class="n">observed_outcomes</span><span class="p">,</span>
             <span class="n">sample_weight</span><span class="p">,</span>
             <span class="n">target</span><span class="o">.</span><span class="n">df_covars</span><span class="p">,</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">weight_series</span><span class="p">,</span>
+            <span class="n">target_weight</span><span class="p">,</span>
             <span class="n">model</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">estimates</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span></div>
