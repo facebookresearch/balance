@@ -146,6 +146,76 @@ Guidelines when drafting a new release:
 
 The Github Actions job is configured at [release.yml](https://github.com/facebookresearch/balance/blob/main/.github/workflows/release.yml).
 
+### Changelog conventions
+
+Every user-visible change needs an entry in
+[`CHANGELOG.md`](https://github.com/facebookresearch/balance/blob/main/CHANGELOG.md).
+The changelog is published to
+[import-balance.org](https://import-balance.org/docs/docs/CHANGELOG/), so it is a
+user-facing document, not an internal work log.
+
+**Version heading.** `# X.Y.Z (YYYY-MM-DD)` at column zero, newest first. Work in
+progress goes under `# X.Y.Z (unreleased)` until release day. Optionally close the
+section with a compare link — note that tags carry **no** `v` prefix:
+`https://github.com/facebookresearch/balance/compare/0.22.0...0.23.0`.
+
+**Section order.** Use this order, omitting any section that is empty:
+
+| Section | Contents |
+| --- | --- |
+| `Highlights` | Only when the release introduces a new *concept*, not just new functions (e.g. 0.19.0's class hierarchy, 0.23.0's outcome models). A short orientation paragraph plus links to the tutorial and design doc. |
+| `Breaking Changes` | Anything that can break working user code. Always first after Highlights. |
+| `Deprecations` | Pre-announced breakage. Name the version that will remove it. |
+| `Compatibility` | Python / pandas / scikit-learn / OS support-matrix changes, dependency range changes, license changes. |
+| `New Features` | New public API and behaviour. |
+| `Bug Fixes` | Incorrect behaviour that is now correct. Prefix security fixes with `**Security:**` and the CVE. |
+| `Documentation` | Docstrings, docs pages, tutorials. |
+| `Code Quality & Refactoring` | Internal changes with no public API impact. |
+| `LLM/GenAI` | `CLAUDE.md`, `.github/copilot-instructions.md`, and other AI-assistant context files. |
+| `CI & Packaging` | Workflows, matrices, pins, formatters, badges. |
+| `Tests` | Test coverage added. |
+| `Contributors` | `@handle` list, including outside contributors. |
+
+Do **not** add a `Misc` section — it was retired after 0.17.0. If an entry does not
+fit a section, it is usually a feature or bug fix that needs a clearer title.
+
+**Breaking changes always get their own section.** Do not announce breakage with a
+`**Breaking:**` prefix inside `New Features`, `Bug Fixes`, or
+`Code Quality & Refactoring` — a reader scanning only `Breaking Changes` will miss
+it. If the full detail belongs in another section, leave it there and add a
+one-line pointer under `Breaking Changes`. Every entry ends with a
+`**Migration:**` line stating what the user must change; if a deprecation cycle was
+skipped, say why.
+
+**Flag silent numerical changes.** balance is a statistics library, so the most
+dangerous change is one where identical code on identical data returns different
+numbers. Prefix those entries with `**Numerical change:**` wherever they live, and
+say whether they are a no-op in the common case. For example:
+
+```markdown
+- **Numerical change: `rake()` now incorporates per-row design weights.**
+  ... No-op when design weights are uniform (the common case).
+```
+
+**Level of detail** is set by blast radius, not by how much work the change took:
+
+* **Breaking change** — 2-4 lines plus `**Migration:**`. Never compressed, even when trivial.
+* **New public API** — one lead sentence naming the exact symbol and signature, then
+  sub-bullets *only* for non-default behaviour, error conditions, and invariants
+  (what survives `adjust()`, what raises, what the default is). Send usage to the
+  tutorial and API reference rather than duplicating a walkthrough.
+* **Bug fix** — what was wrong, what is right now, and whether output values move.
+* **Refactor** — one line, no sub-bullets. If it renames a public dict key or
+  changes a public signature, it is not a refactor; promote it to `Breaking Changes`.
+
+**Formatting.** Use a bolded lead sentence per entry with nested sub-bullets for
+detail. Link the PR or issue inline where one exists
+(`([#194](https://github.com/facebookresearch/balance/pull/194))`). Because
+`scripts/make_docs.sh` copies this file and `CHANGELOG.md` into the Docusaurus docs
+directory, **all links must be absolute URLs** — relative markdown links resolve
+against the docs directory and break the website build, which runs with
+`onBrokenLinks: 'throw'`.
+
 ## License
 By contributing to balance, you agree that your contributions will be licensed
 under the LICENSE file in the root directory of this source tree.

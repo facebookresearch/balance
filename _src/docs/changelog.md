@@ -115,6 +115,18 @@ hide_title: true
 
 # 0.22.0 (2026-07-15)
 
+## Breaking Changes
+
+- **IPW fit metadata renames its training-weight keys.** `ipw(...)["model"]` now
+  stores training design weights under the canonical `training_sample_weights` /
+  `training_target_weights` keys used by `predict_weights()`; the old
+  `fit_sample_weights` / `fit_target_weights` keys are no longer emitted.
+  **Migration:** downstream code that reads the model dict directly should switch
+  to the `training_*` names.
+- **Rake model metadata no longer emits the IPW-style `perf` placeholder** with a
+  synthetic NaN deviance-explained value.
+  **Migration:** use rake-specific metadata such as `iterations` and `converged`.
+
 ## New Features
 
 - `BalanceDFOutcomes.relative_response_rates()` now accepts an explicit `relative_to={"self", "target"}` denominator selector while preserving the existing `target=` API.
@@ -124,13 +136,9 @@ hide_title: true
 
 ## Code Quality & Refactoring
 
-- **Breaking:** IPW fit metadata now stores training design weights under the
-  canonical `training_sample_weights` / `training_target_weights` keys used by
-  `predict_weights()`. The old `fit_sample_weights` / `fit_target_weights`
-  model-dict keys are no longer emitted; downstream code that reads
-  `ipw(...)["model"]` directly should switch to the `training_*` names. Stored
-  fit matrices are copied before being persisted so sample and target caches
-  cannot share slice views with the fit-time design matrix.
+- IPW stored fit matrices are copied before being persisted so sample and target
+  caches cannot share slice views with the fit-time design matrix. (The
+  accompanying `training_*` metadata key rename is listed under Breaking Changes.)
 - ASMD input validation now rejects duplicate DataFrame column labels before
   computing statistics, making direct `asmd(...)` calls match the unique-column
   invariant enforced by SampleFrame construction.
@@ -141,9 +149,6 @@ hide_title: true
 - Rake now uses the shared weighting-method input validator already used by
   IPW and poststratify, so DataFrame/weight type, length, and index checks are
   reported consistently across all three methods.
-- **Breaking:** Rake model metadata no longer emits the IPW-style `perf` placeholder with a
-  synthetic NaN deviance-explained value; consumers should use rake-specific
-  metadata such as `iterations` and `converged`.
 - Transfer-scoring guards for rake and poststratify now reject `functools.partial(...)` wrappers around known data-dependent transformation helpers (`quantize` / `fct_lump`), closing a replay-safety gap where partial-wrapped helpers could bypass direct callable checks.
 - Rake now uses the shared adjustment warning helper when fit metadata is stored with `transformations="default"`, keeping transfer-scoring guidance centralized with the corresponding replay-safety guard.
 
@@ -165,6 +170,15 @@ hide_title: true
   placeholder still works through high-level summary and diagnostics APIs.
 
 # 0.21.0 (2026-06-02)
+
+## Breaking Changes
+
+- **Poststratify models pickled before 0.21.0 cannot be used for transfer
+  scoring.** They lack the `transformations_origin` metadata that
+  `predict_weights(data=...)` needs to replay cell ratios safely. In-place
+  `predict_weights()` continues to work.
+  **Migration:** re-fit the model on the current version before transfer scoring.
+  See the poststratify entry under New Features for details.
 
 ## New Features
 
@@ -242,8 +256,8 @@ hide_title: true
 
 ## Bug Fixes
 
-- **`rake()` now correctly incorporates per-row design weights in final
-  weights.** Previously, every unit in the same raking cell received the same
+- **Numerical change: `rake()` now correctly incorporates per-row design weights
+  in final weights.** Previously, every unit in the same raking cell received the same
   weight `m_fit[c] / m_sample[c]`, ignoring its own design weight. The correct
   formula `w_final_i = w_design_i × m_fit[c] / m_sample[c]` is now applied,
   matching `poststratify` semantics and ensuring weighted marginals recover
@@ -745,6 +759,16 @@ expansion, data flow, and the `Sample.__new__` guard — see
 
 # 0.16.0 (2026-02-09)
 
+## Breaking Changes
+
+- **Require positive weights for weight diagnostics that normalize or aggregate**
+  - `design_effect`, `nonparametric_skew`, `prop_above_and_below`, and
+    `weighted_median_breakdown_point` now raise a `ValueError` when all weights
+    are zero.
+  - **Migration:** ensure your weights include at least one positive value
+    before calling these diagnostics, or catch the `ValueError` if all-zero
+    weights are possible in your workflow.
+
 ## New Features
 
 - **Outcome weight impact diagnostics**
@@ -790,17 +814,20 @@ expansion, data flow, and the `Sample.__new__` guard — see
 - **Direct util imports in tests**
   - Refactored util test modules to import helpers directly from their modules instead of via `balance_util`.
 
+# 0.15.0 (2026-01-20)
+
 ## Breaking Changes
 
-- **Require positive weights for weight diagnostics that normalize or aggregate**
-  - `design_effect`, `nonparametric_skew`, `prop_above_and_below`, and
-    `weighted_median_breakdown_point` now raise a `ValueError` when all weights
-    are zero.
-  - **Migration:** ensure your weights include at least one positive value
-    before calling these diagnostics, or catch the `ValueError` if all-zero
-    weights are possible in your workflow.
-
-# 0.15.0 (2026-01-20)
+- **Numerical change: `poststratify()` now treats missing values as their own
+  category by default**, filling poststratification variables with `"__NaN__"`.
+  Previously their treatment depended on pandas `groupby` / `merge` defaults.
+  **Migration:** pass `na_action="drop"` to approximate the legacy behaviour. See
+  the poststratify entry under New Features.
+- **Numerical change: `model_matrix(add_na=False)` now actually drops rows
+  containing NA**, where it previously only logged a warning. Code relying on the
+  old behaviour may see fewer rows.
+  **Migration:** handle missingness explicitly or pass `add_na=True`. See the
+  entry under Bug Fixes.
 
 ## New Features
 
@@ -813,7 +840,8 @@ expansion, data flow, and the `Sample.__new__` guard — see
 - **Improved missing data handling in `poststratify()`**
   - `poststratify()` now accepts `na_action` to either drop rows with missing
     values or treat missing values as their own category during weighting.
-  - **Breaking change:** the default behavior now fills missing values in
+  - **Default change** (listed under Breaking Changes): the default behavior now
+    fills missing values in
     poststratification variables with `"__NaN__"` and treats this as a distinct
     category during weighting. Previously, missing values were not handled
     explicitly, and their treatment depended on pandas `groupby` and `merge`
@@ -896,6 +924,18 @@ expansion, data flow, and the `Sample.__new__` guard — see
 
 # 0.14.0 (2025-12-14)
 
+## Breaking Changes
+
+- **`Sample.diagnostics()` for IPW now always emits iteration/intercept summaries
+  plus hyperparameter settings.**
+  **Migration:** code that indexes diagnostics rows positionally, or asserts on an
+  exact row count, needs updating. See the entry under Code Quality & Refactoring.
+- **Numerical change: percentile-based weight clipping may shift by roughly one
+  observation at typical limits**, after `trim_weights()` moved to percentile
+  quantiles with explicit clipping bounds for cross-platform consistency.
+  **Migration:** none required, but re-check any hard-coded expected weights. See
+  the entry under Bug Fixes.
+
 ## New Features
 
 - **Enhanced adjusted sample summary output**
@@ -923,7 +963,8 @@ expansion, data flow, and the `Sample.__new__` guard — see
 - **Consolidated diagnostics helpers**
   - Added `_concat_metric_val_var()` helper and `balance.util._coerce_scalar`
     for robust diagnostics row construction and scalar-to-float conversion.
-  - **Breaking change:** `Sample.diagnostics()` for IPW now always emits
+  - **Behaviour change** (listed under Breaking Changes): `Sample.diagnostics()`
+    for IPW now always emits
     iteration/intercept summaries plus hyperparameter settings.
 
 ## Bug Fixes
@@ -935,7 +976,8 @@ expansion, data flow, and the `Sample.__new__` guard — see
   - `trim_weights()` now computes thresholds via percentile quantiles with
     explicit clipping bounds for consistent behavior across Python/NumPy
     versions.
-  - **Breaking change:** percentile-based clipping may shift by roughly one
+  - **Numerical change** (listed under Breaking Changes): percentile-based
+    clipping may shift by roughly one
     observation at typical limits.
 - **IPW diagnostics improvements**
   - Fixed `multi_class` reporting, normalized scalar hyperparameters to floats,
@@ -1105,11 +1147,12 @@ expansion, data flow, and the `Sample.__new__` guard — see
     `value_counts(dropna=False)` with `groupby().size()` in frequency table
     creation to avoid FutureWarning
   - Fixed various pandas deprecation warnings and improved DataFrame handling
-- **Improved raking algorithm** - Completely refactored rake weighting from
-  DataFrame-based to array-based ipfn algorithm using multi-dimensional arrays
-  and itertools for better performance and compatibility with latest Python
-  versions. **Variables are now automatically alphabetized** to ensure
-  consistent results regardless of input order.
+- **Numerical change: improved raking algorithm** - Completely refactored rake
+  weighting from DataFrame-based to array-based ipfn algorithm using
+  multi-dimensional arrays and itertools for better performance and compatibility
+  with latest Python versions. **Variables are now automatically alphabetized** to
+  ensure consistent results regardless of input order, so raking a given input can
+  produce different weights than in 0.10.0.
 - **poststratify method enhancement** - New `strict_matching` parameter (default
   True) handles cases where sample cells are not present in target data. When
   False, issues warning and assigns weight 0 to uncovered samples
@@ -1156,10 +1199,10 @@ expansion, data flow, and the `Sample.__new__` guard — see
 - Dependency on glmnet has been removed, and the `ipw` method now uses sklearn.
 - The transition to sklearn should enable support for newer python versions
   (3.11) as well as the Windows OS!
-- `ipw` method uses logistic regression with L2-penalties instead of
-  L1-penalties for computational reasons. The transition from glmnet to sklearn
-  and use of L2-penalties will lead to slightly different generated weights
-  compared to previous versions of Balance.
+- **Numerical change:** the `ipw` method uses logistic regression with
+  L2-penalties instead of L1-penalties for computational reasons. The transition
+  from glmnet to sklearn and use of L2-penalties will lead to slightly different
+  generated weights compared to previous versions of Balance.
 - Unfortunately, the sklearn-based `ipw` method is generally slower than the
   previous version by 2-5x. Consider using the new arguments `lambda_min`,
   `lambda_max`, and `num_lambdas` for a more efficient search over the `ipw`
@@ -1191,7 +1234,7 @@ expansion, data flow, and the `Sample.__new__` guard — see
 - Added links to presentation given at ISA 2023.
 - Fixed misc typos.
 
-  # 0.9.0 (2023-05-22)
+# 0.9.0 (2023-05-22)
 
 ## News
 
