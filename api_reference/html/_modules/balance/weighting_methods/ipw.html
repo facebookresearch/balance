@@ -74,7 +74,7 @@
     <span class="n">model</span><span class="p">:</span> <span class="n">ClassifierMixin</span><span class="p">,</span>
     <span class="n">feature_names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract coefficient-like information from sklearn classifiers.</span>
+<span class="w">    </span><span class="sd">"""Extract coefficient-like information from sklearn classifiers.</span>
 
 <span class="sd">    For linear models such as :class:`~sklearn.linear_model.LogisticRegression`,</span>
 <span class="sd">    this returns the fitted coefficients (and intercept when available).  For</span>
@@ -87,7 +87,7 @@
 <span class="sd">        feature_names (Optional[list], optional): Feature names associated with</span>
 <span class="sd">            the model matrix columns. When provided and the model exposes a</span>
 <span class="sd">            one-dimensional ``coef_`` array, the returned Series is indexed by</span>
-<span class="sd">            ``[&quot;intercept&quot;] + feature_names``.</span>
+<span class="sd">            ``["intercept"] + feature_names``.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, Any]: Dictionary containing a ``coefs`` key with a</span>
@@ -103,14 +103,14 @@
 <span class="sd">        X = np.array([[0.0], [1.0]])</span>
 <span class="sd">        y = np.array([0, 1])</span>
 <span class="sd">        model = LogisticRegression().fit(X, y)</span>
-<span class="sd">        &quot;coefs&quot; in model_coefs(model)</span>
+<span class="sd">        "coefs" in model_coefs(model)</span>
 <span class="sd">        # True</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;coef_&quot;</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;coefs&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)}</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">"coef_"</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"coefs"</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)}</span>
     <span class="n">coefs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">coef_</span><span class="p">)</span>
-    <span class="n">intercept</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;intercept_&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">intercept</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">"intercept_"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">coefs</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">coefs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">coefs</span> <span class="o">=</span> <span class="n">coefs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
@@ -121,14 +121,14 @@
         <span class="k">if</span> <span class="n">intercept</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">intercept_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">intercept</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">intercept_array</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">index</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;intercept&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">index</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"intercept"</span><span class="p">]</span> <span class="o">+</span> <span class="n">index</span>
                 <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">intercept_array</span><span class="p">,</span> <span class="n">coefs</span><span class="p">))</span>
         <span class="n">coefs_series</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">values</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">coefs_series</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">coefs</span><span class="p">))</span>
 
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;coefs&quot;</span><span class="p">:</span> <span class="n">coefs_series</span><span class="p">,</span>
+        <span class="s2">"coefs"</span><span class="p">:</span> <span class="n">coefs_series</span><span class="p">,</span>
     <span class="p">}</span></div>
 
 
@@ -136,7 +136,7 @@
 <div class="viewcode-block" id="link_transform">
 <a class="viewcode-back" href="../../../balance.weighting_methods.ipw.html#balance.weighting_methods.ipw.link_transform">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">link_transform</span><span class="p">(</span><span class="n">pred</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transforms probabilities into log odds (link function).</span>
+<span class="w">    </span><span class="sd">"""Transforms probabilities into log odds (link function).</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        pred (np.ndarray): LogisticRegression probability predictions from sklearn.</span>
@@ -151,7 +151,7 @@
 <span class="sd">        from balance.weighting_methods.ipw import link_transform</span>
 <span class="sd">        float(link_transform(np.array([0.5]))[0])</span>
 <span class="sd">        # 0.0</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">pred</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
     <span class="c1"># Clip probabilities to avoid dividing by zero or taking log of zero</span>
     <span class="n">eps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span>
@@ -166,7 +166,7 @@
     <span class="n">model_weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">labels</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute deviance (2 * log loss).</span>
+<span class="w">    </span><span class="sd">"""Compute deviance (2 * log loss).</span>
 
 <span class="sd">    Used multiple times throughout ipw() and calc_dev() functions.</span>
 
@@ -178,14 +178,14 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        float: Deviance value.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">log_loss</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">model_weights</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">)</span>
     <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">log_loss</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">model_weights</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_compute_proportion_deviance</span><span class="p">(</span><span class="n">dev</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">null_dev</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute proportion of null deviance explained.</span>
+<span class="w">    </span><span class="sd">"""Compute proportion of null deviance explained.</span>
 
 <span class="sd">    Used multiple times in ipw() for model evaluation.</span>
 
@@ -195,7 +195,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        float: Proportion of deviance explained (1 - dev/null_dev).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">dev</span> <span class="o">/</span> <span class="n">null_dev</span>
 
 
@@ -204,7 +204,7 @@
     <span class="n">start</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">stop</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">csc_matrix</span><span class="p">,</span> <span class="n">csr_matrix</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Copy a row slice of a fit-time design matrix for persistence.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Copy a row slice of a fit-time design matrix for persistence."""</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">X_matrix</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">X_matrix</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -213,7 +213,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_convert_to_dense_array</span><span class="p">(</span>
     <span class="n">X_matrix</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">csc_matrix</span><span class="p">,</span> <span class="n">csr_matrix</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert sparse matrix or DataFrame to dense numpy array.</span>
+<span class="w">    </span><span class="sd">"""Convert sparse matrix or DataFrame to dense numpy array.</span>
 
 <span class="sd">    If the input is a CSC matrix, first convert to CSR for efficiency,</span>
 <span class="sd">    then convert to dense array. If already a dense numpy array or DataFrame,</span>
@@ -226,7 +226,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        np.ndarray: Dense numpy array (or DataFrame if input was DataFrame).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">csc_matrix</span><span class="p">):</span>
         <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">X_matrix</span><span class="o">.</span><span class="n">tocsr</span><span class="p">()</span>
 
@@ -246,7 +246,7 @@
     <span class="n">model_weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">foldids</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;10 fold cross validation to calculate holdout deviance.</span>
+<span class="w">    </span><span class="sd">"""10 fold cross validation to calculate holdout deviance.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        X_matrix (csr_matrix): Model matrix,</span>
@@ -273,7 +273,7 @@
 <span class="sd">        dev_mean, dev_sd = calc_dev(X, y, model, weights, foldids)</span>
 <span class="sd">        dev_mean &gt; 0</span>
 <span class="sd">        # True</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">cv_dev</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)]</span>
 
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
@@ -291,7 +291,7 @@
         <span class="p">)</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;dev_mean: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cv_dev</span><span class="p">)</span><span class="si">}</span><span class="s2">, dev_sd: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">cv_dev</span><span class="p">,</span><span class="w"> </span><span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">"dev_mean: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cv_dev</span><span class="p">)</span><span class="si">}</span><span class="s2">, dev_sd: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">cv_dev</span><span class="p">,</span><span class="w"> </span><span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cv_dev</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">cv_dev</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span></div>
 
@@ -309,7 +309,7 @@
     <span class="n">weight_trimming_percentile</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">keep_sum_of_weights</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform link predictions into weights, by exponentiating them, and optionally balancing the classes and trimming</span>
+<span class="w">    </span><span class="sd">"""Transform link predictions into weights, by exponentiating them, and optionally balancing the classes and trimming</span>
 <span class="sd">    the weights, then normalize the weights to have sum equal to the sum of the target weights.</span>
 
 <span class="sd">    Args:</span>
@@ -335,7 +335,7 @@
 <span class="sd">        target_weights = pd.Series([1.0, 1.0])</span>
 <span class="sd">        weights_from_link(link, False, sample_weights, target_weights).tolist()</span>
 <span class="sd">        # [1.0, 1.0]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">link</span> <span class="o">=</span> <span class="n">link</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">link</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],))</span>
     <span class="k">if</span> <span class="n">balance_classes</span><span class="p">:</span>
         <span class="n">odds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sample_weights</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">target_weights</span><span class="p">)</span>
@@ -370,7 +370,7 @@
     <span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">1.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.125</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">),</span>
     <span class="n">n_asmd_candidates</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Searches through the regularisation parameters of the model and weight</span>
+<span class="w">    </span><span class="sd">"""Searches through the regularisation parameters of the model and weight</span>
 <span class="sd">    trimming levels to find the combination with the highest covariate</span>
 <span class="sd">    ASMD reduction (in sample_df and target_df, NOT in the model matrix used for modeling</span>
 <span class="sd">    the response) subject to the design effect being lower than max_de (defaults to 1.5).</span>
@@ -387,7 +387,7 @@
 <span class="sd">        balance_classes (bool): whether balance_classes used</span>
 <span class="sd">        max_de (float, optional): upper bound for the design effect of the computed weights.</span>
 <span class="sd">            Used for choosing the model regularization and trimming.</span>
-<span class="sd">            If set to None, then it uses &#39;lambda_1se&#39;. Defaults to 1.5.</span>
+<span class="sd">            If set to None, then it uses 'lambda_1se'. Defaults to 1.5.</span>
 <span class="sd">        trim_options (Tuple[ int, int, int, float, float, float, float, float, float, float ], optional):</span>
 <span class="sd">            options for weight_trimming_mean_ratio. Defaults to (20, 10, 5, 2.5, 1.25, 0.5, 0.25, 0.125, 0.05, 0.01).</span>
 <span class="sd">        n_asmd_candidates (int, optional): number of candidates for grid search.. Defaults to 10.</span>
@@ -396,8 +396,8 @@
 <span class="sd">        Dict[str, Any]: Dict of the value of the chosen lambda, the value of trimming, model description.</span>
 <span class="sd">            Shape is</span>
 <span class="sd">                {</span>
-<span class="sd">                    &quot;best&quot;: {&quot;s&quot;: best.s.values, &quot;trim&quot;: best.trim.values[0]},</span>
-<span class="sd">                    &quot;perf&quot;: all_perf,</span>
+<span class="sd">                    "best": {"s": best.s.values, "trim": best.trim.values[0]},</span>
+<span class="sd">                    "perf": all_perf,</span>
 <span class="sd">                }</span>
 
 <span class="sd">    Examples:</span>
@@ -408,8 +408,8 @@
 <span class="sd">        from balance.weighting_methods.ipw import choose_regularization</span>
 <span class="sd">        links = [np.zeros(2)]</span>
 <span class="sd">        lambdas = np.array([1.0])</span>
-<span class="sd">        sample_df = pd.DataFrame({&quot;x&quot;: [0, 1]})</span>
-<span class="sd">        target_df = pd.DataFrame({&quot;x&quot;: [0, 1]})</span>
+<span class="sd">        sample_df = pd.DataFrame({"x": [0, 1]})</span>
+<span class="sd">        target_df = pd.DataFrame({"x": [0, 1]})</span>
 <span class="sd">        sample_weights = pd.Series([1.0, 1.0])</span>
 <span class="sd">        target_weights = pd.Series([1.0, 1.0])</span>
 <span class="sd">        result = choose_regularization(</span>
@@ -425,10 +425,10 @@
 <span class="sd">            n_asmd_candidates=1,</span>
 <span class="sd">        )</span>
 <span class="sd">        sorted(result.keys())</span>
-<span class="sd">        # [&#39;best&#39;, &#39;perf&#39;]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        # ['best', 'perf']</span>
+<span class="sd">    """</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting choosing regularisation parameters&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Starting choosing regularisation parameters"</span><span class="p">)</span>
     <span class="c1"># get all non-null links</span>
     <span class="n">links</span> <span class="o">=</span> <span class="p">[</span><span class="n">link</span> <span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="n">links</span> <span class="k">if</span> <span class="n">link</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
 
@@ -450,19 +450,19 @@
             <span class="n">deff</span> <span class="o">=</span> <span class="n">design_effect</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
             <span class="n">all_perf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="p">{</span>
-                    <span class="s2">&quot;s&quot;</span><span class="p">:</span> <span class="n">s</span><span class="p">,</span>
-                    <span class="s2">&quot;s_index&quot;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
-                    <span class="s2">&quot;trim&quot;</span><span class="p">:</span> <span class="n">wr</span><span class="p">,</span>
-                    <span class="s2">&quot;design_effect&quot;</span><span class="p">:</span> <span class="n">deff</span><span class="p">,</span>
+                    <span class="s2">"s"</span><span class="p">:</span> <span class="n">s</span><span class="p">,</span>
+                    <span class="s2">"s_index"</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+                    <span class="s2">"trim"</span><span class="p">:</span> <span class="n">wr</span><span class="p">,</span>
+                    <span class="s2">"design_effect"</span><span class="p">:</span> <span class="n">deff</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">)</span>
     <span class="n">all_perf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">all_perf</span><span class="p">)</span>
     <span class="n">best</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">all_perf</span><span class="p">[</span><span class="n">all_perf</span><span class="o">.</span><span class="n">design_effect</span> <span class="o">&lt;</span> <span class="n">max_de</span><span class="p">]</span>
-        <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;design_effect&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">"design_effect"</span><span class="p">)</span>
         <span class="o">.</span><span class="n">tail</span><span class="p">(</span><span class="n">n_asmd_candidates</span><span class="p">)</span>
     <span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Regularisation with design effect below </span><span class="si">{</span><span class="n">max_de</span><span class="si">}</span><span class="s2">: </span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">best</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Regularisation with design effect below </span><span class="si">{</span><span class="n">max_de</span><span class="si">}</span><span class="s2">: </span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">best</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="c1"># Calculate ASMDS for best 10 candidates (assuming that higher DE means</span>
     <span class="c1">#  more bias reduction)</span>
@@ -499,25 +499,25 @@
         <span class="n">deff</span> <span class="o">=</span> <span class="n">design_effect</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
         <span class="n">all_perf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="p">{</span>
-                <span class="s2">&quot;s&quot;</span><span class="p">:</span> <span class="n">s</span><span class="p">,</span>
-                <span class="s2">&quot;s_index&quot;</span><span class="p">:</span> <span class="n">s_index</span><span class="p">,</span>
-                <span class="s2">&quot;trim&quot;</span><span class="p">:</span> <span class="n">wr</span><span class="p">,</span>
-                <span class="s2">&quot;design_effect&quot;</span><span class="p">:</span> <span class="n">deff</span><span class="p">,</span>
-                <span class="s2">&quot;asmd_improvement&quot;</span><span class="p">:</span> <span class="n">asmd_impr</span><span class="p">,</span>
-                <span class="s2">&quot;asmd&quot;</span><span class="p">:</span> <span class="n">asmd_after</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">],</span>
+                <span class="s2">"s"</span><span class="p">:</span> <span class="n">s</span><span class="p">,</span>
+                <span class="s2">"s_index"</span><span class="p">:</span> <span class="n">s_index</span><span class="p">,</span>
+                <span class="s2">"trim"</span><span class="p">:</span> <span class="n">wr</span><span class="p">,</span>
+                <span class="s2">"design_effect"</span><span class="p">:</span> <span class="n">deff</span><span class="p">,</span>
+                <span class="s2">"asmd_improvement"</span><span class="p">:</span> <span class="n">asmd_impr</span><span class="p">,</span>
+                <span class="s2">"asmd"</span><span class="p">:</span> <span class="n">asmd_after</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">"mean(asmd)"</span><span class="p">],</span>
             <span class="p">}</span>
         <span class="p">)</span>
 
     <span class="n">all_perf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">all_perf</span><span class="p">)</span>
     <span class="n">best</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">all_perf</span><span class="p">[</span><span class="n">all_perf</span><span class="o">.</span><span class="n">design_effect</span> <span class="o">&lt;</span> <span class="n">max_de</span><span class="p">]</span>
-        <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;asmd_improvement&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">"asmd_improvement"</span><span class="p">)</span>
         <span class="o">.</span><span class="n">tail</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Best regularisation: </span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">best</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Best regularisation: </span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">best</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">solution</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;best&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;s_index&quot;</span><span class="p">:</span> <span class="n">best</span><span class="o">.</span><span class="n">s_index</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;trim&quot;</span><span class="p">:</span> <span class="n">best</span><span class="o">.</span><span class="n">trim</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]},</span>
-        <span class="s2">&quot;perf&quot;</span><span class="p">:</span> <span class="n">all_perf</span><span class="p">,</span>
+        <span class="s2">"best"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"s_index"</span><span class="p">:</span> <span class="n">best</span><span class="o">.</span><span class="n">s_index</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">"trim"</span><span class="p">:</span> <span class="n">best</span><span class="o">.</span><span class="n">trim</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]},</span>
+        <span class="s2">"perf"</span><span class="p">:</span> <span class="n">all_perf</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="k">return</span> <span class="n">solution</span></div>
 
@@ -533,12 +533,12 @@
     <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">target_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">variables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">ClassifierMixin</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;sklearn&quot;</span><span class="p">,</span>
+    <span class="n">model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">ClassifierMixin</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"sklearn"</span><span class="p">,</span>
     <span class="n">weight_trimming_mean_ratio</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
     <span class="n">weight_trimming_percentile</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">balance_classes</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">transformations</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
-    <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">,</span>
+    <span class="n">transformations</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"default"</span><span class="p">,</span>
+    <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"add_indicator"</span><span class="p">,</span>
     <span class="n">max_de</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">lambda_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-05</span><span class="p">,</span>
     <span class="n">lambda_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
@@ -555,7 +555,7 @@
     <span class="n">store_fit_metadata</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fit an ipw (inverse propensity score weighting) for the sample using the target.</span>
+<span class="w">    </span><span class="sd">"""Fit an ipw (inverse propensity score weighting) for the sample using the target.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        sample_df (pd.DataFrame): a dataframe representing the sample</span>
@@ -565,7 +565,7 @@
 <span class="sd">        variables (Optional[List[str]], optional): list of variables to include in the model.</span>
 <span class="sd">            If None all joint variables of sample_df and target_df are used. Defaults to None.</span>
 <span class="sd">        model (Union[str, ClassifierMixin, None], optional): Model used for modeling the</span>
-<span class="sd">            propensity scores. Provide ``&quot;sklearn&quot;`` (default) or ``None`` to use logistic</span>
+<span class="sd">            propensity scores. Provide ``"sklearn"`` (default) or ``None`` to use logistic</span>
 <span class="sd">            regression, or pass an sklearn classifier implementing ``fit`` and</span>
 <span class="sd">            ``predict_proba``. Common choices include scikit-learn estimators such as</span>
 <span class="sd">            :class:`sklearn.linear_model.LogisticRegression`,</span>
@@ -573,7 +573,7 @@
 <span class="sd">            :class:`sklearn.ensemble.GradientBoostingClassifier`,</span>
 <span class="sd">            :class:`sklearn.ensemble.HistGradientBoostingClassifier`, and</span>
 <span class="sd">            :class:`sklearn.linear_model.SGDClassifier` configured with</span>
-<span class="sd">            ``loss=&quot;log_loss&quot;``. To customize the built-in logistic regression</span>
+<span class="sd">            ``loss="log_loss"``. To customize the built-in logistic regression</span>
 <span class="sd">            settings, pass a configured :class:`sklearn.linear_model.LogisticRegression`</span>
 <span class="sd">            instance as ``model``. Custom classifiers should expose a</span>
 <span class="sd">            ``predict_proba`` method returning class probabilities.</span>
@@ -584,15 +584,15 @@
 <span class="sd">            if None then trimming is applied. Defaults to None.</span>
 <span class="sd">        balance_classes (bool, optional): whether to balance the sample and target size for running the model.</span>
 <span class="sd">            True is preferable for imbalanced cases.</span>
-<span class="sd">            It shouldn&#39;t have an effect on the final weights as this is factored</span>
+<span class="sd">            It shouldn't have an effect on the final weights as this is factored</span>
 <span class="sd">            into the computation of the weights. TODO: add ref. Defaults to True.</span>
 <span class="sd">        transformations (str, optional): what transformations to apply to data before fitting the model.</span>
-<span class="sd">            See apply_transformations function. Defaults to &quot;default&quot;.</span>
+<span class="sd">            See apply_transformations function. Defaults to "default".</span>
 <span class="sd">        na_action (str, optional): what to do with NAs.</span>
-<span class="sd">            See add_na_indicator function. Defaults to &quot;add_indicator&quot;.</span>
+<span class="sd">            See add_na_indicator function. Defaults to "add_indicator".</span>
 <span class="sd">        max_de (Optional[float], optional): upper bound for the design effect of the computed weights.</span>
 <span class="sd">            Used for choosing the model regularization and trimming.</span>
-<span class="sd">            If set to None, then it uses &#39;lambda_1se&#39;. Defaults to 1.5.</span>
+<span class="sd">            If set to None, then it uses 'lambda_1se'. Defaults to 1.5.</span>
 <span class="sd">        formula (Union[str, List[str], None], optional): The formula according to which build the model.</span>
 <span class="sd">            In case of list of formula, the model matrix will be built in steps and</span>
 <span class="sd">            concatenated together. Defaults to None.</span>
@@ -614,7 +614,7 @@
 <span class="sd">            ``Categorical`` dtype, which allows sklearn estimators that support</span>
 <span class="sd">            native categorical features (e.g.,</span>
 <span class="sd">            :class:`~sklearn.ensemble.HistGradientBoostingClassifier` with</span>
-<span class="sd">            ``categorical_features=&quot;from_dtype&quot;``) to handle them correctly.</span>
+<span class="sd">            ``categorical_features="from_dtype"``) to handle them correctly.</span>
 <span class="sd">            Requires scikit-learn &gt;= 1.4 when categorical columns are present;</span>
 <span class="sd">            a ``ValueError`` is raised on older versions.</span>
 <span class="sd">            The built-in logistic-regression path (i.e., when</span>
@@ -650,10 +650,10 @@
 <span class="sd">            sample_weights = pd.Series(1, index=sample_df.index)</span>
 <span class="sd">            target_weights = pd.Series(1, index=target_df.index)</span>
 
-<span class="sd">            # Define model (categorical_features=&quot;from_dtype&quot; tells sklearn</span>
+<span class="sd">            # Define model (categorical_features="from_dtype" tells sklearn</span>
 <span class="sd">            # to treat pandas Categorical columns as unordered categoricals)</span>
 <span class="sd">            hgb = HistGradientBoostingClassifier(</span>
-<span class="sd">                random_state=0, categorical_features=&quot;from_dtype&quot;</span>
+<span class="sd">                random_state=0, categorical_features="from_dtype"</span>
 <span class="sd">            )</span>
 
 <span class="sd">            # Run IPW with sklearn model on raw covariates</span>
@@ -662,21 +662,21 @@
 <span class="sd">                sample_weights,</span>
 <span class="sd">                target_df,</span>
 <span class="sd">                target_weights,</span>
-<span class="sd">                variables=[&quot;gender&quot;, &quot;age_group&quot;, &quot;income&quot;],</span>
+<span class="sd">                variables=["gender", "age_group", "income"],</span>
 <span class="sd">                model=hgb,</span>
 <span class="sd">                use_model_matrix=False,</span>
 <span class="sd">            )</span>
-<span class="sd">            print(&quot;HistGradientBoostingClassifier result:&quot;)</span>
+<span class="sd">            print("HistGradientBoostingClassifier result:")</span>
 <span class="sd">            print(result_hgb)</span>
 
 <span class="sd">        Output (values will vary by model and random seed)::</span>
 
 <span class="sd">            HistGradientBoostingClassifier result:</span>
-<span class="sd">            {&#39;weight&#39;: 0      ...</span>
+<span class="sd">            {'weight': 0      ...</span>
 <span class="sd">            1      ...</span>
 <span class="sd">            ...</span>
 <span class="sd">            999    ...</span>
-<span class="sd">            Length: 1000, dtype: float64, &#39;model&#39;: {&#39;method&#39;: &#39;ipw&#39;, ...}}</span>
+<span class="sd">            Length: 1000, dtype: float64, 'model': {'method': 'ipw', ...}}</span>
 
 <span class="sd">        Example 2: Using default sklearn model (LogisticRegression)</span>
 
@@ -688,16 +688,16 @@
 <span class="sd">                sample_weights,</span>
 <span class="sd">                target_df,</span>
 <span class="sd">                target_weights,</span>
-<span class="sd">                variables=[&quot;gender&quot;, &quot;age_group&quot;, &quot;income&quot;],</span>
-<span class="sd">                model=&quot;sklearn&quot;,</span>
+<span class="sd">                variables=["gender", "age_group", "income"],</span>
+<span class="sd">                model="sklearn",</span>
 <span class="sd">            )</span>
-<span class="sd">            print(&quot;Default sklearn model result:&quot;)</span>
+<span class="sd">            print("Default sklearn model result:")</span>
 <span class="sd">            print(result_sklearn)</span>
 
 <span class="sd">        Output::</span>
 
 <span class="sd">            Default sklearn model result:</span>
-<span class="sd">            {&#39;weight&#39;: 0       6.531728</span>
+<span class="sd">            {'weight': 0       6.531728</span>
 <span class="sd">            1       9.617159</span>
 <span class="sd">            2       3.562973</span>
 <span class="sd">            3       6.952117</span>
@@ -708,7 +708,7 @@
 <span class="sd">            997     7.095483</span>
 <span class="sd">            998    11.331144</span>
 <span class="sd">            999     7.913133</span>
-<span class="sd">            Length: 1000, dtype: float64, &#39;model&#39;: {&#39;method&#39;: &#39;ipw&#39;, ...}}</span>
+<span class="sd">            Length: 1000, dtype: float64, 'model': {'method': 'ipw', ...}}</span>
 
 <span class="sd">        Example 3: Comparing weights from different models</span>
 
@@ -717,14 +717,14 @@
 <span class="sd">            import pandas as pd</span>
 <span class="sd">            # Combine weights into a DataFrame</span>
 <span class="sd">            comparison_df = pd.DataFrame({</span>
-<span class="sd">                &#39;HGB&#39;: result_hgb[&#39;weight&#39;],</span>
-<span class="sd">                &#39;Sklearn&#39;: result_sklearn[&#39;weight&#39;]</span>
+<span class="sd">                'HGB': result_hgb['weight'],</span>
+<span class="sd">                'Sklearn': result_sklearn['weight']</span>
 <span class="sd">            })</span>
 <span class="sd">            # Calculate difference</span>
-<span class="sd">            comparison_df[&#39;Difference&#39;] = comparison_df[&#39;HGB&#39;] - comparison_df[&#39;Sklearn&#39;]</span>
+<span class="sd">            comparison_df['Difference'] = comparison_df['HGB'] - comparison_df['Sklearn']</span>
 <span class="sd">            # Print summary statistics</span>
-<span class="sd">            print(&quot;\nMean difference:&quot;, comparison_df[&#39;Difference&#39;].mean())</span>
-<span class="sd">            print(&quot;Std difference:&quot;, comparison_df[&#39;Difference&#39;].std())</span>
+<span class="sd">            print("\nMean difference:", comparison_df['Difference'].mean())</span>
+<span class="sd">            print("Std difference:", comparison_df['Difference'].std())</span>
 
 <span class="sd">        Output (values will vary by model and random seed)::</span>
 
@@ -732,19 +732,19 @@
 <span class="sd">            Std difference: ...</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        Exception: f&quot;Sample indicator only has value {_n_unique}. This can happen when your sample or target are empty from unknown reason&quot;</span>
-<span class="sd">        NotImplementedError: If ``model`` is a string other than &quot;sklearn&quot; (the</span>
-<span class="sd">            built-in logistic regression option) or the deprecated &quot;glmnet&quot;.</span>
+<span class="sd">        Exception: f"Sample indicator only has value {_n_unique}. This can happen when your sample or target are empty from unknown reason"</span>
+<span class="sd">        NotImplementedError: If ``model`` is a string other than "sklearn" (the</span>
+<span class="sd">            built-in logistic regression option) or the deprecated "glmnet".</span>
 <span class="sd">        TypeError: If ``model`` is neither a supported string nor an sklearn</span>
 <span class="sd">            classifier exposing ``predict_proba``.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, Any]: A dictionary with keys:</span>
 
-<span class="sd">            ``&quot;weight&quot;``</span>
+<span class="sd">            ``"weight"``</span>
 <span class="sd">                The adjusted weights for the sample (pd.Series).</span>
 
-<span class="sd">            ``&quot;model&quot;``</span>
+<span class="sd">            ``"model"``</span>
 <span class="sd">                A dict with model parameters. Always-present keys:</span>
 <span class="sd">                ``method``, ``X_matrix_columns``, ``fit`` (estimator),</span>
 <span class="sd">                ``perf`` (performance), ``lambda`` (best regularisation),</span>
@@ -763,40 +763,39 @@
 <span class="sd">                ``sample_link``, ``target_link``,</span>
 <span class="sd">                ``sample_index``, ``target_index``,</span>
 <span class="sd">                ``training_sample_weights``, ``training_target_weights``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">custom_model</span><span class="p">:</span> <span class="n">ClassifierMixin</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">ClassifierMixin</span><span class="p">):</span>
         <span class="n">custom_model</span> <span class="o">=</span> <span class="n">model</span>
-        <span class="n">model_name</span> <span class="o">=</span> <span class="s2">&quot;sklearn&quot;</span>
+        <span class="n">model_name</span> <span class="o">=</span> <span class="s2">"sklearn"</span>
     <span class="k">elif</span> <span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">model_name</span> <span class="o">=</span> <span class="s2">&quot;sklearn&quot;</span>
+        <span class="n">model_name</span> <span class="o">=</span> <span class="s2">"sklearn"</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">model_name</span> <span class="o">=</span> <span class="n">model</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="s2">&quot;model must be &#39;sklearn&#39;, an sklearn classifier implementing predict_proba, or None&quot;</span>
+            <span class="s2">"model must be 'sklearn', an sklearn classifier implementing predict_proba, or None"</span>
         <span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s2">&quot;glmnet&quot;</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;glmnet is no longer supported&quot;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">model_name</span> <span class="o">!=</span> <span class="s2">&quot;sklearn&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s2">"glmnet"</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"glmnet is no longer supported"</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">model_name</span> <span class="o">!=</span> <span class="s2">"sklearn"</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Model &#39;</span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2">&#39; is not supported. Only &#39;sklearn&#39; is currently implemented.&quot;</span>
+            <span class="sa">f</span><span class="s2">"Model '</span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2">' is not supported. Only 'sklearn' is currently implemented."</span>
         <span class="p">)</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting ipw function&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Starting ipw function"</span><span class="p">)</span>
     <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span>
-        <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
         <span class="n">random_seed</span>
     <span class="p">)</span>  <span class="c1"># setting random seed for cases of variations in sklearn</span>
 
-    <span class="n">balance_util</span><span class="o">.</span><span class="n">_check_weighting_methods_input</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">&quot;sample&quot;</span><span class="p">)</span>
-    <span class="n">balance_util</span><span class="o">.</span><span class="n">_check_weighting_methods_input</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">)</span>
+    <span class="n">balance_util</span><span class="o">.</span><span class="n">_check_weighting_methods_input</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">"sample"</span><span class="p">)</span>
+    <span class="n">balance_util</span><span class="o">.</span><span class="n">_check_weighting_methods_input</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">"target"</span><span class="p">)</span>
 
     <span class="n">variables</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">choose_variables</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Join variables for sample and target: </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Join variables for sample and target: </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
     <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
@@ -815,36 +814,36 @@
     <span class="n">target_n</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="c1"># Applying transformations</span>
-    <span class="c1"># Important! Variables that don&#39;t need transformations</span>
+    <span class="c1"># Important! Variables that don't need transformations</span>
     <span class="c1"># should be transformed with the *identity function*,</span>
     <span class="c1"># otherwise will be dropped from the model</span>
     <span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">apply_transformations</span><span class="p">(</span>
         <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">),</span> <span class="n">transformations</span><span class="o">=</span><span class="n">transformations</span>
     <span class="p">)</span>
     <span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Final variables in the model: </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Final variables in the model: </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">use_model_matrix</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">custom_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;use_model_matrix=False is only supported when providing a custom &quot;</span>
-                <span class="s2">&quot;sklearn classifier (e.g., HistGradientBoostingClassifier).&quot;</span>
+                <span class="s2">"use_model_matrix=False is only supported when providing a custom "</span>
+                <span class="s2">"sklearn classifier (e.g., HistGradientBoostingClassifier)."</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="n">formula</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;Argument &#39;formula&#39; is ignored because use_model_matrix=False; &quot;</span>
-                <span class="s2">&quot;no model matrix will be constructed.&quot;</span>
+                <span class="s2">"Argument 'formula' is ignored because use_model_matrix=False; "</span>
+                <span class="s2">"no model matrix will be constructed."</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="n">one_hot_encoding</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;Argument &#39;one_hot_encoding&#39; is ignored because use_model_matrix=False; &quot;</span>
-                <span class="s2">&quot;no model matrix will be constructed.&quot;</span>
+                <span class="s2">"Argument 'one_hot_encoding' is ignored because use_model_matrix=False; "</span>
+                <span class="s2">"no model matrix will be constructed."</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="n">penalty_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;Argument &#39;penalty_factor&#39; is ignored because use_model_matrix=False &quot;</span>
-                <span class="s2">&quot;with a custom sklearn model; this argument only applies when &quot;</span>
-                <span class="s2">&quot;use_model_matrix=True with the built-in logistic regression model.&quot;</span>
+                <span class="s2">"Argument 'penalty_factor' is ignored because use_model_matrix=False "</span>
+                <span class="s2">"with a custom sklearn model; this argument only applies when "</span>
+                <span class="s2">"use_model_matrix=True with the built-in logistic regression model."</span>
             <span class="p">)</span>
 
     <span class="n">dm_result</span> <span class="o">=</span> <span class="n">build_design_matrix</span><span class="p">(</span>
@@ -857,67 +856,67 @@
         <span class="n">penalty_factor</span><span class="o">=</span><span class="n">penalty_factor</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">X_matrix</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">csc_matrix</span><span class="p">,</span> <span class="n">csr_matrix</span><span class="p">]</span> <span class="o">=</span> <span class="n">dm_result</span><span class="p">[</span>
-        <span class="s2">&quot;combined_matrix&quot;</span>
+        <span class="s2">"combined_matrix"</span>
     <span class="p">]</span>
-    <span class="n">X_matrix_columns_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">dm_result</span><span class="p">[</span><span class="s2">&quot;columns&quot;</span><span class="p">]</span>
-    <span class="n">penalty_factor_expanded</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">dm_result</span><span class="p">[</span><span class="s2">&quot;penalty_factor_expanded&quot;</span><span class="p">]</span>
-    <span class="n">resolved_formula</span> <span class="o">=</span> <span class="n">dm_result</span><span class="p">[</span><span class="s2">&quot;resolved_formula&quot;</span><span class="p">]</span>
+    <span class="n">X_matrix_columns_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">dm_result</span><span class="p">[</span><span class="s2">"columns"</span><span class="p">]</span>
+    <span class="n">penalty_factor_expanded</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">dm_result</span><span class="p">[</span><span class="s2">"penalty_factor_expanded"</span><span class="p">]</span>
+    <span class="n">resolved_formula</span> <span class="o">=</span> <span class="n">dm_result</span><span class="p">[</span><span class="s2">"resolved_formula"</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="n">use_model_matrix</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Building model matrix&quot;</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The formula used to build the model matrix: </span><span class="si">{</span><span class="n">resolved_formula</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The number of columns in the model matrix: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The number of rows in the model matrix: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Building model matrix"</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The formula used to build the model matrix: </span><span class="si">{</span><span class="n">resolved_formula</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The number of columns in the model matrix: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The number of rows in the model matrix: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">has_categorical</span> <span class="o">=</span> <span class="p">(</span>
             <span class="nb">isinstance</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
-            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">([</span><span class="s2">&quot;category&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">([</span><span class="s2">"category"</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">has_categorical</span><span class="p">:</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">sklearn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_sklearn_mod</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">packaging.version</span><span class="w"> </span><span class="kn">import</span> <span class="n">Version</span>
 
-            <span class="k">if</span> <span class="n">Version</span><span class="p">(</span><span class="n">_sklearn_mod</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">Version</span><span class="p">(</span><span class="s2">&quot;1.4&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">Version</span><span class="p">(</span><span class="n">_sklearn_mod</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">Version</span><span class="p">(</span><span class="s2">"1.4"</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;use_model_matrix=False with categorical columns requires &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;scikit-learn &gt;= 1.4. Current version: </span><span class="si">{</span><span class="n">_sklearn_mod</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">. &quot;</span>
-                    <span class="s2">&quot;Either upgrade scikit-learn, pre-encode categorical columns &quot;</span>
-                    <span class="s2">&quot;manually, or use use_model_matrix=True.&quot;</span>
+                    <span class="s2">"use_model_matrix=False with categorical columns requires "</span>
+                    <span class="sa">f</span><span class="s2">"scikit-learn &gt;= 1.4. Current version: </span><span class="si">{</span><span class="n">_sklearn_mod</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">. "</span>
+                    <span class="s2">"Either upgrade scikit-learn, pre-encode categorical columns "</span>
+                    <span class="s2">"manually, or use use_model_matrix=True."</span>
                 <span class="p">)</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="s2">&quot;Fitting model on raw covariates without model matrix encoding. &quot;</span>
-            <span class="s2">&quot;Categorical columns are preserved as pandas Categorical dtype.&quot;</span>
+            <span class="s2">"Fitting model on raw covariates without model matrix encoding. "</span>
+            <span class="s2">"Categorical columns are preserved as pandas Categorical dtype."</span>
         <span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The number of columns: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The number of rows: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The number of columns: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The number of rows: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="c1"># Convert extension string dtypes in the original DataFrames to plain</span>
         <span class="c1"># object so that downstream calls (e.g. asmd → model_matrix → patsy</span>
-        <span class="c1"># dmatrix) don&#39;t encounter unsupported dtypes like ``string[python]``.</span>
-        <span class="n">sample_df</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">_pd_convert_all_types</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">)</span>
-        <span class="n">target_df</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">_pd_convert_all_types</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">)</span>
+        <span class="c1"># dmatrix) don't encounter unsupported dtypes like ``string[python]``.</span>
+        <span class="n">sample_df</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">_pd_convert_all_types</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="s2">"string"</span><span class="p">,</span> <span class="s2">"object"</span><span class="p">)</span>
+        <span class="n">target_df</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">_pd_convert_all_types</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="s2">"string"</span><span class="p">,</span> <span class="s2">"object"</span><span class="p">)</span>
 
     <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">sample_n</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">target_n</span><span class="p">)))</span>
     <span class="n">_n_unique</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">_n_unique</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Sample indicator only has value </span><span class="si">{</span><span class="n">_n_unique</span><span class="si">}</span><span class="s2">. This can happen when your &quot;</span>
-            <span class="s2">&quot;sample or target are empty from unknown reason&quot;</span>
+            <span class="sa">f</span><span class="s2">"Sample indicator only has value </span><span class="si">{</span><span class="n">_n_unique</span><span class="si">}</span><span class="s2">. This can happen when your "</span>
+            <span class="s2">"sample or target are empty from unknown reason"</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">balance_classes</span><span class="p">:</span>
         <span class="n">odds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sample_weights</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">target_weights</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">odds</span> <span class="o">=</span> <span class="mi">1</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;odds for balancing classes: </span><span class="si">{</span><span class="n">odds</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"odds for balancing classes: </span><span class="si">{</span><span class="n">odds</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">model_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sample_weights</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">*</span> <span class="n">odds</span><span class="p">))</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;X_matrix shape: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;y input shape: </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"X_matrix shape: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"y input shape: </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;penalty_factor frequency table </span><span class="si">{</span><span class="n">pd</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">penalty_factor_expanded</span><span class="p">,</span><span class="w"> </span><span class="n">columns</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">"penalty_factor frequency table </span><span class="si">{</span><span class="n">pd</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">penalty_factor_expanded</span><span class="p">,</span><span class="w"> </span><span class="n">columns</span><span class="o">=</span><span class="s1">'count'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
     <span class="p">)</span>
 
     <span class="n">foldids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
@@ -925,11 +924,11 @@
         <span class="n">foldids</span>
     <span class="p">)</span>  <span class="c1"># shuffles the values of foldid - note that we set the seed in the beginning of the function, so this order is fixed</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;foldid frequency table </span><span class="si">{</span><span class="n">pd</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">foldids</span><span class="p">,</span><span class="w"> </span><span class="n">columns</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">"foldid frequency table </span><span class="si">{</span><span class="n">pd</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">foldids</span><span class="p">,</span><span class="w"> </span><span class="n">columns</span><span class="o">=</span><span class="s1">'count'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
     <span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;first 10 elements of foldids: </span><span class="si">{</span><span class="n">foldids</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">9</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"first 10 elements of foldids: </span><span class="si">{</span><span class="n">foldids</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">9</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Fitting propensity model&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Fitting propensity model"</span><span class="p">)</span>
 
     <span class="n">null_dev</span> <span class="o">=</span> <span class="n">_compute_deviance</span><span class="p">(</span>
         <span class="n">y</span><span class="p">,</span>
@@ -942,7 +941,7 @@
     <span class="n">fit_penalties_skl</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">custom_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># using_default_logistic</span>
         <span class="c1"># Standardize columns of the X matrix and penalize the columns of the X matrix according to the penalty_factor.</span>
-        <span class="c1"># Workaround for sklearn, which doesn&#39;t allow for covariate specific penalty terms.</span>
+        <span class="c1"># Workaround for sklearn, which doesn't allow for covariate specific penalty terms.</span>
         <span class="c1"># Note that penalty = 0 is not truly supported, and large differences in penalty factors</span>
         <span class="c1"># may affect convergence speed.</span>
 
@@ -954,7 +953,7 @@
 
         <span class="k">if</span> <span class="n">penalty_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">penalties_skl</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="c1"># TODO: fix &#39;magic numbers&#39; that are not explained in the code</span>
+                <span class="c1"># TODO: fix 'magic numbers' that are not explained in the code</span>
                 <span class="mi">1</span> <span class="o">/</span> <span class="n">pf</span> <span class="k">if</span> <span class="n">pf</span> <span class="o">&gt;</span> <span class="mf">0.1</span> <span class="k">else</span> <span class="mi">10</span>
                 <span class="k">for</span> <span class="n">pf</span> <span class="ow">in</span> <span class="n">penalty_factor_expanded</span>
             <span class="p">]</span>
@@ -966,15 +965,15 @@
 
         <span class="n">lambdas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">lambda_max</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">lambda_min</span><span class="p">),</span> <span class="n">num_lambdas</span><span class="p">)</span>
 
-        <span class="c1"># Using L2 regression since L1 is too slow. Observed &quot;lbfgs&quot; was the most computationally efficient solver.</span>
-        <span class="c1"># NOTE: default uses &quot;penalty&quot;: &quot;l2&quot;, for sklearn &lt; 1.18</span>
-        <span class="c1">#       and &quot;l1_ratio&quot;: -.0, for sklearn &gt;= 1.18</span>
+        <span class="c1"># Using L2 regression since L1 is too slow. Observed "lbfgs" was the most computationally efficient solver.</span>
+        <span class="c1"># NOTE: default uses "penalty": "l2", for sklearn &lt; 1.18</span>
+        <span class="c1">#       and "l1_ratio": -.0, for sklearn &gt;= 1.18</span>
         <span class="c1">#       see: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html</span>
         <span class="n">lr_kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;solver&quot;</span><span class="p">:</span> <span class="s2">&quot;lbfgs&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;tol&quot;</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>
-            <span class="s2">&quot;max_iter&quot;</span><span class="p">:</span> <span class="mi">5000</span><span class="p">,</span>
-            <span class="s2">&quot;warm_start&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">"solver"</span><span class="p">:</span> <span class="s2">"lbfgs"</span><span class="p">,</span>
+            <span class="s2">"tol"</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>
+            <span class="s2">"max_iter"</span><span class="p">:</span> <span class="mi">5000</span><span class="p">,</span>
+            <span class="s2">"warm_start"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="n">lr</span> <span class="o">=</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="o">**</span><span class="n">lr_kwargs</span><span class="p">)</span>
@@ -988,7 +987,7 @@
         <span class="n">prev_prop_dev</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">)):</span>
-            <span class="c1"># Conversion between glmnet lambda penalty parameter and sklearn &#39;C&#39; parameter referenced</span>
+            <span class="c1"># Conversion between glmnet lambda penalty parameter and sklearn 'C' parameter referenced</span>
             <span class="c1"># from https://stats.stackexchange.com/questions/203816/logistic-regression-scikit-learn-vs-glmnet</span>
             <span class="n">lr</span><span class="o">.</span><span class="n">C</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">model_weights</span><span class="p">)</span> <span class="o">*</span> <span class="n">lambdas</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 
@@ -1007,15 +1006,15 @@
 
             <span class="c1"># Cross-validation procedure is only used for choosing best lambda if max_de is None</span>
             <span class="c1"># Previously, cross validation was run even when max_de is not None,</span>
-            <span class="c1"># but the results weren&#39;t used for model selection.</span>
+            <span class="c1"># but the results weren't used for model selection.</span>
             <span class="k">if</span> <span class="n">max_de</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;iter </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: lambda: </span><span class="si">{</span><span class="n">lambdas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">, dev: </span><span class="si">{</span><span class="n">dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">, prop_dev: </span><span class="si">{</span><span class="n">prop_dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">"iter </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: lambda: </span><span class="si">{</span><span class="n">lambdas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">, dev: </span><span class="si">{</span><span class="n">dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">, prop_dev: </span><span class="si">{</span><span class="n">prop_dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
                 <span class="p">)</span>
             <span class="k">elif</span> <span class="n">num_lambdas</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">dev_mean</span><span class="p">,</span> <span class="n">dev_sd</span> <span class="o">=</span> <span class="n">calc_dev</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">lr</span><span class="p">,</span> <span class="n">model_weights</span><span class="p">,</span> <span class="n">foldids</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;iter </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: lambda: </span><span class="si">{</span><span class="n">lambdas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">, cv_dev: </span><span class="si">{</span><span class="n">dev_mean</span><span class="si">}</span><span class="s2">, dev_diff: </span><span class="si">{</span><span class="n">dev_mean</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">, prop_dev: </span><span class="si">{</span><span class="n">prop_dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">"iter </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: lambda: </span><span class="si">{</span><span class="n">lambdas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">, cv_dev: </span><span class="si">{</span><span class="n">dev_mean</span><span class="si">}</span><span class="s2">, dev_diff: </span><span class="si">{</span><span class="n">dev_mean</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">, prop_dev: </span><span class="si">{</span><span class="n">prop_dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
                 <span class="p">)</span>
                 <span class="n">cv_dev_mean</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dev_mean</span>
                 <span class="n">cv_dev_sd</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dev_sd</span>
@@ -1026,12 +1025,12 @@
 
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">penalty_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;penalty_factor is ignored when using a custom model.&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"penalty_factor is ignored when using a custom model."</span><span class="p">)</span>
 
         <span class="n">cloned_model</span> <span class="o">=</span> <span class="n">clone</span><span class="p">(</span><span class="n">custom_model</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cloned_model</span><span class="p">,</span> <span class="s2">&quot;predict_proba&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cloned_model</span><span class="p">,</span> <span class="s2">"predict_proba"</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;The provided custom model must implement predict_proba for propensity estimation.&quot;</span>
+                <span class="s2">"The provided custom model must implement predict_proba for propensity estimation."</span>
             <span class="p">)</span>
 
         <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">_convert_to_dense_array</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">)</span>
@@ -1048,13 +1047,13 @@
         <span class="n">probas</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">probas</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">probas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;The provided custom model predict_proba must return probability estimates for both classes.&quot;</span>
+                <span class="s2">"The provided custom model predict_proba must return probability estimates for both classes."</span>
             <span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">class_index</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">classes_</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;The provided custom model must be trained on the binary labels {0, 1}.&quot;</span>
+                <span class="s2">"The provided custom model must be trained on the binary labels {0, 1}."</span>
             <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
         <span class="n">chosen_class_index</span> <span class="o">=</span> <span class="n">class_index</span>
         <span class="n">pred</span> <span class="o">=</span> <span class="n">probas</span><span class="p">[:,</span> <span class="n">class_index</span><span class="p">]</span>
@@ -1063,9 +1062,9 @@
         <span class="n">links</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">link_transform</span><span class="p">(</span><span class="n">pred</span><span class="p">)[:</span><span class="n">sample_n</span><span class="p">,]</span>
         <span class="n">fits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done with sklearn&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Done with sklearn"</span><span class="p">)</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;max_de: </span><span class="si">{</span><span class="n">max_de</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"max_de: </span><span class="si">{</span><span class="n">max_de</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">best_s_index</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">regularisation_perf</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1082,19 +1081,19 @@
             <span class="n">balance_classes</span><span class="p">,</span>
             <span class="n">max_de</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">best_s_index</span> <span class="o">=</span> <span class="n">regularisation_perf</span><span class="p">[</span><span class="s2">&quot;best&quot;</span><span class="p">][</span><span class="s2">&quot;s_index&quot;</span><span class="p">]</span>
-        <span class="n">weight_trimming_mean_ratio</span> <span class="o">=</span> <span class="n">regularisation_perf</span><span class="p">[</span><span class="s2">&quot;best&quot;</span><span class="p">][</span><span class="s2">&quot;trim&quot;</span><span class="p">]</span>
+        <span class="n">best_s_index</span> <span class="o">=</span> <span class="n">regularisation_perf</span><span class="p">[</span><span class="s2">"best"</span><span class="p">][</span><span class="s2">"s_index"</span><span class="p">]</span>
+        <span class="n">weight_trimming_mean_ratio</span> <span class="o">=</span> <span class="n">regularisation_perf</span><span class="p">[</span><span class="s2">"best"</span><span class="p">][</span><span class="s2">"trim"</span><span class="p">]</span>
         <span class="n">weight_trimming_percentile</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">elif</span> <span class="n">num_lambdas</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">custom_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># using_default_logistic</span>
         <span class="c1"># Cross-validation procedure</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting model selection&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Starting model selection"</span><span class="p">)</span>
 
         <span class="n">min_s_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanargmin</span><span class="p">(</span><span class="n">cv_dev_mean</span><span class="p">)</span>
         <span class="n">min_dev_mean</span> <span class="o">=</span> <span class="n">cv_dev_mean</span><span class="p">[</span><span class="n">min_s_index</span><span class="p">]</span>
         <span class="n">min_dev_sd</span> <span class="o">=</span> <span class="n">cv_dev_sd</span><span class="p">[</span><span class="n">min_s_index</span><span class="p">]</span>
 
-        <span class="c1"># Mirrors &#39;lambda.1se&#39; from glmnet:</span>
-        <span class="c1"># &#39;the most regularized model such that the cross-validated error is within one standard error of the minimum.&#39;</span>
+        <span class="c1"># Mirrors 'lambda.1se' from glmnet:</span>
+        <span class="c1"># 'the most regularized model such that the cross-validated error is within one standard error of the minimum.'</span>
         <span class="n">best_s_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span>
             <span class="p">[</span>
                 <span class="p">(</span>
@@ -1133,7 +1132,7 @@
         <span class="n">target_probability</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">best_pred_target</span><span class="p">)</span>
         <span class="n">target_link</span> <span class="o">=</span> <span class="n">link_transform</span><span class="p">(</span><span class="n">target_probability</span><span class="p">)</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Predicting&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Predicting"</span><span class="p">)</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">weights_from_link</span><span class="p">(</span>
         <span class="n">sample_link</span><span class="p">,</span>
         <span class="n">balance_classes</span><span class="p">,</span>
@@ -1143,71 +1142,71 @@
         <span class="n">weight_trimming_percentile</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Chosen lambda: </span><span class="si">{</span><span class="n">best_s</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Chosen lambda: </span><span class="si">{</span><span class="n">best_s</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">performance</span> <span class="o">=</span> <span class="n">model_coefs</span><span class="p">(</span>
         <span class="n">best_model</span><span class="p">,</span>
         <span class="n">feature_names</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">X_matrix_columns_names</span><span class="p">),</span>
     <span class="p">)</span>
-    <span class="n">performance</span><span class="p">[</span><span class="s2">&quot;null_deviance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">null_dev</span>
-    <span class="n">performance</span><span class="p">[</span><span class="s2">&quot;deviance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dev</span><span class="p">[</span><span class="n">best_s_index</span><span class="p">]</span>
-    <span class="n">performance</span><span class="p">[</span><span class="s2">&quot;prop_dev_explained&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prop_dev</span><span class="p">[</span><span class="n">best_s_index</span><span class="p">]</span>
+    <span class="n">performance</span><span class="p">[</span><span class="s2">"null_deviance"</span><span class="p">]</span> <span class="o">=</span> <span class="n">null_dev</span>
+    <span class="n">performance</span><span class="p">[</span><span class="s2">"deviance"</span><span class="p">]</span> <span class="o">=</span> <span class="n">dev</span><span class="p">[</span><span class="n">best_s_index</span><span class="p">]</span>
+    <span class="n">performance</span><span class="p">[</span><span class="s2">"prop_dev_explained"</span><span class="p">]</span> <span class="o">=</span> <span class="n">prop_dev</span><span class="p">[</span><span class="n">best_s_index</span><span class="p">]</span>
     <span class="k">if</span> <span class="p">(</span>
         <span class="n">max_de</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">num_lambdas</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">custom_model</span> <span class="ow">is</span> <span class="kc">None</span>
     <span class="p">):</span>  <span class="c1"># using_default_logistic</span>
-        <span class="n">performance</span><span class="p">[</span><span class="s2">&quot;cv_dev_mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cv_dev_mean</span><span class="p">[</span><span class="n">best_s_index</span><span class="p">]</span>
-        <span class="n">performance</span><span class="p">[</span><span class="s2">&quot;lambda_min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lambdas</span><span class="p">[</span><span class="n">min_s_index</span><span class="p">]</span>
-        <span class="n">performance</span><span class="p">[</span><span class="s2">&quot;min_cv_dev_mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cv_dev_mean</span><span class="p">[</span><span class="n">min_s_index</span><span class="p">]</span>
-        <span class="n">performance</span><span class="p">[</span><span class="s2">&quot;min_cv_dev_sd&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cv_dev_sd</span><span class="p">[</span><span class="n">min_s_index</span><span class="p">]</span>
+        <span class="n">performance</span><span class="p">[</span><span class="s2">"cv_dev_mean"</span><span class="p">]</span> <span class="o">=</span> <span class="n">cv_dev_mean</span><span class="p">[</span><span class="n">best_s_index</span><span class="p">]</span>
+        <span class="n">performance</span><span class="p">[</span><span class="s2">"lambda_min"</span><span class="p">]</span> <span class="o">=</span> <span class="n">lambdas</span><span class="p">[</span><span class="n">min_s_index</span><span class="p">]</span>
+        <span class="n">performance</span><span class="p">[</span><span class="s2">"min_cv_dev_mean"</span><span class="p">]</span> <span class="o">=</span> <span class="n">cv_dev_mean</span><span class="p">[</span><span class="n">min_s_index</span><span class="p">]</span>
+        <span class="n">performance</span><span class="p">[</span><span class="s2">"min_cv_dev_sd"</span><span class="p">]</span> <span class="o">=</span> <span class="n">cv_dev_sd</span><span class="p">[</span><span class="n">min_s_index</span><span class="p">]</span>
 
-    <span class="n">dev</span> <span class="o">=</span> <span class="n">performance</span><span class="p">[</span><span class="s2">&quot;prop_dev_explained&quot;</span><span class="p">]</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Proportion null deviance explained </span><span class="si">{</span><span class="n">dev</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">dev</span> <span class="o">=</span> <span class="n">performance</span><span class="p">[</span><span class="s2">"prop_dev_explained"</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Proportion null deviance explained </span><span class="si">{</span><span class="n">dev</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">weights</span><span class="p">))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span>
         <span class="n">weights</span>
     <span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-04</span><span class="p">:</span>  <span class="c1"># All weights are (essentially) the same</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;All weights are identical. The estimates will not be adjusted&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"All weights are identical. The estimates will not be adjusted"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">dev</span> <span class="o">&lt;</span> <span class="mf">0.10</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;The propensity model has low fraction null deviance explained &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">dev</span><span class="si">}</span><span class="s2">). Results may not be accurate&quot;</span>
+            <span class="s2">"The propensity model has low fraction null deviance explained "</span>
+            <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">dev</span><span class="si">}</span><span class="s2">). Results may not be accurate"</span>
         <span class="p">)</span>
 
     <span class="n">model_out</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;ipw&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;X_matrix_columns&quot;</span><span class="p">:</span> <span class="n">X_matrix_columns_names</span><span class="p">,</span>
-        <span class="s2">&quot;fit&quot;</span><span class="p">:</span> <span class="n">fits</span><span class="p">[</span><span class="n">best_s_index</span><span class="p">],</span>
-        <span class="s2">&quot;perf&quot;</span><span class="p">:</span> <span class="n">performance</span><span class="p">,</span>
-        <span class="s2">&quot;lambda&quot;</span><span class="p">:</span> <span class="n">best_s</span><span class="p">,</span>
-        <span class="s2">&quot;balance_classes&quot;</span><span class="p">:</span> <span class="n">balance_classes</span><span class="p">,</span>
-        <span class="s2">&quot;weight_trimming_mean_ratio&quot;</span><span class="p">:</span> <span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
-        <span class="s2">&quot;weight_trimming_percentile&quot;</span><span class="p">:</span> <span class="n">weight_trimming_percentile</span><span class="p">,</span>
-        <span class="s2">&quot;use_model_matrix&quot;</span><span class="p">:</span> <span class="n">use_model_matrix</span><span class="p">,</span>
-        <span class="s2">&quot;na_action&quot;</span><span class="p">:</span> <span class="n">na_action</span><span class="p">,</span>
-        <span class="s2">&quot;one_hot_encoding&quot;</span><span class="p">:</span> <span class="n">one_hot_encoding</span><span class="p">,</span>
-        <span class="s2">&quot;transformations&quot;</span><span class="p">:</span> <span class="n">transformations</span><span class="p">,</span>
-        <span class="s2">&quot;formula&quot;</span><span class="p">:</span> <span class="n">resolved_formula</span><span class="p">,</span>
-        <span class="s2">&quot;regularisation_perf&quot;</span><span class="p">:</span> <span class="n">regularisation_perf</span><span class="p">,</span>
-        <span class="s2">&quot;fit_scaler&quot;</span><span class="p">:</span> <span class="n">fit_scaler</span><span class="p">,</span>
-        <span class="s2">&quot;fit_penalties_skl&quot;</span><span class="p">:</span> <span class="n">fit_penalties_skl</span><span class="p">,</span>
-        <span class="s2">&quot;fit_matrix_type&quot;</span><span class="p">:</span> <span class="p">(</span>
-            <span class="s2">&quot;sparse&quot;</span>
+        <span class="s2">"method"</span><span class="p">:</span> <span class="s2">"ipw"</span><span class="p">,</span>
+        <span class="s2">"X_matrix_columns"</span><span class="p">:</span> <span class="n">X_matrix_columns_names</span><span class="p">,</span>
+        <span class="s2">"fit"</span><span class="p">:</span> <span class="n">fits</span><span class="p">[</span><span class="n">best_s_index</span><span class="p">],</span>
+        <span class="s2">"perf"</span><span class="p">:</span> <span class="n">performance</span><span class="p">,</span>
+        <span class="s2">"lambda"</span><span class="p">:</span> <span class="n">best_s</span><span class="p">,</span>
+        <span class="s2">"balance_classes"</span><span class="p">:</span> <span class="n">balance_classes</span><span class="p">,</span>
+        <span class="s2">"weight_trimming_mean_ratio"</span><span class="p">:</span> <span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
+        <span class="s2">"weight_trimming_percentile"</span><span class="p">:</span> <span class="n">weight_trimming_percentile</span><span class="p">,</span>
+        <span class="s2">"use_model_matrix"</span><span class="p">:</span> <span class="n">use_model_matrix</span><span class="p">,</span>
+        <span class="s2">"na_action"</span><span class="p">:</span> <span class="n">na_action</span><span class="p">,</span>
+        <span class="s2">"one_hot_encoding"</span><span class="p">:</span> <span class="n">one_hot_encoding</span><span class="p">,</span>
+        <span class="s2">"transformations"</span><span class="p">:</span> <span class="n">transformations</span><span class="p">,</span>
+        <span class="s2">"formula"</span><span class="p">:</span> <span class="n">resolved_formula</span><span class="p">,</span>
+        <span class="s2">"regularisation_perf"</span><span class="p">:</span> <span class="n">regularisation_perf</span><span class="p">,</span>
+        <span class="s2">"fit_scaler"</span><span class="p">:</span> <span class="n">fit_scaler</span><span class="p">,</span>
+        <span class="s2">"fit_penalties_skl"</span><span class="p">:</span> <span class="n">fit_penalties_skl</span><span class="p">,</span>
+        <span class="s2">"fit_matrix_type"</span><span class="p">:</span> <span class="p">(</span>
+            <span class="s2">"sparse"</span>
             <span class="k">if</span> <span class="n">issparse</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">)</span>
-            <span class="k">else</span> <span class="s2">&quot;dataframe&quot;</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;dense&quot;</span>
+            <span class="k">else</span> <span class="s2">"dataframe"</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"dense"</span>
         <span class="p">),</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="n">store_fit_metadata</span><span class="p">:</span>
         <span class="n">model_out</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
             <span class="p">{</span>
-                <span class="s2">&quot;sample_link&quot;</span><span class="p">:</span> <span class="n">sample_link</span><span class="p">,</span>
-                <span class="s2">&quot;target_link&quot;</span><span class="p">:</span> <span class="n">target_link</span><span class="p">,</span>
-                <span class="s2">&quot;sample_probability&quot;</span><span class="p">:</span> <span class="n">sample_probability</span><span class="p">,</span>
-                <span class="s2">&quot;target_probability&quot;</span><span class="p">:</span> <span class="n">target_probability</span><span class="p">,</span>
-                <span class="s2">&quot;sample_index&quot;</span><span class="p">:</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-                <span class="s2">&quot;target_index&quot;</span><span class="p">:</span> <span class="n">target_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-                <span class="s2">&quot;training_sample_weights&quot;</span><span class="p">:</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-                <span class="s2">&quot;training_target_weights&quot;</span><span class="p">:</span> <span class="n">target_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">"sample_link"</span><span class="p">:</span> <span class="n">sample_link</span><span class="p">,</span>
+                <span class="s2">"target_link"</span><span class="p">:</span> <span class="n">target_link</span><span class="p">,</span>
+                <span class="s2">"sample_probability"</span><span class="p">:</span> <span class="n">sample_probability</span><span class="p">,</span>
+                <span class="s2">"target_probability"</span><span class="p">:</span> <span class="n">target_probability</span><span class="p">,</span>
+                <span class="s2">"sample_index"</span><span class="p">:</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">"target_index"</span><span class="p">:</span> <span class="n">target_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">"training_sample_weights"</span><span class="p">:</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">"training_target_weights"</span><span class="p">:</span> <span class="n">target_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
             <span class="p">}</span>
         <span class="p">)</span>
 
@@ -1218,19 +1217,19 @@
         <span class="p">)</span>
         <span class="n">model_out</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
             <span class="p">{</span>
-                <span class="s2">&quot;model_matrix_sample&quot;</span><span class="p">:</span> <span class="n">model_matrix_sample</span><span class="p">,</span>
-                <span class="s2">&quot;model_matrix_target&quot;</span><span class="p">:</span> <span class="n">model_matrix_target</span><span class="p">,</span>
-                <span class="s2">&quot;sample_index&quot;</span><span class="p">:</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-                <span class="s2">&quot;target_index&quot;</span><span class="p">:</span> <span class="n">target_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">"model_matrix_sample"</span><span class="p">:</span> <span class="n">model_matrix_sample</span><span class="p">,</span>
+                <span class="s2">"model_matrix_target"</span><span class="p">:</span> <span class="n">model_matrix_target</span><span class="p">,</span>
+                <span class="s2">"sample_index"</span><span class="p">:</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">"target_index"</span><span class="p">:</span> <span class="n">target_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
             <span class="p">}</span>
         <span class="p">)</span>
 
     <span class="n">out</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">weights</span><span class="p">,</span>
-        <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">model_out</span><span class="p">,</span>
+        <span class="s2">"weight"</span><span class="p">:</span> <span class="n">weights</span><span class="p">,</span>
+        <span class="s2">"model"</span><span class="p">:</span> <span class="n">model_out</span><span class="p">,</span>
     <span class="p">}</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Done ipw function&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Done ipw function"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">out</span></div>
 

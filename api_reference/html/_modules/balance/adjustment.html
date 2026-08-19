@@ -65,16 +65,16 @@
 
 
 <span class="n">BALANCE_WEIGHTING_METHODS</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;ipw&quot;</span><span class="p">:</span> <span class="n">balance_ipw</span><span class="o">.</span><span class="n">ipw</span><span class="p">,</span>
-    <span class="s2">&quot;cbps&quot;</span><span class="p">:</span> <span class="n">balance_cbps</span><span class="o">.</span><span class="n">cbps</span><span class="p">,</span>
-    <span class="s2">&quot;null&quot;</span><span class="p">:</span> <span class="n">balance_adjust_null</span><span class="o">.</span><span class="n">adjust_null</span><span class="p">,</span>
-    <span class="s2">&quot;poststratify&quot;</span><span class="p">:</span> <span class="n">balance_poststratify</span><span class="o">.</span><span class="n">poststratify</span><span class="p">,</span>
-    <span class="s2">&quot;rake&quot;</span><span class="p">:</span> <span class="n">balance_rake</span><span class="o">.</span><span class="n">rake</span><span class="p">,</span>
+    <span class="s2">"ipw"</span><span class="p">:</span> <span class="n">balance_ipw</span><span class="o">.</span><span class="n">ipw</span><span class="p">,</span>
+    <span class="s2">"cbps"</span><span class="p">:</span> <span class="n">balance_cbps</span><span class="o">.</span><span class="n">cbps</span><span class="p">,</span>
+    <span class="s2">"null"</span><span class="p">:</span> <span class="n">balance_adjust_null</span><span class="o">.</span><span class="n">adjust_null</span><span class="p">,</span>
+    <span class="s2">"poststratify"</span><span class="p">:</span> <span class="n">balance_poststratify</span><span class="o">.</span><span class="n">poststratify</span><span class="p">,</span>
+    <span class="s2">"rake"</span><span class="p">:</span> <span class="n">balance_rake</span><span class="o">.</span><span class="n">rake</span><span class="p">,</span>
 <span class="p">}</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_validate_limit</span><span class="p">(</span><span class="n">limit</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">n_weights</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate and adjust a percentile limit for use when clipping percentiles.</span>
+<span class="w">    </span><span class="sd">"""Validate and adjust a percentile limit for use when clipping percentiles.</span>
 
 <span class="sd">    This function prepares percentile limits for winsorization by:</span>
 <span class="sd">    1. Validating that finite limits are within valid bounds (0-1)</span>
@@ -102,7 +102,7 @@
 
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: If the limit is finite and not between 0 and 1.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">limit</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="n">limit</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span>
@@ -113,7 +113,7 @@
         <span class="k">return</span> <span class="n">limit</span>
     <span class="c1"># Validate range only for finite values</span>
     <span class="k">if</span> <span class="n">limit</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">limit</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Percentile limits must be between 0 and 1&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Percentile limits must be between 0 and 1"</span><span class="p">)</span>
     <span class="c1"># Apply adjustment for finite values within valid range</span>
     <span class="n">extra</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">n_weights</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">limit</span> <span class="o">/</span> <span class="mf">10.0</span><span class="p">)</span>
     <span class="n">adjusted</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">limit</span> <span class="o">+</span> <span class="n">extra</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
@@ -123,13 +123,13 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_quantile_with_method</span><span class="p">(</span>
     <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute a quantile with explicit method selection.</span>
+<span class="w">    </span><span class="sd">"""Compute a quantile with explicit method selection.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        data: Array-like input that can be consumed by ``np.asarray``.</span>
 <span class="sd">        q: Quantile to compute in the inclusive range ``[0, 1]``.</span>
 <span class="sd">        method: Quantile algorithm to use. Typical values include</span>
-<span class="sd">            ``&quot;higher&quot;``/``&quot;lower&quot;`` (step functions) and ``&quot;linear&quot;``</span>
+<span class="sd">            ``"higher"``/``"lower"`` (step functions) and ``"linear"``</span>
 <span class="sd">            (default continuous interpolation). The value is forwarded to</span>
 <span class="sd">            ``np.quantile`` via the ``method`` argument when available.</span>
 
@@ -139,11 +139,11 @@
 <span class="sd">    Examples:</span>
 <span class="sd">    .. code-block:: python</span>
 
-<span class="sd">        _quantile_with_method([1, 2, 3, 4], 0.25, &quot;higher&quot;)</span>
+<span class="sd">        _quantile_with_method([1, 2, 3, 4], 0.25, "higher")</span>
 <span class="sd">        2.0</span>
-<span class="sd">        _quantile_with_method([1, 2, 3, 4], 0.75, &quot;lower&quot;)</span>
+<span class="sd">        _quantile_with_method([1, 2, 3, 4], 0.75, "lower")</span>
 <span class="sd">        3.0</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">array_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
@@ -163,7 +163,7 @@
     <span class="n">keep_sum_of_weights</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">target_sum_weights</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Trim extreme weights using mean ratio clipping or percentile-based winsorization.</span>
+<span class="w">    </span><span class="sd">"""Trim extreme weights using mean ratio clipping or percentile-based winsorization.</span>
 
 <span class="sd">    The user cannot supply both weight_trimming_mean_ratio and weight_trimming_percentile.</span>
 <span class="sd">    If neither is supplied, the original weights are returned unchanged.</span>
@@ -246,9 +246,9 @@
 <span class="sd">        )</span>
 <span class="sd">        upper.equals(pd.Series(range(1, 101)).clip(upper=94).astype(float))</span>
 <span class="sd">        # True</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">original_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">original_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
         <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
@@ -258,8 +258,8 @@
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="s2">&quot;weights must be np.array, list, tuple, or pd.Series, are of type: &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="s2">"weights must be np.array, list, tuple, or pd.Series, are of type: "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
     <span class="n">weights_index</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">index</span>
 
@@ -271,8 +271,8 @@
         <span class="n">weight_trimming_percentile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
     <span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;Only one of weight_trimming_mean_ratio and &quot;</span>
-            <span class="s2">&quot;weight_trimming_percentile can be set&quot;</span>
+            <span class="s2">"Only one of weight_trimming_mean_ratio and "</span>
+            <span class="s2">"weight_trimming_percentile can be set"</span>
         <span class="p">)</span>
 
     <span class="n">original_mean</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">weights</span><span class="p">))</span>
@@ -283,10 +283,10 @@
         <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">upper</span><span class="o">=</span><span class="n">max_val</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">percent_trimmed</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Clipping weights to </span><span class="si">%s</span><span class="s2"> (before renormalizing)&quot;</span> <span class="o">%</span> <span class="n">max_val</span><span class="p">)</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Clipped </span><span class="si">%s</span><span class="s2"> of the weights&quot;</span> <span class="o">%</span> <span class="n">percent_trimmed</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Clipping weights to </span><span class="si">%s</span><span class="s2"> (before renormalizing)"</span> <span class="o">%</span> <span class="n">max_val</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Clipped </span><span class="si">%s</span><span class="s2"> of the weights"</span> <span class="o">%</span> <span class="n">percent_trimmed</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;No extreme weights were trimmed&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"No extreme weights were trimmed"</span><span class="p">)</span>
 
         <span class="n">weights</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
             <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
@@ -299,13 +299,13 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">percentile</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)):</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">percentile</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;weight_trimming_percentile must be a single value or a length-2 iterable&quot;</span>
+                    <span class="s2">"weight_trimming_percentile must be a single value or a length-2 iterable"</span>
                 <span class="p">)</span>
             <span class="n">lower_limit</span><span class="p">,</span> <span class="n">upper_limit</span> <span class="o">=</span> <span class="n">percentile</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">lower_limit</span> <span class="o">=</span> <span class="n">upper_limit</span> <span class="o">=</span> <span class="n">percentile</span>
 
-        <span class="c1"># Treat 0 or None as &quot;no winsorization&quot; for that side before applying</span>
+        <span class="c1"># Treat 0 or None as "no winsorization" for that side before applying</span>
         <span class="c1"># validation adjustments that guarantee at least one affected value.</span>
         <span class="n">normalized_limits</span> <span class="o">=</span> <span class="p">(</span>
             <span class="kc">None</span> <span class="k">if</span> <span class="p">(</span><span class="n">lower_limit</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">lower_limit</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">lower_limit</span><span class="p">),</span>
@@ -322,17 +322,17 @@
         <span class="n">lower_bound</span> <span class="o">=</span> <span class="p">(</span>
             <span class="kc">None</span>
             <span class="k">if</span> <span class="n">lower_limit_adjusted</span> <span class="ow">is</span> <span class="kc">None</span>
-            <span class="k">else</span> <span class="n">_quantile_with_method</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">lower_limit_adjusted</span><span class="p">,</span> <span class="s2">&quot;higher&quot;</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">_quantile_with_method</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">lower_limit_adjusted</span><span class="p">,</span> <span class="s2">"higher"</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="n">upper_bound</span> <span class="o">=</span> <span class="p">(</span>
             <span class="kc">None</span>
             <span class="k">if</span> <span class="n">upper_limit_adjusted</span> <span class="ow">is</span> <span class="kc">None</span>
-            <span class="k">else</span> <span class="n">_quantile_with_method</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">upper_limit_adjusted</span><span class="p">,</span> <span class="s2">&quot;lower&quot;</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">_quantile_with_method</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">upper_limit_adjusted</span><span class="p">,</span> <span class="s2">"lower"</span><span class="p">)</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                <span class="s2">&quot;Winsorizing weights to </span><span class="si">%s</span><span class="s2"> percentile&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">weight_trimming_percentile</span><span class="p">)</span>
+                <span class="s2">"Winsorizing weights to </span><span class="si">%s</span><span class="s2"> percentile"</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">weight_trimming_percentile</span><span class="p">)</span>
             <span class="p">)</span>
 
         <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">lower</span><span class="o">=</span><span class="n">lower_bound</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="n">upper_bound</span><span class="p">)</span>
@@ -344,7 +344,7 @@
         <span class="n">target_total</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">target_sum_weights</span><span class="p">)</span>
         <span class="n">current_total</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">current_total</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot normalise weights because their sum is zero.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Cannot normalise weights because their sum is zero."</span><span class="p">)</span>
         <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">*</span> <span class="p">(</span><span class="n">target_total</span> <span class="o">/</span> <span class="n">current_total</span><span class="p">)</span>
 
     <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">original_name</span><span class="p">)</span>
@@ -358,7 +358,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">default_transformations</span><span class="p">(</span>
     <span class="n">dfs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Apply default transformations to dfs, i.e.</span>
 <span class="sd">    quantize to numeric columns and fct_lump to non-numeric and boolean</span>
 
@@ -373,11 +373,11 @@
 
 <span class="sd">        import pandas as pd</span>
 <span class="sd">        from balance.adjustment import default_transformations</span>
-<span class="sd">        df = pd.DataFrame({&quot;age&quot;: [20, 30], &quot;gender&quot;: [&quot;f&quot;, &quot;m&quot;]})</span>
+<span class="sd">        df = pd.DataFrame({"age": [20, 30], "gender": ["f", "m"]})</span>
 <span class="sd">        transformations = default_transformations((df,))</span>
 <span class="sd">        sorted(transformations.keys())</span>
-<span class="sd">        # [&#39;age&#39;, &#39;gender&#39;]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        # ['age', 'gender']</span>
+<span class="sd">    """</span>
     <span class="n">dtypes</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dfs</span><span class="p">:</span>
         <span class="n">dtypes</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">dtypes</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
@@ -403,7 +403,7 @@
     <span class="n">transformations</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">drop</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply the transformations specified in transformations to all of the dfs</span>
+<span class="w">    </span><span class="sd">"""Apply the transformations specified in transformations to all of the dfs</span>
 <span class="sd">        - if a column specified in `transformations` does not exist in the dataframes,</span>
 <span class="sd">        it is added</span>
 <span class="sd">        - if a column is not specified in `transformations`, it is dropped,</span>
@@ -414,7 +414,7 @@
 <span class="sd">        (i.e. the definition of the added variable should include the transformation)</span>
 <span class="sd">        - if you get a cryptic error about mismatched data types, make sure your</span>
 <span class="sd">        transformations are not being treated as additions because of missing</span>
-<span class="sd">        columns (use `_set_warnings(&quot;DEBUG&quot;)` to check)</span>
+<span class="sd">        columns (use `_set_warnings("DEBUG")` to check)</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        dfs (Tuple[pd.DataFrame, ...]): The DataFrames on which to operate</span>
@@ -427,7 +427,7 @@
 <span class="sd">              not specified in `transformations`. Defaults to True.</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        NotImplementedError: When passing an unknown &quot;transformations&quot; argument.</span>
+<span class="sd">        NotImplementedError: When passing an unknown "transformations" argument.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Tuple[pd.DataFrame, ...]: tuple of pd.DataFrames</span>
@@ -440,8 +440,8 @@
 <span class="sd">            import numpy as np</span>
 
 <span class="sd">            apply_transformations(</span>
-<span class="sd">                (pd.DataFrame({&#39;d&#39;: [1, 2, 3], &#39;e&#39;: [4, 5, 6]}),),</span>
-<span class="sd">                {&#39;d&#39;: lambda x: x*2, &#39;f&#39;: lambda x: x.d+x.e}</span>
+<span class="sd">                (pd.DataFrame({'d': [1, 2, 3], 'e': [4, 5, 6]}),),</span>
+<span class="sd">                {'d': lambda x: x*2, 'f': lambda x: x.d+x.e}</span>
 <span class="sd">            )</span>
 
 <span class="sd">                # (   f  d</span>
@@ -449,19 +449,19 @@
 <span class="sd">                #  1  7  4</span>
 <span class="sd">                #  2  9  6,)</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;&#39;dfs&#39; argument must be a tuple of DataFrames&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"'dfs' argument must be a tuple of DataFrames"</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">dfs</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;&#39;dfs&#39; must contain DataFrames&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"'dfs' must contain DataFrames"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">transformations</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dfs</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">transformations</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">transformations</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">transformations</span> <span class="o">==</span> <span class="s2">"default"</span><span class="p">:</span>
             <span class="n">transformations</span> <span class="o">=</span> <span class="n">default_transformations</span><span class="p">(</span><span class="n">dfs</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown transformations </span><span class="si">{</span><span class="n">transformations</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown transformations </span><span class="si">{</span><span class="n">transformations</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">ns</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">dfs</span><span class="p">]))</span>
     <span class="n">boundaries</span> <span class="o">=</span> <span class="p">[(</span><span class="n">ns</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ns</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ns</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
@@ -477,14 +477,14 @@
     <span class="n">transformations</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">transformations</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">all_data</span><span class="o">.</span><span class="n">columns</span>
     <span class="p">}</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Adding the variables: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">additions</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Transforming the variables: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">transformations</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Adding the variables: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">additions</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Transforming the variables: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">transformations</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;Total number of added or transformed variables: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">additions</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">transformations</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">"Total number of added or transformed variables: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">additions</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">transformations</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">additions</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">transformations</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No transformations or additions passed&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No transformations or additions passed"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">additions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">added</span> <span class="o">=</span> <span class="n">all_data</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="o">**</span><span class="n">additions</span><span class="p">)</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="nb">list</span><span class="p">(</span><span class="n">additions</span><span class="o">.</span><span class="n">keys</span><span class="p">())]</span>
@@ -511,17 +511,17 @@
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dropped_columns</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">drop</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dropping the variables: </span><span class="si">{</span><span class="n">dropped_columns</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Dropping the variables: </span><span class="si">{</span><span class="n">dropped_columns</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">out</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">out</span><span class="p">,</span> <span class="n">all_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">dropped_columns</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Final variables in output: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Final variables in output: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">out</span><span class="p">:</span>
         <span class="c1"># Create frequency table without using value_counts to avoid FutureWarning</span>
         <span class="n">freq_table</span> <span class="o">=</span> <span class="n">out</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="n">column</span><span class="p">],</span> <span class="n">dropna</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Frequency table of column </span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s2">:</span><span class="se">\n</span><span class="si">{</span><span class="n">freq_table</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Frequency table of column </span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s2">:</span><span class="se">\n</span><span class="si">{</span><span class="n">freq_table</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Number of levels of column </span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s2">:</span><span class="se">\n</span><span class="si">{</span><span class="n">out</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">(</span><span class="n">dropna</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"Number of levels of column </span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s2">:</span><span class="se">\n</span><span class="si">{</span><span class="n">out</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">(</span><span class="n">dropna</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
     <span class="n">res</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="ow">in</span> <span class="n">boundaries</span><span class="p">)</span>
@@ -532,8 +532,8 @@
 
 
 <span class="c1"># Sentinel for ``_reject_data_dependent_transfer`` to distinguish</span>
-<span class="c1"># &quot;caller did not supply transformations_effective&quot; from &quot;caller</span>
-<span class="c1"># explicitly passed None&quot; (the latter is a valid value: it means the</span>
+<span class="c1"># "caller did not supply transformations_effective" from "caller</span>
+<span class="c1"># explicitly passed None" (the latter is a valid value: it means the</span>
 <span class="c1"># fit-time effective transformations dict was filtered down to an empty</span>
 <span class="c1"># dict and stored as None, e.g. when every user-supplied transform key</span>
 <span class="c1"># was out of scope for the selected variables).</span>
@@ -541,14 +541,14 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_unwrap_partial</span><span class="p">(</span><span class="n">fn</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the base callable wrapped by one or more ``functools.partial``s.</span>
+<span class="w">    </span><span class="sd">"""Return the base callable wrapped by one or more ``functools.partial``s.</span>
 
 <span class="sd">    ``functools.partial`` is available as a concrete type on Python 3.9, so</span>
 <span class="sd">    ``isinstance(..., functools.partial)`` is both compatible with the minimum</span>
 <span class="sd">    supported runtime and more precise than checking for a ``func`` attribute</span>
 <span class="sd">    that unrelated objects may define. Non-partial values are returned</span>
 <span class="sd">    unchanged so callers can safely pass arbitrary transformation values.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">while</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">):</span>
         <span class="n">fn</span> <span class="o">=</span> <span class="n">fn</span><span class="o">.</span><span class="n">func</span>
     <span class="k">return</span> <span class="n">fn</span>
@@ -560,7 +560,7 @@
     <span class="n">method_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">transformations_effective</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">_UNSET_EFFECTIVE_TRANSFORMATIONS</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Guard ``predict_weights(data=...)`` against unsafe transformation replay.</span>
+<span class="w">    </span><span class="sd">"""Guard ``predict_weights(data=...)`` against unsafe transformation replay.</span>
 
 <span class="sd">    Shared by ``rake._predict_weights_from_model`` and</span>
 <span class="sd">    ``poststratify._predict_weights_from_model``. ``cbps`` and ``ipw``</span>
@@ -570,30 +570,30 @@
 <span class="sd">    if they need protection against replaying fit-time data-dependent</span>
 <span class="sd">    transformations on a different scoring sample.</span>
 
-<span class="sd">    Raises if the fitted model&#39;s ``transformations`` argument is</span>
+<span class="sd">    Raises if the fitted model's ``transformations`` argument is</span>
 <span class="sd">    data-dependent and therefore unsafe to replay across a different</span>
 <span class="sd">    scoring sample, namely:</span>
 
-<span class="sd">    - ``transformations=&#39;default&#39;``: the default-transformations dispatcher</span>
+<span class="sd">    - ``transformations='default'``: the default-transformations dispatcher</span>
 <span class="sd">      computes bin edges / kept levels from the fit-time data, so the</span>
 <span class="sd">      stored transformed cells do not generalize.</span>
 <span class="sd">    - An explicit ``dict`` whose values include direct references to</span>
-<span class="sd">      balance&#39;s known data-dependent helpers (``quantize`` or</span>
+<span class="sd">      balance's known data-dependent helpers (``quantize`` or</span>
 <span class="sd">      ``fct_lump``), or ``functools.partial(...)`` wrappers around those</span>
 <span class="sd">      helpers: same hazard, just user-supplied.</span>
 
 <span class="sd">    Offender detection runs against ``transformations_effective`` (the</span>
-<span class="sd">    filtered dict actually applied at fit time, ``model[&#39;transformations&#39;]``)</span>
+<span class="sd">    filtered dict actually applied at fit time, ``model['transformations']``)</span>
 <span class="sd">    when callers supply it, so a ``quantize`` / ``fct_lump`` reference</span>
 <span class="sd">    for an out-of-scope variable that was filtered out at fit time does</span>
 <span class="sd">    not falsely block transfer scoring. ``None`` is a valid value here</span>
 <span class="sd">    (it means the filtered effective dict was empty) and yields no</span>
-<span class="sd">    rejection. The ``&#39;default&#39;`` check still runs against</span>
-<span class="sd">    ``transformations_origin`` so the user&#39;s literal intent is what gets</span>
+<span class="sd">    rejection. The ``'default'`` check still runs against</span>
+<span class="sd">    ``transformations_origin`` so the user's literal intent is what gets</span>
 <span class="sd">    rejected.</span>
 
 <span class="sd">    Best-effort: this guard catches direct references and</span>
-<span class="sd">    ``functools.partial(...)`` wrappers around balance&#39;s known</span>
+<span class="sd">    ``functools.partial(...)`` wrappers around balance's known</span>
 <span class="sd">    data-dependent helpers, but it cannot detect arbitrary top-level wrapper</span>
 <span class="sd">    functions or user-defined data-dependent transformations. The</span>
 <span class="sd">    general invariant is: any callable whose output for a row depends on</span>
@@ -606,12 +606,12 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        transformations_origin: The ``transformations`` argument the user</span>
-<span class="sd">            passed at fit time, stored in ``model[&#39;transformations_origin&#39;]``.</span>
-<span class="sd">            Used for the ``&#39;default&#39;`` rejection.</span>
+<span class="sd">            passed at fit time, stored in ``model['transformations_origin']``.</span>
+<span class="sd">            Used for the ``'default'`` rejection.</span>
 <span class="sd">        method_name: Weighting-method name for the error messages (e.g.</span>
-<span class="sd">            ``&#39;rake&#39;``, ``&#39;poststratify&#39;``).</span>
+<span class="sd">            ``'rake'``, ``'poststratify'``).</span>
 <span class="sd">        transformations_effective: The effective ``transformations`` dict</span>
-<span class="sd">            actually applied at fit time (typically ``model[&#39;transformations&#39;]``).</span>
+<span class="sd">            actually applied at fit time (typically ``model['transformations']``).</span>
 <span class="sd">            Used for the data-dependent-helper rejection. Passing</span>
 <span class="sd">            ``None`` is meaningful (the empty/filtered case and yields</span>
 <span class="sd">            no rejection); omitting the argument entirely falls back to</span>
@@ -619,24 +619,24 @@
 <span class="sd">            can supply a single dict.</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        ValueError: If ``transformations_origin`` is ``&#39;default&#39;`` or</span>
+<span class="sd">        ValueError: If ``transformations_origin`` is ``'default'`` or</span>
 <span class="sd">            the effective transformations dict references</span>
 <span class="sd">            ``quantize``/``fct_lump`` directly or via ``functools.partial``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">method_label</span> <span class="o">=</span> <span class="n">method_name</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span>
-    <span class="n">fit_call_hint</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;BalanceFrame.fit(method=&#39;</span><span class="si">{</span><span class="n">method_name</span><span class="si">}</span><span class="s2">&#39;)&quot;</span>
+    <span class="n">fit_call_hint</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"BalanceFrame.fit(method='</span><span class="si">{</span><span class="n">method_name</span><span class="si">}</span><span class="s2">')"</span>
 
-    <span class="k">if</span> <span class="n">transformations_origin</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">transformations_origin</span> <span class="o">==</span> <span class="s2">"default"</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">method_label</span><span class="si">}</span><span class="s2"> predict_weights(data=...) is unsupported for &quot;</span>
-            <span class="s2">&quot;models fitted with transformations=&#39;default&#39; because those &quot;</span>
-            <span class="s2">&quot;transformations are data-dependent and not replayable across &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;new samples. </span><span class="si">{</span><span class="n">fit_call_hint</span><span class="si">}</span><span class="s2"> uses transformations=&#39;default&#39; &quot;</span>
-            <span class="s2">&quot;out of the box; to enable transfer scoring, pass deterministic &quot;</span>
-            <span class="s2">&quot;transformations explicitly at fit time (a custom function that &quot;</span>
-            <span class="s2">&quot;closes over fit-time-computed parameters such as bin edges or &quot;</span>
-            <span class="s2">&quot;kept-level lists, not over the input frame) or re-fit &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">method_name</span><span class="si">}</span><span class="s2"> on the scoring data.&quot;</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">method_label</span><span class="si">}</span><span class="s2"> predict_weights(data=...) is unsupported for "</span>
+            <span class="s2">"models fitted with transformations='default' because those "</span>
+            <span class="s2">"transformations are data-dependent and not replayable across "</span>
+            <span class="sa">f</span><span class="s2">"new samples. </span><span class="si">{</span><span class="n">fit_call_hint</span><span class="si">}</span><span class="s2"> uses transformations='default' "</span>
+            <span class="s2">"out of the box; to enable transfer scoring, pass deterministic "</span>
+            <span class="s2">"transformations explicitly at fit time (a custom function that "</span>
+            <span class="s2">"closes over fit-time-computed parameters such as bin edges or "</span>
+            <span class="s2">"kept-level lists, not over the input frame) or re-fit "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">method_name</span><span class="si">}</span><span class="s2"> on the scoring data."</span>
         <span class="p">)</span>
     <span class="n">inspect</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">transformations_effective</span>
@@ -650,31 +650,31 @@
 
         <span class="n">offenders</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
             <span class="p">{</span>
-                <span class="nb">getattr</span><span class="p">(</span><span class="n">unwrapped_fn</span><span class="p">,</span> <span class="s2">&quot;__name__&quot;</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="n">unwrapped_fn</span><span class="p">))</span>
+                <span class="nb">getattr</span><span class="p">(</span><span class="n">unwrapped_fn</span><span class="p">,</span> <span class="s2">"__name__"</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="n">unwrapped_fn</span><span class="p">))</span>
                 <span class="k">for</span> <span class="n">unwrapped_fn</span> <span class="ow">in</span> <span class="p">(</span><span class="n">_unwrap_partial</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span> <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
                 <span class="k">if</span> <span class="n">unwrapped_fn</span> <span class="ow">in</span> <span class="n">data_dependent_helpers</span>
             <span class="p">}</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">offenders</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">method_label</span><span class="si">}</span><span class="s2"> predict_weights(data=...) is unsupported &quot;</span>
-                <span class="s2">&quot;for models fitted with data-dependent transformations &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">offenders</span><span class="p">)</span><span class="si">}</span><span class="s2">). These recompute bins/levels &quot;</span>
-                <span class="s2">&quot;from the scoring data, so stored cell ratios no longer &quot;</span>
-                <span class="s2">&quot;line up with the transformed scoring cells. To enable &quot;</span>
-                <span class="s2">&quot;transfer scoring, replace each data-dependent helper with &quot;</span>
-                <span class="s2">&quot;a deterministic wrapper that closes over fit-time-computed &quot;</span>
-                <span class="s2">&quot;parameters (e.g. pre-computed bin edges or kept-level &quot;</span>
-                <span class="s2">&quot;lists), not over the input frame — or re-fit &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">method_name</span><span class="si">}</span><span class="s2"> on the scoring data.&quot;</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">method_label</span><span class="si">}</span><span class="s2"> predict_weights(data=...) is unsupported "</span>
+                <span class="s2">"for models fitted with data-dependent transformations "</span>
+                <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">offenders</span><span class="p">)</span><span class="si">}</span><span class="s2">). These recompute bins/levels "</span>
+                <span class="s2">"from the scoring data, so stored cell ratios no longer "</span>
+                <span class="s2">"line up with the transformed scoring cells. To enable "</span>
+                <span class="s2">"transfer scoring, replace each data-dependent helper with "</span>
+                <span class="s2">"a deterministic wrapper that closes over fit-time-computed "</span>
+                <span class="s2">"parameters (e.g. pre-computed bin edges or kept-level "</span>
+                <span class="s2">"lists), not over the input frame — or re-fit "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">method_name</span><span class="si">}</span><span class="s2"> on the scoring data."</span>
             <span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_warn_default_transformations_not_transferable</span><span class="p">(</span><span class="n">method_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Log a shared warning for fit metadata with default transformations.</span>
+<span class="w">    </span><span class="sd">"""Log a shared warning for fit metadata with default transformations.</span>
 
 <span class="sd">    Weighting methods that persist fit metadata can replay fitted weights on the</span>
-<span class="sd">    original data when ``transformations=&#39;default&#39;`` because they also persist</span>
+<span class="sd">    original data when ``transformations='default'`` because they also persist</span>
 <span class="sd">    the fit-time transformed design. Transfer scoring on new data is different:</span>
 <span class="sd">    default transformations choose bins/levels from the current input, so they</span>
 <span class="sd">    are intentionally rejected by :func:`_reject_data_dependent_transfer`.</span>
@@ -685,41 +685,41 @@
 <span class="sd">    Raises:</span>
 <span class="sd">        TypeError: If ``method_name`` is not a string.</span>
 <span class="sd">        ValueError: If ``method_name`` is empty or only whitespace.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">method_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;method_name must be a string&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"method_name must be a string"</span><span class="p">)</span>
     <span class="n">method_name</span> <span class="o">=</span> <span class="n">method_name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">method_name</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;method_name must be a non-empty string&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"method_name must be a non-empty string"</span><span class="p">)</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-        <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">(store_fit_metadata=True) is being used together with &quot;</span>
-        <span class="s2">&quot;transformations=&#39;default&#39;. The fitted model can be replayed &quot;</span>
-        <span class="s2">&quot;in-place via BalanceFrame.predict_weights(), but transfer &quot;</span>
-        <span class="s2">&quot;scoring via predict_weights(data=...) will raise. Pass &quot;</span>
-        <span class="s2">&quot;deterministic transformations at fit time to enable transfer.&quot;</span><span class="p">,</span>
+        <span class="s2">"</span><span class="si">%s</span><span class="s2">(store_fit_metadata=True) is being used together with "</span>
+        <span class="s2">"transformations='default'. The fitted model can be replayed "</span>
+        <span class="s2">"in-place via BalanceFrame.predict_weights(), but transfer "</span>
+        <span class="s2">"scoring via predict_weights(data=...) will raise. Pass "</span>
+        <span class="s2">"deterministic transformations at fit time to enable transfer."</span><span class="p">,</span>
         <span class="n">method_name</span><span class="p">,</span>
     <span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_find_adjustment_method</span><span class="p">(</span>
-    <span class="n">method</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;cbps&quot;</span><span class="p">,</span> <span class="s2">&quot;ipw&quot;</span><span class="p">,</span> <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;poststratify&quot;</span><span class="p">,</span> <span class="s2">&quot;rake&quot;</span><span class="p">],</span>
+    <span class="n">method</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"cbps"</span><span class="p">,</span> <span class="s2">"ipw"</span><span class="p">,</span> <span class="s2">"null"</span><span class="p">,</span> <span class="s2">"poststratify"</span><span class="p">,</span> <span class="s2">"rake"</span><span class="p">],</span>
     <span class="n">WEIGHTING_METHODS</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="n">BALANCE_WEIGHTING_METHODS</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;This function translates a string method argument to the function itself.</span>
+<span class="w">    </span><span class="sd">"""This function translates a string method argument to the function itself.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        method (Literal[&quot;cbps&quot;, &quot;ipw&quot;, &quot;null&quot;, &quot;poststratify&quot;, &quot;rake&quot;]): method for adjustment: cbps, ipw, null, poststratify</span>
+<span class="sd">        method (Literal["cbps", "ipw", "null", "poststratify", "rake"]): method for adjustment: cbps, ipw, null, poststratify</span>
 <span class="sd">        WEIGHTING_METHODS (Dict[str, Callable]): A dict where keys are strings of function names, and the values are</span>
 <span class="sd">            the functions themselves.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Callable: The function for adjustment</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">WEIGHTING_METHODS</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="n">adjustment_function</span> <span class="o">=</span> <span class="n">WEIGHTING_METHODS</span><span class="p">[</span><span class="n">method</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown adjustment method: &#39;</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown adjustment method: '</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">adjustment_function</span>
 </pre></div>

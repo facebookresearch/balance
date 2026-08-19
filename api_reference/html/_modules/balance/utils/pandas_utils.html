@@ -70,7 +70,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_compute_cardinality_metrics</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HighCardinalityFeature</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute cardinality metrics for a feature series.</span>
+<span class="w">    </span><span class="sd">"""Compute cardinality metrics for a feature series.</span>
 
 <span class="sd">    The function counts unique non-missing values and their proportion relative</span>
 <span class="sd">    to non-missing rows, while also tracking whether any missing values are</span>
@@ -84,17 +84,17 @@
 
 <span class="sd">    Example:</span>
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">        &gt;&gt;&gt; s = pd.Series([&quot;a&quot;, &quot;b&quot;, &quot;c&quot;, None, &quot;c&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; s = pd.Series(["a", "b", "c", None, "c"])</span>
 <span class="sd">        &gt;&gt;&gt; _compute_cardinality_metrics(s)</span>
-<span class="sd">        HighCardinalityFeature(column=&#39;&#39;, unique_count=3, unique_ratio=0.75, has_missing=True)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        HighCardinalityFeature(column='', unique_count=3, unique_ratio=0.75, has_missing=True)</span>
+<span class="sd">    """</span>
     <span class="n">non_missing</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
     <span class="n">unique_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">non_missing</span><span class="o">.</span><span class="n">nunique</span><span class="p">())</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">non_missing</span><span class="o">.</span><span class="n">empty</span> <span class="k">else</span> <span class="mi">0</span>
     <span class="n">unique_ratio</span> <span class="o">=</span> <span class="p">(</span>
         <span class="nb">float</span><span class="p">(</span><span class="n">unique_count</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">non_missing</span><span class="p">))</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">non_missing</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">HighCardinalityFeature</span><span class="p">(</span>
-        <span class="n">column</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">column</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>
         <span class="n">unique_count</span><span class="o">=</span><span class="n">unique_count</span><span class="p">,</span>
         <span class="n">unique_ratio</span><span class="o">=</span><span class="n">unique_ratio</span><span class="p">,</span>
         <span class="n">has_missing</span><span class="o">=</span><span class="n">series</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">(),</span>
@@ -105,7 +105,7 @@
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">HIGH_CARDINALITY_RATIO_THRESHOLD</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">HighCardinalityFeature</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Identify categorical columns whose non-missing values are mostly unique.</span>
+<span class="w">    </span><span class="sd">"""Identify categorical columns whose non-missing values are mostly unique.</span>
 
 <span class="sd">    A feature is flagged when the ratio of unique non-missing values to total</span>
 <span class="sd">    non-missing rows meets or exceeds ``threshold``. Only categorical columns</span>
@@ -123,10 +123,10 @@
 
 <span class="sd">    Example:</span>
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">        &gt;&gt;&gt; df = pd.DataFrame({&quot;id&quot;: [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;], &quot;group&quot;: [&quot;a&quot;, &quot;a&quot;, &quot;b&quot;]})</span>
+<span class="sd">        &gt;&gt;&gt; df = pd.DataFrame({"id": ["a", "b", "c"], "group": ["a", "a", "b"]})</span>
 <span class="sd">        &gt;&gt;&gt; _detect_high_cardinality_features(df, threshold=0.8)</span>
-<span class="sd">        [HighCardinalityFeature(column=&#39;id&#39;, unique_count=3, unique_ratio=1.0, has_missing=False)]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        [HighCardinalityFeature(column='id', unique_count=3, unique_ratio=1.0, has_missing=False)]</span>
+<span class="sd">    """</span>
     <span class="n">high_cardinality_features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">HighCardinalityFeature</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
@@ -158,7 +158,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_coerce_scalar</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Safely convert a scalar value to ``float`` for diagnostics.</span>
+<span class="w">    </span><span class="sd">"""Safely convert a scalar value to ``float`` for diagnostics.</span>
 
 <span class="sd">    ``None`` and non-scalar inputs are converted to ``NaN``. Scalar inputs are</span>
 <span class="sd">    coerced to ``float`` when possible; otherwise, ``NaN`` is returned instead</span>
@@ -175,7 +175,7 @@
 <span class="sd">    Example:</span>
 <span class="sd">        &gt;&gt;&gt; _coerce_scalar(3)</span>
 <span class="sd">        3.0</span>
-<span class="sd">        &gt;&gt;&gt; _coerce_scalar(&quot;7.125&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; _coerce_scalar("7.125")</span>
 <span class="sd">        7.125</span>
 <span class="sd">        &gt;&gt;&gt; _coerce_scalar(True)</span>
 <span class="sd">        1.0</span>
@@ -185,22 +185,22 @@
 <span class="sd">        nan</span>
 <span class="sd">        &gt;&gt;&gt; _coerce_scalar([1, 2, 3])</span>
 <span class="sd">        nan</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
-            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_sorted_unique_categories</span><span class="p">(</span><span class="n">values</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Return sorted unique non-null category values for a Series.</span>
 
 <span class="sd">    Args:</span>
@@ -215,9 +215,9 @@
 <span class="sd">            import pandas as pd</span>
 <span class="sd">            from balance.utils.pandas_utils import _sorted_unique_categories</span>
 
-<span class="sd">            _sorted_unique_categories(pd.Series([&quot;b&quot;, &quot;a&quot;, None]))</span>
-<span class="sd">            # [&#39;a&#39;, &#39;b&#39;]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">            _sorted_unique_categories(pd.Series(["b", "a", None]))</span>
+<span class="sd">            # ['a', 'b']</span>
+<span class="sd">    """</span>
     <span class="n">uniques</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">dropna</span><span class="p">())</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">uniques</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">[]</span>
@@ -228,7 +228,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_is_categorical_dtype</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if a pandas Series has a categorical dtype.</span>
+<span class="w">    </span><span class="sd">"""Check if a pandas Series has a categorical dtype.</span>
 
 <span class="sd">    A dtype is considered categorical if it is object, category, or string type.</span>
 
@@ -241,11 +241,11 @@
 
 <span class="sd">    Example:</span>
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">        &gt;&gt;&gt; _is_categorical_dtype(pd.Series([&quot;a&quot;, &quot;b&quot;]))</span>
+<span class="sd">        &gt;&gt;&gt; _is_categorical_dtype(pd.Series(["a", "b"]))</span>
 <span class="sd">        True</span>
 <span class="sd">        &gt;&gt;&gt; _is_categorical_dtype(pd.Series([1, 2]))</span>
 <span class="sd">        False</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">dtype</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">dtype</span>
     <span class="k">return</span> <span class="p">(</span>
         <span class="n">pd_types</span><span class="o">.</span><span class="n">is_object_dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
@@ -255,7 +255,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_process_series_for_missing_mask</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Helper function to process a pandas Series for missing value detection</span>
 <span class="sd">    while avoiding deprecation warnings from replace and infer_objects.</span>
 
@@ -264,7 +264,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        pd.Series: Boolean series indicating missing values</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Use _safe_replace_and_infer to avoid downcasting warnings</span>
     <span class="n">replaced_series</span> <span class="o">=</span> <span class="n">_safe_replace_and_infer</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
     <span class="c1"># pyrefly: ignore [bad-return]</span>
@@ -276,7 +276,7 @@
     <span class="n">to_replace</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">value</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Helper function to safely replace values and infer object dtypes</span>
 <span class="sd">    while avoiding pandas deprecation warnings.</span>
 <span class="sd">    Args:</span>
@@ -285,7 +285,7 @@
 <span class="sd">        value: Value to replace with (default: np.nan)</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        Processed Series or DataFrame with proper dtype inference</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">to_replace</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">to_replace</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -293,28 +293,28 @@
     <span class="n">original_dtypes</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">dtypes</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="k">else</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span>
     <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span>
-            <span class="s2">&quot;ignore&quot;</span><span class="p">,</span>
-            <span class="n">message</span><span class="o">=</span><span class="s2">&quot;Downcasting behavior in `replace` is deprecated.*&quot;</span><span class="p">,</span>
+            <span class="s2">"ignore"</span><span class="p">,</span>
+            <span class="n">message</span><span class="o">=</span><span class="s2">"Downcasting behavior in `replace` is deprecated.*"</span><span class="p">,</span>
             <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">to_replace</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">infer_objects</span><span class="p">()</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">original_dtypes</span> <span class="o">==</span> <span class="s2">&quot;object&quot;</span> <span class="ow">and</span> <span class="n">result</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="s2">&quot;object&quot;</span><span class="p">:</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;object&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">original_dtypes</span> <span class="o">==</span> <span class="s2">"object"</span> <span class="ow">and</span> <span class="n">result</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="s2">"object"</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"object"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">result</span>
 
     <span class="c1"># pyrefly: ignore [missing-attribute]</span>
-    <span class="n">object_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">dtype</span> <span class="ow">in</span> <span class="n">original_dtypes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">dtype</span> <span class="o">==</span> <span class="s2">&quot;object&quot;</span><span class="p">]</span>
+    <span class="n">object_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">dtype</span> <span class="ow">in</span> <span class="n">original_dtypes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">dtype</span> <span class="o">==</span> <span class="s2">"object"</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">object_cols</span><span class="p">:</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">object_cols</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">))</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">object_cols</span><span class="p">,</span> <span class="s2">"object"</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">result</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_safe_fillna_and_infer</span><span class="p">(</span>
     <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Helper function to safely fill NaN values and infer object dtypes</span>
 <span class="sd">    while avoiding pandas deprecation warnings.</span>
 
@@ -324,27 +324,27 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Processed Series or DataFrame with proper dtype inference</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
 
     <span class="n">original_dtypes</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">dtypes</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="k">else</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span>
     <span class="c1"># Suppress pandas FutureWarnings about downcasting during fillna operations</span>
     <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="ne">FutureWarning</span><span class="p">)</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">"ignore"</span><span class="p">,</span> <span class="ne">FutureWarning</span><span class="p">)</span>
         <span class="n">filled_data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
     <span class="n">result</span> <span class="o">=</span> <span class="n">filled_data</span><span class="o">.</span><span class="n">infer_objects</span><span class="p">()</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">original_dtypes</span> <span class="o">==</span> <span class="s2">&quot;object&quot;</span> <span class="ow">and</span> <span class="n">result</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="s2">&quot;object&quot;</span><span class="p">:</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;object&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">original_dtypes</span> <span class="o">==</span> <span class="s2">"object"</span> <span class="ow">and</span> <span class="n">result</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="s2">"object"</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"object"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">result</span>
 
     <span class="c1"># pyrefly: ignore [missing-attribute]</span>
-    <span class="n">object_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">dtype</span> <span class="ow">in</span> <span class="n">original_dtypes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">dtype</span> <span class="o">==</span> <span class="s2">&quot;object&quot;</span><span class="p">]</span>
+    <span class="n">object_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">dtype</span> <span class="ow">in</span> <span class="n">original_dtypes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">dtype</span> <span class="o">==</span> <span class="s2">"object"</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">object_cols</span><span class="p">:</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">object_cols</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">))</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">object_cols</span><span class="p">,</span> <span class="s2">"object"</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">result</span>
 
 
@@ -353,7 +353,7 @@
     <span class="n">groupby_cols</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">apply_func</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Helper function to safely apply groupby operations while handling</span>
 <span class="sd">    the include_groups parameter for pandas compatibility.</span>
 
@@ -364,7 +364,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Result of groupby apply operation</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Use include_groups=False to avoid FutureWarning about operating on grouping columns</span>
     <span class="c1"># Fall back to old behavior if include_groups parameter is not supported</span>
     <span class="k">try</span><span class="p">:</span>
@@ -373,27 +373,27 @@
     <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
         <span class="c1"># Suppress pandas FutureWarnings about downcasting during fillna operations</span>
         <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="ne">FutureWarning</span><span class="p">)</span>
-            <span class="c1"># Fallback for older pandas versions that don&#39;t support include_groups parameter</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">"ignore"</span><span class="p">,</span> <span class="ne">FutureWarning</span><span class="p">)</span>
+            <span class="c1"># Fallback for older pandas versions that don't support include_groups parameter</span>
             <span class="c1"># pyrefly: ignore [bad-return]</span>
             <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">groupby_cols</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">apply_func</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_safe_show_legend</span><span class="p">(</span><span class="n">axis</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Helper function to safely show legend only if there are labeled artists,</span>
 <span class="sd">    avoiding matplotlib UserWarning about no artists with labels.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        axis: matplotlib axis object</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">_</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">axis</span><span class="o">.</span><span class="n">get_legend_handles_labels</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">labels</span><span class="p">:</span>
         <span class="n">axis</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_safe_divide_with_zero_handling</span><span class="p">(</span><span class="n">numerator</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">denominator</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Helper function to safely perform division while handling divide by zero</span>
 <span class="sd">    warnings with proper numpy error state management.</span>
 
@@ -403,15 +403,15 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Result of division with proper handling of divide by zero cases</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">):</span>
+<span class="sd">    """</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">):</span>
         <span class="c1"># Use numpy.divide to handle division by zero properly</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">numerator</span><span class="p">,</span> <span class="n">denominator</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">result</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_dict_intersect</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">d_for_keys</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns dict 1, but only with the keys that are also in d2</span>
+<span class="w">    </span><span class="sd">"""Returns dict 1, but only with the keys that are also in d2</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        d1 (Dict): First dictionary.</span>
@@ -422,11 +422,11 @@
 
 <span class="sd">    Examples:</span>
 <span class="sd">        ::</span>
-<span class="sd">            d1 = {&quot;a&quot;: 1, &quot;b&quot;: 2}</span>
-<span class="sd">            d2 = {&quot;c&quot;: 3, &quot;b&quot;: 2}</span>
+<span class="sd">            d1 = {"a": 1, "b": 2}</span>
+<span class="sd">            d2 = {"c": 3, "b": 2}</span>
 <span class="sd">            _dict_intersect(d1, d2)</span>
-<span class="sd">            # {&#39;b&#39;: 2}</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">            # {'b': 2}</span>
+<span class="sd">    """</span>
     <span class="n">intersect_keys</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">&amp;</span> <span class="n">d_for_keys</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
     <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">intersect_keys</span><span class="p">}</span>
 
@@ -436,7 +436,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_astype_in_df_from_dtypes</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">target_dtypes</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns df with dtypes cast as specified in df_orig.</span>
+<span class="w">    </span><span class="sd">"""Returns df with dtypes cast as specified in df_orig.</span>
 <span class="sd">       Columns that were not in the original dataframe are kept the same.</span>
 
 <span class="sd">    Args:</span>
@@ -448,18 +448,18 @@
 
 <span class="sd">    Examples:</span>
 <span class="sd">        ::</span>
-<span class="sd">            df = pd.DataFrame({&quot;id&quot;: (&quot;1&quot;, &quot;2&quot;), &quot;a&quot;: (1.0, 2.0), &quot;weight&quot;: (1.0,2.0)})</span>
-<span class="sd">            df_orig = pd.DataFrame({&quot;id&quot;: (1, 2), &quot;a&quot;: (1, 2), &quot;forest&quot;: (&quot;tree&quot;, &quot;banana&quot;)})</span>
+<span class="sd">            df = pd.DataFrame({"id": ("1", "2"), "a": (1.0, 2.0), "weight": (1.0,2.0)})</span>
+<span class="sd">            df_orig = pd.DataFrame({"id": (1, 2), "a": (1, 2), "forest": ("tree", "banana")})</span>
 
 <span class="sd">            df.dtypes.to_dict()</span>
-<span class="sd">                # {&#39;id&#39;: dtype(&#39;O&#39;), &#39;a&#39;: dtype(&#39;float64&#39;), &#39;weight&#39;: dtype(&#39;float64&#39;)}</span>
+<span class="sd">                # {'id': dtype('O'), 'a': dtype('float64'), 'weight': dtype('float64')}</span>
 <span class="sd">            df_orig.dtypes.to_dict()</span>
-<span class="sd">                # {&#39;id&#39;: dtype(&#39;int64&#39;), &#39;a&#39;: dtype(&#39;int64&#39;), &#39;forest&#39;: dtype(&#39;O&#39;)}</span>
+<span class="sd">                # {'id': dtype('int64'), 'a': dtype('int64'), 'forest': dtype('O')}</span>
 
 <span class="sd">            target_dtypes = df_orig.dtypes</span>
 <span class="sd">            _astype_in_df_from_dtypes(df, target_dtypes).dtypes.to_dict()</span>
-<span class="sd">                # {&#39;id&#39;: dtype(&#39;int64&#39;), &#39;a&#39;: dtype(&#39;int64&#39;), &#39;weight&#39;: dtype(&#39;float64&#39;)}</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">                # {'id': dtype('int64'), 'a': dtype('int64'), 'weight': dtype('float64')}</span>
+<span class="sd">    """</span>
     <span class="n">dict_of_target_dtypes</span> <span class="o">=</span> <span class="n">_dict_intersect</span><span class="p">(</span>
         <span class="n">target_dtypes</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
         <span class="n">df</span><span class="o">.</span><span class="n">dtypes</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
@@ -470,7 +470,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_are_dtypes_equal</span><span class="p">(</span>
     <span class="n">dt1</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">dt2</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="nb">set</span><span class="p">[</span><span class="n">Any</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns True if both dtypes are the same and False otherwise.</span>
+<span class="w">    </span><span class="sd">"""Returns True if both dtypes are the same and False otherwise.</span>
 
 <span class="sd">    If dtypes have an unequal set of items, the comparison will only be about the same set of keys.</span>
 <span class="sd">    If there are no shared keys, then return False.</span>
@@ -482,48 +482,48 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, Union[bool, pd.Series, set]]: a dict of the following structure</span>
 <span class="sd">            {</span>
-<span class="sd">                &#39;is_equal&#39;: False,</span>
-<span class="sd">                &#39;comparison_of_dtypes&#39;:</span>
+<span class="sd">                'is_equal': False,</span>
+<span class="sd">                'comparison_of_dtypes':</span>
 <span class="sd">                                    flt    True</span>
 <span class="sd">                                    int    False</span>
 <span class="sd">                                    dtype: bool,</span>
-<span class="sd">                &#39;shared_keys&#39;: {&#39;flt&#39;, &#39;int&#39;}</span>
+<span class="sd">                'shared_keys': {'flt', 'int'}</span>
 <span class="sd">            }</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">        ::</span>
-<span class="sd">            df1 = pd.DataFrame({&#39;int&#39;:np.arange(5), &#39;flt&#39;:np.random.randn(5)})</span>
-<span class="sd">            df2 = pd.DataFrame({&#39;flt&#39;:np.random.randn(5), &#39;int&#39;:np.random.randn(5)})</span>
-<span class="sd">            df11 = pd.DataFrame({&#39;int&#39;:np.arange(5), &#39;flt&#39;:np.random.randn(5), &#39;miao&#39;:np.random.randn(5)})</span>
+<span class="sd">            df1 = pd.DataFrame({'int':np.arange(5), 'flt':np.random.randn(5)})</span>
+<span class="sd">            df2 = pd.DataFrame({'flt':np.random.randn(5), 'int':np.random.randn(5)})</span>
+<span class="sd">            df11 = pd.DataFrame({'int':np.arange(5), 'flt':np.random.randn(5), 'miao':np.random.randn(5)})</span>
 
-<span class="sd">            _are_dtypes_equal(df1.dtypes, df1.dtypes)[&#39;is_equal&#39;]  # True</span>
-<span class="sd">            _are_dtypes_equal(df1.dtypes, df2.dtypes)[&#39;is_equal&#39;]  # False</span>
-<span class="sd">            _are_dtypes_equal(df11.dtypes, df2.dtypes)[&#39;is_equal&#39;] # False</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">            _are_dtypes_equal(df1.dtypes, df1.dtypes)['is_equal']  # True</span>
+<span class="sd">            _are_dtypes_equal(df1.dtypes, df2.dtypes)['is_equal']  # False</span>
+<span class="sd">            _are_dtypes_equal(df11.dtypes, df2.dtypes)['is_equal'] # False</span>
+<span class="sd">    """</span>
     <span class="n">shared_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">dt1</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="nb">set</span><span class="p">(</span><span class="n">dt2</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
     <span class="n">shared_keys_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">shared_keys</span><span class="p">)</span>
     <span class="n">comparison_of_dtypes</span> <span class="o">=</span> <span class="n">dt1</span><span class="p">[</span><span class="n">shared_keys_list</span><span class="p">]</span> <span class="o">==</span> <span class="n">dt2</span><span class="p">[</span><span class="n">shared_keys_list</span><span class="p">]</span>
     <span class="n">is_equal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">comparison_of_dtypes</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;is_equal&quot;</span><span class="p">:</span> <span class="n">is_equal</span><span class="p">,</span>
-        <span class="s2">&quot;comparison_of_dtypes&quot;</span><span class="p">:</span> <span class="n">comparison_of_dtypes</span><span class="p">,</span>
-        <span class="s2">&quot;shared_keys&quot;</span><span class="p">:</span> <span class="n">shared_keys</span><span class="p">,</span>
+        <span class="s2">"is_equal"</span><span class="p">:</span> <span class="n">is_equal</span><span class="p">,</span>
+        <span class="s2">"comparison_of_dtypes"</span><span class="p">:</span> <span class="n">comparison_of_dtypes</span><span class="p">,</span>
+        <span class="s2">"shared_keys"</span><span class="p">:</span> <span class="n">shared_keys</span><span class="p">,</span>
     <span class="p">}</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_warn_of_df_dtypes_change</span><span class="p">(</span>
     <span class="n">original_df_dtypes</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">new_df_dtypes</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
-    <span class="n">original_str</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;df&quot;</span><span class="p">,</span>
-    <span class="n">new_str</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;new_df&quot;</span><span class="p">,</span>
+    <span class="n">original_str</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"df"</span><span class="p">,</span>
+    <span class="n">new_str</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"new_df"</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Prints a warning if the dtypes of some original df and some modified df differs.</span>
+<span class="w">    </span><span class="sd">"""Prints a warning if the dtypes of some original df and some modified df differs.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        original_df_dtypes (pd.Series): dtypes of original dataframe</span>
 <span class="sd">        new_df_dtypes (pd.Series): dtypes of modified dataframe</span>
-<span class="sd">        original_str (str, optional): string to use for warnings when referring to the original. Defaults to &quot;df&quot;.</span>
-<span class="sd">        new_str (str, optional): string to use for warnings when referring to the modified df. Defaults to &quot;new_df&quot;.</span>
+<span class="sd">        original_str (str, optional): string to use for warnings when referring to the original. Defaults to "df".</span>
+<span class="sd">        new_str (str, optional): string to use for warnings when referring to the modified df. Defaults to "new_df".</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">        ::</span>
@@ -533,7 +533,7 @@
 <span class="sd">            from copy import deepcopy</span>
 <span class="sd">            import balance</span>
 
-<span class="sd">            df = pd.DataFrame({&quot;int&quot;: np.arange(5), &quot;flt&quot;: np.random.randn(5)})</span>
+<span class="sd">            df = pd.DataFrame({"int": np.arange(5), "flt": np.random.randn(5)})</span>
 <span class="sd">            new_df = deepcopy(df)</span>
 <span class="sd">            new_df.int = new_df.int.astype(float)</span>
 <span class="sd">            new_df.flt = new_df.flt.astype(int)</span>
@@ -551,32 +551,32 @@
 <span class="sd">                # flt      int64</span>
 <span class="sd">                # int    float64</span>
 <span class="sd">                # dtype: object</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">compare_df_dtypes_before_and_after</span> <span class="o">=</span> <span class="n">_are_dtypes_equal</span><span class="p">(</span>
         <span class="n">original_df_dtypes</span><span class="p">,</span> <span class="n">new_df_dtypes</span>
     <span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">compare_df_dtypes_before_and_after</span><span class="p">[</span><span class="s2">&quot;is_equal&quot;</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">compare_df_dtypes_before_and_after</span><span class="p">[</span><span class="s2">"is_equal"</span><span class="p">]:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;The dtypes of </span><span class="si">{</span><span class="n">new_str</span><span class="si">}</span><span class="s2"> were changed from the original dtypes of the input </span><span class="si">{</span><span class="n">original_str</span><span class="si">}</span><span class="s2">, here are the differences - &quot;</span>
+            <span class="sa">f</span><span class="s2">"The dtypes of </span><span class="si">{</span><span class="n">new_str</span><span class="si">}</span><span class="s2"> were changed from the original dtypes of the input </span><span class="si">{</span><span class="n">original_str</span><span class="si">}</span><span class="s2">, here are the differences - "</span>
         <span class="p">)</span>
-        <span class="n">compared_dtypes</span> <span class="o">=</span> <span class="n">compare_df_dtypes_before_and_after</span><span class="p">[</span><span class="s2">&quot;comparison_of_dtypes&quot;</span><span class="p">]</span>
+        <span class="n">compared_dtypes</span> <span class="o">=</span> <span class="n">compare_df_dtypes_before_and_after</span><span class="p">[</span><span class="s2">"comparison_of_dtypes"</span><span class="p">]</span>
         <span class="n">dtypes_that_changed</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="c1"># pyre-ignore[16]: we&#39;re only using the pd.Series, so no worries</span>
+            <span class="c1"># pyre-ignore[16]: we're only using the pd.Series, so no worries</span>
             <span class="n">compared_dtypes</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">bitwise_not</span><span class="p">(</span><span class="n">compared_dtypes</span><span class="o">.</span><span class="n">values</span><span class="p">)]</span>
             <span class="o">.</span><span class="n">keys</span><span class="p">()</span>
             <span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
         <span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">compare_df_dtypes_before_and_after</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;The (old) dtypes that changed for </span><span class="si">{</span><span class="n">original_str</span><span class="si">}</span><span class="s2"> (before the change):&quot;</span>
+            <span class="sa">f</span><span class="s2">"The (old) dtypes that changed for </span><span class="si">{</span><span class="n">original_str</span><span class="si">}</span><span class="s2"> (before the change):"</span>
         <span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">original_df_dtypes</span><span class="p">[</span><span class="n">dtypes_that_changed</span><span class="p">]))</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The (new) dtypes saved in </span><span class="si">{</span><span class="n">original_str</span><span class="si">}</span><span class="s2"> (after the change):&quot;</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">new_df_dtypes</span><span class="p">[</span><span class="n">dtypes_that_changed</span><span class="p">]))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">original_df_dtypes</span><span class="p">[</span><span class="n">dtypes_that_changed</span><span class="p">]))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The (new) dtypes saved in </span><span class="si">{</span><span class="n">original_str</span><span class="si">}</span><span class="s2"> (after the change):"</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">new_df_dtypes</span><span class="p">[</span><span class="n">dtypes_that_changed</span><span class="p">]))</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_make_df_column_names_unique</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Make DataFrame column names unique by adding suffixes to duplicates.</span>
+<span class="w">    </span><span class="sd">"""Make DataFrame column names unique by adding suffixes to duplicates.</span>
 
 <span class="sd">    This function iterates through the column names of the input DataFrame</span>
 <span class="sd">    and appends a suffix to duplicate column names to make them distinct.</span>
@@ -597,21 +597,21 @@
 
 <span class="sd">            # Sample DataFrame with duplicate column names</span>
 <span class="sd">            data = {</span>
-<span class="sd">                &quot;A&quot;: [1, 2, 3],</span>
-<span class="sd">                &quot;B&quot;: [4, 5, 6],</span>
-<span class="sd">                &quot;A2&quot;: [7, 8, 9],</span>
-<span class="sd">                &quot;C&quot;: [10, 11, 12],</span>
+<span class="sd">                "A": [1, 2, 3],</span>
+<span class="sd">                "B": [4, 5, 6],</span>
+<span class="sd">                "A2": [7, 8, 9],</span>
+<span class="sd">                "C": [10, 11, 12],</span>
 <span class="sd">            }</span>
 
 <span class="sd">            df1 = pd.DataFrame(data)</span>
-<span class="sd">            df1.columns = [&quot;A&quot;, &quot;B&quot;, &quot;A&quot;, &quot;C&quot;]</span>
+<span class="sd">            df1.columns = ["A", "B", "A", "C"]</span>
 
 <span class="sd">            _make_df_column_names_unique(df1).to_dict()</span>
-<span class="sd">            # {&#39;A&#39;: {0: 1, 1: 2, 2: 3},</span>
-<span class="sd">            #  &#39;B&#39;: {0: 4, 1: 5, 2: 6},</span>
-<span class="sd">            #  &#39;A_1&#39;: {0: 7, 1: 8, 2: 9},</span>
-<span class="sd">            #  &#39;C&#39;: {0: 10, 1: 11, 2: 12}}</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">            # {'A': {0: 1, 1: 2, 2: 3},</span>
+<span class="sd">            #  'B': {0: 4, 1: 5, 2: 6},</span>
+<span class="sd">            #  'A_1': {0: 7, 1: 8, 2: 9},</span>
+<span class="sd">            #  'C': {0: 10, 1: 11, 2: 12}}</span>
+<span class="sd">    """</span>
     <span class="c1"># Check if all column names are unique</span>
     <span class="n">unique_columns</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_columns</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
@@ -619,9 +619,9 @@
 
     <span class="c1"># Else: fix duplicate column names</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Duplicate column names exists in the DataFrame.</span>
+<span class="w">        </span><span class="sd">"""Duplicate column names exists in the DataFrame.</span>
 <span class="sd">                    A suffix will be added to them but their order might change from one iteration to another.</span>
-<span class="sd">                    To avoid issues, make sure to change your original column names to be unique (and without special characters).&quot;&quot;&quot;</span>
+<span class="sd">                    To avoid issues, make sure to change your original column names to be unique (and without special characters)."""</span>
     <span class="p">)</span>
     <span class="n">col_counts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">used_names</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
@@ -630,13 +630,13 @@
     <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">used_names</span><span class="p">:</span>
             <span class="n">next_suffix</span> <span class="o">=</span> <span class="n">col_counts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
-            <span class="n">new_col_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">next_suffix</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">new_col_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">next_suffix</span><span class="si">}</span><span class="s2">"</span>
             <span class="k">while</span> <span class="n">new_col_name</span> <span class="ow">in</span> <span class="n">used_names</span><span class="p">:</span>
                 <span class="n">next_suffix</span> <span class="o">+=</span> <span class="mi">1</span>
-                <span class="n">new_col_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">next_suffix</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">new_col_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">next_suffix</span><span class="si">}</span><span class="s2">"</span>
             <span class="n">col_counts</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">next_suffix</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Column </span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2"> already exists in the DataFrame, renaming it to be </span><span class="si">{</span><span class="n">new_col_name</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"Column </span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2"> already exists in the DataFrame, renaming it to be </span><span class="si">{</span><span class="n">new_col_name</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">col_counts</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
@@ -652,7 +652,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_pd_convert_all_types</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">input_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">output_type</span><span class="p">:</span> <span class="nb">str</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts columns in the input dataframe to a specified type.</span>
+<span class="w">    </span><span class="sd">"""Converts columns in the input dataframe to a specified type.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        df (pd.DataFrame): Input df</span>
@@ -667,26 +667,26 @@
 
 <span class="sd">            import numpy as np</span>
 <span class="sd">            import pandas as pd</span>
-<span class="sd">            df = pd.DataFrame({&quot;a&quot;: pd.array([1,2], dtype = pd.Int64Dtype()), &quot;a2&quot;: pd.array([1,2], dtype = np.int64)})</span>
+<span class="sd">            df = pd.DataFrame({"a": pd.array([1,2], dtype = pd.Int64Dtype()), "a2": pd.array([1,2], dtype = np.int64)})</span>
 
 <span class="sd">            df.dtypes</span>
 <span class="sd">                # a     Int64</span>
 <span class="sd">                # a2    int64</span>
 <span class="sd">                # dtype: object</span>
 <span class="sd">            df.dtypes.to_numpy()</span>
-<span class="sd">                # array([Int64Dtype(), dtype(&#39;int64&#39;)], dtype=object)</span>
+<span class="sd">                # array([Int64Dtype(), dtype('int64')], dtype=object)</span>
 
-<span class="sd">            df2 =_pd_convert_all_types(df, &quot;Int64&quot;, &quot;int64&quot;)</span>
+<span class="sd">            df2 =_pd_convert_all_types(df, "Int64", "int64")</span>
 
 <span class="sd">            df2.dtypes.to_numpy()</span>
-<span class="sd">                # array([dtype(&#39;int64&#39;), dtype(&#39;int64&#39;)], dtype=object)</span>
+<span class="sd">                # array([dtype('int64'), dtype('int64')], dtype=object)</span>
 
 <span class="sd">            # Might be requires some casting to float64 so that it will handle missing values</span>
 <span class="sd">            # For details, see: https://stackoverflow.com/a/53853351</span>
-<span class="sd">            df3 =_pd_convert_all_types(df, &quot;Int64&quot;, &quot;float64&quot;)</span>
+<span class="sd">            df3 =_pd_convert_all_types(df, "Int64", "float64")</span>
 <span class="sd">            df3.dtypes.to_numpy()</span>
-<span class="sd">                # array([dtype(&#39;float64&#39;), dtype(&#39;float64&#39;)], dtype=object)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">                # array([dtype('float64'), dtype('float64')], dtype=object)</span>
+<span class="sd">    """</span>
     <span class="n">df</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
     <span class="c1"># source: https://stackoverflow.com/questions/39904889/</span>
     <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>

@@ -49,8 +49,8 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_truncate_text</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">length</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Truncate string s to be of length &#39;length&#39;. If the length of s is larger than &#39;length&#39;, then the</span>
-<span class="sd">    function will add &#39;...&#39; at the end of the truncated text.</span>
+<span class="w">    </span><span class="sd">"""Truncate string s to be of length 'length'. If the length of s is larger than 'length', then the</span>
+<span class="sd">    function will add '...' at the end of the truncated text.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        s (str):</span>
@@ -58,20 +58,20 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="k">return</span> <span class="n">s</span><span class="p">[:</span><span class="n">length</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;...&quot;</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">length</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">s</span><span class="p">[:</span><span class="n">length</span><span class="p">]</span> <span class="o">+</span> <span class="s2">"..."</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">length</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="TruncationFormatter">
 <a class="viewcode-back" href="../../../balance.util.html#balance.util.TruncationFormatter">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TruncationFormatter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Logging formatter which truncates the logged message to 500 characters.</span>
 
 <span class="sd">    This is useful in the cases where the logging message includes objects</span>
 <span class="sd">    --- like DataFrames --- whose string representation is very long.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TruncationFormatter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>

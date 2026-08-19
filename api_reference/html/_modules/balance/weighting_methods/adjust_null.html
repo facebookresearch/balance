@@ -61,7 +61,7 @@
     <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Doesn&#39;t apply any adjustment to the data. Returns the design weights as they are.</span>
+<span class="w">    </span><span class="sd">"""Doesn't apply any adjustment to the data. Returns the design weights as they are.</span>
 <span class="sd">    This may be useful when one needs the output of Sample.adjust() (i.e.: an adjusted object),</span>
 <span class="sd">    but wishes to not run any model for it.</span>
 
@@ -79,18 +79,18 @@
 
 <span class="sd">        import pandas as pd</span>
 <span class="sd">        from balance.weighting_methods.adjust_null import adjust_null</span>
-<span class="sd">        sample_df = pd.DataFrame({&quot;x&quot;: [0, 1]})</span>
-<span class="sd">        target_df = pd.DataFrame({&quot;x&quot;: [0, 1]})</span>
+<span class="sd">        sample_df = pd.DataFrame({"x": [0, 1]})</span>
+<span class="sd">        target_df = pd.DataFrame({"x": [0, 1]})</span>
 <span class="sd">        weights = pd.Series([1.0, 2.0])</span>
 <span class="sd">        result = adjust_null(sample_df, weights, target_df, weights)</span>
-<span class="sd">        result[&quot;model&quot;][&quot;method&quot;]</span>
-<span class="sd">        # &#39;null_adjustment&#39;</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        result["model"]["method"]</span>
+<span class="sd">        # 'null_adjustment'</span>
+<span class="sd">    """</span>
 
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">sample_weights</span><span class="p">,</span>
-        <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;null_adjustment&quot;</span><span class="p">,</span>
+        <span class="s2">"weight"</span><span class="p">:</span> <span class="n">sample_weights</span><span class="p">,</span>
+        <span class="s2">"model"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"method"</span><span class="p">:</span> <span class="s2">"null_adjustment"</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">}</span></div>
 

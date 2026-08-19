@@ -60,9 +60,9 @@
 
 <span class="c1"># pyrefly: ignore [unknown-name]</span>
 <span class="k">global</span> <span class="n">__version__</span>
-<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.23.0&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">"0.23.0"</span>
 
-<span class="n">WELCOME_MESSAGE</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="n">WELCOME_MESSAGE</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
 <span class="s2">balance (Version </span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">) loaded:</span>
 <span class="s2">    📖 Documentation: https://import-balance.org/</span>
 <span class="s2">    🛠️ Help / Issues: https://github.com/facebookresearch/balance/issues/</span>
@@ -72,17 +72,17 @@
 <span class="s2">        https://arxiv.org/abs/2307.06024</span>
 
 <span class="s2">    Tip: You can view this message anytime with balance.help()</span>
-<span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">"""</span>
 
 
 <div class="viewcode-block" id="help">
 <a class="viewcode-back" href="../balance.html#balance.help">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">help</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Display information about documentation, help, and citation.</span>
+<span class="w">    </span><span class="sd">"""Display information about documentation, help, and citation.</span>
 
 <span class="sd">    This function provides users with quick access to important resources</span>
 <span class="sd">    including documentation links, issue tracking, and citation information.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">WELCOME_MESSAGE</span><span class="p">)</span></div>
 
 
@@ -91,12 +91,12 @@
 <a class="viewcode-back" href="../balance.html#balance.setup_logging">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">setup_logging</span><span class="p">(</span>
     <span class="n">logger_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">__package__</span><span class="p">,</span>
-    <span class="n">level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;INFO&quot;</span><span class="p">,</span>
+    <span class="n">level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"INFO"</span><span class="p">,</span>
     <span class="n">removeHandler</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Initiates a nicely formatted logger called &quot;balance&quot;, with level &quot;info&quot;.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Initiates a nicely formatted logger called "balance", with level "info".</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">removeHandler</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">handler</span> <span class="ow">in</span> <span class="n">logging</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">handlers</span><span class="p">[:]:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">removeHandler</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
@@ -105,7 +105,7 @@
 
     <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">logging</span><span class="p">,</span> <span class="n">level</span><span class="p">))</span>
     <span class="n">formatter</span> <span class="o">=</span> <span class="n">TruncationFormatter</span><span class="p">(</span>
-        <span class="s2">&quot;</span><span class="si">%(levelname)s</span><span class="s2"> (</span><span class="si">%(asctime)s</span><span class="s2">) [</span><span class="si">%(module)s</span><span class="s2">/</span><span class="si">%(funcName)s</span><span class="s2"> (line </span><span class="si">%(lineno)d</span><span class="s2">)]: </span><span class="si">%(message)s</span><span class="s2">&quot;</span>
+        <span class="s2">"</span><span class="si">%(levelname)s</span><span class="s2"> (</span><span class="si">%(asctime)s</span><span class="s2">) [</span><span class="si">%(module)s</span><span class="s2">/</span><span class="si">%(funcName)s</span><span class="s2"> (line </span><span class="si">%(lineno)d</span><span class="s2">)]: </span><span class="si">%(message)s</span><span class="s2">"</span>
     <span class="p">)</span>
     <span class="n">handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
     <span class="n">handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
@@ -116,7 +116,7 @@
 
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">setup_logging</span><span class="p">()</span>
-<span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using </span><span class="si">{</span><span class="n">__package__</span><span class="si">}</span><span class="s2"> version </span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Using </span><span class="si">{</span><span class="n">__package__</span><span class="si">}</span><span class="s2"> version </span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 <span class="c1"># Log the welcome/help/citation message on import (use logger.info instead</span>
 <span class="c1"># of print to avoid unwanted output when balance is imported in production</span>
@@ -124,7 +124,7 @@
 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">WELCOME_MESSAGE</span><span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">set_warnings</span><span class="p">(</span><span class="n">level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;WARNING&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_warnings</span><span class="p">(</span><span class="n">level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"WARNING"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">logging</span><span class="p">,</span> <span class="n">level</span><span class="p">))</span>
 </pre></div>
 

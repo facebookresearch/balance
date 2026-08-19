@@ -78,34 +78,34 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_ordered_unique_missing_columns</span><span class="p">(</span>
     <span class="n">requested_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">existing_columns</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return missing requested columns (deduplicated, original order preserved).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Return missing requested columns (deduplicated, original order preserved)."""</span>
     <span class="n">existing_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">existing_columns</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">requested_columns</span><span class="p">)</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">existing_set</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="formula_generator">
 <a class="viewcode-back" href="../../../balance.util.html#balance.util.formula_generator">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">formula_generator</span><span class="p">(</span><span class="n">variables</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">formula_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;additive&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create formula to build the model matrix</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">formula_generator</span><span class="p">(</span><span class="n">variables</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">formula_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"additive"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Create formula to build the model matrix</span>
 <span class="sd">        Default is additive formula.</span>
 <span class="sd">    Args:</span>
 <span class="sd">        variables: list with names of variables (as strings) to combine into a formula</span>
-<span class="sd">        formula_type (str, optional): how to construct the formula. Currently only &quot;additive&quot; is supported. Defaults to &quot;additive&quot;.</span>
+<span class="sd">        formula_type (str, optional): how to construct the formula. Currently only "additive" is supported. Defaults to "additive".</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        Exception: &quot;This formula type is not supported.&#39;&quot; &quot;Please provide a string formula&quot;</span>
+<span class="sd">        Exception: "This formula type is not supported.'" "Please provide a string formula"</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: A string representing the formula</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">formula_type</span> <span class="o">==</span> <span class="s2">&quot;additive&quot;</span><span class="p">:</span>
-        <span class="n">rhs_formula</span> <span class="o">=</span> <span class="s2">&quot; + &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">formula_type</span> <span class="o">==</span> <span class="s2">"additive"</span><span class="p">:</span>
+        <span class="n">rhs_formula</span> <span class="o">=</span> <span class="s2">" + "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;This formula type is not supported.&#39;Please provide a string formula&quot;</span>
+            <span class="s2">"This formula type is not supported.'Please provide a string formula"</span>
         <span class="p">)</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Model default formula: </span><span class="si">{</span><span class="n">rhs_formula</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Model default formula: </span><span class="si">{</span><span class="n">rhs_formula</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">rhs_formula</span></div>
 
 
@@ -113,40 +113,40 @@
 <div class="viewcode-block" id="dot_expansion">
 <a class="viewcode-back" href="../../../balance.util.html#balance.util.dot_expansion">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">dot_expansion</span><span class="p">(</span><span class="n">formula</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">variables</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a formula string by replacing &quot;.&quot; with &quot;summing&quot; all the variables,</span>
+<span class="w">    </span><span class="sd">"""Build a formula string by replacing "." with "summing" all the variables,</span>
 <span class="sd">    If no dot appears, returns the formula as is.</span>
 
-<span class="sd">    This function is named for the &#39;dot&#39; operators in R, where a formula given</span>
-<span class="sd">    as &#39; ~ .&#39; means &quot;use all variables in dataframe.</span>
+<span class="sd">    This function is named for the 'dot' operators in R, where a formula given</span>
+<span class="sd">    as ' ~ .' means "use all variables in dataframe.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        formula: The formula to expand.</span>
 <span class="sd">        variables (List): List of all variables in the dataframe we build the formula for.</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        Exception: &quot;Variables should not be empty. Please provide a list of strings.&quot;</span>
-<span class="sd">        Exception:  &quot;Variables should be a list of strings and have to be included.&quot;</span>
+<span class="sd">        Exception: "Variables should not be empty. Please provide a list of strings."</span>
+<span class="sd">        Exception:  "Variables should be a list of strings and have to be included."</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        A string formula replacing the &#39;.&#39;&#39; with all variables in variables.</span>
-<span class="sd">        If no &#39;.&#39; is present, then the original formula is returned as is.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        A string formula replacing the '.'' with all variables in variables.</span>
+<span class="sd">        If no '.' is present, then the original formula is returned as is.</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="s2">&quot;Variables should not be empty. Please provide a list of strings.&quot;</span>
+            <span class="s2">"Variables should not be empty. Please provide a list of strings."</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="s2">&quot;Variables should be a list of strings and have to be included.&quot;</span>
-            <span class="s2">&quot;Please provide a list of your variables. If you would like to use all variables in&quot;</span>
-            <span class="s2">&quot;a dataframe, insert variables = list(df.columns)&quot;</span>
+            <span class="s2">"Variables should be a list of strings and have to be included."</span>
+            <span class="s2">"Please provide a list of your variables. If you would like to use all variables in"</span>
+            <span class="s2">"a dataframe, insert variables = list(df.columns)"</span>
         <span class="p">)</span>
-    <span class="k">if</span> <span class="n">formula</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">formula</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"."</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
         <span class="n">rhs</span> <span class="o">=</span> <span class="n">formula</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">dot</span> <span class="o">=</span> <span class="s2">&quot;(&quot;</span> <span class="o">+</span> <span class="s2">&quot;+&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
-        <span class="n">rhs</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">formula</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">dot</span><span class="p">)</span>
+        <span class="n">dot</span> <span class="o">=</span> <span class="s2">"("</span> <span class="o">+</span> <span class="s2">"+"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">)</span> <span class="o">+</span> <span class="s2">")"</span>
+        <span class="n">rhs</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">formula</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"."</span><span class="p">,</span> <span class="n">dot</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">rhs</span></div>
 
 
@@ -154,7 +154,7 @@
 <div class="viewcode-block" id="one_hot_encoding_greater_2">
 <a class="viewcode-back" href="../../../balance.util.html#balance.util.one_hot_encoding_greater_2">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">one_hot_encoding_greater_2</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This class creates a special encoding for factor variable to be used in a LASSO model.</span>
 <span class="sd">    For variables with exactly two levels using this in dmatrix will only keep one level, i.e.</span>
 <span class="sd">    will create one column with a 0 or 1 indicator for one of the levels. The level kept will</span>
@@ -167,7 +167,7 @@
 <span class="sd">    # https://stats.stackexchange.com/questions/69804/group-categorical-variables-in-glmnet/107958#107958</span>
 <span class="sd">    3. Source code: adaptation of</span>
 <span class="sd">    # https://patsy.readthedocs.io/en/latest/categorical-coding.html</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reference</span> <span class="o">=</span> <span class="n">reference</span>
@@ -183,13 +183,13 @@
                 <span class="p">)</span>
             <span class="p">)</span>
             <span class="n">suffixes</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2">]&quot;</span>
+                <span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2">]"</span>
                 <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">levels</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="p">]</span> <span class="o">+</span> <span class="n">levels</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">reference</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span>
             <span class="p">]</span>
             <span class="n">contrasts_mat</span> <span class="o">=</span> <span class="n">ContrastMatrix</span><span class="p">(</span><span class="n">contrasts</span><span class="p">,</span> <span class="n">suffixes</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">contrasts_mat</span> <span class="o">=</span> <span class="n">ContrastMatrix</span><span class="p">(</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">levels</span><span class="p">)),</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2">]&quot;</span> <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">levels</span><span class="p">]</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">levels</span><span class="p">)),</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2">]"</span> <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">levels</span><span class="p">]</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">contrasts_mat</span>
 
@@ -203,7 +203,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">process_formula</span><span class="p">(</span>
     <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">variables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">factor_variables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModelDesc</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Process a formula string:</span>
+<span class="w">    </span><span class="sd">"""Process a formula string:</span>
 <span class="sd">        1. Expand .  notation using dot_expansion function</span>
 <span class="sd">        2. Remove intercept (if using ipw, it will be added automatically by sklearn)</span>
 <span class="sd">        3. If factor_variables is not None, one_hot_encoding_greater_2 is applied</span>
@@ -224,18 +224,18 @@
 <span class="sd">            column for variables with 2 levels (treatment contrast).</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        Exception: &quot;Not all factor variables are contained in variables&quot;</span>
+<span class="sd">        Exception: "Not all factor variables are contained in variables"</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        a ModelDesc object to build a model matrix using patsy.dmatrix.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Check all factor variables are in variables:</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">factor_variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">factor_variables</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">)):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Not all factor variables are contained in variables&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Not all factor variables are contained in variables"</span><span class="p">)</span>
 
     <span class="n">formula</span> <span class="o">=</span> <span class="n">dot_expansion</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">variables</span><span class="p">)</span>
     <span class="c1"># Remove the intercept since it is added by sklearn/cbps</span>
-    <span class="n">formula</span> <span class="o">=</span> <span class="n">formula</span> <span class="o">+</span> <span class="s2">&quot; -1&quot;</span>
+    <span class="n">formula</span> <span class="o">=</span> <span class="n">formula</span> <span class="o">+</span> <span class="s2">" -1"</span>
     <span class="n">desc</span> <span class="o">=</span> <span class="n">ModelDesc</span><span class="o">.</span><span class="n">from_formula</span><span class="p">(</span><span class="n">formula</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">factor_variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -247,14 +247,14 @@
                     <span class="n">var</span> <span class="o">=</span> <span class="n">desc</span><span class="o">.</span><span class="n">rhs_termlist</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">factors</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">code</span>
                     <span class="n">desc</span><span class="o">.</span><span class="n">rhs_termlist</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">factors</span><span class="p">[</span>
                         <span class="n">j</span>
-                    <span class="p">]</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;C(</span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2">, one_hot_encoding_greater_2)&quot;</span>
+                    <span class="p">]</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"C(</span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2">, one_hot_encoding_greater_2)"</span>
 
     <span class="k">return</span> <span class="n">desc</span></div>
 
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_stringify_categorical_values</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a categorical series with string labels for patsy.</span>
+<span class="w">    </span><span class="sd">"""Return a categorical series with string labels for patsy.</span>
 
 <span class="sd">    ``patsy`` uses ``repr``-like labels for some non-string categorical levels</span>
 <span class="sd">    (notably pandas ``Interval`` objects), which can make downstream column</span>
@@ -265,9 +265,9 @@
 <span class="sd">    The return value keeps categorical dtype so patsy can still see unused</span>
 <span class="sd">    levels after row filtering. When stringification is one-to-one, categories</span>
 <span class="sd">    are renamed directly. When distinct Python objects stringify to the same</span>
-<span class="sd">    value (for example ``1`` and ``&quot;1&quot;``), the values are stringified and then</span>
+<span class="sd">    value (for example ``1`` and ``"1"``), the values are stringified and then</span>
 <span class="sd">    rebuilt as a categorical series with the de-duplicated string category list;</span>
-<span class="sd">    this avoids pandas&#39; category-uniqueness constraint while preserving the</span>
+<span class="sd">    this avoids pandas' category-uniqueness constraint while preserving the</span>
 <span class="sd">    intended level set as far as string labels can represent it.</span>
 
 <span class="sd">    Args:</span>
@@ -283,26 +283,26 @@
 <span class="sd">    Examples:</span>
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">        &gt;&gt;&gt; intervals = pd.cut(pd.Series([0.1, 0.4]), [0, 0.25, 0.5])</span>
-<span class="sd">        &gt;&gt;&gt; print(&quot;before:&quot;, type(intervals.cat.categories[0]).__name__)</span>
+<span class="sd">        &gt;&gt;&gt; print("before:", type(intervals.cat.categories[0]).__name__)</span>
 <span class="sd">        before: Interval</span>
 <span class="sd">        &gt;&gt;&gt; out = _stringify_categorical_values(intervals)</span>
-<span class="sd">        &gt;&gt;&gt; print(&quot;after:&quot;, type(out.cat.categories[0]).__name__)</span>
+<span class="sd">        &gt;&gt;&gt; print("after:", type(out.cat.categories[0]).__name__)</span>
 <span class="sd">        after: str</span>
 <span class="sd">        &gt;&gt;&gt; out.cat.categories.tolist() == [str(x) for x in intervals.cat.categories]</span>
 <span class="sd">        True</span>
 <span class="sd">        &gt;&gt;&gt; duplicate = pd.Series(</span>
-<span class="sd">        ...     pd.Categorical([1, &quot;1&quot;], categories=[1, &quot;1&quot;, 2], ordered=True)</span>
+<span class="sd">        ...     pd.Categorical([1, "1"], categories=[1, "1", 2], ordered=True)</span>
 <span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; out = _stringify_categorical_values(duplicate)</span>
 <span class="sd">        &gt;&gt;&gt; out.cat.categories.tolist()</span>
-<span class="sd">        [&#39;1&#39;, &#39;2&#39;]</span>
+<span class="sd">        ['1', '2']</span>
 <span class="sd">        &gt;&gt;&gt; out.cat.ordered</span>
 <span class="sd">        True</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="s2">&quot;_stringify_categorical_values expects a pandas Series with &quot;</span>
-            <span class="s2">&quot;CategoricalDtype&quot;</span>
+            <span class="s2">"_stringify_categorical_values expects a pandas Series with "</span>
+            <span class="s2">"CategoricalDtype"</span>
         <span class="p">)</span>
 
     <span class="n">stringified_categories</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">category</span><span class="p">)</span> <span class="k">for</span> <span class="n">category</span> <span class="ow">in</span> <span class="n">series</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">categories</span><span class="p">]</span>
@@ -326,16 +326,16 @@
 <a class="viewcode-back" href="../../../balance.util.html#balance.util.build_model_matrix">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">build_model_matrix</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-    <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span>
+    <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"."</span><span class="p">,</span>
     <span class="n">factor_variables</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">return_sparse</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a model matrix from a formula (using patsy.dmatrix)</span>
+<span class="w">    </span><span class="sd">"""Build a model matrix from a formula (using patsy.dmatrix)</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        df (pd.DataFrame): The data from which to create the model matrix (pandas dataframe)</span>
 <span class="sd">        formula (str, optional): a string representing the formula to use for building the model matrix.</span>
-<span class="sd">                Default is additive formula with all variables in df. Defaults to &quot;.&quot;.</span>
+<span class="sd">                Default is additive formula with all variables in df. Defaults to ".".</span>
 <span class="sd">        factor_variables (LisOptional[List]t, optional): list of names of factor variables that we use</span>
 <span class="sd">                         one_hot_encoding_greater_2 for.</span>
 <span class="sd">                         Default is None, in which case no special contrasts are applied</span>
@@ -347,31 +347,31 @@
 <span class="sd">        return_sparse (bool, optional): whether to return a sparse matrix using scipy.sparse.csc_matrix. Defaults to False.</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        Exception: &quot;Variable names cannot contain characters &#39;[&#39; or &#39;]&#39;&quot;</span>
-<span class="sd">        Exception: &quot;Not all factor variables are contained in df&quot;</span>
+<span class="sd">        Exception: "Variable names cannot contain characters '[' or ']'"</span>
+<span class="sd">        Exception: "Not all factor variables are contained in df"</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, Any]:     A dictionary of 2 elements:</span>
 <span class="sd">            1. model_matrix - this is a pd dataframe or a csc_matrix (depends on return_sparse), ordered by columns names</span>
 <span class="sd">            2. model_matrix_columns - A list of the columns names of model_matrix</span>
 <span class="sd">            (We include model_matrix_columns as a separate argument since if we return a sparse X_matrix,</span>
-<span class="sd">            it doesn&#39;t have a columns names argument and these need to be kept separately,</span>
+<span class="sd">            it doesn't have a columns names argument and these need to be kept separately,</span>
 <span class="sd">            see here:</span>
 <span class="sd">            https://stackoverflow.com/questions/35086940/how-can-i-give-row-and-column-names-to-scipys-csr-matrix.)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
 
-    <span class="n">bracket_variables</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">variables</span> <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;[&quot;</span> <span class="ow">in</span> <span class="n">v</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="s2">&quot;]&quot;</span> <span class="ow">in</span> <span class="n">v</span><span class="p">)]</span>
+    <span class="n">bracket_variables</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">variables</span> <span class="k">if</span> <span class="p">(</span><span class="s2">"["</span> <span class="ow">in</span> <span class="n">v</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="s2">"]"</span> <span class="ow">in</span> <span class="n">v</span><span class="p">)]</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bracket_variables</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;Variable names cannot contain characters &#39;[&#39; or &#39;]&#39;&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;because patsy uses them to denote one-hot encoded categoricals: (</span><span class="si">{</span><span class="n">bracket_variables</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="s2">"Variable names cannot contain characters '[' or ']'"</span>
+            <span class="sa">f</span><span class="s2">"because patsy uses them to denote one-hot encoded categoricals: (</span><span class="si">{</span><span class="n">bracket_variables</span><span class="si">}</span><span class="s2">)"</span>
         <span class="p">)</span>
 
     <span class="c1"># Check all factor variables are in variables:</span>
     <span class="k">if</span> <span class="n">factor_variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">factor_variables</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Not all factor variables are contained in df&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Not all factor variables are contained in df"</span><span class="p">)</span>
 
     <span class="n">model_desc</span> <span class="o">=</span> <span class="n">process_formula</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">factor_variables</span><span class="p">)</span>
     <span class="c1"># Keep patsy-specific dtype coercions local to this call. ``model_matrix``</span>
@@ -383,29 +383,29 @@
         <span class="k">if</span> <span class="n">is_numeric_dtype</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">])</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_bool_dtype</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">]):</span>
             <span class="c1"># dmatrix cannot get Int64Dtype as data type.</span>
             <span class="c1"># Hence converting all numeric columns to float64.</span>
-            <span class="n">coerced_columns</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+            <span class="n">coerced_columns</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float64"</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">):</span>
             <span class="n">coerced_columns</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">_stringify_categorical_values</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">])</span>
 
     <span class="k">if</span> <span class="n">coerced_columns</span><span class="p">:</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="o">**</span><span class="n">coerced_columns</span><span class="p">)</span>
 
-    <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">dmatrix</span><span class="p">(</span><span class="n">model_desc</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;dataframe&quot;</span><span class="p">)</span>
+    <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">dmatrix</span><span class="p">(</span><span class="n">model_desc</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">"dataframe"</span><span class="p">)</span>
     <span class="c1"># Sorting the output in order to eliminate edge cases that cause column order to be stochastic</span>
     <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">X_matrix</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;X_matrix shape: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"X_matrix shape: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">X_matrix_columns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">return_sparse</span><span class="p">:</span>
         <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">csc_matrix</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">:</span> <span class="n">X_matrix</span><span class="p">,</span> <span class="s2">&quot;model_matrix_columns&quot;</span><span class="p">:</span> <span class="n">X_matrix_columns</span><span class="p">}</span></div>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"model_matrix"</span><span class="p">:</span> <span class="n">X_matrix</span><span class="p">,</span> <span class="s2">"model_matrix_columns"</span><span class="p">:</span> <span class="n">X_matrix_columns</span><span class="p">}</span></div>
 
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_concat_frames</span><span class="p">(</span>
     <span class="n">sample_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a combined DataFrame from sample/target, skipping empty inputs.</span>
+<span class="w">    </span><span class="sd">"""Return a combined DataFrame from sample/target, skipping empty inputs.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        sample_df: The sample DataFrame (must be non-empty).</span>
@@ -414,7 +414,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        A DataFrame containing the concatenated rows or a copy of the single</span>
 <span class="sd">        non-empty frame.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">frames</span> <span class="o">=</span> <span class="p">[</span><span class="n">df</span> <span class="k">for</span> <span class="n">df</span> <span class="ow">in</span> <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">)</span> <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">]</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">frames</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -428,7 +428,7 @@
     <span class="n">add_na</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">fix_columns_names</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to model_matrix. Prepare and check input of sample and target:</span>
+<span class="w">    </span><span class="sd">"""Helper function to model_matrix. Prepare and check input of sample and target:</span>
 <span class="sd">        - Choose joint variables to sample and target (or by given variables)</span>
 <span class="sd">        - Extract sample and target dataframes</span>
 <span class="sd">        - Concat dataframes together</span>
@@ -465,17 +465,17 @@
 <span class="sd">            sample has zero rows.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Dict[str, Any]: returns a dictionary containing two keys: &#39;all_data&#39; and &#39;sample_n&#39;.</span>
-<span class="sd">            The &#39;all_data&#39; is a pd.DataFrame with all the rows of &#39;sample&#39; (including &#39;target&#39;, if supplied)</span>
-<span class="sd">            The&#39;sample_n&#39; is the number of rows in the first input DataFrame (&#39;sample&#39;).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        Dict[str, Any]: returns a dictionary containing two keys: 'all_data' and 'sample_n'.</span>
+<span class="sd">            The 'all_data' is a pd.DataFrame with all the rows of 'sample' (including 'target', if supplied)</span>
+<span class="sd">            The'sample_n' is the number of rows in the first input DataFrame ('sample').</span>
+<span class="sd">    """</span>
     <span class="n">variables</span> <span class="o">=</span> <span class="n">choose_variables</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">)</span>
 
-    <span class="n">bracket_variables</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">variables</span> <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;[&quot;</span> <span class="ow">in</span> <span class="n">v</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="s2">&quot;]&quot;</span> <span class="ow">in</span> <span class="n">v</span><span class="p">)]</span>
+    <span class="n">bracket_variables</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">variables</span> <span class="k">if</span> <span class="p">(</span><span class="s2">"["</span> <span class="ow">in</span> <span class="n">v</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="s2">"]"</span> <span class="ow">in</span> <span class="n">v</span><span class="p">)]</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bracket_variables</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;Variable names cannot contain characters &#39;[&#39; or &#39;]&#39;&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;because patsy uses them to denote one-hot encoded categoricals: (</span><span class="si">{</span><span class="n">bracket_variables</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="s2">"Variable names cannot contain characters '[' or ']'"</span>
+            <span class="sa">f</span><span class="s2">"because patsy uses them to denote one-hot encoded categoricals: (</span><span class="si">{</span><span class="n">bracket_variables</span><span class="si">}</span><span class="s2">)"</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">_isinstance_sample</span><span class="p">(</span><span class="n">sample</span><span class="p">):</span>
@@ -483,7 +483,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample</span>
     <span class="k">if</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;sample must have more than zero rows&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"sample must have more than zero rows"</span><span class="p">)</span>
     <span class="c1"># NOTE: .copy() not needed as it is copied anyway in _concat_frames</span>
     <span class="n">sample_n</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
@@ -501,16 +501,16 @@
         <span class="n">all_data</span> <span class="o">=</span> <span class="n">_concat_frames</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">)</span>
         <span class="n">all_data</span> <span class="o">=</span> <span class="n">add_na_indicator</span><span class="p">(</span><span class="n">all_data</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Dropping all rows with NAs&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Dropping all rows with NAs"</span><span class="p">)</span>
         <span class="n">target_was_all_na</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">if</span> <span class="n">target_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">target_df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">how</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">target_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">target_df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">how</span><span class="o">=</span><span class="s2">"all"</span><span class="p">)</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
             <span class="n">target_was_all_na</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">target_df</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">all_data</span> <span class="o">=</span> <span class="n">_concat_frames</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">target_was_all_na</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Dropping rows led to empty target. Consider using add_na=True to add &quot;</span>
-                <span class="s2">&quot;NA indicator columns instead of dropping rows.&quot;</span>
+                <span class="s2">"Dropping rows led to empty target. Consider using add_na=True to add "</span>
+                <span class="s2">"NA indicator columns instead of dropping rows."</span>
             <span class="p">)</span>
         <span class="n">category_levels</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">all_data</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
@@ -523,16 +523,16 @@
         <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Dropping rows led to empty sample. Consider using add_na=True to add &quot;</span>
-                <span class="s2">&quot;NA indicator columns instead of dropping rows.&quot;</span>
+                <span class="s2">"Dropping rows led to empty sample. Consider using add_na=True to add "</span>
+                <span class="s2">"NA indicator columns instead of dropping rows."</span>
             <span class="p">)</span>
         <span class="n">sample_n</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">target_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">target_df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Dropping rows led to empty target. Consider using add_na=True to add &quot;</span>
-                    <span class="s2">&quot;NA indicator columns instead of dropping rows.&quot;</span>
+                    <span class="s2">"Dropping rows led to empty target. Consider using add_na=True to add "</span>
+                    <span class="s2">"NA indicator columns instead of dropping rows."</span>
                 <span class="p">)</span>
         <span class="k">if</span> <span class="n">category_levels</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">levels</span> <span class="ow">in</span> <span class="n">category_levels</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -548,11 +548,11 @@
 
     <span class="k">if</span> <span class="n">fix_columns_names</span><span class="p">:</span>
         <span class="n">all_data</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">all_data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-            <span class="sa">r</span><span class="s2">&quot;[^\w]&quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">True</span>
+            <span class="sa">r</span><span class="s2">"[^\w]"</span><span class="p">,</span> <span class="s2">"_"</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span><span class="o">.</span><span class="n">infer_objects</span><span class="p">()</span>
         <span class="n">all_data</span> <span class="o">=</span> <span class="n">_make_df_column_names_unique</span><span class="p">(</span><span class="n">all_data</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;all_data&quot;</span><span class="p">:</span> <span class="n">all_data</span><span class="p">,</span> <span class="s2">&quot;sample_n&quot;</span><span class="p">:</span> <span class="n">sample_n</span><span class="p">}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"all_data"</span><span class="p">:</span> <span class="n">all_data</span><span class="p">,</span> <span class="s2">"sample_n"</span><span class="p">:</span> <span class="n">sample_n</span><span class="p">}</span>
 
 
 <div class="viewcode-block" id="model_matrix">
@@ -562,28 +562,28 @@
     <span class="n">target</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">variables</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">add_na</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">return_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;two&quot;</span><span class="p">,</span>
-    <span class="n">return_var_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;dataframe&quot;</span><span class="p">,</span>
+    <span class="n">return_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"two"</span><span class="p">,</span>
+    <span class="n">return_var_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"dataframe"</span><span class="p">,</span>
     <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">penalty_factor</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">one_hot_encoding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">csc_matrix</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a model matrix from a sample (and target).</span>
+<span class="w">    </span><span class="sd">"""Create a model matrix from a sample (and target).</span>
 <span class="sd">    The default is to use an additive formula for all variables (or the ones specified).</span>
 <span class="sd">    Can also create a custom model matrix if a formula is provided.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Starting building the model matrix&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Starting building the model matrix"</span><span class="p">)</span>
     <span class="n">input_data</span> <span class="o">=</span> <span class="n">_prepare_input_model_matrix</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">add_na</span><span class="p">)</span>
-    <span class="n">all_data</span> <span class="o">=</span> <span class="n">input_data</span><span class="p">[</span><span class="s2">&quot;all_data&quot;</span><span class="p">]</span>
-    <span class="n">sample_n</span> <span class="o">=</span> <span class="n">input_data</span><span class="p">[</span><span class="s2">&quot;sample_n&quot;</span><span class="p">]</span>
+    <span class="n">all_data</span> <span class="o">=</span> <span class="n">input_data</span><span class="p">[</span><span class="s2">"all_data"</span><span class="p">]</span>
+    <span class="n">sample_n</span> <span class="o">=</span> <span class="n">input_data</span><span class="p">[</span><span class="s2">"sample_n"</span><span class="p">]</span>
 
     <span class="c1"># Arrange formula</span>
     <span class="k">if</span> <span class="n">formula</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># if no formula is provided, we create an additive formula from available columns</span>
-        <span class="n">formula</span> <span class="o">=</span> <span class="n">formula_generator</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">all_data</span><span class="o">.</span><span class="n">columns</span><span class="p">),</span> <span class="n">formula_type</span><span class="o">=</span><span class="s2">&quot;additive&quot;</span><span class="p">)</span>
+        <span class="n">formula</span> <span class="o">=</span> <span class="n">formula_generator</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">all_data</span><span class="o">.</span><span class="n">columns</span><span class="p">),</span> <span class="n">formula_type</span><span class="o">=</span><span class="s2">"additive"</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
         <span class="n">formula</span> <span class="o">=</span> <span class="p">[</span><span class="n">formula</span><span class="p">]</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The formula used to build the model matrix: </span><span class="si">{</span><span class="n">formula</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The formula used to build the model matrix: </span><span class="si">{</span><span class="n">formula</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="c1"># If formula is given we rely on patsy formula checker to check it.</span>
 
     <span class="c1"># Arrange penalty factor</span>
@@ -591,15 +591,15 @@
         <span class="n">penalty_factor</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">formula</span><span class="p">)</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">formula</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span>
         <span class="n">penalty_factor</span>
-    <span class="p">),</span> <span class="s2">&quot;penalty factor and formula must have the same length&quot;</span>
+    <span class="p">),</span> <span class="s2">"penalty factor and formula must have the same length"</span>
 
     <span class="c1"># Arrange factor variables</span>
     <span class="k">if</span> <span class="n">one_hot_encoding</span><span class="p">:</span>
         <span class="n">factor_variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
-            <span class="n">all_data</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">([</span><span class="s2">&quot;category&quot;</span><span class="p">,</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;boolean&quot;</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span>
+            <span class="n">all_data</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">([</span><span class="s2">"category"</span><span class="p">,</span> <span class="s2">"string"</span><span class="p">,</span> <span class="s2">"boolean"</span><span class="p">,</span> <span class="s2">"object"</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span>
         <span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;These variables will be encoded using one-hot encoding: </span><span class="si">{</span><span class="n">factor_variables</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"These variables will be encoded using one-hot encoding: </span><span class="si">{</span><span class="n">factor_variables</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">factor_variables</span> <span class="o">=</span> <span class="kc">None</span>
@@ -608,53 +608,53 @@
     <span class="n">X_matrix_columns</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">pf</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">formula_item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">formula</span><span class="p">):</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Building model matrix for formula item </span><span class="si">{</span><span class="n">formula_item</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Building model matrix for formula item </span><span class="si">{</span><span class="n">formula_item</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="n">model_matrix_result</span> <span class="o">=</span> <span class="n">build_model_matrix</span><span class="p">(</span>
             <span class="n">all_data</span><span class="p">,</span>
             <span class="n">formula_item</span><span class="p">,</span>
             <span class="n">factor_variables</span><span class="o">=</span><span class="n">factor_variables</span><span class="p">,</span>
-            <span class="n">return_sparse</span><span class="o">=</span><span class="p">(</span><span class="n">return_var_type</span> <span class="o">==</span> <span class="s2">&quot;sparse&quot;</span><span class="p">),</span>
+            <span class="n">return_sparse</span><span class="o">=</span><span class="p">(</span><span class="n">return_var_type</span> <span class="o">==</span> <span class="s2">"sparse"</span><span class="p">),</span>
         <span class="p">)</span>
         <span class="n">X_matrix_columns</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">X_matrix_columns</span> <span class="o">+</span> <span class="n">model_matrix_result</span><span class="p">[</span><span class="s2">&quot;model_matrix_columns&quot;</span><span class="p">]</span>
+            <span class="n">X_matrix_columns</span> <span class="o">+</span> <span class="n">model_matrix_result</span><span class="p">[</span><span class="s2">"model_matrix_columns"</span><span class="p">]</span>
         <span class="p">)</span>
-        <span class="n">X_matrix</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model_matrix_result</span><span class="p">[</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">])</span>
+        <span class="n">X_matrix</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model_matrix_result</span><span class="p">[</span><span class="s2">"model_matrix"</span><span class="p">])</span>
         <span class="n">pf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span>
                 <span class="n">penalty_factor</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span>
-                <span class="n">model_matrix_result</span><span class="p">[</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">model_matrix_result</span><span class="p">[</span><span class="s2">"model_matrix"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
                 <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="p">)</span>
 
     <span class="n">penalty_factor_updated</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">pf</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">return_var_type</span> <span class="o">==</span> <span class="s2">&quot;sparse&quot;</span><span class="p">:</span>
-        <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">hstack</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;csc&quot;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">return_var_type</span> <span class="o">==</span> <span class="s2">&quot;matrix&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">return_var_type</span> <span class="o">==</span> <span class="s2">"sparse"</span><span class="p">:</span>
+        <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">hstack</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">"csc"</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">return_var_type</span> <span class="o">==</span> <span class="s2">"matrix"</span><span class="p">:</span>
         <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;The number of columns in the model matrix: </span><span class="si">{X_matrix.shape[1]}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;The number of rows in the model matrix: </span><span class="si">{X_matrix.shape[0]}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"The number of columns in the model matrix: </span><span class="si">{X_matrix.shape[1]}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"The number of rows in the model matrix: </span><span class="si">{X_matrix.shape[0]}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;model_matrix_columns_names&quot;</span><span class="p">:</span> <span class="n">X_matrix_columns</span><span class="p">,</span>
-        <span class="s2">&quot;penalty_factor&quot;</span><span class="p">:</span> <span class="n">penalty_factor_updated</span><span class="p">,</span>
-        <span class="s2">&quot;formula&quot;</span><span class="p">:</span> <span class="n">formula</span><span class="p">,</span>
+        <span class="s2">"model_matrix_columns_names"</span><span class="p">:</span> <span class="n">X_matrix_columns</span><span class="p">,</span>
+        <span class="s2">"penalty_factor"</span><span class="p">:</span> <span class="n">penalty_factor_updated</span><span class="p">,</span>
+        <span class="s2">"formula"</span><span class="p">:</span> <span class="n">formula</span><span class="p">,</span>
     <span class="p">}</span>
-    <span class="k">if</span> <span class="n">return_type</span> <span class="o">==</span> <span class="s2">&quot;one&quot;</span><span class="p">:</span>
-        <span class="n">result</span><span class="p">[</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">X_matrix</span>
-    <span class="k">elif</span> <span class="n">return_type</span> <span class="o">==</span> <span class="s2">&quot;two&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">return_type</span> <span class="o">==</span> <span class="s2">"one"</span><span class="p">:</span>
+        <span class="n">result</span><span class="p">[</span><span class="s2">"model_matrix"</span><span class="p">]</span> <span class="o">=</span> <span class="n">X_matrix</span>
+    <span class="k">elif</span> <span class="n">return_type</span> <span class="o">==</span> <span class="s2">"two"</span><span class="p">:</span>
         <span class="n">sample_matrix</span> <span class="o">=</span> <span class="n">X_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">sample_n</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">target_matrix</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">target_matrix</span> <span class="o">=</span> <span class="n">X_matrix</span><span class="p">[</span><span class="n">sample_n</span><span class="p">:]</span>
-        <span class="n">result</span><span class="p">[</span><span class="s2">&quot;sample&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_matrix</span>
-        <span class="n">result</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_matrix</span>
+        <span class="n">result</span><span class="p">[</span><span class="s2">"sample"</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_matrix</span>
+        <span class="n">result</span><span class="p">[</span><span class="s2">"target"</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_matrix</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Finished building the model matrix&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Finished building the model matrix"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">result</span></div>
 
 
@@ -685,13 +685,13 @@
     <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">project_to_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_MatrixBuildResult</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Holdout path: build model matrix and project to stored fit-time columns.&quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;drop&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Holdout path: build model matrix and project to stored fit-time columns."""</span>
+    <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">"drop"</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;Recomputing stored IPW artifacts for design_matrix/predict_proba is &quot;</span>
-            <span class="s2">&quot;unsupported when na_action=&#39;drop&#39; because row dropping can &quot;</span>
-            <span class="s2">&quot;change sample/target boundaries. Re-fit with &quot;</span>
-            <span class="s2">&quot;na_action=&#39;add_indicator&#39; or score using matching fit-time rows.&quot;</span>
+            <span class="s2">"Recomputing stored IPW artifacts for design_matrix/predict_proba is "</span>
+            <span class="s2">"unsupported when na_action='drop' because row dropping can "</span>
+            <span class="s2">"change sample/target boundaries. Re-fit with "</span>
+            <span class="s2">"na_action='add_indicator' or score using matching fit-time rows."</span>
         <span class="p">)</span>
 
     <span class="c1"># Pre-add NA indicators so the model matrix sees the same columns</span>
@@ -714,17 +714,17 @@
 
     <span class="n">model_matrix_out</span> <span class="o">=</span> <span class="n">model_matrix</span><span class="p">(</span>
         <span class="n">combined</span><span class="p">,</span>
-        <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;one&quot;</span><span class="p">,</span>
-        <span class="n">return_var_type</span><span class="o">=</span><span class="s2">&quot;sparse&quot;</span><span class="p">,</span>
+        <span class="n">return_type</span><span class="o">=</span><span class="s2">"one"</span><span class="p">,</span>
+        <span class="n">return_var_type</span><span class="o">=</span><span class="s2">"sparse"</span><span class="p">,</span>
         <span class="n">formula</span><span class="o">=</span><span class="n">formula</span><span class="p">,</span>
         <span class="n">one_hot_encoding</span><span class="o">=</span><span class="n">one_hot_encoding</span><span class="p">,</span>
         <span class="n">add_na</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">sparse_matrix</span><span class="p">:</span> <span class="n">csc_matrix</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span>
-        <span class="n">model_matrix_out</span><span class="p">[</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">],</span> <span class="n">csc_matrix</span>
+        <span class="n">model_matrix_out</span><span class="p">[</span><span class="s2">"model_matrix"</span><span class="p">],</span> <span class="n">csc_matrix</span>
     <span class="p">)</span>
     <span class="n">sparse_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span>
-        <span class="n">model_matrix_out</span><span class="p">[</span><span class="s2">&quot;model_matrix_columns_names&quot;</span><span class="p">],</span> <span class="nb">list</span>
+        <span class="n">model_matrix_out</span><span class="p">[</span><span class="s2">"model_matrix_columns_names"</span><span class="p">],</span> <span class="nb">list</span>
     <span class="p">)</span>
 
     <span class="c1"># Project to the stored column set.</span>
@@ -752,7 +752,7 @@
     <span class="c1"># sized vector for consistency.</span>
     <span class="n">penalty_factor_expanded</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">project_to_columns</span><span class="p">)</span>
     <span class="n">resolved_formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
-        <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]],</span> <span class="n">model_matrix_out</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;formula&quot;</span><span class="p">)</span>
+        <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]],</span> <span class="n">model_matrix_out</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"formula"</span><span class="p">)</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="p">(</span>
         <span class="n">combined_matrix</span><span class="p">,</span>
@@ -771,40 +771,40 @@
     <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">penalty_factor</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_MatrixBuildResult</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Training path: build model matrix via formula expansion.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Training path: build model matrix via formula expansion."""</span>
     <span class="n">formula_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="p">[</span><span class="n">formula</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">formula</span>
     <span class="n">model_matrix_output</span> <span class="o">=</span> <span class="n">model_matrix</span><span class="p">(</span>
         <span class="n">sample_covars</span><span class="p">,</span>
         <span class="n">target_covars</span><span class="p">,</span>
-        <span class="n">add_na</span><span class="o">=</span><span class="p">(</span><span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">),</span>
-        <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;one&quot;</span><span class="p">,</span>
-        <span class="n">return_var_type</span><span class="o">=</span><span class="s2">&quot;sparse&quot;</span><span class="p">,</span>
+        <span class="n">add_na</span><span class="o">=</span><span class="p">(</span><span class="n">na_action</span> <span class="o">==</span> <span class="s2">"add_indicator"</span><span class="p">),</span>
+        <span class="n">return_type</span><span class="o">=</span><span class="s2">"one"</span><span class="p">,</span>
+        <span class="n">return_var_type</span><span class="o">=</span><span class="s2">"sparse"</span><span class="p">,</span>
         <span class="n">formula</span><span class="o">=</span><span class="n">formula_list</span><span class="p">,</span>
         <span class="n">penalty_factor</span><span class="o">=</span><span class="n">penalty_factor</span><span class="p">,</span>
         <span class="n">one_hot_encoding</span><span class="o">=</span><span class="n">one_hot_encoding</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">combined_matrix</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">csc_matrix</span><span class="p">]</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
         <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">csc_matrix</span><span class="p">],</span>
-        <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">],</span>
+        <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">"model_matrix"</span><span class="p">],</span>
     <span class="p">)</span>
     <span class="c1"># `_assert_type(..., list)` narrows to `list` without element typing, so</span>
     <span class="c1"># cast to `List[str]` to preserve the expected element type for downstream</span>
     <span class="c1"># callers and for strict Pyre `len()`/iteration checks.</span>
     <span class="n">columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
         <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-        <span class="n">_assert_type</span><span class="p">(</span><span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;model_matrix_columns_names&quot;</span><span class="p">],</span> <span class="nb">list</span><span class="p">),</span>
+        <span class="n">_assert_type</span><span class="p">(</span><span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">"model_matrix_columns_names"</span><span class="p">],</span> <span class="nb">list</span><span class="p">),</span>
     <span class="p">)</span>
     <span class="c1"># model_matrix() stores `penalty_factor` as a 1D np.ndarray of floats; fall</span>
     <span class="c1"># back to a uniform vector when the key is absent. Narrowing via cast is</span>
     <span class="c1"># required because `model_matrix_output` has a broad union value type.</span>
-    <span class="n">penalty_factor_raw</span> <span class="o">=</span> <span class="n">model_matrix_output</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;penalty_factor&quot;</span><span class="p">)</span>
+    <span class="n">penalty_factor_raw</span> <span class="o">=</span> <span class="n">model_matrix_output</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"penalty_factor"</span><span class="p">)</span>
     <span class="n">penalty_factor_expanded</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span>
         <span class="p">[</span><span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">penalty_factor_raw</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">penalty_factor_raw</span><span class="p">))</span>
     <span class="p">)</span>
     <span class="n">resolved_formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
-        <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]],</span> <span class="n">model_matrix_output</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;formula&quot;</span><span class="p">)</span>
+        <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]],</span> <span class="n">model_matrix_output</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"formula"</span><span class="p">)</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">combined_matrix</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">penalty_factor_expanded</span><span class="p">,</span> <span class="n">resolved_formula</span>
 
@@ -815,13 +815,13 @@
     <span class="o">*</span><span class="p">,</span>
     <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_MatrixBuildResult</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raw covariates path: concat DataFrames without model matrix encoding.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Raw covariates path: concat DataFrames without model matrix encoding."""</span>
     <span class="n">combined_matrix</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">sample_covars</span><span class="p">,</span> <span class="n">target_covars</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">"add_indicator"</span><span class="p">:</span>
         <span class="n">combined_matrix</span> <span class="o">=</span> <span class="n">add_na_indicator_to_combined</span><span class="p">(</span><span class="n">combined_matrix</span><span class="p">)</span>
 
     <span class="n">categorical_cols</span> <span class="o">=</span> <span class="n">combined_matrix</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span>
-        <span class="p">[</span><span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;boolean&quot;</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">]</span>
+        <span class="p">[</span><span class="s2">"string"</span><span class="p">,</span> <span class="s2">"boolean"</span><span class="p">,</span> <span class="s2">"object"</span><span class="p">]</span>
     <span class="p">)</span><span class="o">.</span><span class="n">columns</span>
     <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">categorical_cols</span><span class="p">:</span>
         <span class="n">combined_matrix</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">combined_matrix</span><span class="p">[</span><span class="n">col</span><span class="p">])</span>
@@ -837,7 +837,7 @@
     <span class="n">use_model_matrix</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">one_hot_encoding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">,</span>
+    <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"add_indicator"</span><span class="p">,</span>
     <span class="n">penalty_factor</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">project_to_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">fit_scaler</span><span class="p">:</span> <span class="n">StandardScaler</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -845,7 +845,7 @@
     <span class="n">fit_penalties_skl</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">matrix_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the combined design matrix used by IPW weighting.</span>
+<span class="w">    </span><span class="sd">"""Build the combined design matrix used by IPW weighting.</span>
 
 <span class="sd">    This function consolidates the preprocessing pipeline shared by the</span>
 <span class="sd">    ``ipw()`` training path and the ``_compute_ipw_matrices()``</span>
@@ -877,8 +877,8 @@
 <span class="sd">        Whether to apply one-hot encoding for categorical variables.</span>
 <span class="sd">        Ignored when ``use_model_matrix=False``.</span>
 <span class="sd">    na_action:</span>
-<span class="sd">        How to handle missing values.  ``&quot;add_indicator&quot;`` (default) adds</span>
-<span class="sd">        boolean NA-indicator columns; ``&quot;drop&quot;`` is **not** supported in the</span>
+<span class="sd">        How to handle missing values.  ``"add_indicator"`` (default) adds</span>
+<span class="sd">        boolean NA-indicator columns; ``"drop"`` is **not** supported in the</span>
 <span class="sd">        holdout path and will raise ``ValueError`` when</span>
 <span class="sd">        ``project_to_columns`` is set.</span>
 <span class="sd">    penalty_factor:</span>
@@ -900,32 +900,32 @@
 <span class="sd">        Pre-computed per-column penalty multipliers.  Each column *i* of the</span>
 <span class="sd">        matrix is multiplied by ``fit_penalties_skl[i]``.</span>
 <span class="sd">    matrix_type:</span>
-<span class="sd">        Desired output type: ``&quot;sparse&quot;`` (:class:`csc_matrix`) or</span>
-<span class="sd">        ``&quot;dense&quot;`` (:class:`numpy.ndarray`).  ``None`` leaves the</span>
+<span class="sd">        Desired output type: ``"sparse"`` (:class:`csc_matrix`) or</span>
+<span class="sd">        ``"dense"`` (:class:`numpy.ndarray`).  ``None`` leaves the</span>
 <span class="sd">        matrix as-is (may be sparse, dense, or DataFrame depending on</span>
 <span class="sd">        the path).</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    dict[str, Any]</span>
-<span class="sd">        ``&quot;combined_matrix&quot;`` -- the preprocessed combined (sample + target)</span>
+<span class="sd">        ``"combined_matrix"`` -- the preprocessed combined (sample + target)</span>
 <span class="sd">        matrix.</span>
 
-<span class="sd">        ``&quot;sample_n&quot;`` -- number of sample rows (for splitting).</span>
+<span class="sd">        ``"sample_n"`` -- number of sample rows (for splitting).</span>
 
-<span class="sd">        ``&quot;columns&quot;`` -- column names of the model matrix.</span>
+<span class="sd">        ``"columns"`` -- column names of the model matrix.</span>
 
-<span class="sd">        ``&quot;penalty_factor_expanded&quot;`` -- expanded penalty factor (one entry</span>
+<span class="sd">        ``"penalty_factor_expanded"`` -- expanded penalty factor (one entry</span>
 <span class="sd">        per column), or ``None``.</span>
 
-<span class="sd">        ``&quot;resolved_formula&quot;`` -- the formula(s) actually used, or ``None``.</span>
+<span class="sd">        ``"resolved_formula"`` -- the formula(s) actually used, or ``None``.</span>
 
-<span class="sd">        ``&quot;fit_scaler&quot;`` -- the ``StandardScaler`` that was used (either the</span>
+<span class="sd">        ``"fit_scaler"`` -- the ``StandardScaler`` that was used (either the</span>
 <span class="sd">        one passed in or the newly created one), or ``None``.</span>
 
-<span class="sd">        ``&quot;fit_penalties_skl&quot;`` -- the per-column penalty multipliers that</span>
+<span class="sd">        ``"fit_penalties_skl"`` -- the per-column penalty multipliers that</span>
 <span class="sd">        were applied, or ``None``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">sample_n</span> <span class="o">=</span> <span class="n">sample_covars</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="c1"># -- Step 1: Build the combined matrix via one of three paths ----------</span>
@@ -967,8 +967,8 @@
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">missing_projection_columns</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;build_design_matrix: holdout data is missing </span><span class="si">%d</span><span class="s2"> fit-time &quot;</span>
-                <span class="s2">&quot;column(s); zero-filling unseen columns: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">"build_design_matrix: holdout data is missing </span><span class="si">%d</span><span class="s2"> fit-time "</span>
+                <span class="s2">"column(s); zero-filling unseen columns: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span>
                 <span class="nb">len</span><span class="p">(</span><span class="n">missing_projection_columns</span><span class="p">),</span>
                 <span class="n">missing_projection_columns</span><span class="p">,</span>
             <span class="p">)</span>
@@ -992,38 +992,38 @@
     <span class="n">out_penalties</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">fit_penalties_skl</span>
     <span class="k">if</span> <span class="n">fit_penalties_skl</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">penalties_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">fit_penalties_skl</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="n">n_cols</span> <span class="o">=</span> <span class="n">combined_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">combined_matrix</span><span class="p">,</span> <span class="s2">&quot;shape&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="n">combined_matrix</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>  <span class="c1"># type: ignore[union-attr]</span>
+        <span class="n">n_cols</span> <span class="o">=</span> <span class="n">combined_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">combined_matrix</span><span class="p">,</span> <span class="s2">"shape"</span><span class="p">)</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="n">combined_matrix</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>  <span class="c1"># type: ignore[union-attr]</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">penalties_arr</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_cols</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;fit_penalties_skl length (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">penalties_arr</span><span class="p">)</span><span class="si">}</span><span class="s2">) does not match &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;the number of matrix columns (</span><span class="si">{</span><span class="n">n_cols</span><span class="si">}</span><span class="s2">).&quot;</span>
+                <span class="sa">f</span><span class="s2">"fit_penalties_skl length (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">penalties_arr</span><span class="p">)</span><span class="si">}</span><span class="s2">) does not match "</span>
+                <span class="sa">f</span><span class="s2">"the number of matrix columns (</span><span class="si">{</span><span class="n">n_cols</span><span class="si">}</span><span class="s2">)."</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">combined_matrix</span><span class="p">,</span> <span class="n">spmatrix</span><span class="p">):</span>
-            <span class="n">penalty_diag</span> <span class="o">=</span> <span class="n">diags</span><span class="p">(</span><span class="n">penalties_arr</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;csc&quot;</span><span class="p">)</span>
+            <span class="n">penalty_diag</span> <span class="o">=</span> <span class="n">diags</span><span class="p">(</span><span class="n">penalties_arr</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">"csc"</span><span class="p">)</span>
             <span class="n">combined_matrix</span> <span class="o">=</span> <span class="n">combined_matrix</span> <span class="o">@</span> <span class="n">penalty_diag</span>  <span class="c1"># pyre-ignore[58]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">combined_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">combined_matrix</span><span class="p">)</span> <span class="o">*</span> <span class="n">penalties_arr</span>
 
     <span class="c1"># -- Step 5: Matrix type conversion ------------------------------------</span>
-    <span class="k">if</span> <span class="n">matrix_type</span> <span class="o">==</span> <span class="s2">&quot;dense&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">matrix_type</span> <span class="o">==</span> <span class="s2">"dense"</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">combined_matrix</span><span class="p">,</span> <span class="n">spmatrix</span><span class="p">):</span>
             <span class="n">combined_matrix</span> <span class="o">=</span> <span class="n">combined_matrix</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span>  <span class="c1"># pyre-ignore[16]</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">combined_matrix</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
             <span class="n">combined_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">combined_matrix</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">matrix_type</span> <span class="o">==</span> <span class="s2">&quot;sparse&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">matrix_type</span> <span class="o">==</span> <span class="s2">"sparse"</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">combined_matrix</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
             <span class="n">combined_matrix</span> <span class="o">=</span> <span class="n">csc_matrix</span><span class="p">(</span><span class="n">combined_matrix</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">combined_matrix</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
             <span class="n">combined_matrix</span> <span class="o">=</span> <span class="n">csc_matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">combined_matrix</span><span class="p">))</span>
 
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;combined_matrix&quot;</span><span class="p">:</span> <span class="n">combined_matrix</span><span class="p">,</span>
-        <span class="s2">&quot;sample_n&quot;</span><span class="p">:</span> <span class="n">sample_n</span><span class="p">,</span>
-        <span class="s2">&quot;columns&quot;</span><span class="p">:</span> <span class="n">columns</span><span class="p">,</span>
-        <span class="s2">&quot;penalty_factor_expanded&quot;</span><span class="p">:</span> <span class="n">penalty_factor_expanded</span><span class="p">,</span>
-        <span class="s2">&quot;resolved_formula&quot;</span><span class="p">:</span> <span class="n">resolved_formula</span><span class="p">,</span>
-        <span class="s2">&quot;fit_scaler&quot;</span><span class="p">:</span> <span class="n">out_scaler</span><span class="p">,</span>
-        <span class="s2">&quot;fit_penalties_skl&quot;</span><span class="p">:</span> <span class="n">out_penalties</span><span class="p">,</span>
+        <span class="s2">"combined_matrix"</span><span class="p">:</span> <span class="n">combined_matrix</span><span class="p">,</span>
+        <span class="s2">"sample_n"</span><span class="p">:</span> <span class="n">sample_n</span><span class="p">,</span>
+        <span class="s2">"columns"</span><span class="p">:</span> <span class="n">columns</span><span class="p">,</span>
+        <span class="s2">"penalty_factor_expanded"</span><span class="p">:</span> <span class="n">penalty_factor_expanded</span><span class="p">,</span>
+        <span class="s2">"resolved_formula"</span><span class="p">:</span> <span class="n">resolved_formula</span><span class="p">,</span>
+        <span class="s2">"fit_scaler"</span><span class="p">:</span> <span class="n">out_scaler</span><span class="p">,</span>
+        <span class="s2">"fit_penalties_skl"</span><span class="p">:</span> <span class="n">out_penalties</span><span class="p">,</span>
     <span class="p">}</span>
 </pre></div>
 

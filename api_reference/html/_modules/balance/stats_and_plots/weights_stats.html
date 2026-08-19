@@ -73,7 +73,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_weights_to_series</span><span class="p">(</span>
     <span class="n">w</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalize supported weight inputs to a pandas Series.</span>
+<span class="w">    </span><span class="sd">"""Normalize supported weight inputs to a pandas Series.</span>
 
 <span class="sd">    If ``w`` is a DataFrame, only the first column is used (the historical</span>
 <span class="sd">    behavior in this module).</span>
@@ -87,10 +87,10 @@
 
 <span class="sd">    Raises:</span>
 <span class="sd">        TypeError: If ``w`` is a DataFrame with zero columns.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">w</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;weights (w) DataFrame must include at least one column.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"weights (w) DataFrame must include at least one column."</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">w</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">w</span>
@@ -104,7 +104,7 @@
     <span class="n">require_finite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">require_strictly_positive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate a normalized weight Series.</span>
+<span class="w">    </span><span class="sd">"""Validate a normalized weight Series.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        w (pd.Series): Weights represented as a pandas Series.</span>
@@ -130,14 +130,14 @@
 <span class="sd">    Warns:</span>
 <span class="sd">        UserWarning: If ``require_positive`` is False and the input has no</span>
 <span class="sd">            positive entries. The warning text distinguishes two causes:</span>
-<span class="sd">            ``&quot;All N weight entries are NaN&quot;`` when every entry is missing,</span>
-<span class="sd">            and ``&quot;All weights are zero (no positive entries)&quot;`` for the</span>
+<span class="sd">            ``"All N weight entries are NaN"`` when every entry is missing,</span>
+<span class="sd">            and ``"All weights are zero (no positive entries)"`` for the</span>
 <span class="sd">            all-zero / mixed zero+NaN case. Both shapes silently produce</span>
 <span class="sd">            ``NaN`` / ``inf`` downstream (``sum(w*x)/sum(w) = 0/0``); the</span>
 <span class="sd">            warning surfaces the failure mode without changing the</span>
 <span class="sd">            historical not-a-raise behaviour for the</span>
 <span class="sd">            ``require_positive=False`` callers.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="c1"># Empty inputs are pandas-version-unstable: ``pd.Series([])`` defaults</span>
         <span class="c1"># to ``object`` dtype on older pandas (which would fall into the</span>
@@ -145,20 +145,20 @@
         <span class="c1"># (which would silently fall through to the all-zero branch and</span>
         <span class="c1"># emit a ``UserWarning``). Reject empty inputs deterministically up</span>
         <span class="c1"># front so the contract is stable across supported pandas versions.</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights (w) must be non-empty.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"weights (w) must be non-empty."</span><span class="p">)</span>
     <span class="k">if</span> <span class="p">(</span>
         <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_numeric_dtype</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
         <span class="ow">or</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_bool_dtype</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
         <span class="ow">or</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_complex_dtype</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
     <span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;weights (w) must be a number but instead they are of type: </span><span class="si">{</span><span class="n">w</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="sa">f</span><span class="s2">"weights (w) must be a number but instead they are of type: </span><span class="si">{</span><span class="n">w</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">."</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">require_finite</span><span class="p">:</span>
         <span class="n">numeric_weights</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">na_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">numeric_weights</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights (w) must contain only finite values.&quot;</span><span class="p">)</span>
-    <span class="c1"># Use pandas ``.any()`` (not Python&#39;s built-in ``any()``) so the</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"weights (w) must contain only finite values."</span><span class="p">)</span>
+    <span class="c1"># Use pandas ``.any()`` (not Python's built-in ``any()``) so the</span>
     <span class="c1"># comparison is robust under nullable dtypes: ``Float64`` / ``Int64``</span>
     <span class="c1"># produce ``pd.NA`` from comparisons with ``NA`` entries, and</span>
     <span class="c1"># ``bool(pd.NA)`` raises ``TypeError: boolean value of NA is</span>
@@ -166,33 +166,33 @@
     <span class="c1"># validation messages could fire. ``Series.any()`` defaults to</span>
     <span class="c1"># ``skipna=True`` and treats NA as False for the boolean reduction.</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">w</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights (w) must all be non-negative values.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"weights (w) must all be non-negative values."</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">require_strictly_positive</span> <span class="ow">and</span> <span class="p">(</span><span class="n">w</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights (w) must all be strictly positive values.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"weights (w) must all be strictly positive values."</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">w</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">require_positive</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights (w) must include at least one positive value.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"weights (w) must include at least one positive value."</span><span class="p">)</span>
         <span class="c1"># Distinguish all-NaN from all-zero so the UserWarning is not</span>
         <span class="c1"># misleading: ``not (w &gt; 0).any()`` fires for both ``[0, 0, 0]``</span>
-        <span class="c1"># and ``[NaN, NaN]``, and the previous &quot;All weights are zero&quot;</span>
+        <span class="c1"># and ``[NaN, NaN]``, and the previous "All weights are zero"</span>
         <span class="c1"># wording incorrectly described the NaN case.</span>
         <span class="n">n_total</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
         <span class="n">n_nan</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
         <span class="k">if</span> <span class="n">n_nan</span> <span class="o">==</span> <span class="n">n_total</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;All </span><span class="si">{</span><span class="n">n_total</span><span class="si">}</span><span class="s2"> weight entries are NaN; weighted statistics &quot;</span>
-                <span class="s2">&quot;downstream will yield NaN. This usually indicates a bug in &quot;</span>
-                <span class="s2">&quot;the upstream weighting / filtering pipeline (e.g. an empty &quot;</span>
-                <span class="s2">&quot;join key or an all-missing column).&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">"All </span><span class="si">{</span><span class="n">n_total</span><span class="si">}</span><span class="s2"> weight entries are NaN; weighted statistics "</span>
+                <span class="s2">"downstream will yield NaN. This usually indicates a bug in "</span>
+                <span class="s2">"the upstream weighting / filtering pipeline (e.g. an empty "</span>
+                <span class="s2">"join key or an all-missing column)."</span><span class="p">,</span>
                 <span class="ne">UserWarning</span><span class="p">,</span>
                 <span class="n">stacklevel</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="s2">&quot;All weights are zero (no positive entries); weighted &quot;</span>
-                <span class="s2">&quot;statistics downstream will yield NaN or inf &quot;</span>
-                <span class="s2">&quot;(``sum(w*x)/sum(w) = 0/0``). This usually indicates a bug &quot;</span>
-                <span class="s2">&quot;in the upstream weighting / filtering pipeline.&quot;</span><span class="p">,</span>
+                <span class="s2">"All weights are zero (no positive entries); weighted "</span>
+                <span class="s2">"statistics downstream will yield NaN or inf "</span>
+                <span class="s2">"(``sum(w*x)/sum(w) = 0/0``). This usually indicates a bug "</span>
+                <span class="s2">"in the upstream weighting / filtering pipeline."</span><span class="p">,</span>
                 <span class="ne">UserWarning</span><span class="p">,</span>
                 <span class="n">stacklevel</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
             <span class="p">)</span>
@@ -205,7 +205,7 @@
     <span class="n">require_finite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">require_strictly_positive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check weights.</span>
+<span class="w">    </span><span class="sd">"""Check weights.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        w (Union[ List, pd.Series, np.ndarray, pd.DataFrame, None, ]): input weights.</span>
@@ -228,7 +228,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        _type_: None</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">w</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="n">w_series</span> <span class="o">=</span> <span class="n">_weights_to_series</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
@@ -247,19 +247,19 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">design_effect</span><span class="p">(</span>
     <span class="n">w</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Kish&#39;s design effect measure.</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Kish's design effect measure.</span>
 
 <span class="sd">    The design effect is a number that shows how well a sample of people may represent</span>
 <span class="sd">    a larger group of people for a specific measure of interest (such as the mean).</span>
-<span class="sd">    Kish&#39;s design effect gives the increase in the variance of the weighted mean based on &quot;haphazard&quot; weights.</span>
+<span class="sd">    Kish's design effect gives the increase in the variance of the weighted mean based on "haphazard" weights.</span>
 
 <span class="sd">    The inverse of the design effect is the effective sample size ratio.</span>
 
 <span class="sd">    Design effect in general can be lower than 1 for stratified sampling. However, when calculating</span>
-<span class="sd">    Kish&#39;s design effect for weights the design effect is always 1 or larger.</span>
+<span class="sd">    Kish's design effect for weights the design effect is always 1 or larger.</span>
 
-<span class="sd">    For details, see: Tal Galili (5 May 2024). &quot;Design effect&quot;.</span>
+<span class="sd">    For details, see: Tal Galili (5 May 2024). "Design effect".</span>
 <span class="sd">    WikiJournal of Science 7 (1): 4. doi:10.15347/wjs/2024.004. Wikidata Q116768211.</span>
 <span class="sd">    ISSN 2470-6345. https://en.wikipedia.org/wiki/Design_effect</span>
 
@@ -284,7 +284,7 @@
 <span class="sd">            design_effect(pd.Series((1, 1, 1000)))</span>
 <span class="sd">                # 2.9880418803112336</span>
 <span class="sd">                # As expected. With a single dominating weight - the Deff is almost equal to the sample size.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">_weights_to_series</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
     <span class="n">_check_weights_series_are_valid</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">require_positive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">_safe_divide_with_zero_handling</span>
@@ -297,7 +297,7 @@
 <div class="viewcode-block" id="KishStats">
 <a class="viewcode-back" href="../../../balance.stats_and_plots.weights_stats.html#balance.stats_and_plots.weights_stats.KishStats">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">KishStats</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Kish design-effect diagnostic bundle.</span>
+<span class="w">    </span><span class="sd">"""Kish design-effect diagnostic bundle.</span>
 
 <span class="sd">    All three members share a single ``design_effect`` computation. The</span>
 <span class="sd">    identities are:</span>
@@ -307,10 +307,10 @@
 <span class="sd">    * ``essp = 1 / deff``        (effective sample proportion in ``[0, 1]``)</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        deff: Kish&#39;s design effect.</span>
-<span class="sd">        ess: Kish&#39;s effective sample size.</span>
-<span class="sd">        essp: Kish&#39;s effective sample proportion.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        deff: Kish's design effect.</span>
+<span class="sd">        ess: Kish's effective sample size.</span>
+<span class="sd">        essp: Kish's effective sample proportion.</span>
+<span class="sd">    """</span>
 
     <span class="n">deff</span><span class="p">:</span> <span class="nb">float</span>
     <span class="n">ess</span><span class="p">:</span> <span class="nb">float</span>
@@ -323,7 +323,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">kish_deff_stats</span><span class="p">(</span>
     <span class="n">w</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KishStats</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Bundle Kish&#39;s design effect, effective sample size, and ESS proportion.</span>
+<span class="w">    </span><span class="sd">"""Bundle Kish's design effect, effective sample size, and ESS proportion.</span>
 
 <span class="sd">    Computes ``design_effect`` once and derives ``ess`` and ``essp`` from</span>
 <span class="sd">    it, avoiding three separate Deff computations when all three quantities</span>
@@ -354,7 +354,7 @@
 <span class="sd">            stats.deff   # 1.0</span>
 <span class="sd">            stats.ess    # 4.0</span>
 <span class="sd">            stats.essp   # 1.0</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">w_series</span> <span class="o">=</span> <span class="n">_weights_to_series</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
     <span class="n">deff</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">design_effect</span><span class="p">(</span><span class="n">w_series</span><span class="p">))</span>
     <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">w_series</span><span class="p">)</span>
@@ -367,7 +367,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">kish_ess</span><span class="p">(</span>
     <span class="n">w</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Kish&#39;s effective sample size: ``n / Deff = sum(w)^2 / sum(w^2)``.</span>
+<span class="w">    </span><span class="sd">"""Kish's effective sample size: ``n / Deff = sum(w)^2 / sum(w^2)``.</span>
 
 <span class="sd">    Convenience singleton over ``design_effect``. Prefer ``kish_deff_stats``</span>
 <span class="sd">    when you need ``ess`` alongside ``deff`` or ``essp`` — that path computes</span>
@@ -394,7 +394,7 @@
 <span class="sd">            import pandas as pd</span>
 
 <span class="sd">            kish_ess(pd.Series((1, 1, 1, 1)))   # 4.0</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">w_series</span> <span class="o">=</span> <span class="n">_weights_to_series</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
     <span class="n">deff</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">design_effect</span><span class="p">(</span><span class="n">w_series</span><span class="p">))</span>
     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">w_series</span><span class="p">)</span> <span class="o">/</span> <span class="n">deff</span><span class="p">)</span></div>
@@ -406,7 +406,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">kish_essp</span><span class="p">(</span>
     <span class="n">w</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Kish&#39;s effective sample proportion: ``1 / Deff`` (always in ``[0, 1]``).</span>
+<span class="w">    </span><span class="sd">"""Kish's effective sample proportion: ``1 / Deff`` (always in ``[0, 1]``).</span>
 
 <span class="sd">    Convenience singleton over ``design_effect``. Prefer ``kish_deff_stats``</span>
 <span class="sd">    when you need ``essp`` alongside ``deff`` or ``ess``.</span>
@@ -432,7 +432,7 @@
 <span class="sd">            import pandas as pd</span>
 
 <span class="sd">            kish_essp(pd.Series((1, 1, 1, 1)))   # 1.0</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">design_effect</span><span class="p">(</span><span class="n">w</span><span class="p">))</span></div>
 
 
@@ -448,7 +448,7 @@
     <span class="c1">#            what is more accepted in the literature in the field and what are the advantages of each.</span>
     <span class="c1">#            Any reference to literature where this is used to analyze weights of survey?</span>
     <span class="c1">#            Add reference to some interpretation of these values?</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    The nonparametric skew is the difference between the mean and the median, divided by the standard deviation.</span>
 <span class="sd">    See:</span>
 <span class="sd">    - https://en.wikipedia.org/wiki/Nonparametric_skew</span>
@@ -459,7 +459,7 @@
 <span class="sd">            DataFrame, only the first column is used.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        np.float64: A value of skew, between -1 to 1, but for weights it&#39;s often positive (i.e.: right tailed distribution).</span>
+<span class="sd">        np.float64: A value of skew, between -1 to 1, but for weights it's often positive (i.e.: right tailed distribution).</span>
 <span class="sd">        The value returned will be 0 if the standard deviation is 0 (i.e.: all values are identical), or if the input is of length 1.</span>
 
 <span class="sd">    Examples:</span>
@@ -473,7 +473,7 @@
 <span class="sd">            nonparametric_skew(pd.Series((1, 1, 1, 2)))  # 0.5</span>
 <span class="sd">            nonparametric_skew(pd.Series((-1,1,1, 1)))   #-0.5</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">_weights_to_series</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
     <span class="n">_check_weights_series_are_valid</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">require_positive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">std</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
@@ -513,13 +513,13 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">PropAboveBelowResult</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
     <span class="c1"># TODO (p2): look more in the literature (are there references for using this vs another, or none at all?)</span>
     <span class="c1">#            update the doc with insights, once done.</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    The proportion of weights, normalized to sample size, that are above and below some numbers (E.g. 1,2,3,5,10 and their inverse: 1, 1/2, 1/3, etc.).</span>
 <span class="sd">    This is similar to returning percentiles of the (normalized) weighted distribution. But instead of focusing on the 25th percentile, the median, etc,</span>
 <span class="sd">    We focus instead on more easily interpretable weights values.</span>
 
 <span class="sd">    For example, saying that some proportion of users had a weight of above 1 gives us an indication of how many users</span>
-<span class="sd">    we got that we don&#39;t &quot;loose&quot; their value after using the weights. Saying which proportion of users had a weight below 1/10 tells us how many users</span>
+<span class="sd">    we got that we don't "loose" their value after using the weights. Saying which proportion of users had a weight below 1/10 tells us how many users</span>
 <span class="sd">    had basically almost no contribution to the final analysis (after applying the weights).</span>
 
 <span class="sd">    Note that below and above can overlap, be unordered, etc. The user is responsible for the order.</span>
@@ -587,19 +587,19 @@
 <span class="sd">                # dtype: float64</span>
 
 <span class="sd">            prop_above_and_below(pd.Series((1, 2, 3, 4)), return_as_series = False)</span>
-<span class="sd">                # {&#39;below&#39;: prop(w &lt; 0.1)      0.00</span>
+<span class="sd">                # {'below': prop(w &lt; 0.1)      0.00</span>
 <span class="sd">                # prop(w &lt; 0.2)      0.00</span>
 <span class="sd">                # prop(w &lt; 0.333)    0.00</span>
 <span class="sd">                # prop(w &lt; 0.5)      0.25</span>
 <span class="sd">                # prop(w &lt; 1)        0.50</span>
-<span class="sd">                # dtype: float64, &#39;above&#39;: prop(w &gt;= 1)     0.5</span>
+<span class="sd">                # dtype: float64, 'above': prop(w &gt;= 1)     0.5</span>
 <span class="sd">                # prop(w &gt;= 2)     0.0</span>
 <span class="sd">                # prop(w &gt;= 3)     0.0</span>
 <span class="sd">                # prop(w &gt;= 5)     0.0</span>
 <span class="sd">                # prop(w &gt;= 10)    0.0</span>
 <span class="sd">                # dtype: float64}</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">_weights_to_series</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
     <span class="n">_check_weights_series_are_valid</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">require_positive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
@@ -612,7 +612,7 @@
     <span class="c1"># calculate props from below:</span>
     <span class="k">if</span> <span class="n">below</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">prop_below</span> <span class="o">=</span> <span class="p">[(</span><span class="n">w</span> <span class="o">&lt;</span> <span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">below</span><span class="p">]</span>
-        <span class="n">prop_below_index</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;prop(w &lt; &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">below</span><span class="p">]</span>
+        <span class="n">prop_below_index</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"prop(w &lt; "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="s2">")"</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">below</span><span class="p">]</span>
         <span class="n">prop_below_series</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">prop_below</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">prop_below_index</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">prop_below_series</span> <span class="o">=</span> <span class="kc">None</span>
@@ -620,7 +620,7 @@
     <span class="c1"># calculate props from above:</span>
     <span class="k">if</span> <span class="n">above</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">prop_above</span> <span class="o">=</span> <span class="p">[(</span><span class="n">w</span> <span class="o">&gt;=</span> <span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">above</span><span class="p">]</span>
-        <span class="n">prop_above_index</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;prop(w &gt;= &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">above</span><span class="p">]</span>
+        <span class="n">prop_above_index</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"prop(w &gt;= "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="s2">")"</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">above</span><span class="p">]</span>
         <span class="n">prop_above_series</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">prop_above</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">prop_above_index</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">prop_above_series</span> <span class="o">=</span> <span class="kc">None</span>
@@ -643,7 +643,7 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
     <span class="c1"># TODO (p2): do we want to have weighted_quantile_breakdown_point</span>
     <span class="c1"># so to check for quantiles other than 50%?</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Calculates the minimal percent of users that have at least 50% of the weights.</span>
 <span class="sd">    This gives us the breakdown point of calculating the weighted median.</span>
 <span class="sd">    This can be thought of as reflecting a similar metric to the design effect.</span>
@@ -673,7 +673,7 @@
 
 <span class="sd">            w = pd.Series([1,1,1,1, 10])</span>
 <span class="sd">            print(weighted_median_breakdown_point(w)) # 0.2</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">_weights_to_series</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
     <span class="n">_check_weights_series_are_valid</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">require_positive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 

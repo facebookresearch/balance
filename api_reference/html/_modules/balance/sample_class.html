@@ -57,20 +57,20 @@
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Sample&quot;</span><span class="p">,</span> <span class="s2">&quot;_CallableBool&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"Sample"</span><span class="p">,</span> <span class="s2">"_CallableBool"</span><span class="p">]</span>
 
 <span class="c1"># Allowed callers for Sample.__new__ stack inspection guard.</span>
 <span class="n">_ALLOWED_CALLERS</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span>
     <span class="p">{</span>
-        <span class="s2">&quot;__deepcopy__&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;__newobj__&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;__newobj_ex__&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;__reduce__&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;__reduce_ex__&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;deepcopy&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;_reconstruct&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;from_frame&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;_create&quot;</span><span class="p">,</span>
+        <span class="s2">"__deepcopy__"</span><span class="p">,</span>
+        <span class="s2">"__newobj__"</span><span class="p">,</span>
+        <span class="s2">"__newobj_ex__"</span><span class="p">,</span>
+        <span class="s2">"__reduce__"</span><span class="p">,</span>
+        <span class="s2">"__reduce_ex__"</span><span class="p">,</span>
+        <span class="s2">"deepcopy"</span><span class="p">,</span>
+        <span class="s2">"_reconstruct"</span><span class="p">,</span>
+        <span class="s2">"from_frame"</span><span class="p">,</span>
+        <span class="s2">"_create"</span><span class="p">,</span>
     <span class="p">}</span>
 <span class="p">)</span>
 
@@ -79,10 +79,10 @@
 <div class="viewcode-block" id="Sample">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Sample</span><span class="p">(</span><span class="n">BalanceFrame</span><span class="p">,</span> <span class="n">SampleFrame</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A class used to represent a sample.</span>
 
-<span class="sd">    Sample is the main object of balance. It contains a dataframe of unit&#39;s observations,</span>
+<span class="sd">    Sample is the main object of balance. It contains a dataframe of unit's observations,</span>
 <span class="sd">    associated with id and weight.</span>
 
 <span class="sd">    Sample inherits from both :class:`~balance.balance_frame.BalanceFrame` and</span>
@@ -98,28 +98,28 @@
 <span class="sd">        a column representing the ids of the units in sample</span>
 <span class="sd">    weight_series : pd.Series</span>
 <span class="sd">        a column representing the weights of the units in sample</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">responders</span><span class="p">:</span> <span class="n">SampleFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">target</span><span class="p">:</span> <span class="n">SampleFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Sample&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Override __new__ to raise NotImplementedError for direct construction.</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Sample"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Override __new__ to raise NotImplementedError for direct construction.</span>
 
 <span class="sd">        Sample should be constructed via ``Sample.from_frame()``.  Direct</span>
 <span class="sd">        ``Sample()`` calls raise ``NotImplementedError``.  Internal paths</span>
 <span class="sd">        (``from_frame``, ``_create``, ``deepcopy``) are allowed through by</span>
 <span class="sd">        checking the call stack.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">responders</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Check if called from an internal path (deepcopy, from_frame, _create)</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">caller_func</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">function</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                    <span class="s2">&quot;Sample should not be constructed directly. &quot;</span>
-                    <span class="s2">&quot;Use Sample.from_frame() instead.&quot;</span>
+                    <span class="s2">"Sample should not be constructed directly. "</span>
+                    <span class="s2">"Use Sample.from_frame() instead."</span>
                 <span class="p">)</span>
             <span class="c1"># Stack inspection is used to allow internal construction</span>
             <span class="c1"># paths while blocking direct Sample() calls.  Known limitation:</span>
@@ -127,8 +127,8 @@
             <span class="c1"># risk is minimal since these are all dunder or internal names.</span>
             <span class="k">if</span> <span class="n">caller_func</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_ALLOWED_CALLERS</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                    <span class="s2">&quot;Sample should not be constructed directly. &quot;</span>
-                    <span class="s2">&quot;Use Sample.from_frame() instead.&quot;</span>
+                    <span class="s2">"Sample should not be constructed directly. "</span>
+                    <span class="s2">"Use Sample.from_frame() instead."</span>
                 <span class="p">)</span>
         <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
 
@@ -149,7 +149,7 @@
         <span class="n">use_deepcopy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">id_column_candidates</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a Sample from a pandas DataFrame.</span>
+<span class="w">        </span><span class="sd">"""Create a Sample from a pandas DataFrame.</span>
 
 <span class="sd">        Thin wrapper around :meth:`SampleFrame.from_frame` that builds a</span>
 <span class="sd">        SampleFrame and then wraps it in a Sample via :meth:`_create`.</span>
@@ -171,7 +171,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A new Sample.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">sf</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
             <span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
             <span class="n">id_column</span><span class="o">=</span><span class="n">id_column</span><span class="p">,</span>
@@ -189,11 +189,11 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__deepcopy__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memo</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Sample</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an independent deep copy of this Sample.</span>
+<span class="w">        </span><span class="sd">"""Return an independent deep copy of this Sample.</span>
 
 <span class="sd">        Copies all instance attributes, preserving both BalanceFrame and</span>
 <span class="sd">        SampleFrame state.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">new</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
         <span class="n">memo</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)]</span> <span class="o">=</span> <span class="n">new</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -205,7 +205,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_sample_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SampleFrame</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Alias for ``_sf_sample`` (backward compat for internal code).&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Alias for ``_sf_sample`` (backward compat for internal code)."""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span>
 
     <span class="nd">@_sample_frame</span><span class="o">.</span><span class="n">setter</span>
@@ -216,7 +216,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_balance_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BalanceFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns self since Sample IS a BalanceFrame now.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Returns self since Sample IS a BalanceFrame now."""</span>
         <span class="k">return</span> <span class="bp">self</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_target</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span>
 
     <span class="nd">@_balance_frame</span><span class="o">.</span><span class="n">setter</span>
@@ -234,7 +234,7 @@
 <div class="viewcode-block" id="Sample.to_sample_frame">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.to_sample_frame">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_sample_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert this Sample to a :class:`~balance.sample_frame.SampleFrame`.</span>
+<span class="w">        </span><span class="sd">"""Convert this Sample to a :class:`~balance.sample_frame.SampleFrame`.</span>
 
 <span class="sd">        Preserves all data and column roles (id, weight, outcomes, ignored</span>
 <span class="sd">        columns).  The returned SampleFrame is independent of the original</span>
@@ -247,11 +247,11 @@
 <span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">            &gt;&gt;&gt; from balance.sample_class import Sample</span>
 <span class="sd">            &gt;&gt;&gt; s = Sample.from_frame(</span>
-<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [1, 2], &quot;x&quot;: [10.0, 20.0], &quot;weight&quot;: [1.0, 2.0]}))</span>
+<span class="sd">            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 2.0]}))</span>
 <span class="sd">            &gt;&gt;&gt; sf = s.to_sample_frame()</span>
 <span class="sd">            &gt;&gt;&gt; list(sf.df_covars.columns)</span>
-<span class="sd">            [&#39;x&#39;]</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            ['x']</span>
+<span class="sd">        """</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">balance.sample_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampleFrame</span>
 
         <span class="k">return</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
@@ -260,13 +260,13 @@
 <div class="viewcode-block" id="Sample.to_balance_frame">
 <a class="viewcode-back" href="../../balance.sample_class.html#balance.sample_class.Sample.to_balance_frame">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_balance_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert this Sample (with target) to a :class:`~balance.balance_frame.BalanceFrame`.</span>
+<span class="w">        </span><span class="sd">"""Convert this Sample (with target) to a :class:`~balance.balance_frame.BalanceFrame`.</span>
 
 <span class="sd">        The Sample must have a target set.  If the Sample is adjusted, the</span>
 <span class="sd">        adjustment state is preserved in the BalanceFrame.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            BalanceFrame: A new BalanceFrame mirroring this Sample&#39;s data,</span>
+<span class="sd">            BalanceFrame: A new BalanceFrame mirroring this Sample's data,</span>
 <span class="sd">                target, and adjustment state.</span>
 
 <span class="sd">        Raises:</span>
@@ -276,13 +276,13 @@
 <span class="sd">            &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">            &gt;&gt;&gt; from balance.sample_class import Sample</span>
 <span class="sd">            &gt;&gt;&gt; s = Sample.from_frame(</span>
-<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [1, 2], &quot;x&quot;: [10.0, 20.0], &quot;weight&quot;: [1.0, 1.0]}))</span>
+<span class="sd">            ...     pd.DataFrame({"id": [1, 2], "x": [10.0, 20.0], "weight": [1.0, 1.0]}))</span>
 <span class="sd">            &gt;&gt;&gt; t = Sample.from_frame(</span>
-<span class="sd">            ...     pd.DataFrame({&quot;id&quot;: [3, 4], &quot;x&quot;: [15.0, 25.0], &quot;weight&quot;: [1.0, 1.0]}))</span>
+<span class="sd">            ...     pd.DataFrame({"id": [3, 4], "x": [15.0, 25.0], "weight": [1.0, 1.0]}))</span>
 <span class="sd">            &gt;&gt;&gt; bf = s.set_target(t).to_balance_frame()</span>
 <span class="sd">            &gt;&gt;&gt; bf.is_adjusted</span>
 <span class="sd">            False</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">balance.balance_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">BalanceFrame</span>
 
         <span class="k">return</span> <span class="n">BalanceFrame</span><span class="o">.</span><span class="n">from_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>

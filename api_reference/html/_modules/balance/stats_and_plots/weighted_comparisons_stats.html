@@ -72,20 +72,20 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_duplicated_labels_once</span><span class="p">(</span><span class="n">columns</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">object</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return duplicate labels once, preserving their first duplicate order.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Return duplicate labels once, preserving their first duplicate order."""</span>
     <span class="k">return</span> <span class="n">columns</span><span class="p">[</span><span class="n">columns</span><span class="o">.</span><span class="n">duplicated</span><span class="p">()]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_duplicate_column_names_error_message</span><span class="p">(</span>
     <span class="n">duplicate_sample_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">object</span><span class="p">],</span> <span class="n">duplicate_target_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">object</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Format duplicate-column validation errors without empty duplicate lists.&quot;&quot;&quot;</span>
-    <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;sample_df and target_df must have unique column names.&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">"""Format duplicate-column validation errors without empty duplicate lists."""</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"sample_df and target_df must have unique column names."</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">duplicate_sample_columns</span><span class="p">:</span>
-        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Duplicate sample_df columns: </span><span class="si">{</span><span class="n">duplicate_sample_columns</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Duplicate sample_df columns: </span><span class="si">{</span><span class="n">duplicate_sample_columns</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">duplicate_target_columns</span><span class="p">:</span>
-        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Duplicate target_df columns: </span><span class="si">{</span><span class="n">duplicate_target_columns</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Duplicate target_df columns: </span><span class="si">{</span><span class="n">duplicate_target_columns</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
 
 
 <span class="c1">##########################################</span>
@@ -96,12 +96,12 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_coerce_r_indicator_propensities</span><span class="p">(</span>
     <span class="n">propensities</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">ArrayLike</span><span class="p">,</span> <span class="n">input_name</span><span class="p">:</span> <span class="nb">str</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalize ``r_indicator`` propensity inputs to a 1D float array.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Normalize ``r_indicator`` propensity inputs to a 1D float array."""</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">propensities</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
     <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;r_indicator requires all </span><span class="si">{</span><span class="n">input_name</span><span class="si">}</span><span class="s2"> propensity values to be numeric&quot;</span>
+            <span class="sa">f</span><span class="s2">"r_indicator requires all </span><span class="si">{</span><span class="n">input_name</span><span class="si">}</span><span class="s2"> propensity values to be numeric"</span>
         <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
 
     <span class="k">if</span> <span class="n">array</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -114,7 +114,7 @@
         <span class="k">return</span> <span class="n">array</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
 
     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;r_indicator requires </span><span class="si">{</span><span class="n">input_name</span><span class="si">}</span><span class="s2"> to be one-dimensional or single-column&quot;</span>
+        <span class="sa">f</span><span class="s2">"r_indicator requires </span><span class="si">{</span><span class="n">input_name</span><span class="si">}</span><span class="s2"> to be one-dimensional or single-column"</span>
     <span class="p">)</span>
 
 
@@ -124,7 +124,7 @@
     <span class="n">sample_p</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">ArrayLike</span><span class="p">,</span>
     <span class="n">target_p</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">ArrayLike</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the R-indicator from sample and target response propensities.</span>
+<span class="w">    </span><span class="sd">"""Compute the R-indicator from sample and target response propensities.</span>
 
 <span class="sd">    Implements Eq. 2.2.2 from *Indicators for the representativeness of survey</span>
 <span class="sd">    response* (Bethlehem, Cobben, Schouten):</span>
@@ -159,23 +159,23 @@
 <span class="sd">            0.7418011102528389</span>
 <span class="sd">            &gt;&gt;&gt; r_indicator(np.array([0.5, 0.5]), np.array([0.5]))</span>
 <span class="sd">            1.0</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">sample_propensities</span> <span class="o">=</span> <span class="n">_coerce_r_indicator_propensities</span><span class="p">(</span><span class="n">sample_p</span><span class="p">,</span> <span class="s2">&quot;sample_p&quot;</span><span class="p">)</span>
-    <span class="n">target_propensities</span> <span class="o">=</span> <span class="n">_coerce_r_indicator_propensities</span><span class="p">(</span><span class="n">target_p</span><span class="p">,</span> <span class="s2">&quot;target_p&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">sample_propensities</span> <span class="o">=</span> <span class="n">_coerce_r_indicator_propensities</span><span class="p">(</span><span class="n">sample_p</span><span class="p">,</span> <span class="s2">"sample_p"</span><span class="p">)</span>
+    <span class="n">target_propensities</span> <span class="o">=</span> <span class="n">_coerce_r_indicator_propensities</span><span class="p">(</span><span class="n">target_p</span><span class="p">,</span> <span class="s2">"target_p"</span><span class="p">)</span>
     <span class="n">propensities</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sample_propensities</span><span class="p">,</span> <span class="n">target_propensities</span><span class="p">))</span>
 
     <span class="n">n_obs</span> <span class="o">=</span> <span class="n">propensities</span><span class="o">.</span><span class="n">size</span>
     <span class="k">if</span> <span class="n">n_obs</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;r_indicator requires at least two propensity values across sample and target&quot;</span>
+            <span class="s2">"r_indicator requires at least two propensity values across sample and target"</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">propensities</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;r_indicator requires all propensity values to be finite&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"r_indicator requires all propensity values to be finite"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="p">((</span><span class="n">propensities</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">propensities</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;r_indicator requires propensity values to be within the [0, 1] range&quot;</span>
+            <span class="s2">"r_indicator requires propensity values to be within the [0, 1] range"</span>
         <span class="p">)</span>
 
     <span class="n">centered</span> <span class="o">=</span> <span class="n">propensities</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">propensities</span><span class="p">)</span>
@@ -187,16 +187,16 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_weights_per_covars_names</span><span class="p">(</span><span class="n">covar_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
     <span class="c1"># TODO (p2): consider if to give weights that are proportional to the proportion of this covar in the population</span>
-    <span class="c1">#           E.g.: if merging varios platforms, maybe if something like windows has very few users, it&#39;s impact on the ASMD</span>
+    <span class="c1">#           E.g.: if merging varios platforms, maybe if something like windows has very few users, it's impact on the ASMD</span>
     <span class="c1">#           should be smaller (similar to how kld works).</span>
-    <span class="c1">#           The current function structure won&#39;t support it, and this would require some extra input (i.e.: baseline target pop proportion)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="c1">#           The current function structure won't support it, and this would require some extra input (i.e.: baseline target pop proportion)</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Figure out how much weight to give to each column name for ASMD averaging.</span>
 <span class="sd">    This is meant for post-processing df produced from model_matrix that include</span>
 <span class="sd">    one-hot categorical variables. This function helps to resolve the needed weight to add</span>
 <span class="sd">    to columns after they are broken down by the one-hot encoding used in model_matrix.</span>
 <span class="sd">    Each of these will count for 1/num_levels.</span>
-<span class="sd">    It&#39;s OK to assume that variables with &#39;[]&#39; in the name are one-hot</span>
+<span class="sd">    It's OK to assume that variables with '[]' in the name are one-hot</span>
 <span class="sd">    categoricals because model_matrix enforces it.</span>
 
 <span class="sd">    Args:</span>
@@ -204,60 +204,60 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        pd.DataFrame: with two columns, one for weights and another for main_covar_names,</span>
-<span class="sd">        with rows for each of the columns from &#39;covar_names&#39;</span>
+<span class="sd">        with rows for each of the columns from 'covar_names'</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">    .. code-block:: python</span>
 
 <span class="sd">            asmd_df = pd.DataFrame(</span>
 <span class="sd">            {</span>
-<span class="sd">                &#39;age&#39;: 0.5,</span>
-<span class="sd">                &#39;education[T.high_school]&#39;: 1,</span>
-<span class="sd">                &#39;education[T.bachelor]&#39;: 1,</span>
-<span class="sd">                &#39;education[T.masters]&#39;: 1,</span>
-<span class="sd">                &#39;education[T.phd]&#39;: 1,</span>
-<span class="sd">            }, index = (&#39;self&#39;, ))</span>
+<span class="sd">                'age': 0.5,</span>
+<span class="sd">                'education[T.high_school]': 1,</span>
+<span class="sd">                'education[T.bachelor]': 1,</span>
+<span class="sd">                'education[T.masters]': 1,</span>
+<span class="sd">                'education[T.phd]': 1,</span>
+<span class="sd">            }, index = ('self', ))</span>
 
 <span class="sd">            input = asmd_df.columns.values.tolist()</span>
 <span class="sd">                # input</span>
-<span class="sd">                # [&#39;age&#39;,</span>
-<span class="sd">                #  &#39;education[T.high_school]&#39;,</span>
-<span class="sd">                #  &#39;education[T. bachelor]&#39;,</span>
-<span class="sd">                #  &#39;education[T. masters]&#39;,</span>
-<span class="sd">                #  &#39;education[T. phd]&#39;]</span>
+<span class="sd">                # ['age',</span>
+<span class="sd">                #  'education[T.high_school]',</span>
+<span class="sd">                #  'education[T. bachelor]',</span>
+<span class="sd">                #  'education[T. masters]',</span>
+<span class="sd">                #  'education[T. phd]']</span>
 
 <span class="sd">            _weights_per_covars_names(input).to_dict()</span>
 <span class="sd">                # Output:</span>
-<span class="sd">                # {&#39;weight&#39;: {&#39;age&#39;: 1.0,</span>
-<span class="sd">                #   &#39;education[T.high_school]&#39;: 0.25,</span>
-<span class="sd">                #   &#39;education[T.bachelor]&#39;: 0.25,</span>
-<span class="sd">                #   &#39;education[T.masters]&#39;: 0.25,</span>
-<span class="sd">                #   &#39;education[T.phd]&#39;: 0.25},</span>
-<span class="sd">                #  &#39;main_covar_names&#39;: {&#39;age&#39;: &#39;age&#39;,</span>
-<span class="sd">                #   &#39;education[T.high_school]&#39;: &#39;education&#39;,</span>
-<span class="sd">                #   &#39;education[T.bachelor]&#39;: &#39;education&#39;,</span>
-<span class="sd">                #   &#39;education[T.masters]&#39;: &#39;education&#39;,</span>
-<span class="sd">                #   &#39;education[T.phd]&#39;: &#39;education&#39;}}</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">columns_to_original_variable</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\[.*\]$&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">covar_names</span><span class="p">}</span>
+<span class="sd">                # {'weight': {'age': 1.0,</span>
+<span class="sd">                #   'education[T.high_school]': 0.25,</span>
+<span class="sd">                #   'education[T.bachelor]': 0.25,</span>
+<span class="sd">                #   'education[T.masters]': 0.25,</span>
+<span class="sd">                #   'education[T.phd]': 0.25},</span>
+<span class="sd">                #  'main_covar_names': {'age': 'age',</span>
+<span class="sd">                #   'education[T.high_school]': 'education',</span>
+<span class="sd">                #   'education[T.bachelor]': 'education',</span>
+<span class="sd">                #   'education[T.masters]': 'education',</span>
+<span class="sd">                #   'education[T.phd]': 'education'}}</span>
+<span class="sd">    """</span>
+    <span class="n">columns_to_original_variable</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\[.*\]$"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">covar_names</span><span class="p">}</span>
     <span class="n">counts</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">Counter</span><span class="p">(</span><span class="n">columns_to_original_variable</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
         <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">counts</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">columns_to_original_variable</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
-        <span class="n">index</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">([</span><span class="s2">&quot;weight&quot;</span><span class="p">]),</span>
+        <span class="n">index</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">([</span><span class="s2">"weight"</span><span class="p">]),</span>
     <span class="p">)</span>
     <span class="n">_check_weights_are_valid</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>  <span class="c1"># verify nothing odd has occurred.</span>
     <span class="n">main_covar_names</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span>
         <span class="n">columns_to_original_variable</span><span class="p">,</span>
-        <span class="n">orient</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">,</span>
+        <span class="n">orient</span><span class="o">=</span><span class="s2">"index"</span><span class="p">,</span>
         <span class="n">columns</span><span class="o">=</span><span class="p">[</span>
-            <span class="s2">&quot;main_covar_names&quot;</span><span class="p">,</span>
+            <span class="s2">"main_covar_names"</span><span class="p">,</span>
         <span class="p">],</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">weights</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">main_covar_names</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_kl_divergence_discrete</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-12</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compute the KL divergence between two discrete probability mass functions.</span>
 
 <span class="sd">    Args:</span>
@@ -271,25 +271,25 @@
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: If inputs are not 1D arrays, are empty, have different</span>
 <span class="sd">            lengths, contain invalid values, or sum to zero.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
     <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">q</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Both p and q must be 1D arrays.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Both p and q must be 1D arrays."</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">q</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input PMF arrays must not be empty.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Input PMF arrays must not be empty."</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="n">q</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input PMF arrays must have the same length.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Input PMF arrays must have the same length."</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">p</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">q</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;PMF arrays must not contain negative values.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"PMF arrays must not contain negative values."</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">q</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;PMF arrays must not contain NaN or infinite values.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"PMF arrays must not contain NaN or infinite values."</span><span class="p">)</span>
 
     <span class="n">p_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
     <span class="n">q_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">p_sum</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">q_sum</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;PMF arrays must not sum to zero.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"PMF arrays must not sum to zero."</span><span class="p">)</span>
     <span class="n">p</span> <span class="o">=</span> <span class="n">p</span> <span class="o">/</span> <span class="n">p_sum</span>
     <span class="n">q</span> <span class="o">=</span> <span class="n">q</span> <span class="o">/</span> <span class="n">q_sum</span>
 
@@ -307,7 +307,7 @@
     <span class="n">q_weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-12</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Estimate the KL divergence between two continuous distributions using KDEs</span>
 <span class="sd">    integrated with adaptive quadrature.</span>
 
@@ -324,29 +324,29 @@
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: If inputs are not valid 1D arrays, empty, or have</span>
 <span class="sd">            insufficient samples.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_validate_samples</span><span class="p">(</span>
         <span class="n">samples</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
         <span class="n">samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">samples</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> must be a 1D array.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> must be a 1D array."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">samples</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> must not be empty.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> must not be empty."</span><span class="p">)</span>
         <span class="n">weights_arr</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">weights_arr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">weights_arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> weights must match the number of samples.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> weights must match the number of samples."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">weights_arr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">weights_arr</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> weights must sum to a positive value.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> weights must sum to a positive value."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">samples</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> must contain at least two samples for KDE.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> must contain at least two samples for KDE."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">weights_arr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">weights_arr</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> weights must be non-negative.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> weights must be non-negative."</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">samples</span><span class="p">,</span> <span class="n">weights_arr</span>
 
-    <span class="n">p_samples</span><span class="p">,</span> <span class="n">p_weights</span> <span class="o">=</span> <span class="n">_validate_samples</span><span class="p">(</span><span class="n">p_samples</span><span class="p">,</span> <span class="n">p_weights</span><span class="p">,</span> <span class="s2">&quot;p_samples&quot;</span><span class="p">)</span>
-    <span class="n">q_samples</span><span class="p">,</span> <span class="n">q_weights</span> <span class="o">=</span> <span class="n">_validate_samples</span><span class="p">(</span><span class="n">q_samples</span><span class="p">,</span> <span class="n">q_weights</span><span class="p">,</span> <span class="s2">&quot;q_samples&quot;</span><span class="p">)</span>
+    <span class="n">p_samples</span><span class="p">,</span> <span class="n">p_weights</span> <span class="o">=</span> <span class="n">_validate_samples</span><span class="p">(</span><span class="n">p_samples</span><span class="p">,</span> <span class="n">p_weights</span><span class="p">,</span> <span class="s2">"p_samples"</span><span class="p">)</span>
+    <span class="n">q_samples</span><span class="p">,</span> <span class="n">q_weights</span> <span class="o">=</span> <span class="n">_validate_samples</span><span class="p">(</span><span class="n">q_samples</span><span class="p">,</span> <span class="n">q_weights</span><span class="p">,</span> <span class="s2">"q_samples"</span><span class="p">)</span>
 
     <span class="n">kde_p</span><span class="p">:</span> <span class="n">gaussian_kde</span> <span class="o">=</span> <span class="n">gaussian_kde</span><span class="p">(</span><span class="n">p_samples</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">p_weights</span><span class="p">)</span>
     <span class="n">kde_q</span><span class="p">:</span> <span class="n">gaussian_kde</span> <span class="o">=</span> <span class="n">gaussian_kde</span><span class="p">(</span><span class="n">q_samples</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">q_weights</span><span class="p">)</span>
@@ -364,7 +364,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_weighted_pmf</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compute a weighted probability mass function for a categorical series.</span>
 
 <span class="sd">    Args:</span>
@@ -384,24 +384,24 @@
 <span class="sd">            import pandas as pd</span>
 <span class="sd">            from balance.stats_and_plots.weighted_comparisons_stats import _weighted_pmf</span>
 
-<span class="sd">            _weighted_pmf(pd.Series([&quot;a&quot;, &quot;a&quot;, &quot;b&quot;]), np.array([1.0, 2.0, 1.0]))</span>
+<span class="sd">            _weighted_pmf(pd.Series(["a", "a", "b"]), np.array([1.0, 2.0, 1.0]))</span>
 <span class="sd">            # a    0.75</span>
 <span class="sd">            # b    0.25</span>
 <span class="sd">            # dtype: float64</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">series</span><span class="p">,</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">weights</span><span class="p">})</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">notna</span><span class="p">()]</span>
-    <span class="n">grouped</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="sd">    """</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">"value"</span><span class="p">:</span> <span class="n">series</span><span class="p">,</span> <span class="s2">"weight"</span><span class="p">:</span> <span class="n">weights</span><span class="p">})</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s2">"value"</span><span class="p">]</span><span class="o">.</span><span class="n">notna</span><span class="p">()]</span>
+    <span class="n">grouped</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"value"</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="s2">"weight"</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
     <span class="n">total</span> <span class="o">=</span> <span class="n">grouped</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">total</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;PMF weights must sum to a positive value.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"PMF weights must sum to a positive value."</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">grouped</span> <span class="o">/</span> <span class="n">total</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_weighted_ecdf</span><span class="p">(</span>
     <span class="n">values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compute a weighted empirical CDF for numeric values.</span>
 
 <span class="sd">    Args:</span>
@@ -428,18 +428,18 @@
 <span class="sd">            # array([1., 2., 3.])</span>
 <span class="sd">            cdf</span>
 <span class="sd">            # array([0.25, 0.5 , 1.  ])</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">values</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">weights</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;values and weights must be 1D arrays.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"values and weights must be 1D arrays."</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">values</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;values must not be empty.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"values must not be empty."</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights must match the number of values.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"weights must match the number of values."</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">weights</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights must be non-negative.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"weights must be non-negative."</span><span class="p">)</span>
     <span class="n">total</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">total</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights must sum to a positive value.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"weights must sum to a positive value."</span><span class="p">)</span>
     <span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
     <span class="n">values_sorted</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
     <span class="n">weights_sorted</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
@@ -450,7 +450,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_evaluate_ecdf</span><span class="p">(</span>
     <span class="n">values_sorted</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">cdf</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">points</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Evaluate a weighted ECDF at given points.</span>
 
 <span class="sd">    Args:</span>
@@ -471,8 +471,8 @@
 <span class="sd">            cdf = np.array([0.2, 0.6, 1.0])</span>
 <span class="sd">            _evaluate_ecdf(values_sorted, cdf, np.array([0.5, 2.5, 3.0]))</span>
 <span class="sd">            # array([0. , 0.6, 1. ])</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">values_sorted</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="sd">    """</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">values_sorted</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">"right"</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
     <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
     <span class="n">valid</span> <span class="o">=</span> <span class="n">indices</span> <span class="o">&gt;=</span> <span class="mi">0</span>
     <span class="n">out</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span> <span class="o">=</span> <span class="n">cdf</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="n">valid</span><span class="p">]]</span>
@@ -482,7 +482,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_combined_weights</span><span class="p">(</span>
     <span class="n">values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Combine duplicate numeric values and normalize their weights.</span>
 
 <span class="sd">    Args:</span>
@@ -503,12 +503,12 @@
 
 <span class="sd">            _combined_weights(np.array([1.0, 1.0, 2.0]), np.array([1.0, 2.0, 1.0]))</span>
 <span class="sd">            # (array([1., 2.]), array([0.75, 0.25]))</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">values</span><span class="p">,</span> <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">weights</span><span class="p">})</span>
-    <span class="n">grouped</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="sd">    """</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">"value"</span><span class="p">:</span> <span class="n">values</span><span class="p">,</span> <span class="s2">"weight"</span><span class="p">:</span> <span class="n">weights</span><span class="p">})</span>
+    <span class="n">grouped</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"value"</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="s2">"weight"</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
     <span class="n">total</span> <span class="o">=</span> <span class="n">grouped</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">total</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Combined weights must sum to a positive value.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Combined weights must sum to a positive value."</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">grouped</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="p">(</span><span class="n">grouped</span> <span class="o">/</span> <span class="n">total</span><span class="p">)</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
 
 
@@ -520,18 +520,18 @@
     <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">sample_weights</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">target_weights</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">std_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="s2">&quot;pooled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;target&quot;</span><span class="p">,</span>
+    <span class="n">std_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"target"</span><span class="p">,</span> <span class="s2">"sample"</span><span class="p">,</span> <span class="s2">"pooled"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"target"</span><span class="p">,</span>
     <span class="n">aggregate_by_main_covar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Calculate the Absolute Standardized Mean Deviation (ASMD) between the columns of two DataFrames (or BalanceDFs).</span>
 <span class="sd">    It uses weighted average and std for the calculations.</span>
-<span class="sd">    This is the same as taking the absolute value of Cohen&#39;s d statistic,</span>
+<span class="sd">    This is the same as taking the absolute value of Cohen's d statistic,</span>
 <span class="sd">    with a specific choice of the standard deviation (std).</span>
 
-<span class="sd">    https://en.wikipedia.org/wiki/Effect_size#Cohen&#39;s_d</span>
+<span class="sd">    https://en.wikipedia.org/wiki/Effect_size#Cohen's_d</span>
 
-<span class="sd">    As opposed to Cohen&#39;s d, the current asmd implementation has several options of std calculation,</span>
+<span class="sd">    As opposed to Cohen's d, the current asmd implementation has several options of std calculation,</span>
 <span class="sd">    see the arguments section for details.</span>
 
 <span class="sd">    Unlike in R package {cobalt}, in the current implementation of asmd:</span>
@@ -540,7 +540,7 @@
 <span class="sd">      not as 0.</span>
 <span class="sd">    - differences for categorical variables are also weighted by default</span>
 
-<span class="sd">    The function omits columns that starts with the name &quot;_is_na_&quot;</span>
+<span class="sd">    The function omits columns that starts with the name "_is_na_"</span>
 
 <span class="sd">    If column names of sample_df and target_df are different, it will only calculate asmd for</span>
 <span class="sd">    the overlapping columns. The rest will be np.nan.</span>
@@ -559,25 +559,25 @@
 <span class="sd">        target_weights (Union[ List, pd.Series, np.ndarray, ], optional): weights to use.</span>
 <span class="sd">            The default is None.</span>
 <span class="sd">            If no weights are passed (None), it will use an array of 1s.</span>
-<span class="sd">        std_type (Literal[&quot;target&quot;, &quot;sample&quot;, &quot;pooled&quot;], optional):</span>
+<span class="sd">        std_type (Literal["target", "sample", "pooled"], optional):</span>
 <span class="sd">            How the standard deviation should be calculated.</span>
-<span class="sd">            The options are: &quot;target&quot;, &quot;sample&quot; and &quot;pooled&quot;. Defaults to &quot;target&quot;.</span>
-<span class="sd">            &quot;target&quot; means we use the std from the target population.</span>
-<span class="sd">            &quot;sample&quot; means we use the std from the sample population.</span>
-<span class="sd">            &quot;pooled&quot; means we use the simple arithmetic average of</span>
+<span class="sd">            The options are: "target", "sample" and "pooled". Defaults to "target".</span>
+<span class="sd">            "target" means we use the std from the target population.</span>
+<span class="sd">            "sample" means we use the std from the sample population.</span>
+<span class="sd">            "pooled" means we use the simple arithmetic average of</span>
 <span class="sd">                the variance from the sample and target population.</span>
 <span class="sd">                We then take the square root of that value to get the pooled std.</span>
 <span class="sd">                Notice that this is done while giving the same weight to both sources.</span>
 <span class="sd">                I.e.: there is NO over/under weighting sample or target based on their</span>
 <span class="sd">                respective sample sizes (in contrast to how pooled sd is calculated in</span>
-<span class="sd">                Cohen&#39;s d statistic).</span>
+<span class="sd">                Cohen's d statistic).</span>
 <span class="sd">        aggregate_by_main_covar (bool):</span>
 <span class="sd">            If to use :func:`_aggregate_statistic_by_main_covar` to aggregate (average) the asmd based on variable name.</span>
 <span class="sd">            Default is False.</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        pd.Series: a Series indexed on the names of the columns in the input DataFrames.</span>
 <span class="sd">        The values (of type np.float64) are of the ASMD calculation.</span>
-<span class="sd">        The last element is &#39;mean(asmd)&#39;, which is the average of the calculated ASMD values.</span>
+<span class="sd">        The last element is 'mean(asmd)', which is the average of the calculated ASMD values.</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">    .. code-block:: python</span>
@@ -594,8 +594,8 @@
 <span class="sd">            w2 = w1</span>
 
 <span class="sd">            r = weighted_comparisons_stats.asmd(</span>
-<span class="sd">                        pd.DataFrame({&quot;a&quot;: a1, &quot;b&quot;: b1}),</span>
-<span class="sd">                        pd.DataFrame({&quot;a&quot;: a2, &quot;b&quot;: b2}),</span>
+<span class="sd">                        pd.DataFrame({"a": a1, "b": b1}),</span>
+<span class="sd">                        pd.DataFrame({"a": a2, "b": b2}),</span>
 <span class="sd">                        w1,</span>
 <span class="sd">                        w2,</span>
 <span class="sd">                    )</span>
@@ -607,7 +607,7 @@
 <span class="sd">            print(exp_b)</span>
 
 <span class="sd">            # output:</span>
-<span class="sd">            # {&#39;a&#39;: 2.82842712474619, &#39;b&#39;: 0.0, &#39;mean(asmd)&#39;: 1.414213562373095}</span>
+<span class="sd">            # {'a': 2.82842712474619, 'b': 0.0, 'mean(asmd)': 1.414213562373095}</span>
 <span class="sd">            # 2.82842712474619</span>
 <span class="sd">            # 0.0</span>
 
@@ -623,36 +623,36 @@
 <span class="sd">            w2 = w1</span>
 
 <span class="sd">            r = weighted_comparisons_stats.asmd(</span>
-<span class="sd">                pd.DataFrame({&quot;a&quot;: a1, &quot;b[A]&quot;: b1_A, &quot;b[B]&quot;: b1_B}),</span>
-<span class="sd">                pd.DataFrame({&quot;a&quot;: a2, &quot;b[A]&quot;: b2_A, &quot;b[B]&quot;: b2_B}),</span>
+<span class="sd">                pd.DataFrame({"a": a1, "b[A]": b1_A, "b[B]": b1_B}),</span>
+<span class="sd">                pd.DataFrame({"a": a2, "b[A]": b2_A, "b[B]": b2_B}),</span>
 <span class="sd">                w1,</span>
 <span class="sd">                w2,</span>
 <span class="sd">            ).to_dict()</span>
 
 <span class="sd">            print(r)</span>
-<span class="sd">            # {&#39;a&#39;: 2.82842712474619, &#39;b[A]&#39;: 0.7071067811865475, &#39;b[B]&#39;: 0.7071067811865475, &#39;mean(asmd)&#39;: 1.7677669529663689}</span>
+<span class="sd">            # {'a': 2.82842712474619, 'b[A]': 0.7071067811865475, 'b[B]': 0.7071067811865475, 'mean(asmd)': 1.7677669529663689}</span>
 
 <span class="sd">            # Check that using aggregate_by_main_covar works</span>
 <span class="sd">            r = weighted_comparisons_stats.asmd(</span>
-<span class="sd">                pd.DataFrame({&quot;a&quot;: a1, &quot;b[A]&quot;: b1_A, &quot;b[B]&quot;: b1_B}),</span>
-<span class="sd">                pd.DataFrame({&quot;a&quot;: a2, &quot;b[A]&quot;: b2_A, &quot;b[B]&quot;: b2_B}),</span>
+<span class="sd">                pd.DataFrame({"a": a1, "b[A]": b1_A, "b[B]": b1_B}),</span>
+<span class="sd">                pd.DataFrame({"a": a2, "b[A]": b2_A, "b[B]": b2_B}),</span>
 <span class="sd">                w1,</span>
 <span class="sd">                w2,</span>
-<span class="sd">                &quot;target&quot;,</span>
+<span class="sd">                "target",</span>
 <span class="sd">                True,</span>
 <span class="sd">            ).to_dict()</span>
 
 <span class="sd">            print(r)</span>
-<span class="sd">            # {&#39;a&#39;: 2.82842712474619, &#39;b&#39;: 0.7071067811865475, &#39;mean(asmd)&#39;: 1.7677669529663689}</span>
+<span class="sd">            # {'a': 2.82842712474619, 'b': 0.7071067811865475, 'mean(asmd)': 1.7677669529663689}</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sample_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">sample_df</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"sample_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">sample_df</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;target_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">target_df</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">std_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="s2">&quot;pooled&quot;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"target_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">target_df</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">std_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"sample"</span><span class="p">,</span> <span class="s2">"target"</span><span class="p">,</span> <span class="s2">"pooled"</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Unknown std_type: </span><span class="si">{</span><span class="n">std_type</span><span class="si">!r}</span><span class="s2">. Use &#39;sample&#39;, &#39;target&#39;, or &#39;pooled&#39;.&quot;</span>
+            <span class="sa">f</span><span class="s2">"Unknown std_type: </span><span class="si">{</span><span class="n">std_type</span><span class="si">!r}</span><span class="s2">. Use 'sample', 'target', or 'pooled'."</span>
         <span class="p">)</span>
     <span class="n">sample_columns</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
     <span class="n">target_columns</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
@@ -666,36 +666,36 @@
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">sample_columns</span> <span class="o">!=</span> <span class="n">target_columns</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;sample_df and target_df must have the same column names.</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;sample_df column names: </span><span class="si">{</span><span class="n">sample_columns</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;target_df column names: </span><span class="si">{</span><span class="n">target_columns</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="s2">"sample_df and target_df must have the same column names.</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">"sample_df column names: </span><span class="si">{</span><span class="n">sample_columns</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">"target_df column names: </span><span class="si">{</span><span class="n">target_columns</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
-    <span class="n">sample_mean</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">&quot;mean&quot;</span><span class="p">)</span>
-    <span class="n">target_mean</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">&quot;mean&quot;</span><span class="p">)</span>
+    <span class="n">sample_mean</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">"mean"</span><span class="p">)</span>
+    <span class="n">target_mean</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">"mean"</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">std_type</span> <span class="o">==</span> <span class="s2">&quot;sample&quot;</span><span class="p">:</span>
-        <span class="n">std</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">std_type</span> <span class="o">==</span> <span class="s2">&quot;target&quot;</span><span class="p">:</span>
-        <span class="n">std</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">std_type</span> <span class="o">==</span> <span class="s2">&quot;pooled&quot;</span><span class="p">:</span>
-        <span class="n">target_std</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">)</span>
-        <span class="n">sample_std</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">std_type</span> <span class="o">==</span> <span class="s2">"sample"</span><span class="p">:</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">"std"</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">std_type</span> <span class="o">==</span> <span class="s2">"target"</span><span class="p">:</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">"std"</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">std_type</span> <span class="o">==</span> <span class="s2">"pooled"</span><span class="p">:</span>
+        <span class="n">target_std</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">"std"</span><span class="p">)</span>
+        <span class="n">sample_std</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">"std"</span><span class="p">)</span>
         <span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(((</span><span class="n">sample_std</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">target_std</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
 
     <span class="n">out</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">sample_mean</span> <span class="o">-</span> <span class="n">target_mean</span><span class="p">)</span> <span class="o">/</span> <span class="n">std</span>
 
-    <span class="c1">#  Remove na indicator columns; it&#39;s OK to assume that these columns are</span>
+    <span class="c1">#  Remove na indicator columns; it's OK to assume that these columns are</span>
     <span class="c1">#  indicators because add_na_indicator enforces it</span>
-    <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">(</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">c</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_is_na_&quot;</span><span class="p">))]</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">(</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">c</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"_is_na_"</span><span class="p">))]</span>
     <span class="n">out</span> <span class="o">=</span> <span class="n">_safe_replace_and_infer</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
 
     <span class="n">weights</span> <span class="o">=</span> <span class="n">_weights_per_covars_names</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())[</span>
-        <span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
+        <span class="p">[</span><span class="s2">"weight"</span><span class="p">]</span>
     <span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
     <span class="n">out</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">out</span><span class="p">,</span> <span class="n">weights</span><span class="p">))</span>
-    <span class="n">mean</span> <span class="o">=</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">out</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">])</span>
-    <span class="n">out</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">out</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">"weight"</span><span class="p">])</span>
+    <span class="n">out</span><span class="p">[</span><span class="s2">"mean(asmd)"</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean</span>
 
     <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">out</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
@@ -716,7 +716,7 @@
     <span class="n">target_weights</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">aggregate_by_main_covar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Calculate the Kullback-Leibler divergence (KLD) between the columns of two DataFrames.</span>
 
 <span class="sd">    This function supports both discrete (categorical, binary, boolean) and continuous (numeric) data.</span>
@@ -724,10 +724,10 @@
 <span class="sd">    Numeric columns are compared using weighted kernel density estimates integrated</span>
 <span class="sd">    via adaptive quadrature. Categorical (including binary/one-hot encoded)</span>
 <span class="sd">    columns are treated as general discrete distributions based on their weighted</span>
-<span class="sd">    empirical probability mass functions. Each column&#39;s contribution is aggregated</span>
+<span class="sd">    empirical probability mass functions. Each column's contribution is aggregated</span>
 <span class="sd">    into ``mean(kld)`` using the same weighting scheme as ASMD.</span>
 
-<span class="sd">    The function omits columns that start with the name &quot;_is_na_&quot;.</span>
+<span class="sd">    The function omits columns that start with the name "_is_na_".</span>
 
 <span class="sd">    If column names of sample_df and target_df are different, it will only calculate KLD for</span>
 <span class="sd">    the overlapping columns (using outer join with 0 fill for missing columns).</span>
@@ -750,7 +750,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        pd.Series: a Series indexed on the names of the columns in the input DataFrames.</span>
 <span class="sd">            The values (of type np.float64) are of the KLD calculation.</span>
-<span class="sd">            The last element is &#39;mean(kld)&#39;, which is the weighted average of the calculated KLD values.</span>
+<span class="sd">            The last element is 'mean(kld)', which is the weighted average of the calculated KLD values.</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">    .. code-block:: python</span>
@@ -760,10 +760,10 @@
 
 <span class="sd">            # Example with categorical data showing clear distributional differences</span>
 <span class="sd">            sample_df = pd.DataFrame({</span>
-<span class="sd">                &#39;category&#39;: [&#39;A&#39;, &#39;A&#39;, &#39;B&#39;, &#39;C&#39;],</span>
+<span class="sd">                'category': ['A', 'A', 'B', 'C'],</span>
 <span class="sd">            })</span>
 <span class="sd">            target_df = pd.DataFrame({</span>
-<span class="sd">                &#39;category&#39;: [&#39;A&#39;, &#39;B&#39;, &#39;B&#39;, &#39;C&#39;],</span>
+<span class="sd">                'category': ['A', 'B', 'B', 'C'],</span>
 <span class="sd">            })</span>
 
 <span class="sd">            # Calculate KLD between the two categorical distributions</span>
@@ -788,22 +788,22 @@
 <span class="sd">            # category      0.091551</span>
 <span class="sd">            # mean(kld)     0.091551</span>
 <span class="sd">            # dtype: float64</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sample_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">sample_df</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"sample_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">sample_df</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;target_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">target_df</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"target_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">target_df</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">!=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">():</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;sample_df and target_df must have the same column names.</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;sample_df column names: </span><span class="si">{</span><span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;target_df column names: </span><span class="si">{</span><span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="s2">"sample_df and target_df must have the same column names.</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">"sample_df column names: </span><span class="si">{</span><span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">"target_df column names: </span><span class="si">{</span><span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
     <span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">align</span><span class="p">(</span>
-        <span class="n">target_df</span><span class="p">,</span> <span class="n">join</span><span class="o">=</span><span class="s2">&quot;outer&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span>
+        <span class="n">target_df</span><span class="p">,</span> <span class="n">join</span><span class="o">=</span><span class="s2">"outer"</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span>
     <span class="p">)</span>
 
     <span class="n">sample_weights_arr</span> <span class="o">=</span> <span class="p">(</span>
@@ -820,14 +820,14 @@
     <span class="n">out</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">col</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_is_na_&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">col</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"_is_na_"</span><span class="p">):</span>
             <span class="k">continue</span>
 
         <span class="n">sample_series</span><span class="p">,</span> <span class="n">sample_w</span> <span class="o">=</span> <span class="n">_extract_series_and_weights</span><span class="p">(</span>
-            <span class="n">sample_df</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">sample_weights_arr</span><span class="p">,</span> <span class="s2">&quot;sample_df column&quot;</span>
+            <span class="n">sample_df</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">sample_weights_arr</span><span class="p">,</span> <span class="s2">"sample_df column"</span>
         <span class="p">)</span>
         <span class="n">target_series</span><span class="p">,</span> <span class="n">target_w</span> <span class="o">=</span> <span class="n">_extract_series_and_weights</span><span class="p">(</span>
-            <span class="n">target_df</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">target_weights_arr</span><span class="p">,</span> <span class="s2">&quot;target_df column&quot;</span>
+            <span class="n">target_df</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">target_weights_arr</span><span class="p">,</span> <span class="s2">"target_df column"</span>
         <span class="p">)</span>
 
         <span class="n">is_discrete</span> <span class="o">=</span> <span class="n">_is_discrete_series</span><span class="p">(</span><span class="n">sample_series</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_is_discrete_series</span><span class="p">(</span>
@@ -838,14 +838,14 @@
             <span class="n">sample_pmf</span> <span class="o">=</span> <span class="n">_weighted_pmf</span><span class="p">(</span><span class="n">sample_series</span><span class="p">,</span> <span class="n">sample_w</span><span class="p">)</span>
             <span class="n">target_pmf</span> <span class="o">=</span> <span class="n">_weighted_pmf</span><span class="p">(</span><span class="n">target_series</span><span class="p">,</span> <span class="n">target_w</span><span class="p">)</span>
             <span class="n">pmfs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
-                <span class="p">[</span><span class="n">sample_pmf</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;sample&quot;</span><span class="p">),</span> <span class="n">target_pmf</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+                <span class="p">[</span><span class="n">sample_pmf</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"sample"</span><span class="p">),</span> <span class="n">target_pmf</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"target"</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
             <span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
             <span class="n">out</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">_kl_divergence_discrete</span><span class="p">(</span>
-                <span class="n">pmfs</span><span class="p">[</span><span class="s2">&quot;sample&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">pmfs</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+                <span class="n">pmfs</span><span class="p">[</span><span class="s2">"sample"</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">pmfs</span><span class="p">[</span><span class="s2">"target"</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">sample_vals</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">sample_series</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;coerce&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
-            <span class="n">target_vals</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">target_series</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;coerce&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+            <span class="n">sample_vals</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">sample_series</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"coerce"</span><span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+            <span class="n">target_vals</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">target_series</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"coerce"</span><span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
             <span class="n">sample_w_numeric</span> <span class="o">=</span> <span class="n">sample_w</span><span class="p">[</span><span class="n">sample_series</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">sample_vals</span><span class="o">.</span><span class="n">index</span><span class="p">)]</span>
             <span class="n">target_w_numeric</span> <span class="o">=</span> <span class="n">target_w</span><span class="p">[</span><span class="n">target_series</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">target_vals</span><span class="o">.</span><span class="n">index</span><span class="p">)]</span>
             <span class="n">out</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">_kl_divergence_continuous_quad</span><span class="p">(</span>
@@ -858,13 +858,13 @@
     <span class="n">out</span> <span class="o">=</span> <span class="n">_safe_replace_and_infer</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">out</span><span class="p">]))</span>
 
     <span class="n">weights</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">_weights_per_covars_names</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
+        <span class="n">_weights_per_covars_names</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())[</span><span class="s2">"weight"</span><span class="p">]</span>
         <span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
         <span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
     <span class="p">)</span>
     <span class="n">out</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">out</span><span class="p">,</span> <span class="n">weights</span><span class="p">))</span>
-    <span class="n">mean</span> <span class="o">=</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">out</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">])</span>
-    <span class="n">out</span><span class="p">[</span><span class="s2">&quot;mean(kld)&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">out</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">"weight"</span><span class="p">])</span>
+    <span class="n">out</span><span class="p">[</span><span class="s2">"mean(kld)"</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean</span>
 
     <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">out</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
@@ -885,7 +885,7 @@
     <span class="n">target_weights</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">aggregate_by_main_covar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the Earth Mover&#39;s Distance (EMD) between columns of two DataFrames.</span>
+<span class="w">    </span><span class="sd">"""Calculate the Earth Mover's Distance (EMD) between columns of two DataFrames.</span>
 
 <span class="sd">    Numeric columns use weighted Wasserstein distance. Discrete columns are mapped to an</span>
 <span class="sd">    ordered set of categories before computing the weighted distance.</span>
@@ -906,7 +906,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        pd.Series: a Series indexed on the names of the columns in the input DataFrames.</span>
 <span class="sd">            The values (of type np.float64) are EMD values.</span>
-<span class="sd">            The last element is &#39;mean(emd)&#39;, which is the weighted average of EMD values.</span>
+<span class="sd">            The last element is 'mean(emd)', which is the weighted average of EMD values.</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">    .. code-block:: python</span>
@@ -914,28 +914,28 @@
 <span class="sd">            import pandas as pd</span>
 <span class="sd">            from balance.stats_and_plots import weighted_comparisons_stats</span>
 
-<span class="sd">            sample_df = pd.DataFrame({&quot;x&quot;: [0, 0, 1, 1]})</span>
-<span class="sd">            target_df = pd.DataFrame({&quot;x&quot;: [0, 1, 1, 1]})</span>
+<span class="sd">            sample_df = pd.DataFrame({"x": [0, 0, 1, 1]})</span>
+<span class="sd">            target_df = pd.DataFrame({"x": [0, 1, 1, 1]})</span>
 
 <span class="sd">            weighted_comparisons_stats.emd(sample_df, target_df)</span>
 <span class="sd">            # x            0.25</span>
 <span class="sd">            # mean(emd)    0.25</span>
 <span class="sd">            # dtype: float64</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sample_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">sample_df</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"sample_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">sample_df</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;target_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">target_df</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"target_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">target_df</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">!=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">():</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;sample_df and target_df must have the same column names.</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;sample_df column names: </span><span class="si">{</span><span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;target_df column names: </span><span class="si">{</span><span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="s2">"sample_df and target_df must have the same column names.</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">"sample_df column names: </span><span class="si">{</span><span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">"target_df column names: </span><span class="si">{</span><span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
     <span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">align</span><span class="p">(</span>
-        <span class="n">target_df</span><span class="p">,</span> <span class="n">join</span><span class="o">=</span><span class="s2">&quot;outer&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span>
+        <span class="n">target_df</span><span class="p">,</span> <span class="n">join</span><span class="o">=</span><span class="s2">"outer"</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span>
     <span class="p">)</span>
 
     <span class="n">sample_weights_arr</span> <span class="o">=</span> <span class="p">(</span>
@@ -952,14 +952,14 @@
     <span class="n">out_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">col</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_is_na_&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">col</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"_is_na_"</span><span class="p">):</span>
             <span class="k">continue</span>
 
         <span class="n">sample_series</span><span class="p">,</span> <span class="n">sample_w</span> <span class="o">=</span> <span class="n">_extract_series_and_weights</span><span class="p">(</span>
-            <span class="n">sample_df</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">sample_weights_arr</span><span class="p">,</span> <span class="s2">&quot;sample_df column&quot;</span>
+            <span class="n">sample_df</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">sample_weights_arr</span><span class="p">,</span> <span class="s2">"sample_df column"</span>
         <span class="p">)</span>
         <span class="n">target_series</span><span class="p">,</span> <span class="n">target_w</span> <span class="o">=</span> <span class="n">_extract_series_and_weights</span><span class="p">(</span>
-            <span class="n">target_df</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">target_weights_arr</span><span class="p">,</span> <span class="s2">&quot;target_df column&quot;</span>
+            <span class="n">target_df</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">target_weights_arr</span><span class="p">,</span> <span class="s2">"target_df column"</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">_is_discrete_series</span><span class="p">(</span><span class="n">sample_series</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_is_discrete_series</span><span class="p">(</span><span class="n">target_series</span><span class="p">):</span>
@@ -967,7 +967,7 @@
                 <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">sample_series</span><span class="p">,</span> <span class="n">target_series</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">categories</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Discrete columns must contain at least one category.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Discrete columns must contain at least one category."</span><span class="p">)</span>
             <span class="n">sample_codes</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span>
                 <span class="n">sample_series</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="n">categories</span><span class="p">,</span> <span class="n">ordered</span><span class="o">=</span><span class="kc">True</span>
             <span class="p">)</span><span class="o">.</span><span class="n">codes</span>
@@ -981,10 +981,10 @@
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">sample_vals</span><span class="p">,</span> <span class="n">sample_w_numeric</span> <span class="o">=</span> <span class="n">_coerce_to_numeric_and_validate</span><span class="p">(</span>
-                <span class="n">sample_series</span><span class="p">,</span> <span class="n">sample_w</span><span class="p">,</span> <span class="s2">&quot;Sample numeric column&quot;</span>
+                <span class="n">sample_series</span><span class="p">,</span> <span class="n">sample_w</span><span class="p">,</span> <span class="s2">"Sample numeric column"</span>
             <span class="p">)</span>
             <span class="n">target_vals</span><span class="p">,</span> <span class="n">target_w_numeric</span> <span class="o">=</span> <span class="n">_coerce_to_numeric_and_validate</span><span class="p">(</span>
-                <span class="n">target_series</span><span class="p">,</span> <span class="n">target_w</span><span class="p">,</span> <span class="s2">&quot;Target numeric column&quot;</span>
+                <span class="n">target_series</span><span class="p">,</span> <span class="n">target_w</span><span class="p">,</span> <span class="s2">"Target numeric column"</span>
             <span class="p">)</span>
             <span class="n">out_dict</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
                 <span class="n">wasserstein_distance</span><span class="p">(</span>
@@ -997,13 +997,13 @@
 
     <span class="n">out</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">=</span> <span class="n">_safe_replace_and_infer</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">out_dict</span><span class="p">]))</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">_weights_per_covars_names</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
+        <span class="n">_weights_per_covars_names</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())[</span><span class="s2">"weight"</span><span class="p">]</span>
         <span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
         <span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
     <span class="p">)</span>
     <span class="n">out</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">out</span><span class="p">,</span> <span class="n">weights</span><span class="p">))</span>
-    <span class="n">mean</span> <span class="o">=</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">out</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">])</span>
-    <span class="n">out</span><span class="p">[</span><span class="s2">&quot;mean(emd)&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">out</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">"weight"</span><span class="p">])</span>
+    <span class="n">out</span><span class="p">[</span><span class="s2">"mean(emd)"</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean</span>
 
     <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">out</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1024,7 +1024,7 @@
     <span class="n">target_weights</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">aggregate_by_main_covar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the Cramér-von Mises distance between columns of two DataFrames.</span>
+<span class="w">    </span><span class="sd">"""Calculate the Cramér-von Mises distance between columns of two DataFrames.</span>
 
 <span class="sd">    See: https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93von_Mises_criterion</span>
 
@@ -1042,7 +1042,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        pd.Series: a Series indexed on the names of the columns in the input DataFrames.</span>
 <span class="sd">            The values (of type np.float64) are CVMD values.</span>
-<span class="sd">            The last element is &#39;mean(cvmd)&#39;, which is the weighted average of CVMD values.</span>
+<span class="sd">            The last element is 'mean(cvmd)', which is the weighted average of CVMD values.</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">    .. code-block:: python</span>
@@ -1050,28 +1050,28 @@
 <span class="sd">            import pandas as pd</span>
 <span class="sd">            from balance.stats_and_plots import weighted_comparisons_stats</span>
 
-<span class="sd">            sample_df = pd.DataFrame({&quot;cat&quot;: [&quot;A&quot;, &quot;A&quot;, &quot;B&quot;]})</span>
-<span class="sd">            target_df = pd.DataFrame({&quot;cat&quot;: [&quot;A&quot;, &quot;A&quot;, &quot;B&quot;]})</span>
+<span class="sd">            sample_df = pd.DataFrame({"cat": ["A", "A", "B"]})</span>
+<span class="sd">            target_df = pd.DataFrame({"cat": ["A", "A", "B"]})</span>
 
 <span class="sd">            weighted_comparisons_stats.cvmd(sample_df, target_df)</span>
 <span class="sd">            # cat          0.0</span>
 <span class="sd">            # mean(cvmd)   0.0</span>
 <span class="sd">            # dtype: float64</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sample_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">sample_df</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"sample_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">sample_df</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;target_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">target_df</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"target_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">target_df</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">!=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">():</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;sample_df and target_df must have the same column names.</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;sample_df column names: </span><span class="si">{</span><span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;target_df column names: </span><span class="si">{</span><span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="s2">"sample_df and target_df must have the same column names.</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">"sample_df column names: </span><span class="si">{</span><span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">"target_df column names: </span><span class="si">{</span><span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
     <span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">align</span><span class="p">(</span>
-        <span class="n">target_df</span><span class="p">,</span> <span class="n">join</span><span class="o">=</span><span class="s2">&quot;outer&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span>
+        <span class="n">target_df</span><span class="p">,</span> <span class="n">join</span><span class="o">=</span><span class="s2">"outer"</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span>
     <span class="p">)</span>
 
     <span class="n">sample_weights_arr</span> <span class="o">=</span> <span class="p">(</span>
@@ -1088,14 +1088,14 @@
     <span class="n">out_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">col</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_is_na_&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">col</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"_is_na_"</span><span class="p">):</span>
             <span class="k">continue</span>
 
         <span class="n">sample_series</span><span class="p">,</span> <span class="n">sample_w</span> <span class="o">=</span> <span class="n">_extract_series_and_weights</span><span class="p">(</span>
-            <span class="n">sample_df</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">sample_weights_arr</span><span class="p">,</span> <span class="s2">&quot;sample_df column&quot;</span>
+            <span class="n">sample_df</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">sample_weights_arr</span><span class="p">,</span> <span class="s2">"sample_df column"</span>
         <span class="p">)</span>
         <span class="n">target_series</span><span class="p">,</span> <span class="n">target_w</span> <span class="o">=</span> <span class="n">_extract_series_and_weights</span><span class="p">(</span>
-            <span class="n">target_df</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">target_weights_arr</span><span class="p">,</span> <span class="s2">&quot;target_df column&quot;</span>
+            <span class="n">target_df</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">target_weights_arr</span><span class="p">,</span> <span class="s2">"target_df column"</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">_is_discrete_series</span><span class="p">(</span><span class="n">sample_series</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_is_discrete_series</span><span class="p">(</span><span class="n">target_series</span><span class="p">):</span>
@@ -1103,7 +1103,7 @@
                 <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">sample_series</span><span class="p">,</span> <span class="n">target_series</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">categories</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Discrete columns must contain at least one category.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Discrete columns must contain at least one category."</span><span class="p">)</span>
             <span class="n">sample_pmf</span> <span class="o">=</span> <span class="n">_weighted_pmf</span><span class="p">(</span><span class="n">sample_series</span><span class="p">,</span> <span class="n">sample_w</span><span class="p">)</span>
             <span class="n">target_pmf</span> <span class="o">=</span> <span class="n">_weighted_pmf</span><span class="p">(</span><span class="n">target_series</span><span class="p">,</span> <span class="n">target_w</span><span class="p">)</span>
             <span class="n">sample_cdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span>
@@ -1120,10 +1120,10 @@
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">sample_vals</span><span class="p">,</span> <span class="n">sample_w_numeric</span> <span class="o">=</span> <span class="n">_coerce_to_numeric_and_validate</span><span class="p">(</span>
-                <span class="n">sample_series</span><span class="p">,</span> <span class="n">sample_w</span><span class="p">,</span> <span class="s2">&quot;Sample numeric column&quot;</span>
+                <span class="n">sample_series</span><span class="p">,</span> <span class="n">sample_w</span><span class="p">,</span> <span class="s2">"Sample numeric column"</span>
             <span class="p">)</span>
             <span class="n">target_vals</span><span class="p">,</span> <span class="n">target_w_numeric</span> <span class="o">=</span> <span class="n">_coerce_to_numeric_and_validate</span><span class="p">(</span>
-                <span class="n">target_series</span><span class="p">,</span> <span class="n">target_w</span><span class="p">,</span> <span class="s2">&quot;Target numeric column&quot;</span>
+                <span class="n">target_series</span><span class="p">,</span> <span class="n">target_w</span><span class="p">,</span> <span class="s2">"Target numeric column"</span>
             <span class="p">)</span>
 
             <span class="n">sample_sorted</span><span class="p">,</span> <span class="n">sample_cdf</span> <span class="o">=</span> <span class="n">_weighted_ecdf</span><span class="p">(</span><span class="n">sample_vals</span><span class="p">,</span> <span class="n">sample_w_numeric</span><span class="p">)</span>
@@ -1140,13 +1140,13 @@
 
     <span class="n">out</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">=</span> <span class="n">_safe_replace_and_infer</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">out_dict</span><span class="p">]))</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">_weights_per_covars_names</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
+        <span class="n">_weights_per_covars_names</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())[</span><span class="s2">"weight"</span><span class="p">]</span>
         <span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
         <span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
     <span class="p">)</span>
     <span class="n">out</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">out</span><span class="p">,</span> <span class="n">weights</span><span class="p">))</span>
-    <span class="n">mean</span> <span class="o">=</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">out</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">])</span>
-    <span class="n">out</span><span class="p">[</span><span class="s2">&quot;mean(cvmd)&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">out</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">"weight"</span><span class="p">])</span>
+    <span class="n">out</span><span class="p">[</span><span class="s2">"mean(cvmd)"</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean</span>
 
     <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">out</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1167,7 +1167,7 @@
     <span class="n">target_weights</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">aggregate_by_main_covar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the Kolmogorov-Smirnov statistic between columns of two DataFrames.</span>
+<span class="w">    </span><span class="sd">"""Calculate the Kolmogorov-Smirnov statistic between columns of two DataFrames.</span>
 
 <span class="sd">    See: https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test</span>
 
@@ -1185,7 +1185,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        pd.Series: a Series indexed on the names of the columns in the input DataFrames.</span>
 <span class="sd">            The values (of type np.float64) are KS values.</span>
-<span class="sd">            The last element is &#39;mean(ks)&#39;, which is the weighted average of KS values.</span>
+<span class="sd">            The last element is 'mean(ks)', which is the weighted average of KS values.</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">    .. code-block:: python</span>
@@ -1193,28 +1193,28 @@
 <span class="sd">            import pandas as pd</span>
 <span class="sd">            from balance.stats_and_plots import weighted_comparisons_stats</span>
 
-<span class="sd">            sample_df = pd.DataFrame({&quot;x&quot;: [0.0, 0.0, 1.0, 1.0]})</span>
-<span class="sd">            target_df = pd.DataFrame({&quot;x&quot;: [0.0, 1.0, 1.0, 1.0]})</span>
+<span class="sd">            sample_df = pd.DataFrame({"x": [0.0, 0.0, 1.0, 1.0]})</span>
+<span class="sd">            target_df = pd.DataFrame({"x": [0.0, 1.0, 1.0, 1.0]})</span>
 
 <span class="sd">            weighted_comparisons_stats.ks(sample_df, target_df)</span>
 <span class="sd">            # x          0.25</span>
 <span class="sd">            # mean(ks)   0.25</span>
 <span class="sd">            # dtype: float64</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sample_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">sample_df</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"sample_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">sample_df</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;target_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">target_df</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"target_df must be pd.DataFrame, is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">target_df</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">!=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">():</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;sample_df and target_df must have the same column names.</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;sample_df column names: </span><span class="si">{</span><span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;target_df column names: </span><span class="si">{</span><span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="s2">"sample_df and target_df must have the same column names.</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">"sample_df column names: </span><span class="si">{</span><span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">"target_df column names: </span><span class="si">{</span><span class="n">target_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
     <span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">align</span><span class="p">(</span>
-        <span class="n">target_df</span><span class="p">,</span> <span class="n">join</span><span class="o">=</span><span class="s2">&quot;outer&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span>
+        <span class="n">target_df</span><span class="p">,</span> <span class="n">join</span><span class="o">=</span><span class="s2">"outer"</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span>
     <span class="p">)</span>
 
     <span class="n">sample_weights_arr</span> <span class="o">=</span> <span class="p">(</span>
@@ -1231,14 +1231,14 @@
     <span class="n">out_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">col</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_is_na_&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">col</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"_is_na_"</span><span class="p">):</span>
             <span class="k">continue</span>
 
         <span class="n">sample_series</span><span class="p">,</span> <span class="n">sample_w</span> <span class="o">=</span> <span class="n">_extract_series_and_weights</span><span class="p">(</span>
-            <span class="n">sample_df</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">sample_weights_arr</span><span class="p">,</span> <span class="s2">&quot;sample_df column&quot;</span>
+            <span class="n">sample_df</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">sample_weights_arr</span><span class="p">,</span> <span class="s2">"sample_df column"</span>
         <span class="p">)</span>
         <span class="n">target_series</span><span class="p">,</span> <span class="n">target_w</span> <span class="o">=</span> <span class="n">_extract_series_and_weights</span><span class="p">(</span>
-            <span class="n">target_df</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">target_weights_arr</span><span class="p">,</span> <span class="s2">&quot;target_df column&quot;</span>
+            <span class="n">target_df</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">target_weights_arr</span><span class="p">,</span> <span class="s2">"target_df column"</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">_is_discrete_series</span><span class="p">(</span><span class="n">sample_series</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_is_discrete_series</span><span class="p">(</span><span class="n">target_series</span><span class="p">):</span>
@@ -1246,7 +1246,7 @@
                 <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">sample_series</span><span class="p">,</span> <span class="n">target_series</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">categories</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Discrete columns must contain at least one category.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Discrete columns must contain at least one category."</span><span class="p">)</span>
             <span class="n">sample_pmf</span> <span class="o">=</span> <span class="n">_weighted_pmf</span><span class="p">(</span><span class="n">sample_series</span><span class="p">,</span> <span class="n">sample_w</span><span class="p">)</span>
             <span class="n">target_pmf</span> <span class="o">=</span> <span class="n">_weighted_pmf</span><span class="p">(</span><span class="n">target_series</span><span class="p">,</span> <span class="n">target_w</span><span class="p">)</span>
             <span class="n">sample_cdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span>
@@ -1258,10 +1258,10 @@
             <span class="n">out_dict</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sample_cdf</span> <span class="o">-</span> <span class="n">target_cdf</span><span class="p">)))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">sample_vals</span><span class="p">,</span> <span class="n">sample_w_numeric</span> <span class="o">=</span> <span class="n">_coerce_to_numeric_and_validate</span><span class="p">(</span>
-                <span class="n">sample_series</span><span class="p">,</span> <span class="n">sample_w</span><span class="p">,</span> <span class="s2">&quot;Sample numeric column&quot;</span>
+                <span class="n">sample_series</span><span class="p">,</span> <span class="n">sample_w</span><span class="p">,</span> <span class="s2">"Sample numeric column"</span>
             <span class="p">)</span>
             <span class="n">target_vals</span><span class="p">,</span> <span class="n">target_w_numeric</span> <span class="o">=</span> <span class="n">_coerce_to_numeric_and_validate</span><span class="p">(</span>
-                <span class="n">target_series</span><span class="p">,</span> <span class="n">target_w</span><span class="p">,</span> <span class="s2">&quot;Target numeric column&quot;</span>
+                <span class="n">target_series</span><span class="p">,</span> <span class="n">target_w</span><span class="p">,</span> <span class="s2">"Target numeric column"</span>
             <span class="p">)</span>
 
             <span class="n">sample_sorted</span><span class="p">,</span> <span class="n">sample_cdf</span> <span class="o">=</span> <span class="n">_weighted_ecdf</span><span class="p">(</span><span class="n">sample_vals</span><span class="p">,</span> <span class="n">sample_w_numeric</span><span class="p">)</span>
@@ -1273,13 +1273,13 @@
 
     <span class="n">out</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">=</span> <span class="n">_safe_replace_and_infer</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">out_dict</span><span class="p">]))</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">_weights_per_covars_names</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
+        <span class="n">_weights_per_covars_names</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())[</span><span class="s2">"weight"</span><span class="p">]</span>
         <span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
         <span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
     <span class="p">)</span>
     <span class="n">out</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">out</span><span class="p">,</span> <span class="n">weights</span><span class="p">))</span>
-    <span class="n">mean</span> <span class="o">=</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">out</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">])</span>
-    <span class="n">out</span><span class="p">[</span><span class="s2">&quot;mean(ks)&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">out</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">"weight"</span><span class="p">])</span>
+    <span class="n">out</span><span class="p">[</span><span class="s2">"mean(ks)"</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean</span>
 
     <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">out</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1292,7 +1292,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_aggregate_statistic_by_main_covar</span><span class="p">(</span><span class="n">statistic_series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This function helps to aggregate statistics (e.g., ASMD, KLD), which are broken down per level for a category variable,</span>
 <span class="sd">    into one value per covariate.</span>
 <span class="sd">    This is useful since it allows us to get high level view of features such as country, locale, etc.</span>
@@ -1312,18 +1312,18 @@
 
 <span class="sd">            statistic_series = pd.Series(</span>
 <span class="sd">            {</span>
-<span class="sd">                &#39;age&#39;: 0.5,</span>
-<span class="sd">                &#39;education[T.high_school]&#39;: 1,</span>
-<span class="sd">                &#39;education[T.bachelor]&#39;: 2,</span>
-<span class="sd">                &#39;education[T.masters]&#39;: 3,</span>
-<span class="sd">                &#39;education[T.phd]&#39;: 4,</span>
+<span class="sd">                'age': 0.5,</span>
+<span class="sd">                'education[T.high_school]': 1,</span>
+<span class="sd">                'education[T.bachelor]': 2,</span>
+<span class="sd">                'education[T.masters]': 3,</span>
+<span class="sd">                'education[T.phd]': 4,</span>
 <span class="sd">            })</span>
 
 <span class="sd">            _aggregate_statistic_by_main_covar(statistic_series).to_dict()</span>
 
 <span class="sd">            # output:</span>
-<span class="sd">            # {&#39;age&#39;: 0.5, &#39;education&#39;: 2.5}</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">            # {'age': 0.5, 'education': 2.5}</span>
+<span class="sd">    """</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">_weights_per_covars_names</span><span class="p">(</span><span class="n">statistic_series</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
 
     <span class="c1"># turn things into DataFrame to make it easy to aggregate.</span>
@@ -1332,11 +1332,11 @@
     <span class="c1"># Define the apply function for calculating weighted means</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">calculate_weighted_mean</span><span class="p">(</span><span class="n">group_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="n">values</span> <span class="o">=</span> <span class="n">group_data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># First column contains the ASMD values</span>
-        <span class="n">weights</span> <span class="o">=</span> <span class="n">group_data</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">group_data</span><span class="p">[</span><span class="s2">"weight"</span><span class="p">]</span>
         <span class="k">return</span> <span class="p">((</span><span class="n">values</span> <span class="o">*</span> <span class="n">weights</span><span class="p">)</span> <span class="o">/</span> <span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
     <span class="c1"># Use _safe_groupby_apply to handle pandas compatibility</span>
-    <span class="n">out</span> <span class="o">=</span> <span class="n">_safe_groupby_apply</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="s2">&quot;main_covar_names&quot;</span><span class="p">,</span> <span class="n">calculate_weighted_mean</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">_safe_groupby_apply</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="s2">"main_covar_names"</span><span class="p">,</span> <span class="n">calculate_weighted_mean</span><span class="p">)</span>
     <span class="n">out</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">out</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -1357,7 +1357,7 @@
     <span class="n">sample_after_weights</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">target_weights</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the improvement in mean(asmd) from before to after applying some weight adjustment.</span>
+<span class="w">    </span><span class="sd">"""Calculates the improvement in mean(asmd) from before to after applying some weight adjustment.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        sample_before (pd.DataFrame): DataFrame of the sample before adjustments.</span>
@@ -1378,17 +1378,17 @@
 
 <span class="sd">        import pandas as pd</span>
 <span class="sd">        from balance.stats_and_plots.weighted_comparisons_stats import asmd_improvement</span>
-<span class="sd">        sample = pd.DataFrame({&quot;x&quot;: [0, 1]})</span>
-<span class="sd">        target = pd.DataFrame({&quot;x&quot;: [0, 1]})</span>
+<span class="sd">        sample = pd.DataFrame({"x": [0, 1]})</span>
+<span class="sd">        target = pd.DataFrame({"x": [0, 1]})</span>
 <span class="sd">        float(asmd_improvement(sample, sample, target))</span>
 <span class="sd">        # 0.0</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">asmd_mean_before</span> <span class="o">=</span> <span class="n">asmd</span><span class="p">(</span>
         <span class="n">sample_before</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">sample_before_weights</span><span class="p">,</span> <span class="n">target_weights</span>
-    <span class="p">)</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">]</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">"mean(asmd)"</span><span class="p">]</span>
     <span class="n">asmd_mean_after</span> <span class="o">=</span> <span class="n">asmd</span><span class="p">(</span>
         <span class="n">sample_after</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">sample_after_weights</span><span class="p">,</span> <span class="n">target_weights</span>
-    <span class="p">)</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;mean(asmd)&quot;</span><span class="p">]</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">"mean(asmd)"</span><span class="p">]</span>
 
     <span class="c1"># Avoid division by zero when asmd_mean_before is zero or very close to zero</span>
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">asmd_mean_before</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-10</span><span class="p">:</span>
@@ -1406,7 +1406,7 @@
     <span class="n">w_numerator</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">w_denominator</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate ratio of weighted variances of two DataFrames</span>
+<span class="w">    </span><span class="sd">"""Calculate ratio of weighted variances of two DataFrames</span>
 
 <span class="sd">    Directly calculating the empirical ratio of variance of the outcomes before and after weighting.</span>
 <span class="sd">    Notice that this is different than design effect.</span>
@@ -1427,10 +1427,10 @@
 
 <span class="sd">        import pandas as pd</span>
 <span class="sd">        from balance.stats_and_plots.weighted_comparisons_stats import outcome_variance_ratio</span>
-<span class="sd">        df = pd.DataFrame({&quot;y&quot;: [1.0, 2.0, 3.0]})</span>
+<span class="sd">        df = pd.DataFrame({"y": [1.0, 2.0, 3.0]})</span>
 <span class="sd">        outcome_variance_ratio(df, df).iloc[0]</span>
 <span class="sd">        # 1.0</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">numerator_w_var</span> <span class="o">=</span> <span class="n">weighted_var</span><span class="p">(</span><span class="n">df_numerator</span><span class="p">,</span> <span class="n">w_numerator</span><span class="p">)</span>
     <span class="n">denominator_w_var</span> <span class="o">=</span> <span class="n">weighted_var</span><span class="p">(</span><span class="n">df_denominator</span><span class="p">,</span> <span class="n">w_denominator</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">numerator_w_var</span> <span class="o">/</span> <span class="n">denominator_w_var</span></div>

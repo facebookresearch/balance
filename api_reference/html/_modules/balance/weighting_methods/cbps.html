@@ -68,7 +68,7 @@
     <span class="n">beta</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
     <span class="n">truncation_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-5</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
+<span class="w">    </span><span class="sd">"""This is a helper function for cbps.</span>
 <span class="sd">    Given an X matrx and avector of coeeficients beta, it computes the truncated</span>
 <span class="sd">    version of the logit function.</span>
 
@@ -90,7 +90,7 @@
 <span class="sd">        from balance.weighting_methods.cbps import logit_truncated</span>
 <span class="sd">        logit_truncated(np.array([[0.0]]), np.array([0.0])).tolist()</span>
 <span class="sd">        # [[0.5]]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">probs</span> <span class="o">=</span> <span class="n">expit</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">beta</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">probs</span><span class="p">,</span> <span class="n">truncation_value</span><span class="p">),</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">truncation_value</span><span class="p">)</span></div>
 
@@ -103,7 +103,7 @@
     <span class="n">design_weights</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">in_pop</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
+<span class="w">    </span><span class="sd">"""This is a helper function for cbps.</span>
 <span class="sd">    Given computed probs, it computes the weights: N/N_t * (in_pop - p_i)/(1 - p_i).</span>
 <span class="sd">    (Note that these weights on sample are negative for convenience of notations)</span>
 
@@ -125,7 +125,7 @@
 <span class="sd">        in_pop = np.array([1.0, 0.0])</span>
 <span class="sd">        compute_pseudo_weights_from_logit_probs(probs, design_weights, in_pop).tolist()</span>
 <span class="sd">        # [2.0, -2.0]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">N</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">design_weights</span><span class="p">)</span>
     <span class="n">N_target</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">design_weights</span><span class="p">[</span><span class="n">in_pop</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">N</span> <span class="o">/</span> <span class="n">N_target</span> <span class="o">*</span> <span class="p">(</span><span class="n">in_pop</span> <span class="o">-</span> <span class="n">probs</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">probs</span><span class="p">)</span></div>
@@ -141,7 +141,7 @@
     <span class="n">in_pop</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
     <span class="n">XtXinv</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
+<span class="w">    </span><span class="sd">"""This is a helper function for cbps.</span>
 <span class="sd">    It computes the balance loss.</span>
 
 <span class="sd">    Args:</span>
@@ -166,7 +166,7 @@
 <span class="sd">        XtXinv = np.linalg.pinv(X.T @ X)</span>
 <span class="sd">        float(bal_loss(beta, X, design_weights, in_pop, XtXinv)) &gt;= 0</span>
 <span class="sd">        # True</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">probs</span> <span class="o">=</span> <span class="n">logit_truncated</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
     <span class="n">N</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">design_weights</span><span class="p">)</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="p">(</span>
@@ -189,7 +189,7 @@
     <span class="n">in_pop</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">invV</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
+<span class="w">    </span><span class="sd">"""This is a helper function for cbps.</span>
 <span class="sd">    It computes the gmm loss.</span>
 
 <span class="sd">    Args:</span>
@@ -215,8 +215,8 @@
 <span class="sd">        in_pop = np.array([1.0, 0.0])</span>
 <span class="sd">        result = gmm_function(beta, X, design_weights, in_pop)</span>
 <span class="sd">        sorted(result.keys())</span>
-<span class="sd">        # [&#39;invV&#39;, &#39;loss&#39;]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        # ['invV', 'loss']</span>
+<span class="sd">    """</span>
     <span class="c1"># Convert inputs to numpy arrays to avoid pandas indexing issues</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
         <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">values</span>
@@ -265,7 +265,7 @@
 
     <span class="c1"># Compute loss</span>
     <span class="n">loss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">gbar</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">invV</span><span class="p">),</span> <span class="n">gbar</span><span class="p">)</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;loss&quot;</span><span class="p">:</span> <span class="n">loss</span><span class="p">,</span> <span class="s2">&quot;invV&quot;</span><span class="p">:</span> <span class="n">invV</span><span class="p">}</span></div>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"loss"</span><span class="p">:</span> <span class="n">loss</span><span class="p">,</span> <span class="s2">"invV"</span><span class="p">:</span> <span class="n">invV</span><span class="p">}</span></div>
 
 
 
@@ -278,7 +278,7 @@
     <span class="n">in_pop</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">invV</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
+<span class="w">    </span><span class="sd">"""This is a helper function for cbps.</span>
 <span class="sd">    It computes the gmm loss.</span>
 <span class="sd">    See gmm_function for detials.</span>
 
@@ -303,8 +303,8 @@
 <span class="sd">        in_pop = np.array([1.0, 0.0])</span>
 <span class="sd">        float(gmm_loss(beta, X, design_weights, in_pop)) &gt;= 0</span>
 <span class="sd">        # True</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">gmm_function</span><span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">design_weights</span><span class="p">,</span> <span class="n">in_pop</span><span class="p">,</span> <span class="n">invV</span><span class="p">)[</span><span class="s2">&quot;loss&quot;</span><span class="p">]</span></div>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">gmm_function</span><span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">design_weights</span><span class="p">,</span> <span class="n">in_pop</span><span class="p">,</span> <span class="n">invV</span><span class="p">)[</span><span class="s2">"loss"</span><span class="p">]</span></div>
 
 
 
@@ -317,7 +317,7 @@
     <span class="n">design_weights</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">in_pop</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a helper function for cbps.</span>
+<span class="w">    </span><span class="sd">"""This is a helper function for cbps.</span>
 <span class="sd">    It computes the gmm loss of alpha*beta.</span>
 
 <span class="sd">    Args:</span>
@@ -342,7 +342,7 @@
 <span class="sd">        in_pop = np.array([1.0, 0.0])</span>
 <span class="sd">        float(alpha_function(alpha, beta, X, design_weights, in_pop)) &gt;= 0</span>
 <span class="sd">        # True</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">gmm_loss</span><span class="p">(</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">beta</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">design_weights</span><span class="p">,</span> <span class="n">in_pop</span><span class="p">)</span></div>
 
 
@@ -352,7 +352,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_deff_from_beta</span><span class="p">(</span>
     <span class="n">X</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">beta</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">design_weights</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">in_pop</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a helper function for cbps. It computes the design effect of</span>
+<span class="w">    </span><span class="sd">"""This is a helper function for cbps. It computes the design effect of</span>
 <span class="sd">    the estimated weights on the sample given a value of beta.</span>
 <span class="sd">    It is used for setting a constraints on max_de.</span>
 
@@ -376,7 +376,7 @@
 <span class="sd">        in_pop = np.array([1.0, 0.0])</span>
 <span class="sd">        float(compute_deff_from_beta(X, beta, design_weights, in_pop)) &gt;= 0</span>
 <span class="sd">        # True</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">probs</span> <span class="o">=</span> <span class="n">logit_truncated</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span>
         <span class="n">compute_pseudo_weights_from_logit_probs</span><span class="p">(</span><span class="n">probs</span><span class="p">,</span> <span class="n">design_weights</span><span class="p">,</span> <span class="n">in_pop</span><span class="p">)</span>
@@ -389,7 +389,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_standardize_model_matrix</span><span class="p">(</span>
     <span class="n">model_matrix</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">model_matrix_columns_names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a helper function for cbps. It standardizes the columns of the model matrix.</span>
+<span class="w">    </span><span class="sd">"""This is a helper function for cbps. It standardizes the columns of the model matrix.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        model_matrix (pd.DataFrame): the matrix of covariates</span>
@@ -398,12 +398,12 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, Any]: Dict of the shape</span>
 <span class="sd">            {</span>
-<span class="sd">                &quot;model_matrix&quot;: model_matrix,</span>
-<span class="sd">                &quot;model_matrix_columns_names&quot;: model_matrix_columns_names,</span>
-<span class="sd">                &quot;model_matrix_mean&quot;: model_matrix_mean,</span>
-<span class="sd">                &quot;model_matrix_std&quot;: model_matrix_std,</span>
+<span class="sd">                "model_matrix": model_matrix,</span>
+<span class="sd">                "model_matrix_columns_names": model_matrix_columns_names,</span>
+<span class="sd">                "model_matrix_mean": model_matrix_mean,</span>
+<span class="sd">                "model_matrix_std": model_matrix_std,</span>
 <span class="sd">            }</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># TODO: Verify if scikit-learn have something similar</span>
     <span class="n">model_matrix_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">model_matrix</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
         <span class="o">-</span><span class="mi">1</span>
@@ -414,7 +414,7 @@
             <span class="n">variables_to_omit</span>
         <span class="p">]</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;The following variables have only one level, and are omitted: </span><span class="si">{</span><span class="n">names_variables_to_omit</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"The following variables have only one level, and are omitted: </span><span class="si">{</span><span class="n">names_variables_to_omit</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
         <span class="n">model_matrix_columns_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
             <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">model_matrix_columns_names</span><span class="p">)[</span><span class="n">np</span><span class="o">.</span><span class="n">invert</span><span class="p">(</span><span class="n">variables_to_omit</span><span class="p">)]</span>
@@ -424,10 +424,10 @@
     <span class="n">model_matrix_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">model_matrix</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
     <span class="n">model_matrix</span> <span class="o">=</span> <span class="p">(</span><span class="n">model_matrix</span> <span class="o">-</span> <span class="n">model_matrix_mean</span><span class="p">)</span> <span class="o">/</span> <span class="n">model_matrix_std</span>
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;model_matrix&quot;</span><span class="p">:</span> <span class="n">model_matrix</span><span class="p">,</span>
-        <span class="s2">&quot;model_matrix_columns_names&quot;</span><span class="p">:</span> <span class="n">model_matrix_columns_names</span><span class="p">,</span>
-        <span class="s2">&quot;model_matrix_mean&quot;</span><span class="p">:</span> <span class="n">model_matrix_mean</span><span class="p">,</span>
-        <span class="s2">&quot;model_matrix_std&quot;</span><span class="p">:</span> <span class="n">model_matrix_std</span><span class="p">,</span>
+        <span class="s2">"model_matrix"</span><span class="p">:</span> <span class="n">model_matrix</span><span class="p">,</span>
+        <span class="s2">"model_matrix_columns_names"</span><span class="p">:</span> <span class="n">model_matrix_columns_names</span><span class="p">,</span>
+        <span class="s2">"model_matrix_mean"</span><span class="p">:</span> <span class="n">model_matrix_mean</span><span class="p">,</span>
+        <span class="s2">"model_matrix_std"</span><span class="p">:</span> <span class="n">model_matrix_std</span><span class="p">,</span>
     <span class="p">}</span>
 
 
@@ -440,7 +440,7 @@
     <span class="n">X_matrix_mean</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
     <span class="n">X_matrix_std</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a helper function for cbps. It revrse the svd and the centralization to get an estimate of beta</span>
+<span class="w">    </span><span class="sd">"""This is a helper function for cbps. It revrse the svd and the centralization to get an estimate of beta</span>
 <span class="sd">    Source: https://github.com/kosukeimai/CBPS/blob/master/R/CBPSMain.R#L353</span>
 
 <span class="sd">    Args:</span>
@@ -453,7 +453,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        np.ndarray: reversed beta coefficient vector</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># TODO: update SVD and reverse SVD to the functions in scikit-learn</span>
     <span class="c1"># Invert s</span>
     <span class="n">s_inv</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -478,13 +478,13 @@
     <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">target_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">variables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">transformations</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
-    <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">,</span>
+    <span class="n">transformations</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"default"</span><span class="p">,</span>
+    <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"add_indicator"</span><span class="p">,</span>
     <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">balance_classes</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">cbps_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;over&quot;</span><span class="p">,</span>  <span class="c1"># other option: &quot;exact&quot;</span>
+    <span class="n">cbps_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"over"</span><span class="p">,</span>  <span class="c1"># other option: "exact"</span>
     <span class="n">max_de</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">opt_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;COBYLA&quot;</span><span class="p">,</span>
+    <span class="n">opt_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"COBYLA"</span><span class="p">,</span>
     <span class="n">opt_opts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">weight_trimming_mean_ratio</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
     <span class="n">weight_trimming_percentile</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -493,7 +493,7 @@
     <span class="n">store_fit_metadata</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fit cbps (covariate balancing propensity score model) for the sample using the target.</span>
+<span class="w">    </span><span class="sd">"""Fit cbps (covariate balancing propensity score model) for the sample using the target.</span>
 <span class="sd">    Final weights are normalized to target size.</span>
 <span class="sd">    We use a two-step GMM estimator (as in the default R package), unlike the suggeted continuous-updating</span>
 <span class="sd">    estimator in the paper. The reason is that it runs much faster than the continuous one.</span>
@@ -512,21 +512,21 @@
 <span class="sd">        variables (Optional[List[str]], optional): list of variables to include in the model.</span>
 <span class="sd">            If None all joint variables of sample_df and target_df are used. Defaults to None.</span>
 <span class="sd">        transformations (str, optional): what transformations to apply to data before fitting the model.</span>
-<span class="sd">            Default is &quot;default&quot; (see apply_transformations function). Defaults to &quot;default&quot;.</span>
+<span class="sd">            Default is "default" (see apply_transformations function). Defaults to "default".</span>
 <span class="sd">        na_action (str, optional): what to do with NAs. (see add_na_indicator function).</span>
-<span class="sd">            Defaults to &quot;add_indicator&quot;.</span>
+<span class="sd">            Defaults to "add_indicator".</span>
 <span class="sd">        formula (Optional[Union[str, List[str]]], optional): The formula according to which build the model.</span>
 <span class="sd">            In case of list of formula, the model matrix will be built in steps and</span>
 <span class="sd">            concatenated together.. Defaults to None.</span>
 <span class="sd">        balance_classes (bool, optional): whether to balance the sample and target size for running the model.</span>
 <span class="sd">            True is preferable for imbalanced cases. Defaults to True.</span>
-<span class="sd">        cbps_method (str, optional): method used for cbps. &quot;over&quot; fits an over-identified model that combines</span>
-<span class="sd">            the propensity score and covariate balancing conditions; &quot;exact&quot; fits a model that only c</span>
-<span class="sd">            ontains the covariate balancing conditions. Defaults to &quot;over&quot;.</span>
+<span class="sd">        cbps_method (str, optional): method used for cbps. "over" fits an over-identified model that combines</span>
+<span class="sd">            the propensity score and covariate balancing conditions; "exact" fits a model that only c</span>
+<span class="sd">            ontains the covariate balancing conditions. Defaults to "over".</span>
 <span class="sd">        max_de (Optional[float], optional): upper bound for the design effect of the computed weights.</span>
 <span class="sd">            Default is None.</span>
 <span class="sd">        opt_method (str, optional): type of optimization solver. See :func:`scipy.optimize.minimize`</span>
-<span class="sd">                   for other options. Defaults to &quot;COBYLA&quot;.</span>
+<span class="sd">                   for other options. Defaults to "COBYLA".</span>
 <span class="sd">        opt_opts (Optional[Dict], optional): A dictionary of solver options. Default is None. See :func:`scipy.optimize.minimize`</span>
 <span class="sd">            for other options. Defaults to None.</span>
 <span class="sd">        weight_trimming_mean_ratio (Union[None, float, int], optional): indicating the ratio from above according to which</span>
@@ -546,27 +546,27 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, Union[pd.Series, Dict]]: A dictionary includes:</span>
-<span class="sd">        &quot;weight&quot; --- The weights for the sample.</span>
-<span class="sd">        &quot;model&quot; -- dictionary with details about the fitted model:</span>
+<span class="sd">        "weight" --- The weights for the sample.</span>
+<span class="sd">        "model" -- dictionary with details about the fitted model:</span>
 <span class="sd">            X_matrix_columns, deviance, beta_optimal, balance_optimize_result,</span>
 <span class="sd">            gmm_optimize_result_glm_init, gmm_optimize_result_bal_init</span>
 <span class="sd">            It has the following shape:</span>
-<span class="sd">            &quot;model&quot;: {</span>
-<span class="sd">                &quot;method&quot;: &quot;cbps&quot;,</span>
-<span class="sd">                &quot;X_matrix_columns&quot;: X_matrix_columns_names,</span>
-<span class="sd">                &quot;deviance&quot;: deviance,</span>
-<span class="sd">                &quot;original_sum_weights&quot;: original_sum_weights,  # This can be used to reconstruct the propensity probablities</span>
-<span class="sd">                &quot;beta_optimal&quot;: beta_opt,</span>
-<span class="sd">                &quot;beta_init_glm&quot;: beta_0,  # The initial estimator by glm</span>
-<span class="sd">                &quot;gmm_init&quot;: gmm_init,  # The rescaled initial estimator</span>
+<span class="sd">            "model": {</span>
+<span class="sd">                "method": "cbps",</span>
+<span class="sd">                "X_matrix_columns": X_matrix_columns_names,</span>
+<span class="sd">                "deviance": deviance,</span>
+<span class="sd">                "original_sum_weights": original_sum_weights,  # This can be used to reconstruct the propensity probablities</span>
+<span class="sd">                "beta_optimal": beta_opt,</span>
+<span class="sd">                "beta_init_glm": beta_0,  # The initial estimator by glm</span>
+<span class="sd">                "gmm_init": gmm_init,  # The rescaled initial estimator</span>
 <span class="sd">                # The following are the results of the optimizations</span>
-<span class="sd">                &quot;rescale_initial_result&quot;: rescale_initial_result,</span>
-<span class="sd">                &quot;balance_optimize_result&quot;: balance_optimize_result,</span>
-<span class="sd">                &quot;gmm_optimize_result_glm_init&quot;: gmm_optimize_result_glm_init</span>
-<span class="sd">                if cbps_method == &quot;over&quot;</span>
+<span class="sd">                "rescale_initial_result": rescale_initial_result,</span>
+<span class="sd">                "balance_optimize_result": balance_optimize_result,</span>
+<span class="sd">                "gmm_optimize_result_glm_init": gmm_optimize_result_glm_init</span>
+<span class="sd">                if cbps_method == "over"</span>
 <span class="sd">                else None,</span>
-<span class="sd">                &quot;gmm_optimize_result_bal_init&quot;: gmm_optimize_result_bal_init</span>
-<span class="sd">                if cbps_method == &quot;over&quot;</span>
+<span class="sd">                "gmm_optimize_result_bal_init": gmm_optimize_result_bal_init</span>
+<span class="sd">                if cbps_method == "over"</span>
 <span class="sd">                else None,</span>
 <span class="sd">            },</span>
 
@@ -575,8 +575,8 @@
 
 <span class="sd">        import pandas as pd</span>
 <span class="sd">        from balance.weighting_methods.cbps import cbps</span>
-<span class="sd">        sample_df = pd.DataFrame({&quot;x&quot;: [0, 1, 0, 1]})</span>
-<span class="sd">        target_df = pd.DataFrame({&quot;x&quot;: [0, 1, 0, 1]})</span>
+<span class="sd">        sample_df = pd.DataFrame({"x": [0, 1, 0, 1]})</span>
+<span class="sd">        target_df = pd.DataFrame({"x": [0, 1, 0, 1]})</span>
 <span class="sd">        sample_weights = pd.Series([1.0, 1.0, 1.0, 1.0])</span>
 <span class="sd">        target_weights = pd.Series([1.0, 1.0, 1.0, 1.0])</span>
 <span class="sd">        result = cbps(</span>
@@ -584,68 +584,67 @@
 <span class="sd">            sample_weights,</span>
 <span class="sd">            target_df,</span>
 <span class="sd">            target_weights,</span>
-<span class="sd">            variables=[&quot;x&quot;],</span>
+<span class="sd">            variables=["x"],</span>
 <span class="sd">            transformations=None,</span>
 <span class="sd">            balance_classes=False,</span>
 <span class="sd">        )</span>
-<span class="sd">        len(result[&quot;weight&quot;]) == len(sample_df)</span>
+<span class="sd">        len(result["weight"]) == len(sample_df)</span>
 <span class="sd">        # True</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting cbps function&quot;</span><span class="p">)</span>
-    <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Starting cbps function"</span><span class="p">)</span>
     <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>  <span class="c1"># setting random seed for cases of variations in glmnet</span>
 
-    <span class="n">balance_util</span><span class="o">.</span><span class="n">_check_weighting_methods_input</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">&quot;sample&quot;</span><span class="p">)</span>
-    <span class="n">balance_util</span><span class="o">.</span><span class="n">_check_weighting_methods_input</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span><span class="p">)</span>
+    <span class="n">balance_util</span><span class="o">.</span><span class="n">_check_weighting_methods_input</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">"sample"</span><span class="p">)</span>
+    <span class="n">balance_util</span><span class="o">.</span><span class="n">_check_weighting_methods_input</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">"target"</span><span class="p">)</span>
 
     <span class="c1"># Choose joint variables from sample and target</span>
     <span class="n">variables</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">choose_variables</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Joint variables for sample and target: </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Joint variables for sample and target: </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
     <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
 
-    <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;drop&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">"drop"</span><span class="p">:</span>
         <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">)</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">drop_na_rows</span><span class="p">(</span>
-            <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">&quot;sample&quot;</span>
+            <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">"sample"</span>
         <span class="p">)</span>
         <span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">)</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">drop_na_rows</span><span class="p">(</span>
-            <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span>
+            <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">"target"</span>
         <span class="p">)</span>
     <span class="c1"># keeping index of sample df to use for final weights</span>
     <span class="n">sample_index</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">index</span>
 
     <span class="c1"># Applying transformations</span>
-    <span class="c1"># Important! Variables that don&#39;t need transformations</span>
+    <span class="c1"># Important! Variables that don't need transformations</span>
     <span class="c1"># should be transformed with the *identity function*,</span>
     <span class="c1"># otherwise will be dropped from the model</span>
     <span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">apply_transformations</span><span class="p">(</span>
         <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">),</span> <span class="n">transformations</span><span class="o">=</span><span class="n">transformations</span>
     <span class="p">)</span>
     <span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Final variables in the model: </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Final variables in the model: </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="c1"># Build X matrix</span>
     <span class="n">model_matrix_output</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">model_matrix</span><span class="p">(</span>
         <span class="n">sample_df</span><span class="p">,</span>
         <span class="n">target_df</span><span class="p">,</span>
         <span class="n">variables</span><span class="p">,</span>
-        <span class="n">add_na</span><span class="o">=</span><span class="p">(</span><span class="n">na_action</span> <span class="o">==</span> <span class="s2">&quot;add_indicator&quot;</span><span class="p">),</span>
-        <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;one&quot;</span><span class="p">,</span>
-        <span class="n">return_var_type</span><span class="o">=</span><span class="s2">&quot;sparse&quot;</span><span class="p">,</span>
+        <span class="n">add_na</span><span class="o">=</span><span class="p">(</span><span class="n">na_action</span> <span class="o">==</span> <span class="s2">"add_indicator"</span><span class="p">),</span>
+        <span class="n">return_type</span><span class="o">=</span><span class="s2">"one"</span><span class="p">,</span>
+        <span class="n">return_var_type</span><span class="o">=</span><span class="s2">"sparse"</span><span class="p">,</span>
         <span class="n">formula</span><span class="o">=</span><span class="n">formula</span><span class="p">,</span>
         <span class="n">one_hot_encoding</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
         <span class="n">csc_matrix</span><span class="p">,</span>
-        <span class="p">(</span><span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">]),</span>
+        <span class="p">(</span><span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">"model_matrix"</span><span class="p">]),</span>
     <span class="p">)</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span>
     <span class="n">X_matrix_columns_names</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
-        <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;model_matrix_columns_names&quot;</span><span class="p">]</span>
+        <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">"model_matrix_columns_names"</span><span class="p">]</span>
     <span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;The formula used to build the model matrix: </span><span class="si">{</span><span class="n">model_matrix_output</span><span class="p">[</span><span class="s1">&#39;formula&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">"The formula used to build the model matrix: </span><span class="si">{</span><span class="n">model_matrix_output</span><span class="p">[</span><span class="s1">'formula'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
     <span class="p">)</span>
 
     <span class="c1"># Standardize the X_matrix for SVD</span>
@@ -653,14 +652,14 @@
         <span class="n">X_matrix</span><span class="p">,</span>
         <span class="n">X_matrix_columns_names</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">model_matrix_standardized</span><span class="p">[</span><span class="s2">&quot;model_matrix&quot;</span><span class="p">]</span>
-    <span class="n">X_matrix_columns_names</span> <span class="o">=</span> <span class="n">model_matrix_standardized</span><span class="p">[</span><span class="s2">&quot;model_matrix_columns_names&quot;</span><span class="p">]</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The number of columns in the model matrix: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The number of rows in the model matrix: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">model_matrix_standardized</span><span class="p">[</span><span class="s2">"model_matrix"</span><span class="p">]</span>
+    <span class="n">X_matrix_columns_names</span> <span class="o">=</span> <span class="n">model_matrix_standardized</span><span class="p">[</span><span class="s2">"model_matrix_columns_names"</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The number of columns in the model matrix: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The number of rows in the model matrix: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="c1"># Adding intercept since model_matrix removes it</span>
     <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">X_matrix</span><span class="p">]</span>
-    <span class="n">X_matrix_columns_names</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Intercept&quot;</span><span class="p">)</span>
+    <span class="n">X_matrix_columns_names</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">"Intercept"</span><span class="p">)</span>
 
     <span class="c1"># SVD for X_matrix</span>
     <span class="n">U</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">Vh</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">X_matrix</span><span class="p">,</span> <span class="n">full_matrices</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -678,13 +677,13 @@
     <span class="n">target_n</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">total_n</span> <span class="o">=</span> <span class="n">sample_n</span> <span class="o">+</span> <span class="n">target_n</span>
 
-    <span class="c1"># Create &quot;treatment&quot; (in_sample) variable</span>
+    <span class="c1"># Create "treatment" (in_sample) variable</span>
     <span class="n">in_sample</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">sample_n</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">target_n</span><span class="p">)))</span>
     <span class="n">in_pop</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sample_n</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">target_n</span><span class="p">)))</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">in_sample</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">in_sample</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">_number_unique</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">in_sample</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">in_sample</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Sample indicator only has value </span><span class="si">{</span><span class="n">_number_unique</span><span class="si">}</span><span class="s2">. This can happen when your sample or target are empty from unknown reason&quot;</span>
+            <span class="sa">f</span><span class="s2">"Sample indicator only has value </span><span class="si">{</span><span class="n">_number_unique</span><span class="si">}</span><span class="s2">. This can happen when your sample or target are empty from unknown reason"</span>
         <span class="p">)</span>
 
     <span class="c1"># balance classes</span>
@@ -715,8 +714,8 @@
         <span class="n">constraints</span> <span class="o">+=</span> <span class="p">[</span>
             <span class="c1"># max de effect</span>
             <span class="p">{</span>
-                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;ineq&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;fun&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">"type"</span><span class="p">:</span> <span class="s2">"ineq"</span><span class="p">,</span>
+                <span class="s2">"fun"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span>
                     <span class="n">max_de</span> <span class="o">-</span> <span class="n">compute_deff_from_beta</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">design_weights</span><span class="p">,</span> <span class="n">in_pop</span><span class="p">)</span>
                 <span class="p">),</span>
             <span class="p">}</span>
@@ -724,7 +723,7 @@
 
     <span class="c1"># Optimization using Generalized Methods of Moments:</span>
     <span class="c1"># Step 0 - initial estimation for beta</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Finding initial estimator for GMM optimization&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Finding initial estimator for GMM optimization"</span><span class="p">)</span>
     <span class="n">glm_mod</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">GLM</span><span class="p">(</span>
         <span class="n">in_pop</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="n">sm</span><span class="o">.</span><span class="n">families</span><span class="o">.</span><span class="n">Binomial</span><span class="p">(),</span> <span class="n">freq_weights</span><span class="o">=</span><span class="n">design_weights</span>
     <span class="p">)</span>
@@ -743,16 +742,16 @@
         <span class="p">),</span>
         <span class="n">bounds</span><span class="o">=</span><span class="p">[(</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">)],</span>  <span class="c1"># These are the bounds used in the R CBPS package</span>
     <span class="p">)</span>
-    <span class="k">if</span> <span class="n">rescale_initial_result</span><span class="p">[</span><span class="s2">&quot;success&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">(</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">rescale_initial_result</span><span class="p">[</span><span class="s2">"success"</span><span class="p">]</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">(</span><span class="kc">False</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Convergence of alpha_function has failed due to &#39;</span><span class="si">{</span><span class="n">rescale_initial_result</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+            <span class="sa">f</span><span class="s2">"Convergence of alpha_function has failed due to '</span><span class="si">{</span><span class="n">rescale_initial_result</span><span class="p">[</span><span class="s1">'message'</span><span class="p">]</span><span class="si">}</span><span class="s2">'"</span>
         <span class="p">)</span>
-    <span class="n">gmm_init</span> <span class="o">=</span> <span class="n">beta_0</span> <span class="o">*</span> <span class="n">rescale_initial_result</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">invV</span> <span class="o">=</span> <span class="n">gmm_function</span><span class="p">(</span><span class="n">gmm_init</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">design_weights</span><span class="p">,</span> <span class="n">in_pop</span><span class="p">,</span> <span class="n">invV</span><span class="o">=</span><span class="kc">None</span><span class="p">)[</span><span class="s2">&quot;invV&quot;</span><span class="p">]</span>
+    <span class="n">gmm_init</span> <span class="o">=</span> <span class="n">beta_0</span> <span class="o">*</span> <span class="n">rescale_initial_result</span><span class="p">[</span><span class="s2">"x"</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">invV</span> <span class="o">=</span> <span class="n">gmm_function</span><span class="p">(</span><span class="n">gmm_init</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">design_weights</span><span class="p">,</span> <span class="n">in_pop</span><span class="p">,</span> <span class="n">invV</span><span class="o">=</span><span class="kc">None</span><span class="p">)[</span><span class="s2">"invV"</span><span class="p">]</span>
 
     <span class="c1"># Step 2 - find initial estimation for beta by minimizing balance loss</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="s2">&quot;Finding initial estimator for GMM optimization that minimizes the balance loss&quot;</span>
+        <span class="s2">"Finding initial estimator for GMM optimization that minimizes the balance loss"</span>
     <span class="p">)</span>
     <span class="n">balance_optimize_result</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
         <span class="n">fun</span><span class="o">=</span><span class="n">bal_loss</span><span class="p">,</span>
@@ -767,27 +766,27 @@
         <span class="n">options</span><span class="o">=</span><span class="n">opt_opts</span><span class="p">,</span>
         <span class="n">constraints</span><span class="o">=</span><span class="n">constraints</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">if</span> <span class="n">balance_optimize_result</span><span class="p">[</span><span class="s2">&quot;success&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">(</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">balance_optimize_result</span><span class="p">[</span><span class="s2">"success"</span><span class="p">]</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">(</span><span class="kc">False</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Convergence of bal_loss function has failed due to &#39;</span><span class="si">{</span><span class="n">balance_optimize_result</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+            <span class="sa">f</span><span class="s2">"Convergence of bal_loss function has failed due to '</span><span class="si">{</span><span class="n">balance_optimize_result</span><span class="p">[</span><span class="s1">'message'</span><span class="p">]</span><span class="si">}</span><span class="s2">'"</span>
         <span class="p">)</span>
-    <span class="n">beta_balance</span> <span class="o">=</span> <span class="n">balance_optimize_result</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span>
+    <span class="n">beta_balance</span> <span class="o">=</span> <span class="n">balance_optimize_result</span><span class="p">[</span><span class="s2">"x"</span><span class="p">]</span>
 
     <span class="n">gmm_optimize_result_glm_init</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">gmm_optimize_result_bal_init</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="k">if</span> <span class="n">cbps_method</span> <span class="o">==</span> <span class="s2">&quot;exact&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">cbps_method</span> <span class="o">==</span> <span class="s2">"exact"</span><span class="p">:</span>
         <span class="k">if</span> <span class="p">(</span>
-            <span class="n">balance_optimize_result</span><span class="p">[</span><span class="s2">&quot;success&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-            <span class="ow">and</span> <span class="s2">&quot;Did not converge to a solution satisfying the constraints&quot;</span>
-            <span class="ow">in</span> <span class="n">balance_optimize_result</span><span class="p">[</span><span class="s2">&quot;message&quot;</span><span class="p">]</span>
+            <span class="n">balance_optimize_result</span><span class="p">[</span><span class="s2">"success"</span><span class="p">]</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="s2">"Did not converge to a solution satisfying the constraints"</span>
+            <span class="ow">in</span> <span class="n">balance_optimize_result</span><span class="p">[</span><span class="s2">"message"</span><span class="p">]</span>
         <span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;There is no solution satisfying the constraints.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">"There is no solution satisfying the constraints."</span><span class="p">)</span>
         <span class="n">beta_opt</span> <span class="o">=</span> <span class="n">beta_balance</span>
 
     <span class="c1"># Step 3 - minimize gmm_loss from two starting points: beta_balance and gmm_init,</span>
     <span class="c1"># and choose the solution that minimize the gmm_loss.</span>
-    <span class="k">elif</span> <span class="n">cbps_method</span> <span class="o">==</span> <span class="s2">&quot;over&quot;</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running GMM optimization&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">cbps_method</span> <span class="o">==</span> <span class="s2">"over"</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Running GMM optimization"</span><span class="p">)</span>
         <span class="n">gmm_optimize_result_glm_init</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
             <span class="n">fun</span><span class="o">=</span><span class="n">gmm_loss</span><span class="p">,</span>
             <span class="n">x0</span><span class="o">=</span><span class="n">gmm_init</span><span class="p">,</span>
@@ -801,9 +800,9 @@
             <span class="n">options</span><span class="o">=</span><span class="n">opt_opts</span><span class="p">,</span>
             <span class="n">constraints</span><span class="o">=</span><span class="n">constraints</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="k">if</span> <span class="n">gmm_optimize_result_glm_init</span><span class="p">[</span><span class="s2">&quot;success&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">(</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">gmm_optimize_result_glm_init</span><span class="p">[</span><span class="s2">"success"</span><span class="p">]</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">(</span><span class="kc">False</span><span class="p">):</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Convergence of gmm_loss function with gmm_init start point has failed due to &#39;</span><span class="si">{</span><span class="n">gmm_optimize_result_glm_init</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+                <span class="sa">f</span><span class="s2">"Convergence of gmm_loss function with gmm_init start point has failed due to '</span><span class="si">{</span><span class="n">gmm_optimize_result_glm_init</span><span class="p">[</span><span class="s1">'message'</span><span class="p">]</span><span class="si">}</span><span class="s2">'"</span>
             <span class="p">)</span>
 
         <span class="n">gmm_optimize_result_bal_init</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
@@ -819,44 +818,44 @@
             <span class="n">options</span><span class="o">=</span><span class="n">opt_opts</span><span class="p">,</span>
             <span class="n">constraints</span><span class="o">=</span><span class="n">constraints</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="k">if</span> <span class="n">gmm_optimize_result_bal_init</span><span class="p">[</span><span class="s2">&quot;success&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">(</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">gmm_optimize_result_bal_init</span><span class="p">[</span><span class="s2">"success"</span><span class="p">]</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">(</span><span class="kc">False</span><span class="p">):</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Convergence of gmm_loss function with beta_balance start point has failed due to &#39;</span><span class="si">{</span><span class="n">gmm_optimize_result_bal_init</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+                <span class="sa">f</span><span class="s2">"Convergence of gmm_loss function with beta_balance start point has failed due to '</span><span class="si">{</span><span class="n">gmm_optimize_result_bal_init</span><span class="p">[</span><span class="s1">'message'</span><span class="p">]</span><span class="si">}</span><span class="s2">'"</span>
             <span class="p">)</span>
 
         <span class="c1"># If the constraints cannot be satisfied, exit the function</span>
         <span class="k">if</span> <span class="p">(</span>
-            <span class="n">gmm_optimize_result_glm_init</span><span class="p">[</span><span class="s2">&quot;success&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-            <span class="ow">and</span> <span class="s2">&quot;Did not converge to a solution satisfying the constraints&quot;</span>
-            <span class="ow">in</span> <span class="n">gmm_optimize_result_glm_init</span><span class="p">[</span><span class="s2">&quot;message&quot;</span><span class="p">]</span>
-            <span class="ow">and</span> <span class="n">gmm_optimize_result_bal_init</span><span class="p">[</span><span class="s2">&quot;success&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-            <span class="ow">and</span> <span class="s2">&quot;Did not converge to a solution satisfying the constraints&quot;</span>
-            <span class="ow">in</span> <span class="n">gmm_optimize_result_bal_init</span><span class="p">[</span><span class="s2">&quot;message&quot;</span><span class="p">]</span>
+            <span class="n">gmm_optimize_result_glm_init</span><span class="p">[</span><span class="s2">"success"</span><span class="p">]</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="s2">"Did not converge to a solution satisfying the constraints"</span>
+            <span class="ow">in</span> <span class="n">gmm_optimize_result_glm_init</span><span class="p">[</span><span class="s2">"message"</span><span class="p">]</span>
+            <span class="ow">and</span> <span class="n">gmm_optimize_result_bal_init</span><span class="p">[</span><span class="s2">"success"</span><span class="p">]</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="s2">"Did not converge to a solution satisfying the constraints"</span>
+            <span class="ow">in</span> <span class="n">gmm_optimize_result_bal_init</span><span class="p">[</span><span class="s2">"message"</span><span class="p">]</span>
         <span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;There is no solution satisfying the constraints.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">"There is no solution satisfying the constraints."</span><span class="p">)</span>
 
         <span class="c1"># Choose beta that gives a smaller loss in GMM and that satisfy the constraints</span>
         <span class="k">if</span> <span class="p">(</span>
-            <span class="n">gmm_optimize_result_bal_init</span><span class="p">[</span><span class="s2">&quot;fun&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">gmm_optimize_result_glm_init</span><span class="p">[</span><span class="s2">&quot;fun&quot;</span><span class="p">]</span>
-            <span class="ow">and</span> <span class="s2">&quot;Did not converge to a solution satisfying the constraints&quot;</span>
-            <span class="ow">not</span> <span class="ow">in</span> <span class="n">gmm_optimize_result_bal_init</span><span class="p">[</span><span class="s2">&quot;message&quot;</span><span class="p">]</span>
+            <span class="n">gmm_optimize_result_bal_init</span><span class="p">[</span><span class="s2">"fun"</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">gmm_optimize_result_glm_init</span><span class="p">[</span><span class="s2">"fun"</span><span class="p">]</span>
+            <span class="ow">and</span> <span class="s2">"Did not converge to a solution satisfying the constraints"</span>
+            <span class="ow">not</span> <span class="ow">in</span> <span class="n">gmm_optimize_result_bal_init</span><span class="p">[</span><span class="s2">"message"</span><span class="p">]</span>
         <span class="p">):</span>
-            <span class="n">beta_opt</span> <span class="o">=</span> <span class="n">gmm_optimize_result_bal_init</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span>
+            <span class="n">beta_opt</span> <span class="o">=</span> <span class="n">gmm_optimize_result_bal_init</span><span class="p">[</span><span class="s2">"x"</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">beta_opt</span> <span class="o">=</span> <span class="n">gmm_optimize_result_glm_init</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span>
+            <span class="n">beta_opt</span> <span class="o">=</span> <span class="n">gmm_optimize_result_glm_init</span><span class="p">[</span><span class="s2">"x"</span><span class="p">]</span>
 
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cbps_method &#39;</span><span class="si">{</span><span class="n">cbps_method</span><span class="si">}</span><span class="s2">&#39; is not a valid option&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">"cbps_method '</span><span class="si">{</span><span class="n">cbps_method</span><span class="si">}</span><span class="s2">' is not a valid option"</span><span class="p">)</span>
 
     <span class="c1"># Compute final probs and weights with beta_opt</span>
     <span class="n">probs</span> <span class="o">=</span> <span class="n">logit_truncated</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">beta_opt</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Minimum probs for sample: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">probs</span><span class="p">[</span><span class="n">in_sample</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">1.0</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Maximum probs for sample: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">probs</span><span class="p">[</span><span class="n">in_sample</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">1.0</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Minimum probs for sample: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">probs</span><span class="p">[</span><span class="n">in_sample</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">1.0</span><span class="p">])</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Maximum probs for sample: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">probs</span><span class="p">[</span><span class="n">in_sample</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">1.0</span><span class="p">])</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span>
         <span class="n">compute_pseudo_weights_from_logit_probs</span><span class="p">(</span><span class="n">probs</span><span class="p">,</span> <span class="n">design_weights</span><span class="p">,</span> <span class="n">in_pop</span><span class="p">)</span>
     <span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Minimum weight for sample: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="n">in_sample</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">1.0</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Maximum weight for sample: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="n">in_sample</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">1.0</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Minimum weight for sample: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="n">in_sample</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">1.0</span><span class="p">])</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Maximum weight for sample: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="n">in_sample</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">1.0</span><span class="p">])</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">design_weights</span><span class="p">[</span><span class="n">in_sample</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="n">weights</span><span class="p">[</span><span class="n">in_sample</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">]</span>
 
     <span class="c1"># Compute deviance (Minus twice the log-likelihood of the CBPS fit)</span>
@@ -871,16 +870,16 @@
     <span class="p">)</span>
     <span class="c1"># normalize to target size</span>
     <span class="n">original_sum_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;original sum of weights for sample: </span><span class="si">{</span><span class="n">original_sum_weights</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"original sum of weights for sample: </span><span class="si">{</span><span class="n">original_sum_weights</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">/</span> <span class="n">original_sum_weights</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">target_weights</span><span class="p">)</span>
 
     <span class="c1"># set index to sample_df</span>
-    <span class="n">weights</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">weights</span><span class="p">})</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">sample_index</span><span class="p">)[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">"weight"</span><span class="p">:</span> <span class="n">weights</span><span class="p">})</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">sample_index</span><span class="p">)[</span><span class="s2">"weight"</span><span class="p">]</span>
 
-    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">weights</span><span class="o">.</span><span class="n">describe</span><span class="p">()[</span><span class="s2">&quot;std&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">1e-4</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">weights</span><span class="o">.</span><span class="n">describe</span><span class="p">()[</span><span class="s2">"std"</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">1e-4</span><span class="p">:</span>
         <span class="c1"># All weights are the same</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;All weights are identical (or almost identical). The estimates will not be adjusted&quot;</span>
+            <span class="s2">"All weights are identical (or almost identical). The estimates will not be adjusted"</span>
         <span class="p">)</span>
 
     <span class="n">beta_opt_model_space</span> <span class="o">=</span> <span class="n">beta_opt</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -891,54 +890,54 @@
         <span class="n">U</span><span class="p">,</span>
         <span class="n">s</span><span class="p">,</span>
         <span class="n">Vh</span><span class="p">,</span>
-        <span class="n">model_matrix_standardized</span><span class="p">[</span><span class="s2">&quot;model_matrix_mean&quot;</span><span class="p">],</span>
-        <span class="n">model_matrix_standardized</span><span class="p">[</span><span class="s2">&quot;model_matrix_std&quot;</span><span class="p">],</span>
+        <span class="n">model_matrix_standardized</span><span class="p">[</span><span class="s2">"model_matrix_mean"</span><span class="p">],</span>
+        <span class="n">model_matrix_standardized</span><span class="p">[</span><span class="s2">"model_matrix_std"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">out</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">weights</span><span class="p">,</span>
-        <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;cbps&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;X_matrix_columns&quot;</span><span class="p">:</span> <span class="n">X_matrix_columns_names</span><span class="p">,</span>
-            <span class="s2">&quot;deviance&quot;</span><span class="p">:</span> <span class="n">deviance</span><span class="p">,</span>
-            <span class="s2">&quot;original_sum_weights&quot;</span><span class="p">:</span> <span class="n">original_sum_weights</span><span class="p">,</span>  <span class="c1"># This can be used to reconstruct the propensity probablities</span>
-            <span class="s2">&quot;beta_optimal&quot;</span><span class="p">:</span> <span class="n">beta_opt</span><span class="p">,</span>
-            <span class="s2">&quot;beta_init_glm&quot;</span><span class="p">:</span> <span class="n">beta_0</span><span class="p">,</span>  <span class="c1"># The initial estimator by glm</span>
-            <span class="s2">&quot;gmm_init&quot;</span><span class="p">:</span> <span class="n">gmm_init</span><span class="p">,</span>  <span class="c1"># The rescaled initial estimator</span>
+        <span class="s2">"weight"</span><span class="p">:</span> <span class="n">weights</span><span class="p">,</span>
+        <span class="s2">"model"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"method"</span><span class="p">:</span> <span class="s2">"cbps"</span><span class="p">,</span>
+            <span class="s2">"X_matrix_columns"</span><span class="p">:</span> <span class="n">X_matrix_columns_names</span><span class="p">,</span>
+            <span class="s2">"deviance"</span><span class="p">:</span> <span class="n">deviance</span><span class="p">,</span>
+            <span class="s2">"original_sum_weights"</span><span class="p">:</span> <span class="n">original_sum_weights</span><span class="p">,</span>  <span class="c1"># This can be used to reconstruct the propensity probablities</span>
+            <span class="s2">"beta_optimal"</span><span class="p">:</span> <span class="n">beta_opt</span><span class="p">,</span>
+            <span class="s2">"beta_init_glm"</span><span class="p">:</span> <span class="n">beta_0</span><span class="p">,</span>  <span class="c1"># The initial estimator by glm</span>
+            <span class="s2">"gmm_init"</span><span class="p">:</span> <span class="n">gmm_init</span><span class="p">,</span>  <span class="c1"># The rescaled initial estimator</span>
             <span class="c1"># The following are the results of the optimizations</span>
-            <span class="s2">&quot;rescale_initial_result&quot;</span><span class="p">:</span> <span class="n">rescale_initial_result</span><span class="p">,</span>
-            <span class="s2">&quot;balance_optimize_result&quot;</span><span class="p">:</span> <span class="n">balance_optimize_result</span><span class="p">,</span>
-            <span class="s2">&quot;gmm_optimize_result_glm_init&quot;</span><span class="p">:</span> <span class="p">(</span>
-                <span class="n">gmm_optimize_result_glm_init</span> <span class="k">if</span> <span class="n">cbps_method</span> <span class="o">==</span> <span class="s2">&quot;over&quot;</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="s2">"rescale_initial_result"</span><span class="p">:</span> <span class="n">rescale_initial_result</span><span class="p">,</span>
+            <span class="s2">"balance_optimize_result"</span><span class="p">:</span> <span class="n">balance_optimize_result</span><span class="p">,</span>
+            <span class="s2">"gmm_optimize_result_glm_init"</span><span class="p">:</span> <span class="p">(</span>
+                <span class="n">gmm_optimize_result_glm_init</span> <span class="k">if</span> <span class="n">cbps_method</span> <span class="o">==</span> <span class="s2">"over"</span> <span class="k">else</span> <span class="kc">None</span>
             <span class="p">),</span>
-            <span class="s2">&quot;gmm_optimize_result_bal_init&quot;</span><span class="p">:</span> <span class="p">(</span>
-                <span class="n">gmm_optimize_result_bal_init</span> <span class="k">if</span> <span class="n">cbps_method</span> <span class="o">==</span> <span class="s2">&quot;over&quot;</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="s2">"gmm_optimize_result_bal_init"</span><span class="p">:</span> <span class="p">(</span>
+                <span class="n">gmm_optimize_result_bal_init</span> <span class="k">if</span> <span class="n">cbps_method</span> <span class="o">==</span> <span class="s2">"over"</span> <span class="k">else</span> <span class="kc">None</span>
             <span class="p">),</span>
         <span class="p">},</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="n">store_fit_metadata</span><span class="p">:</span>
-        <span class="n">cast</span><span class="p">(</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">out</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+        <span class="n">cast</span><span class="p">(</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">out</span><span class="p">[</span><span class="s2">"model"</span><span class="p">])</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
             <span class="p">{</span>
-                <span class="s2">&quot;variables&quot;</span><span class="p">:</span> <span class="n">variables</span><span class="p">,</span>
-                <span class="s2">&quot;transformations&quot;</span><span class="p">:</span> <span class="n">transformations</span><span class="p">,</span>
-                <span class="s2">&quot;na_action&quot;</span><span class="p">:</span> <span class="n">na_action</span><span class="p">,</span>
-                <span class="s2">&quot;formula&quot;</span><span class="p">:</span> <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">&quot;formula&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;balance_classes&quot;</span><span class="p">:</span> <span class="n">balance_classes</span><span class="p">,</span>
-                <span class="s2">&quot;weight_trimming_mean_ratio&quot;</span><span class="p">:</span> <span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
-                <span class="s2">&quot;weight_trimming_percentile&quot;</span><span class="p">:</span> <span class="n">weight_trimming_percentile</span><span class="p">,</span>
-                <span class="s2">&quot;sample_index&quot;</span><span class="p">:</span> <span class="n">sample_index</span><span class="p">,</span>
-                <span class="s2">&quot;target_index&quot;</span><span class="p">:</span> <span class="n">target_df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
-                <span class="s2">&quot;training_sample_weights&quot;</span><span class="p">:</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-                <span class="s2">&quot;training_target_weights&quot;</span><span class="p">:</span> <span class="n">target_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-                <span class="s2">&quot;model_matrix_mean&quot;</span><span class="p">:</span> <span class="n">model_matrix_standardized</span><span class="p">[</span><span class="s2">&quot;model_matrix_mean&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;model_matrix_std&quot;</span><span class="p">:</span> <span class="n">model_matrix_standardized</span><span class="p">[</span><span class="s2">&quot;model_matrix_std&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;beta_optimal_model_space&quot;</span><span class="p">:</span> <span class="n">beta_opt_model_space</span><span class="p">,</span>
-                <span class="s2">&quot;svd_s&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-                <span class="s2">&quot;svd_Vh&quot;</span><span class="p">:</span> <span class="n">Vh</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-                <span class="s2">&quot;store_fit_metadata&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">"variables"</span><span class="p">:</span> <span class="n">variables</span><span class="p">,</span>
+                <span class="s2">"transformations"</span><span class="p">:</span> <span class="n">transformations</span><span class="p">,</span>
+                <span class="s2">"na_action"</span><span class="p">:</span> <span class="n">na_action</span><span class="p">,</span>
+                <span class="s2">"formula"</span><span class="p">:</span> <span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">"formula"</span><span class="p">],</span>
+                <span class="s2">"balance_classes"</span><span class="p">:</span> <span class="n">balance_classes</span><span class="p">,</span>
+                <span class="s2">"weight_trimming_mean_ratio"</span><span class="p">:</span> <span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
+                <span class="s2">"weight_trimming_percentile"</span><span class="p">:</span> <span class="n">weight_trimming_percentile</span><span class="p">,</span>
+                <span class="s2">"sample_index"</span><span class="p">:</span> <span class="n">sample_index</span><span class="p">,</span>
+                <span class="s2">"target_index"</span><span class="p">:</span> <span class="n">target_df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                <span class="s2">"training_sample_weights"</span><span class="p">:</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">"training_target_weights"</span><span class="p">:</span> <span class="n">target_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">"model_matrix_mean"</span><span class="p">:</span> <span class="n">model_matrix_standardized</span><span class="p">[</span><span class="s2">"model_matrix_mean"</span><span class="p">],</span>
+                <span class="s2">"model_matrix_std"</span><span class="p">:</span> <span class="n">model_matrix_standardized</span><span class="p">[</span><span class="s2">"model_matrix_std"</span><span class="p">],</span>
+                <span class="s2">"beta_optimal_model_space"</span><span class="p">:</span> <span class="n">beta_opt_model_space</span><span class="p">,</span>
+                <span class="s2">"svd_s"</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">"svd_Vh"</span><span class="p">:</span> <span class="n">Vh</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">"store_fit_metadata"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done cbps function&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Done cbps function"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">out</span></div>
 

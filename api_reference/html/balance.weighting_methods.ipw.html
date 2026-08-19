@@ -262,10 +262,10 @@ sklearn-style prediction/weight reproduction workflows.</p>
 <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">sample_df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
 <span class="n">target_weights</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">target_df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
 
-<span class="c1"># Define model (categorical_features=&quot;from_dtype&quot; tells sklearn</span>
+<span class="c1"># Define model (categorical_features="from_dtype" tells sklearn</span>
 <span class="c1"># to treat pandas Categorical columns as unordered categoricals)</span>
 <span class="n">hgb</span> <span class="o">=</span> <span class="n">HistGradientBoostingClassifier</span><span class="p">(</span>
-    <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">categorical_features</span><span class="o">=</span><span class="s2">&quot;from_dtype&quot;</span>
+    <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">categorical_features</span><span class="o">=</span><span class="s2">"from_dtype"</span>
 <span class="p">)</span>
 
 <span class="c1"># Run IPW with sklearn model on raw covariates</span>
@@ -274,21 +274,21 @@ sklearn-style prediction/weight reproduction workflows.</p>
     <span class="n">sample_weights</span><span class="p">,</span>
     <span class="n">target_df</span><span class="p">,</span>
     <span class="n">target_weights</span><span class="p">,</span>
-    <span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;gender&quot;</span><span class="p">,</span> <span class="s2">&quot;age_group&quot;</span><span class="p">,</span> <span class="s2">&quot;income&quot;</span><span class="p">],</span>
+    <span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"gender"</span><span class="p">,</span> <span class="s2">"age_group"</span><span class="p">,</span> <span class="s2">"income"</span><span class="p">],</span>
     <span class="n">model</span><span class="o">=</span><span class="n">hgb</span><span class="p">,</span>
     <span class="n">use_model_matrix</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;HistGradientBoostingClassifier result:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"HistGradientBoostingClassifier result:"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">result_hgb</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Output (values will vary by model and random seed):</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HistGradientBoostingClassifier</span> <span class="n">result</span><span class="p">:</span>
-<span class="p">{</span><span class="s1">&#39;weight&#39;</span><span class="p">:</span> <span class="mi">0</span>      <span class="o">...</span>
+<span class="p">{</span><span class="s1">'weight'</span><span class="p">:</span> <span class="mi">0</span>      <span class="o">...</span>
 <span class="mi">1</span>      <span class="o">...</span>
 <span class="o">...</span>
 <span class="mi">999</span>    <span class="o">...</span>
-<span class="n">Length</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">float64</span><span class="p">,</span> <span class="s1">&#39;model&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;method&#39;</span><span class="p">:</span> <span class="s1">&#39;ipw&#39;</span><span class="p">,</span> <span class="o">...</span><span class="p">}}</span>
+<span class="n">Length</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">float64</span><span class="p">,</span> <span class="s1">'model'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'method'</span><span class="p">:</span> <span class="s1">'ipw'</span><span class="p">,</span> <span class="o">...</span><span class="p">}}</span>
 </pre></div>
 </div>
 <p>Example 2: Using default sklearn model (LogisticRegression)</p>
@@ -298,16 +298,16 @@ sklearn-style prediction/weight reproduction workflows.</p>
     <span class="n">sample_weights</span><span class="p">,</span>
     <span class="n">target_df</span><span class="p">,</span>
     <span class="n">target_weights</span><span class="p">,</span>
-    <span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;gender&quot;</span><span class="p">,</span> <span class="s2">&quot;age_group&quot;</span><span class="p">,</span> <span class="s2">&quot;income&quot;</span><span class="p">],</span>
-    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;sklearn&quot;</span><span class="p">,</span>
+    <span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"gender"</span><span class="p">,</span> <span class="s2">"age_group"</span><span class="p">,</span> <span class="s2">"income"</span><span class="p">],</span>
+    <span class="n">model</span><span class="o">=</span><span class="s2">"sklearn"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Default sklearn model result:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Default sklearn model result:"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">result_sklearn</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Output:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Default</span> <span class="n">sklearn</span> <span class="n">model</span> <span class="n">result</span><span class="p">:</span>
-<span class="p">{</span><span class="s1">&#39;weight&#39;</span><span class="p">:</span> <span class="mi">0</span>       <span class="mf">6.531728</span>
+<span class="p">{</span><span class="s1">'weight'</span><span class="p">:</span> <span class="mi">0</span>       <span class="mf">6.531728</span>
 <span class="mi">1</span>       <span class="mf">9.617159</span>
 <span class="mi">2</span>       <span class="mf">3.562973</span>
 <span class="mi">3</span>       <span class="mf">6.952117</span>
@@ -318,20 +318,20 @@ sklearn-style prediction/weight reproduction workflows.</p>
 <span class="mi">997</span>     <span class="mf">7.095483</span>
 <span class="mi">998</span>    <span class="mf">11.331144</span>
 <span class="mi">999</span>     <span class="mf">7.913133</span>
-<span class="n">Length</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">float64</span><span class="p">,</span> <span class="s1">&#39;model&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;method&#39;</span><span class="p">:</span> <span class="s1">&#39;ipw&#39;</span><span class="p">,</span> <span class="o">...</span><span class="p">}}</span>
+<span class="n">Length</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">float64</span><span class="p">,</span> <span class="s1">'model'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'method'</span><span class="p">:</span> <span class="s1">'ipw'</span><span class="p">,</span> <span class="o">...</span><span class="p">}}</span>
 </pre></div>
 </div>
 <p>Example 3: Comparing weights from different models</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="c1"># Combine weights into a DataFrame</span>
 <span class="n">comparison_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
-    <span class="s1">&#39;HGB&#39;</span><span class="p">:</span> <span class="n">result_hgb</span><span class="p">[</span><span class="s1">&#39;weight&#39;</span><span class="p">],</span>
-    <span class="s1">&#39;Sklearn&#39;</span><span class="p">:</span> <span class="n">result_sklearn</span><span class="p">[</span><span class="s1">&#39;weight&#39;</span><span class="p">]</span>
+    <span class="s1">'HGB'</span><span class="p">:</span> <span class="n">result_hgb</span><span class="p">[</span><span class="s1">'weight'</span><span class="p">],</span>
+    <span class="s1">'Sklearn'</span><span class="p">:</span> <span class="n">result_sklearn</span><span class="p">[</span><span class="s1">'weight'</span><span class="p">]</span>
 <span class="p">})</span>
 <span class="c1"># Calculate difference</span>
-<span class="n">comparison_df</span><span class="p">[</span><span class="s1">&#39;Difference&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">comparison_df</span><span class="p">[</span><span class="s1">&#39;HGB&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">comparison_df</span><span class="p">[</span><span class="s1">&#39;Sklearn&#39;</span><span class="p">]</span>
+<span class="n">comparison_df</span><span class="p">[</span><span class="s1">'Difference'</span><span class="p">]</span> <span class="o">=</span> <span class="n">comparison_df</span><span class="p">[</span><span class="s1">'HGB'</span><span class="p">]</span> <span class="o">-</span> <span class="n">comparison_df</span><span class="p">[</span><span class="s1">'Sklearn'</span><span class="p">]</span>
 <span class="c1"># Print summary statistics</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span>
 </pre></div>
 </div>
 </dd>
