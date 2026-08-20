@@ -3752,8 +3752,6 @@ class BalanceFrame:
             for col in model["outcome_columns"]
             if f"{col}_hat" in target_predictions.columns
         }
-        dr_estimates = {str(col): float(v) for col, v in self.aipw().items()}
-
         def _fmt_points(estimates: dict[str, float]) -> str:
             return "\n".join(
                 f"    {col}    {val:.3f}" for col, val in estimates.items()
@@ -3770,9 +3768,20 @@ class BalanceFrame:
             "Outcome model / g-computation (mu_OM), point estimate "
             "(CI not shown; not cached):",
             _fmt_points(om_estimates),
-            "Doubly robust / AIPW (mu_DR), point estimate:",
-            _fmt_points(dr_estimates),
         ]
+
+        # μ̂_DR requires adjust()-calibrated responder weights on the same
+        # population scale as the target (``aipw()`` enforces this). A frame
+        # with a fitted outcome model but no adjust() is a supported workflow
+        # (see the changelog), so omit the AIPW block instead of crashing.
+        if self.is_adjusted:
+            dr_estimates = {str(col): float(v) for col, v in self.aipw().items()}
+            blocks.extend(
+                [
+                    "Doubly robust / AIPW (mu_DR), point estimate:",
+                    _fmt_points(dr_estimates),
+                ]
+            )
         return "Outcome estimates:\n" + "\n".join(blocks)
 
     def summary(self) -> str:

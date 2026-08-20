@@ -315,6 +315,24 @@ class AipwTest(balance.testutil.BalanceTestCase):
         # the rich section replaces the plain "Outcome weighted means" block
         self.assertNotIn("Outcome weighted means", summary)
 
+    def test_summary_omits_dr_when_model_fit_but_unadjusted(self) -> None:
+        """summary() with a fitted outcome model but NO adjust() must not crash.
+
+        The μ̂_DR/AIPW block requires adjust()-calibrated weights, so it is
+        omitted (μ̂_IPW and μ̂_OM are still shown) rather than raising.
+        """
+        sample_df, target_df = _make_aipw_fixture()
+        s = Sample.from_frame(
+            sample_df, id_column="id", weight_column="weight", outcome_columns=["y"]
+        )
+        t = Sample.from_frame(target_df, id_column="id", weight_column="weight")
+        st = s.set_target(t).fit_outcome_model(model=LinearRegression())
+        summary = st.summary()  # previously raised ValueError from aipw()
+        self.assertIn("Outcome estimates:", summary)
+        self.assertIn("mu_IPW", summary)
+        self.assertIn("mu_OM", summary)
+        self.assertNotIn("mu_DR", summary)
+
     def test_summary_unchanged_without_outcome_model(self) -> None:
         sample_df, target_df = _make_aipw_fixture()
         s = Sample.from_frame(
