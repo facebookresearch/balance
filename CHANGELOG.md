@@ -113,10 +113,12 @@ for the design rationale.
     weights are constant (`μ̂_DR` reduces to `μ̂_OM`). **Point estimate only** — no
     CI yet; see the TODOs in `balance/outcome_models/aipw.py`.
 
-- **`summary()` reports the estimator trio** when a fitted outcome model and a
-  target are both present: an "Outcome estimates" section with `μ̂_IPW` and its
-  analytic CI, plus `μ̂_OM` and `μ̂_DR` as point estimates. **With no outcome model
-  fit, `summary()` output is unchanged.** Separately,
+- **`summary()` reports outcome-model estimates** when a fitted outcome model
+  and a target are both present: an "Outcome estimates" section with `μ̂_IPW` and
+  its analytic CI, plus `μ̂_OM` as a point estimate, and `μ̂_DR` when the frame is
+  `adjust()`-calibrated (its AIPW block needs those weights; an unadjusted frame
+  with a fitted model is a supported workflow and omits it). **With no outcome
+  model fit, `summary()` output is unchanged.** Separately,
   `outcomes_hat().summary()` **scopes any doubly-robust claim to the fit weights**
   — a linear learner with an intercept fit with non-uniform weights reports
   `"doubly robust w.r.t. weights <col>"`; everything else reports plain

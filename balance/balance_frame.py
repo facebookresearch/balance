@@ -3752,6 +3752,7 @@ class BalanceFrame:
             for col in model["outcome_columns"]
             if f"{col}_hat" in target_predictions.columns
         }
+
         def _fmt_points(estimates: dict[str, float]) -> str:
             return "\n".join(
                 f"    {col}    {val:.3f}" for col, val in estimates.items()
@@ -3772,8 +3773,8 @@ class BalanceFrame:
 
         # μ̂_DR requires adjust()-calibrated responder weights on the same
         # population scale as the target (``aipw()`` enforces this). A frame
-        # with a fitted outcome model but no adjust() is a supported workflow
-        # (see the changelog), so omit the AIPW block instead of crashing.
+        # with a fitted outcome model but no adjust() is a supported workflow,
+        # so omit the AIPW block instead of crashing.
         if self.is_adjusted:
             dr_estimates = {str(col): float(v) for col, v in self.aipw().items()}
             blocks.extend(
