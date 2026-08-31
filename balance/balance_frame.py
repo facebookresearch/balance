@@ -147,8 +147,7 @@ class BalanceFrame:
     _sf_sample_pre_adjust: SampleFrame
     _sf_sample: SampleFrame
     _sf_target: SampleFrame | None
-    # pyre-fixme[13]: Attributes are initialized in _create() / from_frame()
-    _adjustment_model: dict[str, Any] | None
+    _adjustment_model: dict[str, Any] | None = None
     # pyre-fixme[13]: Attributes are initialized in _create() / from_frame()
     _adjustment_history: list[dict[str, Any]]
     # pyre-fixme[4]: Attributes are initialized in from_frame() / _create()
