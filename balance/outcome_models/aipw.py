@@ -27,8 +27,8 @@ the augmentation is zero and ``μ̂_DR = μ̂_OM``. A non-trivial correction the
 requires either a non-linear ``ĝ`` or a fit-weighting different from ``w`` (e.g.
 an unweighted ``ĝ`` combined with non-uniform balance weights).
 
-This module provides the **point estimate only** (see the TODOs below for
-cross-fitting and honest variance/CI).
+This module provides full-sample and K-fold cross-fitted **point estimates**.
+Honest variance/CI remains deferred (see the TODO below).
 
 The public :meth:`balance.balance_frame.BalanceFrame.aipw` entry point enforces
 the estimator's normalization contract: responder weights must come from
@@ -41,23 +41,19 @@ from __future__ import annotations
 
 import logging
 import math
+from numbers import Integral
 from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
-from balance.outcome_models.outcome_model import predict_outcome
+from balance.outcome_models.outcome_model import fit_outcome_model, predict_outcome
 from balance.stats_and_plots.weighted_stats import weighted_mean
+from balance.utils.input_validation import _is_discrete_series
 
 logger: logging.Logger = logging.getLogger(__package__)
 
 _AIPW_WEIGHT_SUM_RTOL: float = 1e-6
 
-# TODO (cross-fitting): the augmentation uses in-sample ĝ(X_S) — the model was
-# fit on these same responders — which is optimistic for flexible learners. Add
-# K-fold cross-fitted (out-of-fold) predictions for the residual term, and
-# average ĝ^(-k)(X_T) over folds for the target term (n_folds=5 default),
-# reusing learner_from_model() for the per-fold refits.
-#
 # TODO (variance / CI — preferred: analytic influence function): this returns
 # the point estimate only. The efficient next step is an influence-function /
 # sandwich SE. It MUST account for estimating BOTH nuisances (ĝ AND the balance
@@ -224,4 +220,234 @@ def aipw_point_estimate(
             ).iloc[0]
         )
         result[col] = mu_om_target + augmentation
+    return result
+
+
+def cross_fitted_aipw_point_estimate(
+    sample_covars: pd.DataFrame,
+    outcomes: pd.DataFrame,
+    sample_weight: pd.Series | np.ndarray,
+    target_covars: pd.DataFrame,
+    target_weight: pd.Series | np.ndarray,
+    *,
+    fit_kwargs: Dict[str, Any],
+    fit_sample_weight: pd.Series | np.ndarray | None = None,
+    n_folds: int = 5,
+    random_seed: int = 2020,
+) -> Dict[str, float]:
+    """Return a K-fold cross-fitted AIPW target-mean estimate.
+
+    Each responder prediction is produced by a model that was not trained on
+    that responder.  The target prediction is the arithmetic average of the
+    predictions from the ``n_folds`` nuisance fits. Fold assignment is shuffled
+    and deterministic given ``random_seed``. Nuisance learners remain subject
+    to their own ``random_state`` configuration.
+
+    ``sample_weight`` always supplies the AIPW residual weights, whereas
+    ``fit_sample_weight`` independently reproduces a weighted outcome-model fit.
+    This distinction is important when the outcome model was fit unweighted.
+
+    Raises:
+        ValueError: If fold or seed configuration is invalid; inputs are empty,
+            non-numeric, non-finite, negative, or not row-aligned; weight totals
+            violate the AIPW scale contract; an outcome lacks enough observed
+            rows; or a classification outcome lacks two sufficiently populated
+            classes.
+
+    Examples:
+    .. code-block:: python
+
+        import numpy as np
+        import pandas as pd
+        from balance.outcome_models import cross_fitted_aipw_point_estimate
+        from sklearn.linear_model import LinearRegression
+
+        sample_covars = pd.DataFrame({"x": np.arange(6, dtype=float)})
+        outcomes = pd.DataFrame({"y": 1.0 + 2.0 * sample_covars["x"]})
+        target_covars = pd.DataFrame({"x": [0.5, 2.5, 4.5]})
+        estimates = cross_fitted_aipw_point_estimate(
+            sample_covars,
+            outcomes,
+            sample_weight=np.ones(6),
+            target_covars=target_covars,
+            target_weight=np.full(3, 2.0),
+            fit_kwargs={"model": LinearRegression()},
+            n_folds=3,
+            random_seed=7,
+        )
+        round(estimates["y"], 6)
+        # 6.0
+    """
+    from sklearn.model_selection import KFold
+
+    n_rows = len(sample_covars)
+    if isinstance(n_folds, bool) or not isinstance(n_folds, Integral) or n_folds < 2:
+        raise ValueError("n_folds must be an integer greater than or equal to 2.")
+    n_folds = int(n_folds)
+    if (
+        isinstance(random_seed, bool)
+        or not isinstance(random_seed, Integral)
+        or random_seed < 0
+        or random_seed > np.iinfo(np.uint32).max
+    ):
+        raise ValueError(
+            "random_seed must be a non-negative integer no greater than 2**32 - 1."
+        )
+    random_seed = int(random_seed)
+    if n_rows == 0:
+        raise ValueError("cross-fitted aipw() requires at least one responder.")
+    if len(outcomes) != n_rows:
+        raise ValueError(
+            "sample_covars and outcomes must have the same number of rows: "
+            f"got {n_rows} and {len(outcomes)}."
+        )
+    if outcomes.shape[1] == 0:
+        raise ValueError("outcomes must contain at least one outcome column.")
+    if "sample_weight" in fit_kwargs:
+        raise ValueError(
+            "fit_kwargs must not contain sample_weight; pass fit_sample_weight "
+            "to keep nuisance-fit weights separate from AIPW residual weights."
+        )
+    if len(target_covars) == 0:
+        raise ValueError("cross-fitted aipw() requires at least one target row.")
+
+    try:
+        residual_weight = np.asarray(sample_weight, dtype=float)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("sample_weight must contain numeric values.") from exc
+    try:
+        target_weight_array = np.asarray(target_weight, dtype=float)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("target_weight must contain numeric values.") from exc
+    if residual_weight.ndim != 1 or len(residual_weight) != n_rows:
+        raise ValueError(
+            "sample_weight must be one-dimensional and have one value per "
+            f"responder ({n_rows}); got shape {residual_weight.shape}."
+        )
+    if target_weight_array.ndim != 1 or len(target_weight_array) != len(target_covars):
+        raise ValueError(
+            "target_weight must be one-dimensional and have one value per "
+            f"target row ({len(target_covars)}); got shape {target_weight_array.shape}."
+        )
+    _validate_aipw_weight_scale(residual_weight, target_weight_array)
+
+    sample_covars = sample_covars.reset_index(drop=True)
+    outcomes = outcomes.reset_index(drop=True)
+    try:
+        fit_weight = (
+            None
+            if fit_sample_weight is None
+            else np.asarray(fit_sample_weight, dtype=float)
+        )
+    except (TypeError, ValueError) as exc:
+        raise ValueError("fit_sample_weight must contain numeric values.") from exc
+    if fit_weight is not None and (fit_weight.ndim != 1 or len(fit_weight) != n_rows):
+        raise ValueError(
+            "fit_sample_weight must be one-dimensional and have one value per "
+            f"responder ({n_rows}); got shape {fit_weight.shape}."
+        )
+    if fit_weight is not None and (
+        not np.isfinite(fit_weight).all() or (fit_weight <= 0).any()
+    ):
+        raise ValueError(
+            "fit_sample_weight must contain only finite, strictly positive values."
+        )
+    outcome_columns = [str(column) for column in outcomes.columns]
+    oof_predictions = pd.DataFrame(
+        index=range(n_rows), columns=outcome_columns, dtype=float
+    )
+    target_prediction_sum = pd.DataFrame(
+        0.0, index=range(len(target_covars)), columns=outcome_columns
+    )
+
+    result: Dict[str, float] = {}
+    for column in outcome_columns:
+        observed_index = np.flatnonzero(outcomes[column].notna().to_numpy())
+        if n_folds > len(observed_index):
+            raise ValueError(
+                f"n_folds ({n_folds}) cannot exceed the number of observed "
+                f"responders for outcome {column!r} ({len(observed_index)})."
+            )
+        observed_outcome = outcomes.loc[observed_index, column]
+        try:
+            observed_numeric = observed_outcome.to_numpy(dtype=float)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"outcome {column!r} must contain numeric or binary values."
+            ) from exc
+        if not np.isfinite(observed_numeric).all():
+            raise ValueError(
+                f"outcome {column!r} must contain only finite observed values."
+            )
+        if math.fsum(residual_weight[observed_index]) <= 0:
+            raise ValueError(
+                f"observed responders for outcome {column!r} must have positive "
+                "total AIPW residual weight."
+            )
+        if _is_discrete_series(observed_outcome):
+            class_values = observed_outcome.to_numpy()
+            classes, class_counts = np.unique(class_values, return_counts=True)
+            if len(classes) != 2 or class_counts.min() < 2:
+                raise ValueError(
+                    f"cross-fitted classification for outcome {column!r} requires "
+                    "exactly two classes with at least two observed responders "
+                    f"per class; got counts {dict(zip(classes, class_counts))}."
+                )
+            # Distribute each shuffled class round-robin. Unlike
+            # StratifiedKFold, this remains warning-free when a class has fewer
+            # observations than folds, while ensuring every training fold keeps
+            # at least one observation from each class.
+            rng = np.random.default_rng(random_seed)
+            validation_folds: list[list[int]] = [[] for _ in range(n_folds)]
+            fold_offset = 0
+            for class_value in classes:
+                class_positions = np.flatnonzero(class_values == class_value)
+                rng.shuffle(class_positions)
+                for offset, position in enumerate(class_positions):
+                    validation_folds[(fold_offset + offset) % n_folds].append(
+                        int(position)
+                    )
+                fold_offset = (fold_offset + len(class_positions)) % n_folds
+            fold_positions = []
+            all_positions = np.arange(len(observed_index))
+            for validation in validation_folds:
+                validation_position = np.asarray(validation, dtype=int)
+                train_position = np.setdiff1d(
+                    all_positions, validation_position, assume_unique=True
+                )
+                fold_positions.append((train_position, validation_position))
+        else:
+            splitter = KFold(n_splits=n_folds, shuffle=True, random_state=random_seed)
+            fold_positions = list(splitter.split(observed_index))
+
+        for train_position, validation_position in fold_positions:
+            train_index = observed_index[train_position]
+            validation_index = observed_index[validation_position]
+            fold_model = fit_outcome_model(
+                sample_covars.iloc[train_index].reset_index(drop=True),
+                outcomes.loc[train_index, [column]].reset_index(drop=True),
+                sample_weight=None if fit_weight is None else fit_weight[train_index],
+                **fit_kwargs,
+            )
+            validation_predictions = predict_outcome(
+                fold_model,
+                sample_covars.iloc[validation_index].reset_index(drop=True),
+            )
+            oof_predictions.loc[validation_index, column] = np.asarray(
+                validation_predictions[column], dtype=float
+            )
+            target_prediction_sum[column] += np.asarray(
+                predict_outcome(fold_model, target_covars)[column], dtype=float
+            )
+
+        target_predictions = target_prediction_sum[column] / float(n_folds)
+        target_term = float(weighted_mean(target_predictions, target_weight).iloc[0])
+        observed = outcomes[column].notna()
+        residual_term = float(
+            weighted_mean(
+                outcomes.loc[observed, column] - oof_predictions.loc[observed, column],
+                pd.Series(residual_weight[observed.to_numpy()]),
+            ).iloc[0]
+        )
+        result[column] = target_term + residual_term
     return result

@@ -3508,7 +3508,7 @@ class BalanceFrame:
 
         return BalanceDFOutcomesHat(cast(BalanceDFSource, self), links=links)
 
-    def aipw(self) -> pd.Series:
+    def aipw(self, *, n_folds: int | None = None, random_seed: int = 2020) -> pd.Series:
         """Doubly-robust (AIPW) estimate ``μ̂_DR`` of the target-population mean.
 
         Combines the fitted outcome model ``ĝ`` (from :meth:`fit_outcome_model`)
@@ -3530,12 +3530,26 @@ class BalanceFrame:
         same target-population scale. With constant responder weights it warns
         and reduces to ``μ̂_OM``.
 
+        By default the fitted full-sample model is used. Pass ``n_folds=5`` (or
+        another integer of at least two) to use out-of-fold responder
+        predictions and fold-averaged target predictions. Cross-fitting avoids
+        own-observation optimism for flexible outcome learners; fold assignment
+        is deterministic given ``random_seed`` (learner randomness is controlled
+        by the learner's own configuration).
+
         Point estimate only -- no confidence interval (an honest AIPW interval
         must jointly capture the weighting- and outcome-model uncertainty; see
         the TODOs in :mod:`balance.outcome_models.aipw`).
 
         Returns:
             pd.Series: ``μ̂_DR`` indexed by outcome column.
+
+        Args:
+            n_folds: Number of cross-fitting folds. ``None`` (default) uses the
+                stored full-sample model; an integer of at least two enables
+                cross-fitting.
+            random_seed: Seed used to shuffle cross-fitting folds. Defaults to
+                2020 and is ignored when ``n_folds`` is ``None``.
 
         Raises:
             ValueError: If no outcome model has been fit, if no target is set,
@@ -3565,6 +3579,7 @@ class BalanceFrame:
         from balance.outcome_models.aipw import (
             _validate_aipw_weight_scale,
             aipw_point_estimate,
+            cross_fitted_aipw_point_estimate,
         )
 
         model = self.outcome_model
@@ -3605,14 +3620,41 @@ class BalanceFrame:
                 "estimate reduces to the outcome-model estimate mu_OM."
             )
 
-        estimates = aipw_point_estimate(
-            self._sf_sample.df_covars,
-            observed_outcomes,
-            sample_weight,
-            target.df_covars,
-            target_weight,
-            model,
-        )
+        if n_folds is None:
+            estimates = aipw_point_estimate(
+                self._sf_sample.df_covars,
+                observed_outcomes,
+                sample_weight,
+                target.df_covars,
+                target_weight,
+                model,
+            )
+        else:
+            from balance.outcome_models.outcome_model import learner_from_model
+
+            fit_kwargs = {
+                "model": learner_from_model(model),
+                "formula": model.get("formula"),
+                "na_action": str(model.get("na_action", "add_indicator")),
+                "use_model_matrix": bool(model.get("use_model_matrix", True)),
+                "calibrate": bool(model.get("calibrated", False)),
+            }
+            estimates = cross_fitted_aipw_point_estimate(
+                self._sf_sample.df_covars,
+                observed_outcomes,
+                sample_weight,
+                target.df_covars,
+                target_weight,
+                fit_kwargs=fit_kwargs,
+                # Cross-fitting is a new fit on the current responder frame.
+                # Reproduce whether the stored nuisance fit was weighted, using
+                # the current frame's weights (the original vector may belong to
+                # a pre-adjustment or transferred frame and is intentionally not
+                # persisted in the model artifact).
+                fit_sample_weight=sample_weight if model.get("weighted") else None,
+                n_folds=n_folds,
+                random_seed=random_seed,
+            )
         return pd.Series(estimates, dtype=float)
 
     # --- Summary & diagnostics ---

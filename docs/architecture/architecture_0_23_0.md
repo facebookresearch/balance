@@ -7,7 +7,7 @@
 > records the decision status and explicitly deferred later phases. As of the round-6 review, no
 > items remain **(OPEN)**.
 >
-> **Implementation status (updated 2026-07-18 — reconciled to the as-built code).** Phase 1 (the g-computation `μ̂_OM` stack, diffs 1–9) **and** the AIPW point estimate have **shipped**. Key deltas vs the original plan: (1) **AIPW is implemented as `BalanceFrame.aipw()`** (→ `Sample.aipw()` via MRO; pure engine `balance.outcome_models.aipw_point_estimate`) — **not** the planned `outcomes_hat().aipw()` view method, and it works for **any** learner (not only the linear-WLS special case); (2) `summary()` now surfaces the **IPW / OM / DR estimator trio** ("Outcome estimates" section) when an outcome model + target are present; (3) only **AIPW variance/CI and cross-fitting remain deferred**. In-line `file:line` citations were refreshed to current locations; pre-rename historical citations are marked as such.
+> **Implementation status (updated 2026-08-15 — reconciled to the as-built code).** Phase 1 (the g-computation `μ̂_OM` stack, diffs 1–9), the AIPW point estimate, and optional K-fold cross-fitting have **shipped**. Key deltas vs the original plan: (1) **AIPW is implemented as `BalanceFrame.aipw()`** (→ `Sample.aipw()` via MRO; pure engines `balance.outcome_models.aipw_point_estimate` and `cross_fitted_aipw_point_estimate`) — **not** the planned `outcomes_hat().aipw()` view method, and it works for **any** learner (not only the linear-WLS special case); (2) `summary()` now surfaces the **IPW / OM / DR estimator trio** ("Outcome estimates" section) when an outcome model + target are present; (3) only **AIPW variance/CI remains deferred**. In-line `file:line` citations were refreshed to current locations; pre-rename historical citations are marked as such.
 >
 > For the evergreen overview see [`../../ARCHITECTURE.md`](../../ARCHITECTURE.md); for the review
 > checklist see [`.github/copilot-instructions.md`](../../.github/copilot-instructions.md).
@@ -861,9 +861,10 @@ threaded through `summary_utils._build_summary(outcome_estimates=...)` (`summary
 
 Deferred to implementation / later phases (not blocking this design):
 
-- **AIPW / doubly-robust** — the point estimate has **shipped** as `bf.aipw()` (BalanceFrame/Sample;
-  pure `aipw_point_estimate`), general for any learner; only its **variance/CI** and **cross-fitting**
-  remain deferred (each needs its own design).
+- **AIPW / doubly-robust** — the point estimate and optional K-fold cross-fitting have
+  **shipped** as `bf.aipw()` (BalanceFrame/Sample; pure `aipw_point_estimate` and
+  `cross_fitted_aipw_point_estimate` engines), general for any learner; only its
+  **variance/CI** remains deferred.
 - **AIPW normalization contract** — **implemented**: `aipw()` requires an adjusted frame and
   rejects responder/target weight totals when `|Σw_R−Σw_T|/Σw_T >= 1e-6`, enforcing same-scale
   `w_R`/`w_T` (with DR asymptotic under Hájek normalization and ratio bias `O(1/n)`).
