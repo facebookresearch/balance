@@ -341,13 +341,17 @@
 
     <span class="k">if</span> <span class="n">target_sum_weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">target_total</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">target_sum_weights</span><span class="p">)</span>
+        <span class="c1"># pyrefly: ignore [missing-attribute]</span>
         <span class="n">current_total</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">current_total</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Cannot normalise weights because their sum is zero."</span><span class="p">)</span>
+        <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
         <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">*</span> <span class="p">(</span><span class="n">target_total</span> <span class="o">/</span> <span class="n">current_total</span><span class="p">)</span>
 
+    <span class="c1"># pyrefly: ignore [missing-attribute]</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">original_name</span><span class="p">)</span>
 
+    <span class="c1"># pyrefly: ignore [bad-return]</span>
     <span class="k">return</span> <span class="n">weights</span></div>
 
 

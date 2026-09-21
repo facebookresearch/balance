@@ -866,11 +866,14 @@
     <span class="n">out</span><span class="p">[</span><span class="s2">"mean(kld)"</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean</span>
 
     <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># pyrefly: ignore [missing-attribute]</span>
     <span class="n">out</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">if</span> <span class="n">aggregate_by_main_covar</span><span class="p">:</span>
+        <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
         <span class="n">out</span> <span class="o">=</span> <span class="n">_aggregate_statistic_by_main_covar</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
 
+    <span class="c1"># pyrefly: ignore [bad-return]</span>
     <span class="k">return</span> <span class="n">out</span></div>
 
 
@@ -1008,8 +1011,10 @@
     <span class="n">out</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">if</span> <span class="n">aggregate_by_main_covar</span><span class="p">:</span>
+        <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
         <span class="n">out</span> <span class="o">=</span> <span class="n">_aggregate_statistic_by_main_covar</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
 
+    <span class="c1"># pyrefly: ignore [bad-return]</span>
     <span class="k">return</span> <span class="n">out</span></div>
 
 
@@ -1151,8 +1156,10 @@
     <span class="n">out</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">if</span> <span class="n">aggregate_by_main_covar</span><span class="p">:</span>
+        <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
         <span class="n">out</span> <span class="o">=</span> <span class="n">_aggregate_statistic_by_main_covar</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
 
+    <span class="c1"># pyrefly: ignore [bad-return]</span>
     <span class="k">return</span> <span class="n">out</span></div>
 
 
@@ -1284,8 +1291,10 @@
     <span class="n">out</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">if</span> <span class="n">aggregate_by_main_covar</span><span class="p">:</span>
+        <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
         <span class="n">out</span> <span class="o">=</span> <span class="n">_aggregate_statistic_by_main_covar</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
 
+    <span class="c1"># pyrefly: ignore [bad-return]</span>
     <span class="k">return</span> <span class="n">out</span></div>
 
 
