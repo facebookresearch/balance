@@ -3880,7 +3880,10 @@ class BalanceDFWeights(BalanceDF):
                 )
 
         return weighted_comparisons_stats.r_indicator(
-            sample_propensity, target_propensity
+            # pyrefly: ignore [bad-argument-type]
+            sample_propensity,
+            # pyrefly: ignore [bad-argument-type]
+            target_propensity,
         )
 
     # TODO: in the future, consider if this type of overriding is the best solution.

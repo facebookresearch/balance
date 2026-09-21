@@ -550,6 +550,7 @@ def prop_above_and_below(
 
     # calculate props from below:
     if below is not None:
+        # pyrefly: ignore [missing-attribute, unsupported-operation]
         prop_below = [(w < i).mean() for i in below]
         prop_below_index = ["prop(w < " + str(round(i, 3)) + ")" for i in below]
         prop_below_series = pd.Series(prop_below, index=prop_below_index)
@@ -558,6 +559,7 @@ def prop_above_and_below(
 
     # calculate props from above:
     if above is not None:
+        # pyrefly: ignore [missing-attribute, unsupported-operation]
         prop_above = [(w >= i).mean() for i in above]
         prop_above_index = ["prop(w >= " + str(round(i, 3)) + ")" for i in above]
         prop_above_series = pd.Series(prop_above, index=prop_above_index)
@@ -618,6 +620,7 @@ def weighted_median_breakdown_point(
     n = len(w)  # n users
     w = w / w.sum()  # normalize to 1
     # get a cumsum of sorted weights to find the median:
+    # pyrefly: ignore [missing-attribute]
     w_freq_cumsum = w.sort_values(ascending=False).cumsum()
     numerator = (w_freq_cumsum <= 0.5).sum()
     if numerator == 0:

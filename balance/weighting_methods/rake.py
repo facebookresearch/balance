@@ -514,6 +514,7 @@ def rake(
     if len(variables) > 1:
         if transformations == "default":
             transformations_for_pickle = balance_adjustment.default_transformations(
+                # pyrefly: ignore [bad-argument-type]
                 (sample_df, target_df)
             )
         else:
@@ -546,6 +547,7 @@ def rake(
         poststratified = poststratify(
             sample_df=sample_df,
             sample_weights=sample_weights,
+            # pyrefly: ignore [bad-argument-type]
             target_df=target_df,
             target_weights=target_weights,
             variables=variables,
@@ -568,11 +570,14 @@ def rake(
             transformations_to_apply = transformations_for_pickle
         else:
             transformations_to_apply = balance_adjustment.default_transformations(
+                # pyrefly: ignore [bad-argument-type]
                 (sample_df, target_df)
             )
 
     sample_df, target_df = balance_adjustment.apply_transformations(
-        (sample_df, target_df), transformations_to_apply
+        # pyrefly: ignore [bad-argument-type]
+        (sample_df, target_df),
+        transformations_to_apply,
     )
 
     sample_df, sample_weights, target_df, target_weights = (

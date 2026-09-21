@@ -937,12 +937,14 @@ def ipw(
             lr.C = 1 / (sum(model_weights) * lambdas[i])
 
             model = lr.fit(X_matrix, y, sample_weight=model_weights)
+            # pyrefly: ignore [missing-attribute]
             pred = model.predict_proba(X_matrix)[:, 1]
             dev[i] = _compute_deviance(y, pred, model_weights)
             prop_dev[i] = _compute_proportion_deviance(dev[i], null_dev)
 
             # Early stopping criteria: improvement in prop_dev is less than 1e-5 (mirrors glmnet)
             if (
+                # pyrefly: ignore [missing-attribute]
                 np.sum(np.abs(model.coef_)) > 0
                 and prev_prop_dev is not None
                 and prop_dev[i] - prev_prop_dev < 1e-5
@@ -966,6 +968,7 @@ def ipw(
 
             prev_prop_dev = prop_dev[i]
             links[i] = link_transform(pred)[:sample_n,]
+            # pyrefly: ignore [unsupported-operation]
             fits[i] = copy.deepcopy(model)
 
     else:
@@ -989,12 +992,14 @@ def ipw(
         cv_dev_sd = [np.nan]
 
         model = cloned_model.fit(X_matrix, y, sample_weight=model_weights)
+        # pyrefly: ignore [missing-attribute]
         probas = model.predict_proba(X_matrix)
         if probas.ndim != 2 or probas.shape[1] < 2:
             raise ValueError(
                 "The provided custom model predict_proba must return probability estimates for both classes."
             )
         try:
+            # pyrefly: ignore [missing-attribute]
             class_index = list(model.classes_).index(1)
         except ValueError as error:
             raise ValueError(
@@ -1005,6 +1010,7 @@ def ipw(
         dev[0] = _compute_deviance(y, pred, model_weights)
         prop_dev[0] = _compute_proportion_deviance(dev[0], null_dev)
         links[0] = link_transform(pred)[:sample_n,]
+        # pyrefly: ignore [unsupported-operation]
         fits[0] = copy.deepcopy(model)
 
     logger.info("Done with sklearn")

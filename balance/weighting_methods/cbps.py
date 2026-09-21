@@ -216,6 +216,7 @@ def gmm_function(
 
     # Compute loss
     loss = np.matmul(np.matmul(gbar.T, invV), gbar)
+    # pyrefly: ignore [bad-assignment]
     return {"loss": loss, "invV": invV}
 
 
