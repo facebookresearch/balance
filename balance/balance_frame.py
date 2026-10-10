@@ -150,13 +150,12 @@ class BalanceFrame:
     _adjustment_model: dict[str, Any] | None = None
     # pyre-fixme[13]: Attributes are initialized in _create() / from_frame()
     _adjustment_history: list[dict[str, Any]]
-    # pyre-fixme[4]: Attributes are initialized in from_frame() / _create()
     # _links is a defaultdict(list) but by convention stores single objects
     # (not lists) for the "target" and "unadjusted" keys.  The defaultdict
     # type is kept for BalanceDF compatibility which expects .get() semantics.
     # Values: _links["target"] → SampleFrame | BalanceFrame
     #         _links["unadjusted"] → BalanceFrame
-    _links = None
+    _links: collections.defaultdict[str, Any] | None = None
 
     def _sync_sampleframe_state_from_responder(self, responder: SampleFrame) -> None:
         """Sync inherited SampleFrame fields from a responder SampleFrame.
