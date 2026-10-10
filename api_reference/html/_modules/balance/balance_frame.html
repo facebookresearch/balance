@@ -189,13 +189,12 @@
     <span class="n">_adjustment_model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="c1"># pyre-fixme[13]: Attributes are initialized in _create() / from_frame()</span>
     <span class="n">_adjustment_history</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
-    <span class="c1"># pyre-fixme[4]: Attributes are initialized in from_frame() / _create()</span>
     <span class="c1"># _links is a defaultdict(list) but by convention stores single objects</span>
     <span class="c1"># (not lists) for the "target" and "unadjusted" keys.  The defaultdict</span>
     <span class="c1"># type is kept for BalanceDF compatibility which expects .get() semantics.</span>
     <span class="c1"># Values: _links["target"] → SampleFrame | BalanceFrame</span>
     <span class="c1">#         _links["unadjusted"] → BalanceFrame</span>
-    <span class="n">_links</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_links</span><span class="p">:</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_sync_sampleframe_state_from_responder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">responder</span><span class="p">:</span> <span class="n">SampleFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Sync inherited SampleFrame fields from a responder SampleFrame.</span>
