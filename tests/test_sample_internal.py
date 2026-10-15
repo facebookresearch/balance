@@ -12,7 +12,6 @@ it clear which tests can be removed when Sample's internals are replaced by
 SampleFrame/BalanceFrame.
 """
 
-# pyre-strict
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 

@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 
 from __future__ import annotations
 
@@ -822,11 +821,14 @@ def kld(
     out["mean(kld)"] = mean
 
     out = out.iloc[0]
+    # pyrefly: ignore [missing-attribute]
     out.name = None
 
     if aggregate_by_main_covar:
+        # pyrefly: ignore [bad-argument-type]
         out = _aggregate_statistic_by_main_covar(out)
 
+    # pyrefly: ignore [bad-return]
     return out
 
 
@@ -961,8 +963,10 @@ def emd(
     out.name = None
 
     if aggregate_by_main_covar:
+        # pyrefly: ignore [bad-argument-type]
         out = _aggregate_statistic_by_main_covar(out)
 
+    # pyrefly: ignore [bad-return]
     return out
 
 
@@ -1101,8 +1105,10 @@ def cvmd(
     out.name = None
 
     if aggregate_by_main_covar:
+        # pyrefly: ignore [bad-argument-type]
         out = _aggregate_statistic_by_main_covar(out)
 
+    # pyrefly: ignore [bad-return]
     return out
 
 
@@ -1231,8 +1237,10 @@ def ks(
     out.name = None
 
     if aggregate_by_main_covar:
+        # pyrefly: ignore [bad-argument-type]
         out = _aggregate_statistic_by_main_covar(out)
 
+    # pyrefly: ignore [bad-return]
     return out
 
 

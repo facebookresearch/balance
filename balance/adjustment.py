@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 
 from __future__ import annotations
 
@@ -303,13 +302,17 @@ def trim_weights(
 
     if target_sum_weights is not None:
         target_total = float(target_sum_weights)
+        # pyrefly: ignore [missing-attribute]
         current_total = float(weights.sum())
         if np.isclose(current_total, 0.0):
             raise ValueError("Cannot normalise weights because their sum is zero.")
+        # pyrefly: ignore [unsupported-operation]
         weights = weights * (target_total / current_total)
 
+    # pyrefly: ignore [missing-attribute]
     weights = weights.rename(original_name)
 
+    # pyrefly: ignore [bad-return]
     return weights
 
 
