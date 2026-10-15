@@ -1,3 +1,14 @@
+# 0.24.0 (TBD - Unreleased)
+
+## New Features
+
+- **Cross-fitted AIPW estimates.** `BalanceFrame.aipw()` now accepts `n_folds`
+  and `random_seed`. Enabling folds uses out-of-fold predictions for responder
+  residuals and averages fold-model predictions on the target, avoiding
+  own-observation optimism from flexible outcome learners. Fold assignment is
+  reproducible through `random_seed`, while the original full-sample behavior
+  remains the default.
+
 # 0.23.0 (2026-08-04)
 
 ## Highlights
