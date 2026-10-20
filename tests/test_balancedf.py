@@ -224,7 +224,6 @@ class TestBalanceDFOutcomes(BalanceTestCase):
             # pyrefly: ignore [not-callable]
             o.df()
         # Here is how we can call it as a function:
-        # pyrefly: ignore [not-callable]
         self.assertEqual(BalanceDFOutcomes.df.fget(o), o.df)
 
         # Check values are as expected:
@@ -723,7 +722,6 @@ class TestBalanceDFWeights(BalanceTestCase):
         # Verify that the @property decorator works properly.
         self.assertTrue(isinstance(BalanceDFWeights.df, property))
         self.assertEqual(
-            # pyrefly: ignore [not-callable]
             BalanceDFWeights.df.fget(w),
             w.df,
         )
@@ -2185,7 +2183,6 @@ class TestBalanceDF_asmd(BalanceTestCase):
 
         # Apply NA indicators the same way _apply_comparison_stat_to_BalanceDF does
         combined_self_target = add_na_indicator_to_combined(
-            # pyrefly: ignore [bad-argument-type]
             pd.concat([self_df, target_df], axis=0)
         )
         n_self = self_df.shape[0]
@@ -2193,7 +2190,6 @@ class TestBalanceDF_asmd(BalanceTestCase):
         target_df_na_for_self = combined_self_target.iloc[n_self:]
 
         combined_unadj_target = add_na_indicator_to_combined(
-            # pyrefly: ignore [bad-argument-type]
             pd.concat([unadj_df, target_df], axis=0)
         )
         n_unadj = unadj_df.shape[0]

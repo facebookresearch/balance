@@ -482,7 +482,6 @@ class BalanceDF:
                     )
                 output.append(v_att_method.assign(source=k).set_index("source"))
 
-        # pyrefly: ignore [bad-return]
         return pd.concat(output)
 
         # return pd.concat(
@@ -3880,7 +3879,6 @@ class BalanceDFWeights(BalanceDF):
                 )
 
         return weighted_comparisons_stats.r_indicator(
-            # pyrefly: ignore [bad-argument-type]
             sample_propensity,
             # pyrefly: ignore [bad-argument-type]
             target_propensity,
