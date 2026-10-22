@@ -915,7 +915,7 @@ class CommonCoverageExtra(unittest.TestCase):
             @property
             def __dict__(self):  # pyre-ignore[14]
                 class D(dict):
-                    def __setitem__(self, k, v):
+                    def __setitem__(self, k: object, v: object) -> None:
                         raise TypeError("ro")
 
                 return D()
