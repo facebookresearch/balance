@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import logging
 import sys
+from collections.abc import Mapping, Sequence
+from types import ModuleType
 
 import balance.testutil
 import numpy as np
@@ -404,10 +406,16 @@ class TestAssertNotPrintsRegexp(balance.testutil.BalanceTestCase):
 
         real_import = __import__
 
-        def fake_import(name, *args, **kwargs):
+        def fake_import(
+            name: str,
+            globals: Mapping[str, object] | None = None,
+            locals: Mapping[str, object] | None = None,
+            fromlist: Sequence[str] = (),
+            level: int = 0,
+        ) -> ModuleType:
             if name == "sklearn" or name.startswith("sklearn."):
                 raise ImportError("boom")
-            return real_import(name, *args, **kwargs)
+            return real_import(name, globals, locals, fromlist, level)
 
         with patch("builtins.__import__", side_effect=fake_import):
             self.assertFalse(t._has_sklearn_1_4())
