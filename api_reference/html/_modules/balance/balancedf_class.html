@@ -2829,6 +2829,7 @@
         <span class="n">outcome_std</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
         <span class="n">adjusted_outcome_sd</span> <span class="o">=</span> <span class="n">outcome_std</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">"self"</span><span class="p">]</span>
         <span class="n">unadjusted_row</span> <span class="o">=</span> <span class="n">outcome_std</span><span class="o">.</span><span class="n">reindex</span><span class="p">([</span><span class="s2">"unadjusted"</span><span class="p">])</span>
+        <span class="c1"># pyrefly: ignore [invalid-argument]</span>
         <span class="k">if</span> <span class="n">unadjusted_row</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">"No unadjusted outcomes available. This requires an adjusted sample."</span>
