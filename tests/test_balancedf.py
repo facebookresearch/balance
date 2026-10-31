@@ -224,6 +224,7 @@ class TestBalanceDFOutcomes(BalanceTestCase):
             # pyrefly: ignore [not-callable]
             o.df()
         # Here is how we can call it as a function:
+        # pyrefly: ignore [not-callable]
         self.assertEqual(BalanceDFOutcomes.df.fget(o), o.df)
 
         # Check values are as expected:
@@ -722,6 +723,7 @@ class TestBalanceDFWeights(BalanceTestCase):
         # Verify that the @property decorator works properly.
         self.assertTrue(isinstance(BalanceDFWeights.df, property))
         self.assertEqual(
+            # pyrefly: ignore [not-callable]
             BalanceDFWeights.df.fget(w),
             w.df,
         )

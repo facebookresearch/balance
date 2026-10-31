@@ -2710,6 +2710,7 @@ class BalanceDFOutcomes(BalanceDF):
         outcome_std = self.std()
         adjusted_outcome_sd = outcome_std.loc["self"]
         unadjusted_row = outcome_std.reindex(["unadjusted"])
+        # pyrefly: ignore [invalid-argument]
         if unadjusted_row.isna().all(axis=None):
             raise ValueError(
                 "No unadjusted outcomes available. This requires an adjusted sample."
