@@ -6,7 +6,10 @@
 
 from __future__ import annotations
 
-from balance.outcome_models.aipw import aipw_point_estimate
+from balance.outcome_models.aipw import (
+    aipw_point_estimate,
+    cross_fitted_aipw_point_estimate,
+)
 from balance.outcome_models.outcome_model import (
     bootstrap_outcome_estimate,
     fit_outcome_model,
@@ -16,6 +19,7 @@ from balance.outcome_models.outcome_model import (
 
 __all__ = [
     "aipw_point_estimate",
+    "cross_fitted_aipw_point_estimate",
     "bootstrap_outcome_estimate",
     "fit_outcome_model",
     "learner_from_model",

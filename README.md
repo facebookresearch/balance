@@ -307,7 +307,8 @@ differently, so comparing them is a useful robustness check:
 The two estimators are complementary — agreement between μ̂_IPW and μ̂_OM is
 reassuring; disagreement points at a misspecified weighting or outcome model.
 A doubly-robust / AIPW estimator that combines both is available as `bf.aipw()`
-(point estimate only; variance/CI and cross-fitting remain deferred).
+(point estimate only; optional K-fold cross-fitting is available and variance/CI
+remains deferred).
 
 _For a runnable end-to-end walkthrough, see the [outcome-model tutorial](https://import-balance.org/docs/tutorials/outcome_model/)._
 

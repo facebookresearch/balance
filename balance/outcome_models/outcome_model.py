@@ -767,11 +767,8 @@ def fit_outcome_model(
         prediction_kind[outcome_col] = pred_kind
         perf[outcome_col] = col_perf
 
-    # TODO (AIPW/DR seam): a doubly-robust (AIPW) estimator will combine these
-    # predictions with the propensity weights; it will need the responder
-    # residuals Y - ĝ(X) and, ideally, CROSS-FITTED (out-of-fold) ĝ to avoid
-    # own-observation optimism. Don't lock this stored model into in-sample-only
-    # predictions when adding DR.
+    # The AIPW estimator can clone these learners for cross-fitted, out-of-fold
+    # responder predictions. Keep the stored fit configuration replayable.
     # A weighted linear+intercept fit is doubly robust w.r.t. the weights only
     # when the weights are genuinely non-uniform; a constant weight vector is
     # uninformative (WLS collapses to OLS). Record the actual uniformity so the
@@ -792,7 +789,10 @@ def fit_outcome_model(
         "transformations": transformations,
         "fit_matrix_type": stored_matrix_type,
         "weighted": weighted,
-        "fit_weight": {"column": fit_weight_column, "uniform": fit_weight_uniform},
+        "fit_weight": {
+            "column": fit_weight_column,
+            "uniform": fit_weight_uniform,
+        },
         "prediction_kind": prediction_kind,
         "calibrated": bool(calibrate)
         and any(type(e).__name__ == "CalibratedClassifierCV" for e in fit.values()),

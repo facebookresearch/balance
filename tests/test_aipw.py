@@ -23,6 +23,7 @@ linear ``ĝ`` fit with the same weights, ``μ̂_DR`` collapses to ``μ̂_OM``).
 
 from __future__ import annotations
 
+import warnings
 from unittest import mock
 
 import balance.testutil
@@ -34,7 +35,7 @@ from balance.outcome_models.aipw import (
     _validate_aipw_weight_scale,
 )
 from balance.sample_class import Sample
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, LogisticRegression
 
 
 def _make_aipw_fixture(
@@ -196,6 +197,144 @@ class AipwTest(balance.testutil.BalanceTestCase):
             model,
         )
         self.assertAlmostEqual(float(st.aipw()["y"]), pure["y"], places=10)
+
+    def test_cross_fitted_aipw_is_deterministic(self) -> None:
+        sample_df, target_df = _make_aipw_fixture()
+        st = _fitted_frame(sample_df, target_df)
+
+        first = st.aipw(n_folds=5, random_seed=123)
+        second = st.aipw(n_folds=5, random_seed=123)
+
+        self.assertAlmostEqual(float(first["y"]), float(second["y"]), places=12)
+        self.assertTrue(np.isfinite(first["y"]))
+
+    def test_cross_fitted_aipw_validates_fold_count(self) -> None:
+        sample_df, target_df = _make_aipw_fixture(n_sample=10)
+        st = _fitted_frame(sample_df, target_df)
+
+        for invalid in (True, 1, 11):
+            with self.subTest(n_folds=invalid):
+                with self.assertRaisesRegex(ValueError, "n_folds"):
+                    st.aipw(n_folds=invalid)
+
+        for invalid_seed in (True, -1, 1.5, 2**32):
+            with self.subTest(random_seed=invalid_seed):
+                with self.assertRaisesRegex(ValueError, "random_seed"):
+                    st.aipw(n_folds=2, random_seed=invalid_seed)
+
+    def test_cross_fitted_aipw_validates_aligned_inputs(self) -> None:
+        sample_df, target_df = _make_aipw_fixture(n_sample=10, n_target=5)
+        st = _fitted_frame(sample_df, target_df)
+        model = st.outcome_model
+        assert model is not None
+        from balance.outcome_models.outcome_model import learner_from_model
+
+        common = {
+            "sample_covars": st._sf_sample.df_covars,
+            "outcomes": st._outcome_columns,
+            "sample_weight": st.weight_series,
+            "target_covars": st._sf_target.df_covars,
+            "target_weight": st._sf_target.weight_series,
+            "fit_kwargs": {"model": learner_from_model(model)},
+            "n_folds": 2,
+        }
+        invalid_overrides = (
+            ({"outcomes": st._outcome_columns.iloc[:-1]}, "same number of rows"),
+            ({"sample_weight": np.ones(9)}, "sample_weight"),
+            ({"sample_weight": np.array(["bad"] * 10)}, "numeric"),
+            ({"target_weight": np.ones((5, 1))}, "target_weight"),
+            ({"fit_sample_weight": np.ones(9)}, "fit_sample_weight"),
+            ({"fit_sample_weight": np.zeros(10)}, "strictly positive"),
+            ({"fit_kwargs": {"sample_weight": np.ones(10)}}, "must not contain"),
+            (
+                {
+                    "outcomes": st._outcome_columns.assign(y=np.inf),
+                },
+                "finite observed",
+            ),
+        )
+        from balance.outcome_models import cross_fitted_aipw_point_estimate
+
+        for override, message in invalid_overrides:
+            with self.subTest(override=override):
+                with self.assertRaisesRegex(ValueError, message):
+                    cross_fitted_aipw_point_estimate(**(common | override))
+
+        outcomes_with_missing = st._outcome_columns.copy()
+        outcomes_with_missing.loc[:4, "y"] = np.nan
+        zero_observed_weight = np.r_[np.ones(5), np.zeros(5)]
+        target_weight = np.full(5, zero_observed_weight.sum() / 5)
+        with self.assertRaisesRegex(ValueError, "positive total AIPW residual"):
+            cross_fitted_aipw_point_estimate(
+                **(
+                    common
+                    | {
+                        "outcomes": outcomes_with_missing,
+                        "sample_weight": zero_observed_weight,
+                        "target_weight": target_weight,
+                    }
+                )
+            )
+
+    def test_cross_fitted_aipw_supports_missing_outcomes(self) -> None:
+        sample_df, target_df = _make_aipw_fixture()
+        sample_df.loc[[1, 17, 42], "y"] = np.nan
+        st = _fitted_frame(sample_df.dropna(), target_df)
+        # Restore the incomplete responder outcome after fitting so this tests
+        # the per-outcome observed-row folds used by the AIPW augmentation.
+        st._sf_sample._df.loc[st._sf_sample._df.index[:3], "y"] = np.nan
+
+        estimate = st.aipw(n_folds=3, random_seed=1)
+
+        self.assertTrue(np.isfinite(estimate["y"]))
+
+    def test_cross_fitted_aipw_handles_each_outcome_missingness_independently(
+        self,
+    ) -> None:
+        sample_df, target_df = _make_aipw_fixture()
+        sample_df["z"] = 2.0 * sample_df["y"] + 1.0
+        sample = Sample.from_frame(
+            sample_df,
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=["y", "z"],
+        )
+        target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
+        st = (
+            sample.set_target(target)
+            .adjust(method=_calibrate_existing_weights)
+            .fit_outcome_model(model=LinearRegression())
+        )
+        st._sf_sample._df.loc[st._sf_sample._df.index[:3], "y"] = np.nan
+        st._sf_sample._df.loc[st._sf_sample._df.index[3:7], "z"] = np.nan
+
+        estimate = st.aipw(n_folds=5, random_seed=11)
+
+        self.assertEqual(set(estimate.index), {"y", "z"})
+        self.assertTrue(np.isfinite(estimate.to_numpy()).all())
+
+    def test_cross_fitted_binary_outcome_with_rare_class_is_warning_free(self) -> None:
+        sample_df, target_df = _make_aipw_fixture(n_sample=30, n_target=20)
+        sample_df["y"] = 0
+        sample_df.loc[[0, 1], "y"] = 1
+        sample = Sample.from_frame(
+            sample_df,
+            id_column="id",
+            weight_column="weight",
+            outcome_columns=["y"],
+        )
+        target = Sample.from_frame(target_df, id_column="id", weight_column="weight")
+        st = (
+            sample.set_target(target)
+            .adjust(method=_calibrate_existing_weights)
+            .fit_outcome_model(model=LogisticRegression(max_iter=500))
+        )
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            estimate = st.aipw(n_folds=5, random_seed=7)
+
+        self.assertTrue(np.isfinite(estimate["y"]))
 
     def test_pure_function_is_index_independent(self) -> None:
         """μ̂_DR is unchanged when the (already row-aligned) sample covariates,
