@@ -4021,7 +4021,7 @@ class BalanceFrame:
         self,
         rows_to_keep: str | None = None,
         columns_to_keep: list[str] | None = None,
-    ) -> BalanceFrame:
+    ) -> Self:
         """Return a new BalanceFrame with filtered rows and/or columns.
 
         Returns a deep copy with the requested subset applied to the
@@ -4126,6 +4126,7 @@ class BalanceFrame:
             ):
                 new_bf._sf_sample_pre_adjust._outcome_model = None
 
+        new_bf._sync_sampleframe_state_from_responder(new_bf._sf_sample)
         return new_bf
 
     @staticmethod

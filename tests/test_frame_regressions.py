@@ -98,3 +98,14 @@ class InplaceFitBaselineTest(unittest.TestCase):
         self.assertEqual(
             converted.df_responders["weight"].tolist(), [6.0, 1.0, 1.0, 2.0]
         )
+
+
+class FilteredSampleRolesTest(unittest.TestCase):
+    def test_removed_prediction_role_is_not_left_on_facade(self) -> None:
+        sample = _make_sample()
+        sample.add_outcomes_hat_column("y_hat", pd.Series([1.0, 2.0, 3.0, 4.0]))
+        filtered = sample.keep_only_some_rows_columns(columns_to_keep=["x"])
+
+        self.assertEqual(filtered.outcomes_hat_columns, [])
+        self.assertIsNone(filtered.df_outcomes_hat)
+        self.assertEqual(sample.outcomes_hat_columns, ["y_hat"])
