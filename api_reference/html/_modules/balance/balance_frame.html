@@ -298,6 +298,15 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_id_column_name</span>
 
     <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_weight_column_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Active weight name, delegated to the canonical responder frame."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_weight_column_name</span>
+
+    <span class="nd">@_weight_column_name</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_weight_column_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_weight_column_name</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">weight_series</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""The active weight as a Series, delegated to ``_sf_sample``."""</span>
         <span class="k">try</span><span class="p">:</span>
