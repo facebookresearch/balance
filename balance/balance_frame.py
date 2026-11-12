@@ -3729,7 +3729,12 @@ class BalanceFrame:
             for col in model["outcome_columns"]
             if f"{col}_hat" in target_predictions.columns
         }
-        dr_estimates = {str(col): float(v) for col, v in self.aipw().items()}
+        dr_estimates: dict[str, float] = {}
+        dr_error: str | None = None
+        try:
+            dr_estimates = {str(col): float(v) for col, v in self.aipw().items()}
+        except ValueError as exc:
+            dr_error = str(exc)
 
         def _fmt_points(estimates: dict[str, float]) -> str:
             return "\n".join(
@@ -3747,8 +3752,12 @@ class BalanceFrame:
             "Outcome model / g-computation (mu_OM), point estimate "
             "(CI not shown; not cached):",
             _fmt_points(om_estimates),
-            "Doubly robust / AIPW (mu_DR), point estimate:",
-            _fmt_points(dr_estimates),
+            (
+                "Doubly robust / AIPW (mu_DR), point estimate:"
+                if dr_error is None
+                else "Doubly robust / AIPW (mu_DR), unavailable:"
+            ),
+            _fmt_points(dr_estimates) if dr_error is None else dr_error,
         ]
         return "Outcome estimates:\n" + "\n".join(blocks)
 

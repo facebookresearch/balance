@@ -10,6 +10,7 @@ import unittest
 import pandas as pd
 from balance import Sample
 from balance.util import _assert_type
+from sklearn.linear_model import LinearRegression
 
 
 def _make_sample() -> Sample:
@@ -160,3 +161,14 @@ class FrameConversionRolesTest(unittest.TestCase):
         self.assertEqual(
             converted.weight_metadata("weight_adjusted_1")["method"], "poststratify"
         )
+
+
+class OutcomeOnlySummaryTest(unittest.TestCase):
+    def test_summary_survives_aipw_weight_scale_mismatch(self) -> None:
+        sample = _make_sample().set_target(_make_target()).adjust(method="null")
+        sample.fit_outcome_model(model=LinearRegression())
+        summary = sample.summary()
+
+        self.assertIn("g-computation", summary)
+        self.assertIn("unavailable", summary)
+        self.assertIn("same population scale", summary)
