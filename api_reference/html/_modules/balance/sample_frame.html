@@ -1989,8 +1989,8 @@
 
 <span class="sd">        Preserves the Sample's tabular data and column role assignments:</span>
 <span class="sd">        id column, weight column, outcome columns, and ignored columns.</span>
-<span class="sd">        Covariate columns are inferred by exclusion,</span>
-<span class="sd">        matching the Sample's own logic.</span>
+<span class="sd">        Covariate and weight columns retain their explicit role assignments,</span>
+<span class="sd">        including inactive/history weights and the active-weight selection.</span>
 
 <span class="sd">        The internal DataFrame is deep-copied so that the resulting</span>
 <span class="sd">        SampleFrame is fully independent of the original Sample.</span>
@@ -2062,23 +2062,23 @@
         <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Sample has no DataFrame set."</span><span class="p">)</span>
 
-        <span class="c1"># ``_covar_columns_names()`` derives covariates by excluding special</span>
-        <span class="c1"># columns (id/weight/outcome/outcomes_hat/ignored); defensively drop</span>
-        <span class="c1"># any outcomes_hat columns again so each column keeps exactly one role.</span>
-        <span class="n">covar_cols</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_covar_columns_names</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">outcomes_hat_cols</span><span class="p">:</span>
-            <span class="n">hat_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">outcomes_hat_cols</span><span class="p">)</span>
-            <span class="n">covar_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">covar_cols</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">hat_set</span><span class="p">]</span>
-
-        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span>
-            <span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
+        <span class="n">responder</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">)</span>
+        <span class="n">converted</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span>
+            <span class="n">df</span><span class="o">=</span><span class="n">responder</span><span class="o">.</span><span class="n">_df</span><span class="p">,</span>
             <span class="n">id_column</span><span class="o">=</span><span class="n">id_col_name</span><span class="p">,</span>
-            <span class="n">covar_columns</span><span class="o">=</span><span class="n">covar_cols</span><span class="p">,</span>
-            <span class="n">weight_columns</span><span class="o">=</span><span class="p">[</span><span class="n">weight_col_name</span><span class="p">],</span>
+            <span class="n">covar_columns</span><span class="o">=</span><span class="n">responder</span><span class="o">.</span><span class="n">covar_columns</span><span class="p">,</span>
+            <span class="n">weight_columns</span><span class="o">=</span><span class="n">responder</span><span class="o">.</span><span class="n">weight_columns_all</span><span class="p">,</span>
             <span class="n">outcome_columns</span><span class="o">=</span><span class="n">outcome_cols</span><span class="p">,</span>
             <span class="n">outcomes_hat_columns</span><span class="o">=</span><span class="n">outcomes_hat_cols</span> <span class="k">if</span> <span class="n">outcomes_hat_cols</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
             <span class="n">ignored_columns</span><span class="o">=</span><span class="n">ignored_cols</span> <span class="k">if</span> <span class="n">ignored_cols</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="p">)</span></div>
+            <span class="n">_skip_copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">_df_dtypes</span><span class="o">=</span><span class="n">responder</span><span class="o">.</span><span class="n">_df_dtypes</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">converted</span><span class="o">.</span><span class="n">set_active_weight</span><span class="p">(</span><span class="n">weight_col_name</span><span class="p">)</span>
+        <span class="n">converted</span><span class="o">.</span><span class="n">_weight_metadata</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_weight_metadata</span>
+        <span class="n">converted</span><span class="o">.</span><span class="n">_prediction_metadata</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_prediction_metadata</span>
+        <span class="n">converted</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_outcome_model</span>
+        <span class="k">return</span> <span class="n">converted</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>

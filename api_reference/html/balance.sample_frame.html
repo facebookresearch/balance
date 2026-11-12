@@ -590,8 +590,8 @@ names to try when <code class="docutils literal notranslate"><span class="pre">i
 <dd><p>Convert a <a class="reference internal" href="balance.sample_class.html#balance.sample_class.Sample" title="balance.sample_class.Sample"><code class="xref py py-class docutils literal notranslate"><span class="pre">Sample</span></code></a> to a SampleFrame.</p>
 <p>Preserves the Sample’s tabular data and column role assignments:
 id column, weight column, outcome columns, and ignored columns.
-Covariate columns are inferred by exclusion,
-matching the Sample’s own logic.</p>
+Covariate and weight columns retain their explicit role assignments,
+including inactive/history weights and the active-weight selection.</p>
 <p>The internal DataFrame is deep-copied so that the resulting
 SampleFrame is fully independent of the original Sample.</p>
 <div class="admonition warning">

@@ -1321,6 +1321,10 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">result</span>
 
+        <span class="n">result_links</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">_links</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result_links</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"unadjusted"</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">result_links</span><span class="p">[</span><span class="s2">"unadjusted"</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
         <span class="c1"># Copy fitted state from result into self.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">_sf_sample</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span>
@@ -3315,17 +3319,13 @@
             <span class="p">)</span>
 
         <span class="n">responders_sf</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_sample</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
-        <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
-        <span class="n">target_sf</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_sample</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">"target"</span><span class="p">])</span>
+        <span class="n">target_sf</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">_assert_type</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">))</span>
 
         <span class="n">bf</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">responders_sf</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">target_sf</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">sample</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">():</span>
             <span class="c1"># Set unadjusted to a DIFFERENT SampleFrame so is_adjusted returns True</span>
-            <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_sample</span><span class="p">(</span>
-                <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
-                <span class="n">sample</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">"unadjusted"</span><span class="p">]</span>
-            <span class="p">)</span>
+            <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span><span class="p">)</span>
             <span class="n">bf</span><span class="o">.</span><span class="n">_adjustment_model</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">model</span>
             <span class="n">bf</span><span class="o">.</span><span class="n">_adjustment_history</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_copy_adjustment_history_from</span><span class="p">(</span>
                 <span class="n">sample</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span>
@@ -3373,52 +3373,23 @@
                 <span class="s2">"Cannot convert to Sample: BalanceFrame has no target set."</span>
             <span class="p">)</span>
 
-        <span class="n">resp_sample</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_df</span><span class="p">,</span>
-            <span class="n">id_column</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_id_column_name</span><span class="p">,</span>
-            <span class="n">weight_column</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_weight_column_name</span><span class="p">,</span>
-            <span class="n">outcome_columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">outcome_columns</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">outcomes_hat_columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">outcomes_hat_columns</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">ignored_columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">ignored_columns</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">standardize_types</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">target_sample</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">target</span><span class="p">))</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span>
+            <span class="n">sample</span><span class="o">=</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">),</span> <span class="n">target</span><span class="o">=</span><span class="n">target_sample</span><span class="o">.</span><span class="n">_sf_sample</span>
         <span class="p">)</span>
-        <span class="n">target_sample</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">_df</span><span class="p">,</span>
-            <span class="n">id_column</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">_id_column_name</span><span class="p">,</span>
-            <span class="n">weight_column</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">_weight_column_name</span><span class="p">,</span>
-            <span class="n">outcome_columns</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">outcome_columns</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">outcomes_hat_columns</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">outcomes_hat_columns</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">ignored_columns</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">ignored_columns</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">standardize_types</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">resp_sample</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">target_sample</span><span class="p">)</span>
+        <span class="n">links</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">_links</span><span class="p">)</span>
+        <span class="n">links</span><span class="p">[</span><span class="s2">"target"</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_sample</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">unadj_sf</span> <span class="o">=</span> <span class="n">SampleFrame</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span><span class="o">.</span><span class="n">_df</span><span class="p">,</span>
-                <span class="n">id_column</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span><span class="o">.</span><span class="n">_id_column_name</span><span class="p">,</span>
-                <span class="n">weight_column</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span><span class="o">.</span><span class="n">_weight_column_name</span><span class="p">,</span>
-                <span class="n">outcome_columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span><span class="o">.</span><span class="n">outcome_columns</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
-                <span class="n">outcomes_hat_columns</span><span class="o">=</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span><span class="o">.</span><span class="n">outcomes_hat_columns</span> <span class="ow">or</span> <span class="kc">None</span>
-                <span class="p">),</span>
-                <span class="n">ignored_columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span><span class="o">.</span><span class="n">ignored_columns</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
-                <span class="n">standardize_types</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjusted</span><span class="p">:</span>
+            <span class="n">unadjusted</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span><span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span> <span class="o">=</span> <span class="n">unadjusted</span>
+            <span class="n">links</span><span class="p">[</span><span class="s2">"unadjusted"</span><span class="p">]</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span>
+                <span class="n">sample</span><span class="o">=</span><span class="n">unadjusted</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">target_sample</span><span class="o">.</span><span class="n">_sf_sample</span>
             <span class="p">)</span>
-            <span class="n">result</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span> <span class="o">=</span> <span class="n">unadj_sf</span>
-            <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
-            <span class="n">result</span><span class="o">.</span><span class="n">_links</span><span class="p">[</span><span class="s2">"unadjusted"</span><span class="p">]</span> <span class="o">=</span> <span class="n">unadj_sf</span>
             <span class="n">result</span><span class="o">.</span><span class="n">_adjustment_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adjustment_model</span>
             <span class="n">result</span><span class="o">.</span><span class="n">_adjustment_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy_adjustment_history_from</span><span class="p">(</span>
                 <span class="bp">self</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span>
             <span class="p">)</span>
-
-        <span class="c1"># Carry the fitted outcome model onto the reconstructed Sample: the</span>
-        <span class="c1"># outcomes_hat role columns are carried above, but the fit behind them</span>
-        <span class="c1"># would otherwise be lost on a BalanceFrame -&gt; Sample round-trip.</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">result</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span>
-            <span class="n">result</span><span class="o">.</span><span class="n">_sync_sampleframe_state_from_responder</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">result</span></div>
 
@@ -3854,7 +3825,12 @@
             <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">model</span><span class="p">[</span><span class="s2">"outcome_columns"</span><span class="p">]</span>
             <span class="k">if</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">_hat"</span> <span class="ow">in</span> <span class="n">target_predictions</span><span class="o">.</span><span class="n">columns</span>
         <span class="p">}</span>
-        <span class="n">dr_estimates</span> <span class="o">=</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">col</span><span class="p">):</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">aipw</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">dr_estimates</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">dr_error</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">dr_estimates</span> <span class="o">=</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">col</span><span class="p">):</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">aipw</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">dr_error</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">_fmt_points</span><span class="p">(</span><span class="n">estimates</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
             <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
@@ -3872,8 +3848,12 @@
             <span class="s2">"Outcome model / g-computation (mu_OM), point estimate "</span>
             <span class="s2">"(CI not shown; not cached):"</span><span class="p">,</span>
             <span class="n">_fmt_points</span><span class="p">(</span><span class="n">om_estimates</span><span class="p">),</span>
-            <span class="s2">"Doubly robust / AIPW (mu_DR), point estimate:"</span><span class="p">,</span>
-            <span class="n">_fmt_points</span><span class="p">(</span><span class="n">dr_estimates</span><span class="p">),</span>
+            <span class="p">(</span>
+                <span class="s2">"Doubly robust / AIPW (mu_DR), point estimate:"</span>
+                <span class="k">if</span> <span class="n">dr_error</span> <span class="ow">is</span> <span class="kc">None</span>
+                <span class="k">else</span> <span class="s2">"Doubly robust / AIPW (mu_DR), unavailable:"</span>
+            <span class="p">),</span>
+            <span class="n">_fmt_points</span><span class="p">(</span><span class="n">dr_estimates</span><span class="p">)</span> <span class="k">if</span> <span class="n">dr_error</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">dr_error</span><span class="p">,</span>
         <span class="p">]</span>
         <span class="k">return</span> <span class="s2">"Outcome estimates:</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">blocks</span><span class="p">)</span>
 
@@ -4121,7 +4101,7 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">rows_to_keep</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">columns_to_keep</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BalanceFrame</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Return a new BalanceFrame with filtered rows and/or columns.</span>
 
 <span class="sd">        Returns a deep copy with the requested subset applied to the</span>
@@ -4226,6 +4206,7 @@
             <span class="p">):</span>
                 <span class="n">new_bf</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="o">=</span> <span class="kc">None</span>
 
+        <span class="n">new_bf</span><span class="o">.</span><span class="n">_sync_sampleframe_state_from_responder</span><span class="p">(</span><span class="n">new_bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">new_bf</span></div>
 
 
@@ -4523,7 +4504,12 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_special_columns_names</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""Return names of all special columns (id, weight, outcome, outcomes_hat, ignored)."""</span>
         <span class="k">return</span> <span class="p">(</span>
-            <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">id_series</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_series</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+            <span class="p">(</span>
+                <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">_assert_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id_series</span><span class="p">)</span><span class="o">.</span><span class="n">name</span><span class="p">)]</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_series</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="k">else</span> <span class="p">[]</span>
+            <span class="p">)</span>
+            <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">weight_columns_all</span>
             <span class="o">+</span> <span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outcome_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
