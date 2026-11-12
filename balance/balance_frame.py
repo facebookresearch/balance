@@ -3242,17 +3242,13 @@ class BalanceFrame:
             )
 
         responders_sf = SampleFrame.from_sample(sample)
-        # pyrefly: ignore [unsupported-operation]
-        target_sf = SampleFrame.from_sample(sample._links["target"])
+        target_sf = deepcopy(_assert_type(sample._sf_target))
 
         bf = cls._create(sample=responders_sf, target=target_sf)
 
         if sample.is_adjusted():
             # Set unadjusted to a DIFFERENT SampleFrame so is_adjusted returns True
-            bf._sf_sample_pre_adjust = SampleFrame.from_sample(
-                # pyrefly: ignore [unsupported-operation]
-                sample._links["unadjusted"]
-            )
+            bf._sf_sample_pre_adjust = deepcopy(sample._sf_sample_pre_adjust)
             bf._adjustment_model = sample.model
             bf._adjustment_history = cls._copy_adjustment_history_from(
                 sample, deep=False
@@ -3297,52 +3293,23 @@ class BalanceFrame:
                 "Cannot convert to Sample: BalanceFrame has no target set."
             )
 
-        resp_sample = Sample.from_frame(
-            self._sf_sample._df,
-            id_column=self._sf_sample._id_column_name,
-            weight_column=self._sf_sample._weight_column_name,
-            outcome_columns=self._sf_sample.outcome_columns or None,
-            outcomes_hat_columns=self._sf_sample.outcomes_hat_columns or None,
-            ignored_columns=self._sf_sample.ignored_columns or None,
-            standardize_types=False,
+        target_sample = Sample._create(sample=deepcopy(target))
+        result = Sample._create(
+            sample=deepcopy(self._sf_sample), target=target_sample._sf_sample
         )
-        target_sample = Sample.from_frame(
-            target._df,
-            id_column=target._id_column_name,
-            weight_column=target._weight_column_name,
-            outcome_columns=target.outcome_columns or None,
-            outcomes_hat_columns=target.outcomes_hat_columns or None,
-            ignored_columns=target.ignored_columns or None,
-            standardize_types=False,
-        )
-        result = resp_sample.set_target(target_sample)
+        links = _assert_type(result._links)
+        links["target"] = target_sample
 
-        if self.is_adjusted and self._sf_sample_pre_adjust is not None:
-            unadj_sf = SampleFrame.from_frame(
-                self._sf_sample_pre_adjust._df,
-                id_column=self._sf_sample_pre_adjust._id_column_name,
-                weight_column=self._sf_sample_pre_adjust._weight_column_name,
-                outcome_columns=self._sf_sample_pre_adjust.outcome_columns or None,
-                outcomes_hat_columns=(
-                    self._sf_sample_pre_adjust.outcomes_hat_columns or None
-                ),
-                ignored_columns=self._sf_sample_pre_adjust.ignored_columns or None,
-                standardize_types=False,
+        if self.is_adjusted:
+            unadjusted = deepcopy(self._sf_sample_pre_adjust)
+            result._sf_sample_pre_adjust = unadjusted
+            links["unadjusted"] = Sample._create(
+                sample=unadjusted, target=target_sample._sf_sample
             )
-            result._sf_sample_pre_adjust = unadj_sf
-            # pyrefly: ignore [unsupported-operation]
-            result._links["unadjusted"] = unadj_sf
             result._adjustment_model = self._adjustment_model
             result._adjustment_history = self._copy_adjustment_history_from(
                 self, deep=False
             )
-
-        # Carry the fitted outcome model onto the reconstructed Sample: the
-        # outcomes_hat role columns are carried above, but the fit behind them
-        # would otherwise be lost on a BalanceFrame -> Sample round-trip.
-        if self._sf_sample._outcome_model is not None:
-            result._sf_sample._outcome_model = self._sf_sample._outcome_model
-            result._sync_sampleframe_state_from_responder(result._sf_sample)
 
         return result
 
@@ -4405,7 +4372,12 @@ class BalanceFrame:
     def _special_columns_names(self) -> list[str]:
         """Return names of all special columns (id, weight, outcome, outcomes_hat, ignored)."""
         return (
-            [str(i.name) for i in [self.id_series, self.weight_series] if i is not None]
+            (
+                [str(_assert_type(self.id_series).name)]
+                if self.id_series is not None
+                else []
+            )
+            + self._sf_sample.weight_columns_all
             + (
                 self._outcome_columns.columns.tolist()
                 if self._outcome_columns is not None

@@ -109,3 +109,54 @@ class FilteredSampleRolesTest(unittest.TestCase):
         self.assertEqual(filtered.outcomes_hat_columns, [])
         self.assertIsNone(filtered.df_outcomes_hat)
         self.assertEqual(sample.outcomes_hat_columns, ["y_hat"])
+
+
+class FrameConversionRolesTest(unittest.TestCase):
+    def test_conversion_preserves_the_fitted_outcome_model(self) -> None:
+        sample = _make_sample().fit_outcome_model()
+        converted = sample.to_sample_frame()
+
+        self.assertIsNotNone(converted.outcome_model)
+        self.assertIs(
+            converted.outcome_model["fit"]["y"],
+            _assert_type(sample.outcome_model)["fit"]["y"],
+        )
+
+    def test_sample_frame_target_survives_conversion(self) -> None:
+        target = _make_target().to_sample_frame()
+        sample = _make_sample().set_target(target, inplace=False)
+        converted = sample.to_balance_frame()
+
+        self.assertIsNot(converted.target, target)
+        pd.testing.assert_frame_equal(_assert_type(converted.target).df, target.df)
+
+    def test_conversion_uses_fresh_canonical_target_predictions(self) -> None:
+        target = _make_target()
+        target.add_outcomes_hat_column("y_hat", pd.Series([999.0] * 4))
+        sample = _make_sample().set_target(target).fit_outcome_model()
+        sample.predict_outcomes(on="target")
+        expected = _assert_type(_assert_type(sample.target).df_outcomes_hat)
+        converted = sample.to_balance_frame()
+
+        self.assertIsNotNone(converted.outcome_model)
+        pd.testing.assert_frame_equal(
+            _assert_type(_assert_type(converted.target).df_outcomes_hat), expected
+        )
+        self.assertEqual(
+            _assert_type(target.df_outcomes_hat)["y_hat"].tolist(), [999.0] * 4
+        )
+
+    def test_sample_frame_conversion_preserves_all_weight_roles(self) -> None:
+        sample = (
+            _make_sample()
+            .set_target(_make_target())
+            .adjust(method="poststratify", variables=["x"], transformations=None)
+        )
+        converted = sample.to_sample_frame()
+
+        self.assertEqual(converted.covar_columns, ["x"])
+        self.assertEqual(converted.weight_columns_all, sample.weight_columns_all)
+        self.assertEqual(sample._covar_columns_names(), ["x"])
+        self.assertEqual(
+            converted.weight_metadata("weight_adjusted_1")["method"], "poststratify"
+        )

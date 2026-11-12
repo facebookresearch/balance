@@ -5,6 +5,7 @@
 - Keep `Sample` active-weight selection, renaming, accessors, and updates aligned with its responder frame.
 - Preserve a separate pre-fit baseline when `fit(inplace=True)` adopts adjusted state.
 - Synchronize `Sample` column-role accessors after row/column filtering.
+- Preserve canonical frame state, explicit column roles, weight history, and fitted outcome models through conversions.
 
 # 0.23.0 (2026-08-04)
 

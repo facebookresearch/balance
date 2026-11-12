@@ -371,7 +371,7 @@ class TestBalanceFrameAdjust(BalanceTestCase):
 
     def test_adjust_repr_shows_adjusted(self) -> None:
         adjusted = self.bf.adjust(method="null")
-        self.assertIn("adjusted", repr(adjusted))
+        self.assertIn("Adjusted", repr(adjusted))
         self.assertNotIn("unadjusted", repr(adjusted))
 
     def test_adjust_weight_metadata(self) -> None:

@@ -1900,8 +1900,8 @@ class SampleFrame:
 
         Preserves the Sample's tabular data and column role assignments:
         id column, weight column, outcome columns, and ignored columns.
-        Covariate columns are inferred by exclusion,
-        matching the Sample's own logic.
+        Covariate and weight columns retain their explicit role assignments,
+        including inactive/history weights and the active-weight selection.
 
         The internal DataFrame is deep-copied so that the resulting
         SampleFrame is fully independent of the original Sample.
@@ -1973,23 +1973,23 @@ class SampleFrame:
         if df is None:
             raise ValueError("Sample has no DataFrame set.")
 
-        # ``_covar_columns_names()`` derives covariates by excluding special
-        # columns (id/weight/outcome/outcomes_hat/ignored); defensively drop
-        # any outcomes_hat columns again so each column keeps exactly one role.
-        covar_cols = sample._covar_columns_names()
-        if outcomes_hat_cols:
-            hat_set = set(outcomes_hat_cols)
-            covar_cols = [c for c in covar_cols if c not in hat_set]
-
-        return cls._create(
-            df=df,
+        responder = deepcopy(sample._sf_sample)
+        converted = cls._create(
+            df=responder._df,
             id_column=id_col_name,
-            covar_columns=covar_cols,
-            weight_columns=[weight_col_name],
+            covar_columns=responder.covar_columns,
+            weight_columns=responder.weight_columns_all,
             outcome_columns=outcome_cols,
             outcomes_hat_columns=outcomes_hat_cols if outcomes_hat_cols else None,
             ignored_columns=ignored_cols if ignored_cols else None,
+            _skip_copy=True,
+            _df_dtypes=responder._df_dtypes,
         )
+        converted.set_active_weight(weight_col_name)
+        converted._weight_metadata = responder._weight_metadata
+        converted._prediction_metadata = responder._prediction_metadata
+        converted._outcome_model = responder._outcome_model
+        return converted
 
     def __repr__(self) -> str:
         n_obs = len(self._df)
