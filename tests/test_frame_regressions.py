@@ -61,3 +61,40 @@ class SampleActiveWeightTest(unittest.TestCase):
             _assert_type(sample.weight_series).tolist(), [2.0, 2.0, 2.0, 2.0]
         )
         self.assertNotIn("weight", sample.df.columns)
+
+
+def _make_target() -> Sample:
+    return Sample.from_frame(
+        pd.DataFrame(
+            {
+                "id": ["t1", "t2", "t3", "t4"],
+                "x": [0.0, 1.0, 2.0, 3.0],
+                "weight": [6.0, 1.0, 1.0, 2.0],
+            }
+        )
+    )
+
+
+class InplaceFitBaselineTest(unittest.TestCase):
+    def test_fit_preserves_a_separate_unadjusted_link(self) -> None:
+        sample = _make_sample().set_target(_make_target())
+        sample.fit(method="poststratify", variables=["x"], transformations=None)
+        baseline = _assert_type(sample._links)["unadjusted"]
+
+        self.assertIsNot(baseline, sample)
+        self.assertEqual(baseline.weight_series.tolist(), [1.0, 1.0, 1.0, 1.0])
+        self.assertEqual(
+            _assert_type(sample.weight_series).tolist(), [6.0, 1.0, 1.0, 2.0]
+        )
+
+    def test_conversion_preserves_prefit_weights(self) -> None:
+        sample = _make_sample().set_target(_make_target())
+        sample.fit(method="poststratify", variables=["x"], transformations=None)
+        converted = sample.to_balance_frame()
+
+        self.assertEqual(
+            converted.df_responders_unadjusted["weight"].tolist(), [1.0] * 4
+        )
+        self.assertEqual(
+            converted.df_responders["weight"].tolist(), [6.0, 1.0, 1.0, 2.0]
+        )

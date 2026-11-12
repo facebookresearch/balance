@@ -1271,6 +1271,10 @@ class BalanceFrame:
         if not inplace:
             return result
 
+        result_links = _assert_type(result._links)
+        if result_links.get("unadjusted") is self:
+            result_links["unadjusted"] = deepcopy(self)
+
         # Copy fitted state from result into self.
         self._sf_sample = result._sf_sample
         self._sf_sample_pre_adjust = result._sf_sample_pre_adjust
