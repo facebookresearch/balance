@@ -259,6 +259,15 @@ class BalanceFrame:
         return self._sf_sample._id_column_name
 
     @property
+    def _weight_column_name(self) -> str | None:
+        """Active weight name, delegated to the canonical responder frame."""
+        return self._sf_sample._weight_column_name
+
+    @_weight_column_name.setter
+    def _weight_column_name(self, value: str | None) -> None:
+        self._sf_sample._weight_column_name = value
+
+    @property
     def weight_series(self) -> pd.Series | None:
         """The active weight as a Series, delegated to ``_sf_sample``."""
         try:

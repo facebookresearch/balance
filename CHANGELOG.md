@@ -1,3 +1,9 @@
+# Unreleased
+
+## Fixed
+
+- Keep `Sample` active-weight selection, renaming, accessors, and updates aligned with its responder frame.
+
 # 0.23.0 (2026-08-04)
 
 ## Highlights
