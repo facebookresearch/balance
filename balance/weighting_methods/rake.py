@@ -616,6 +616,11 @@ def rake(
         transformations_to_apply,
     )
 
+    sample_rows_kept = (
+        np.asarray(sample_df.notna().all(axis=1), dtype=bool)
+        if na_action == "drop"
+        else None
+    )
     sample_df, sample_weights, target_df, target_weights = (
         balance_util._apply_na_action_to_frame_pair(
             sample_df,
@@ -748,6 +753,8 @@ def rake(
         "iterations": iterations,
         "converged": converged,
     }
+    if sample_rows_kept is not None:
+        model["sample_rows_kept"] = sample_rows_kept
     if store_fit_metadata:
         # Pickleability of `transformations_to_apply` was already validated
         # earlier (before the IPF compute), so persistence here is safe.
@@ -939,6 +946,21 @@ def _apply_rake_predict_na_action(
 ) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series | None]:
     """Apply rake's stored NA policy to scoring frames."""
     if na_action == "drop":
+        if len(sample_weights) != len(sample_df):
+            keep = np.asarray(sample_df.notna().all(axis=1), dtype=bool)
+            if not sample_weights.index.equals(sample_df.index[keep]):
+                raise ValueError(
+                    "Rake fit-time design weights do not match the non-missing "
+                    "scoring rows. Refit or pass aligned scoring weights."
+                )
+            if not np.isfinite(sample_weights.to_numpy(dtype=float)).all():
+                raise ValueError(
+                    "Rake filtered fit-time design weights must be finite. "
+                    "Refit or pass valid aligned scoring weights."
+                )
+            expanded_weights = pd.Series(np.nan, index=sample_df.index, dtype=float)
+            expanded_weights.iloc[keep] = sample_weights.to_numpy()
+            sample_weights = expanded_weights
         sample_clean, sample_weights_clean = balance_util.drop_na_rows(
             sample_df, sample_weights, "sample"
         )
@@ -1013,15 +1035,25 @@ def _rake_target_sum(
 
 
 def _restore_rake_dropped_index(
-    predicted: pd.Series, sample_weights_full: pd.Series, na_action: str
+    predicted: pd.Series,
+    sample_weights_full: pd.Series,
+    na_action: str,
+    kept_rows: np.ndarray | None,
 ) -> pd.Series:
     """Restore rows dropped by ``na_action='drop'`` as missing predictions."""
     if na_action != "drop":
         return predicted
+    kept = np.asarray(balance_util._assert_type(kept_rows))
+    if (
+        kept.dtype.kind != "b"
+        or kept.shape != (len(sample_weights_full),)
+        or np.count_nonzero(kept) != len(predicted)
+    ):
+        raise ValueError("Rake retained-row mask does not align with the weight rows.")
     predicted_full = pd.Series(
         np.nan, index=sample_weights_full.index, dtype=float
     ).rename(predicted.name)
-    predicted_full.loc[predicted.index] = predicted.to_numpy()
+    predicted_full.iloc[kept] = predicted.to_numpy()
     return predicted_full
 
 
@@ -1051,6 +1083,11 @@ def _predict_weights_from_model(
         model, metadata, sample_df, target_df
     )
     _validate_rake_table_shape(metadata)
+    kept_rows = (
+        np.asarray(sample_df.notna().all(axis=1), dtype=bool)
+        if metadata.na_action == "drop"
+        else None
+    )
     sample_weights = _resolve_rake_sample_weights(
         model, sample_weights_full, metadata.na_action, is_transfer
     )
@@ -1108,7 +1145,7 @@ def _predict_weights_from_model(
         keep_sum_of_weights=bool(model.get("keep_sum_of_weights", True)),
     )
     return _restore_rake_dropped_index(
-        predicted, sample_weights_full, metadata.na_action
+        predicted, sample_weights_full, metadata.na_action, kept_rows
     )
 
 

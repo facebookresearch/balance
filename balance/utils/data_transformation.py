@@ -243,8 +243,9 @@ def drop_na_rows(
         Tuple[pd.DataFrame, pd.Series]: sample_df, sample_weights without NAs rows
     """
     sample_n = sample_df.shape[0]
-    sample_df = sample_df.dropna()
-    sample_weights = sample_weights[sample_df.index]
+    keep = np.asarray(sample_df.notna().all(axis=1))
+    sample_df = sample_df.loc[keep]
+    sample_weights = sample_weights.iloc[keep]
     sample_n_after = sample_df.shape[0]
 
     _sample_rate = f"{sample_n - sample_n_after}/{sample_n}"

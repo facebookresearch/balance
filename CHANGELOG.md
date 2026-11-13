@@ -2,6 +2,8 @@
 
 ## Fixed
 
+- Reject non-finite caller-filtered rake fit-time design weights before expanding them onto complete scoring rows.
+- Restore filtered rake fit-time design weights to scoring-row positions before NA-drop replay, preserving full output indices without filtering weights twice. Use retained row positions for both fitted and replayed weights, so repeated index labels neither assign weight to dropped rows nor duplicate retained values.
 - Keep `Sample` active-weight selection, renaming, accessors, and updates aligned with its responder frame.
 - Preserve a separate pre-fit baseline when `fit(inplace=True)` adopts adjusted state.
 - Synchronize `Sample` column-role accessors after row/column filtering.
@@ -106,6 +108,7 @@
 
 ## Statistics and utility fixes
 
+- Keep covariates and weights positionally aligned when dropping rows with duplicate index labels.
 - Preserve caller missing values when returning a new NA-indicator frame.
 
 # 0.23.0 (2026-08-04)

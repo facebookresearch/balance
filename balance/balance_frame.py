@@ -852,10 +852,26 @@ class BalanceFrame:
         n = new_responders._next_weight_action_number()
         adj_col_name = f"weight_adjusted_{n}"
 
+        adjusted_weights = result["weight"]
+        row_model = result.get("model")
+        if (
+            isinstance(row_model, dict)
+            and row_model.get("method") == "rake"
+            and row_model.get("sample_rows_kept") is not None
+        ):
+            from balance.weighting_methods.rake import _restore_rake_dropped_index
+
+            adjusted_weights = _restore_rake_dropped_index(
+                adjusted_weights,
+                _assert_type(self.weight_series),
+                "drop",
+                row_model["sample_rows_kept"],
+            )
+
         # Add the new adjusted weights as weight_adjusted_N
         new_responders.add_weight_column(
             adj_col_name,
-            result["weight"],
+            adjusted_weights,
             metadata={
                 "method": method_name,
                 "adjusted": True,
@@ -867,7 +883,7 @@ class BalanceFrame:
         # so the active weight column always keeps its original name.
         # use_index=True lets na_action="drop" (which returns fewer weights)
         # fill dropped rows with NaN; set_weights warns about missing indices.
-        new_responders.set_weights(result["weight"], use_index=True)
+        new_responders.set_weights(adjusted_weights, use_index=True)
 
         # TODO: The weight history columns (weight_pre_adjust, weight_adjusted_1,
         # weight_adjusted_2, ...) make _sf_sample_pre_adjust redundant.  Once all
