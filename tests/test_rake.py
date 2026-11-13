@@ -552,7 +552,7 @@ class Testrake(
 
         self.assertEqual(
             adjusted["weight"].round(2),
-            pd.Series([1.67, 0.33] * 6, name="rake_weight").rename_axis("index"),
+            pd.Series([1.67, 0.33] * 6, name="rake_weight"),
         )
 
     def test_rake_accepts_target_margins_without_target_frame(self) -> None:
@@ -579,7 +579,7 @@ class Testrake(
 
         self.assertEqual(
             adjusted["weight"].round(2),
-            pd.Series([1.67, 0.33] * 6, name="rake_weight").rename_axis("index"),
+            pd.Series([1.67, 0.33] * 6, name="rake_weight"),
         )
 
     def test_rake_target_margins_accepts_nan_category_label(self) -> None:
@@ -969,7 +969,94 @@ class Testrake(
 
         self.assertEqual(
             adjusted["weight"].round(2),
-            pd.Series([1.25, 0.25] * 6, name="rake_weight").rename_axis("index"),
+            pd.Series([1.25, 0.25] * 6, name="rake_weight"),
+        )
+
+    def _two_variable_rake_frames(
+        self, sample_index: pd.Index
+    ) -> tuple[pd.DataFrame, pd.DataFrame]:
+        sample_df = pd.DataFrame(
+            {"a": ["x", "y", "x", "y"], "b": ["p", "p", "q", "q"]},
+            index=sample_index,
+        )
+        target_df = pd.DataFrame({"a": ["x", "x", "x", "y"], "b": ["p", "q", "q", "q"]})
+        return sample_df, target_df
+
+    def test_rake_keeps_named_sample_index(self) -> None:
+        """Weights are returned on the sample's own (named) index."""
+        sample_df, target_df = self._two_variable_rake_frames(
+            pd.Index([10, 11, 12, 13], name="respondent")
+        )
+        unnamed_df, _ = self._two_variable_rake_frames(pd.Index([10, 11, 12, 13]))
+        weights = rake(
+            sample_df,
+            pd.Series(1.0, index=sample_df.index),
+            target_df,
+            pd.Series(1.0, index=target_df.index),
+            transformations=None,
+        )["weight"]
+        reference = rake(
+            unnamed_df,
+            pd.Series(1.0, index=unnamed_df.index),
+            target_df,
+            pd.Series(1.0, index=target_df.index),
+            transformations=None,
+        )["weight"]
+        self.assertTrue(weights.index.equals(sample_df.index))
+        self.assertEqual(weights.index.name, "respondent")
+        self.assertIsNone(reference.index.name)
+        np.testing.assert_allclose(weights.to_numpy(), reference.to_numpy())
+
+    def test_rake_covariate_named_index_keeps_sample_index(self) -> None:
+        """A covariate called ``index`` must not replace the weights' index."""
+        sample_df, target_df = self._two_variable_rake_frames(
+            pd.Index([10, 11, 12, 13])
+        )
+        sample_df = sample_df.rename(columns={"b": "index"})
+        target_df = target_df.rename(columns={"b": "index"})
+        reference_sample, reference_target = self._two_variable_rake_frames(
+            pd.Index([10, 11, 12, 13])
+        )
+        weights = rake(
+            sample_df,
+            pd.Series(1.0, index=sample_df.index),
+            target_df,
+            pd.Series(1.0, index=target_df.index),
+            transformations=None,
+        )["weight"]
+        reference = rake(
+            reference_sample,
+            pd.Series(1.0, index=reference_sample.index),
+            reference_target,
+            pd.Series(1.0, index=reference_target.index),
+            transformations=None,
+        )["weight"]
+        self.assertEqual(list(weights.index), [10, 11, 12, 13])
+        np.testing.assert_allclose(weights.to_numpy(), reference.to_numpy())
+
+    def test_sample_adjust_rake_with_named_index(self) -> None:
+        """Sample.adjust(method='rake') works when the caller's frame has a
+        named index (SampleFrame keeps it on the covariates)."""
+        sample_df, target_df = self._two_variable_rake_frames(
+            pd.Index([0, 1, 2, 3], name="row")
+        )
+        target_df.index = pd.Index([0, 1, 2, 3], name="row")
+        sample = Sample.from_frame(
+            sample_df.assign(id=[1, 2, 3, 4], weight=1.0), id_column="id"
+        )
+        target = Sample.from_frame(
+            target_df.assign(id=[5, 6, 7, 8], weight=1.0), id_column="id"
+        )
+        adjusted = sample.set_target(target).adjust(method="rake", transformations=None)
+        reference = rake(
+            sample_df.reset_index(drop=True),
+            pd.Series(np.ones(4)),
+            target_df.reset_index(drop=True),
+            pd.Series(np.ones(4)),
+            transformations=None,
+        )["weight"]
+        np.testing.assert_allclose(
+            adjusted.weights().df.iloc[:, 0].to_numpy(), reference.to_numpy()
         )
 
     def test_rake_nonuniform_design_weights_marginal_recovery(self) -> None:

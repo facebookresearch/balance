@@ -43,6 +43,15 @@
   Cells are now built from observed combinations only, matching `object`
   columns.
 
+- **Rake keeps the sample's own index on the returned weights.** Rake mapped
+  rows to cells with `reset_index()` + `set_index("index")`, so a sample with
+  a named index raised `KeyError: "None of ['index'] are in the columns"`
+  (also through `Sample.adjust(method="rake")` / `fit()`), a covariate named
+  `index` silently became the weights' index, and otherwise the weights'
+  index was renamed to `"index"`. Rows are now mapped to cells positionally;
+  the returned weights keep the sample index, including its name (previously
+  always `"index"`).
+
 # 0.23.0 (2026-08-04)
 
 ## Highlights

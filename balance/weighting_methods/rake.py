@@ -7,7 +7,6 @@
 from __future__ import annotations
 
 import collections.abc
-import itertools
 import logging
 import math
 import numbers
@@ -679,34 +678,20 @@ def rake(
     if not converged:
         logger.warning("Maximum iterations reached, convergence was not achieved")
 
-    combos = list(itertools.product(*categories))
-    fit = pd.DataFrame(combos, columns=alphabetized_variables)
-    fit["rake_weight"] = m_fit.flatten()
-
-    raked = pd.merge(
-        sample_df.reset_index(),
-        fit,
-        how="left",
-        on=alphabetized_variables,
-    )
-
-    raked_rescaled = pd.merge(
-        raked,
-        grouped_sample_series.reset_index().rename(
-            columns={"weight": "total_survey_weight"}
-        ),
-        how="left",
-        on=alphabetized_variables,
-    ).set_index("index")
-
-    raked_rescaled["rake_weight"] = (
-        raked_rescaled["rake_weight"]
-        * raked_rescaled["weight"]
-        / raked_rescaled["total_survey_weight"]
+    # Look up each sample row's cell without merging, so the sample index is kept.
+    sample_cells = pd.MultiIndex.from_frame(sample_df[alphabetized_variables])
+    cell_fit = pd.Series(m_fit.flatten(), index=index).reindex(sample_cells)
+    cell_sample_total = grouped_sample_full.reindex(sample_cells)
+    raked_weight = pd.Series(
+        cell_fit.to_numpy()
+        * sample_df["weight"].to_numpy()
+        / cell_sample_total.to_numpy(),
+        index=sample_df.index,
+        name="rake_weight",
     )
 
     w = balance_adjustment.trim_weights(
-        raked_rescaled["rake_weight"],
+        raked_weight,
         target_sum_weights=target_sum_weights,
         weight_trimming_mean_ratio=weight_trimming_mean_ratio,
         weight_trimming_percentile=weight_trimming_percentile,
