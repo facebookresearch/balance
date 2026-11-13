@@ -34,6 +34,15 @@
   cell instead of being lumped with other rare levels. `na_action="drop"` is
   unchanged.
 
+- **Poststratify cells now ignore unobserved categorical levels.** Cell totals
+  were computed with pandas' default `groupby(observed=False)`, so pandas
+  `Categorical` covariates produced every level combination. A sample cell
+  missing from the target got a target total of `0` instead of a missing
+  value, so `strict_matching=True` silently gave those rows weight 0 instead of
+  raising, and target-only cells stored an infinite `cell_weight_ratio`.
+  Cells are now built from observed combinations only, matching `object`
+  columns.
+
 # 0.23.0 (2026-08-04)
 
 ## Highlights

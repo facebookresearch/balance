@@ -241,10 +241,14 @@ def poststratify(
     logger.debug(f"Final variables in the model after transformations: {variables}")
 
     target_df = target_df.assign(weight=target_weights)
-    target_cell_props = target_df.groupby(list(variables))["weight"].sum()
+    target_cell_props = target_df.groupby(list(variables), observed=True)[
+        "weight"
+    ].sum()
 
     sample_df = sample_df.assign(design_weight=sample_weights)
-    sample_cell_props = sample_df.groupby(list(variables))["design_weight"].sum()
+    sample_cell_props = sample_df.groupby(list(variables), observed=True)[
+        "design_weight"
+    ].sum()
 
     combined = pd.merge(
         target_cell_props,

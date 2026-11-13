@@ -786,6 +786,36 @@ class Testpoststratify(
         )
         np.testing.assert_allclose(replayed.to_numpy(), target_weights.to_numpy())
 
+    def test_poststratify_categorical_columns_match_object_columns(self) -> None:
+        """Unobserved categorical levels do not create cells: weights and stored
+        cell ratios match the equivalent object-dtype fit (no inf ratios for
+        target-only levels)."""
+        levels = pd.CategoricalDtype(["a", "b", "c"])
+        sample_df = pd.DataFrame({"g": pd.Series(["a", "b", "a", "b"], dtype=levels)})
+        target_df = pd.DataFrame({"g": pd.Series(["a", "b", "c", "c"], dtype=levels)})
+        kwargs = {
+            "sample_weights": pd.Series(np.ones(4)),
+            "target_weights": pd.Series(np.ones(4)),
+            "transformations": None,
+            "na_action": "drop",
+            "store_fit_metadata": True,
+        }
+        categorical = poststratify(sample_df=sample_df, target_df=target_df, **kwargs)
+        as_object = poststratify(
+            sample_df=sample_df.astype(object),
+            target_df=target_df.astype(object),
+            **kwargs,
+        )
+        np.testing.assert_allclose(
+            categorical["weight"].to_numpy(), as_object["weight"].to_numpy()
+        )
+        categorical_ratio = categorical["model"]["cell_weight_ratio"]
+        self.assertFalse(np.isinf(categorical_ratio.to_numpy()).any())
+        self.assertEqual(
+            categorical_ratio.dropna().to_dict(),
+            as_object["model"]["cell_weight_ratio"].dropna().to_dict(),
+        )
+
     def test_poststratify_na_drop_warns(self) -> None:
         sample = Sample.from_frame(
             pd.DataFrame(
