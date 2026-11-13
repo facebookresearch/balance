@@ -30,6 +30,7 @@ from balance.weighting_methods.rake import (
     _lcm,
     _predict_weights_from_model,
     _proportional_array_from_dict,
+    _rake_level_labels,
     _realize_dicts_of_proportions,
     _run_ipf_numpy,
     prepare_marginal_dist_for_raking,
@@ -1094,6 +1095,137 @@ class Testrake(
             )
         self.assertEqual(result["model"]["converged"], 1)
         warning.assert_not_called()
+
+    def _int_sample_float_target_frames(
+        self,
+    ) -> tuple[pd.DataFrame, pd.DataFrame]:
+        sample_df = pd.DataFrame({"k": [1, 2, 1, 2], "g": ["a", "a", "b", "b"]})
+        target_df = pd.DataFrame({"k": [1.0, 1.0, 1.0, 2.0], "g": ["a", "b", "b", "b"]})
+        return sample_df, target_df
+
+    def test_rake_matches_integer_and_integral_float_levels(self) -> None:
+        """An integer sample column and a float target column share levels
+        (``1`` and ``1.0`` are the same level)."""
+        sample_df, target_df = self._int_sample_float_target_frames()
+        weights = rake(
+            sample_df,
+            pd.Series(np.ones(4)),
+            target_df,
+            pd.Series(np.ones(4)),
+            transformations=None,
+        )["weight"]
+        reference = rake(
+            sample_df,
+            pd.Series(np.ones(4)),
+            target_df.astype({"k": int}),
+            pd.Series(np.ones(4)),
+            transformations=None,
+        )["weight"]
+        np.testing.assert_allclose(weights.to_numpy(), reference.to_numpy())
+
+    def test_rake_matches_integer_and_integral_float_categorical_levels(
+        self,
+    ) -> None:
+        """Categorical columns get the same level labels as plain columns, so
+        integer and integral-float categories of the same level match."""
+        sample_df, target_df = self._int_sample_float_target_frames()
+        categorical_target = target_df.astype({"k": "category"})
+        weights = rake(
+            sample_df,
+            pd.Series(np.ones(4)),
+            categorical_target,
+            pd.Series(np.ones(4)),
+            transformations=None,
+            na_action="drop",
+        )["weight"]
+        reference = rake(
+            sample_df,
+            pd.Series(np.ones(4)),
+            target_df.astype({"k": int}),
+            pd.Series(np.ones(4)),
+            transformations=None,
+            na_action="drop",
+        )["weight"]
+        self.assertIsInstance(categorical_target["k"].dtype, pd.CategoricalDtype)
+        np.testing.assert_allclose(weights.to_numpy(), reference.to_numpy())
+
+    def test_rake_level_labels_match_across_nullable_and_numpy_dtypes(
+        self,
+    ) -> None:
+        """Equal levels and missing values get the same labels whether a column
+        is nullable (``Int64``/``Float64``/``boolean``), NumPy or object."""
+        expected = ["1", "2", "__NaN__"]
+        for series in (
+            pd.Series([1, 2, pd.NA], dtype="Int64"),
+            pd.Series([1.0, 2.0, np.nan]),
+            pd.Series([1.0, 2.0, pd.NA], dtype="Float64"),
+            pd.Series([1, 2.0, None], dtype=object),
+        ):
+            with self.subTest(dtype=str(series.dtype)):
+                self.assertEqual(_rake_level_labels(series).tolist(), expected)
+        self.assertEqual(
+            _rake_level_labels(pd.Series([True, pd.NA], dtype="boolean")).tolist(),
+            _rake_level_labels(pd.Series([True, None], dtype=object)).tolist(),
+        )
+
+    def test_rake_nullable_integer_sample_matches_float_target_levels(
+        self,
+    ) -> None:
+        """A nullable-integer sample column raked against a float target column
+        with missing values gives the same weights as a plain integer column,
+        under both NA policies (public-path control)."""
+        sample_df = pd.DataFrame(
+            {"k": pd.Series([1, 2, 1, 2, 2, 1], dtype="Int64"), "g": list("ababab")}
+        )
+        target_df = pd.DataFrame(
+            {
+                "k": [1.0, 2.0, 1.0, np.nan, 2.0, 1.0, 2.0, np.nan],
+                "g": list("aabbabab"),
+            }
+        )
+        for na_action in ("add_indicator", "drop"):
+            with self.subTest(na_action=na_action):
+                weights = rake(
+                    sample_df,
+                    pd.Series(np.ones(6)),
+                    target_df,
+                    pd.Series(np.ones(8)),
+                    transformations=None,
+                    na_action=na_action,
+                )["weight"]
+                reference = rake(
+                    sample_df.astype({"k": int}),
+                    pd.Series(np.ones(6)),
+                    target_df,
+                    pd.Series(np.ones(8)),
+                    transformations=None,
+                    na_action=na_action,
+                )["weight"]
+                np.testing.assert_allclose(weights.to_numpy(), reference.to_numpy())
+
+    def test_rake_replay_with_integer_and_integral_float_levels(self) -> None:
+        """In-place replay reproduces a fit whose sample and target use
+        integer and integral-float labels for the same levels."""
+        sample_df, target_df = self._int_sample_float_target_frames()
+        sample_weights = pd.Series(np.ones(4))
+        target_weights = pd.Series(np.ones(4))
+        result = rake(
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            transformations=None,
+            store_fit_metadata=True,
+        )
+        predicted = _predict_weights_from_model(
+            model=result["model"],
+            sample_df=sample_df,
+            sample_weights_full=sample_weights,
+            target_df=target_df,
+            target_weights=target_weights,
+            is_transfer=False,
+        )
+        np.testing.assert_allclose(predicted.to_numpy(), result["weight"].to_numpy())
 
     def test_rake_nonuniform_design_weights_marginal_recovery(self) -> None:
         """

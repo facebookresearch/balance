@@ -61,6 +61,16 @@
   `converged=0` and logs a warning with the remaining deviation. The stopping
   rule itself is unchanged.
 
+- **Rake treats integer and integral-float levels as the same level.** Levels
+  were compared after `astype(str)`, so an integer sample column (`"1"`) and a
+  target column that is float, e.g. because it contains missing values
+  (`"1.0"`), raised `All variable levels in sample must be present in target`
+  with `transformations=None`. Integral floats (including categorical
+  categories) are now labelled without the trailing `.0`, in fitting and in
+  `predict_weights()` replay. Rake models
+  pickled by earlier versions whose fit-time levels were integral floats
+  (labels such as `"1.0"`) must be re-fit before in-place replay.
+
 # 0.23.0 (2026-08-04)
 
 ## Highlights

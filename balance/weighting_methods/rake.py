@@ -121,6 +121,41 @@ def _run_ipf_numpy(
     return table, converged, iterations_df
 
 
+def _rake_level_label(value: Any) -> str:
+    """Return the string label rake uses for one covariate level."""
+    if pd.api.types.is_scalar(value) and pd.isna(value):
+        return "__NaN__"
+    if isinstance(value, (float, np.floating)) and float(value).is_integer():
+        return str(int(value))
+    return str(value)
+
+
+def _rake_level_labels(series: pd.Series) -> pd.Series:
+    """Stringify rake covariate levels so equal numbers share one label.
+
+    Integral floats are written without a trailing ``.0`` so that, for
+    example, an integer sample column and a target column that became float
+    because it holds missing values both label the level ``1`` as ``"1"``.
+    Missing scalars (``NaN``, ``None``, ``pd.NA``) all get the ``"__NaN__"``
+    label used by ``na_action="add_indicator"``, and pandas extension dtypes
+    (nullable integers/floats/booleans, categoricals, strings) are labelled
+    value by value like their NumPy counterparts.
+
+    Examples:
+        >>> _rake_level_labels(pd.Series([1.0, 2.5, "__NaN__"])).tolist()
+        ['1', '2.5', '__NaN__']
+        >>> _rake_level_labels(pd.Series([1, pd.NA], dtype="Int64")).tolist()
+        ['1', '__NaN__']
+    """
+    if (
+        pd.api.types.is_float_dtype(series.dtype)
+        or series.dtype == object
+        or isinstance(series.dtype, pd.api.extensions.ExtensionDtype)
+    ):
+        return series.astype(object).map(_rake_level_label).astype(str)
+    return series.astype(str)
+
+
 # Inner category-label keys below are typed ``Any`` rather than ``Hashable``:
 # ``Mapping``'s key type is invariant, so ``Mapping[Hashable, float]`` rejects the
 # ordinary ``dict[str, float]`` / ``dict[int, float]`` arguments callers pass.
@@ -605,8 +640,8 @@ def rake(
     # series of type Object, which won't work for the ipfn script
     categories = []
     for variable in alphabetized_variables:
-        target_df[variable] = target_df[variable].astype(str)
-        sample_df[variable] = sample_df[variable].astype(str)
+        target_df[variable] = _rake_level_labels(target_df[variable])
+        sample_df[variable] = _rake_level_labels(sample_df[variable])
 
         sample_var_set = set(sample_df[variable].unique())
         target_var_set = set(target_df[variable].unique())
@@ -911,7 +946,9 @@ def _apply_rake_predict_na_action(
             target_df, target_weights, "target"
         )
         return (
-            sample_clean.astype(str),
+            balance_util._assert_type(
+                sample_clean.apply(_rake_level_labels), pd.DataFrame
+            ),
             sample_weights_clean,
             target_clean,
             dropped_target_weights,
@@ -919,7 +956,14 @@ def _apply_rake_predict_na_action(
     if na_action == "add_indicator":
         sample_clean = pd.DataFrame(_safe_fillna_and_infer(sample_df, "__NaN__"))
         target_clean = pd.DataFrame(_safe_fillna_and_infer(target_df, "__NaN__"))
-        return sample_clean.astype(str), sample_weights, target_clean, None
+        return (
+            balance_util._assert_type(
+                sample_clean.apply(_rake_level_labels), pd.DataFrame
+            ),
+            sample_weights,
+            target_clean,
+            None,
+        )
     raise ValueError(
         f"Rake model has invalid na_action metadata '{na_action}' for predict_weights()."
     )
