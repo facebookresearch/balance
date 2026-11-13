@@ -9,6 +9,7 @@
 - Keep outcome-model summaries available when AIPW prerequisites are not met, with an explicit unavailable reason.
 - Preserve existing sample weights, weighting models, adjustment history, and the unadjusted baseline when `fit_outcome_model(target=...)` replaces the outcome target. Warn when the new target data differ from the previous target: the preserved weights may still describe the previous population, while subsequent outcome predictions use the new target.
 - Honor explicitly supplied covariate-view weights regardless of their name; default unnamed RangeIndex weights stay positional even when data labels are reordered. Align complete matching unique labelled weights before length validation (ignoring unused labelled weights), and reject incomplete unique label matches rather than silently assigning them by position.
+- Keep flag-only Bento test invocations scoped to the package test directory without broadening explicit Python test selections when flags appear first.
 
 # 0.23.0 (2026-08-04)
 
