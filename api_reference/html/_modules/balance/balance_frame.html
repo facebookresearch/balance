@@ -897,10 +897,26 @@
         <span class="n">n</span> <span class="o">=</span> <span class="n">new_responders</span><span class="o">.</span><span class="n">_next_weight_action_number</span><span class="p">()</span>
         <span class="n">adj_col_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"weight_adjusted_</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span>
 
+        <span class="n">adjusted_weights</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">"weight"</span><span class="p">]</span>
+        <span class="n">row_model</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"model"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">row_model</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">row_model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"method"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"rake"</span>
+            <span class="ow">and</span> <span class="n">row_model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sample_rows_kept"</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">):</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods.rake</span><span class="w"> </span><span class="kn">import</span> <span class="n">_restore_rake_dropped_index</span>
+
+            <span class="n">adjusted_weights</span> <span class="o">=</span> <span class="n">_restore_rake_dropped_index</span><span class="p">(</span>
+                <span class="n">adjusted_weights</span><span class="p">,</span>
+                <span class="n">_assert_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_series</span><span class="p">),</span>
+                <span class="s2">"drop"</span><span class="p">,</span>
+                <span class="n">row_model</span><span class="p">[</span><span class="s2">"sample_rows_kept"</span><span class="p">],</span>
+            <span class="p">)</span>
+
         <span class="c1"># Add the new adjusted weights as weight_adjusted_N</span>
         <span class="n">new_responders</span><span class="o">.</span><span class="n">add_weight_column</span><span class="p">(</span>
             <span class="n">adj_col_name</span><span class="p">,</span>
-            <span class="n">result</span><span class="p">[</span><span class="s2">"weight"</span><span class="p">],</span>
+            <span class="n">adjusted_weights</span><span class="p">,</span>
             <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
                 <span class="s2">"method"</span><span class="p">:</span> <span class="n">method_name</span><span class="p">,</span>
                 <span class="s2">"adjusted"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
@@ -912,7 +928,7 @@
         <span class="c1"># so the active weight column always keeps its original name.</span>
         <span class="c1"># use_index=True lets na_action="drop" (which returns fewer weights)</span>
         <span class="c1"># fill dropped rows with NaN; set_weights warns about missing indices.</span>
-        <span class="n">new_responders</span><span class="o">.</span><span class="n">set_weights</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">"weight"</span><span class="p">],</span> <span class="n">use_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">new_responders</span><span class="o">.</span><span class="n">set_weights</span><span class="p">(</span><span class="n">adjusted_weights</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="c1"># TODO: The weight history columns (weight_pre_adjust, weight_adjusted_1,</span>
         <span class="c1"># weight_adjusted_2, ...) make _sf_sample_pre_adjust redundant.  Once all</span>
@@ -3724,8 +3740,9 @@
 <span class="w">        </span><span class="sd">"""Compute design effect, ESS, and ESSP from the responder weights.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            n_rows: Optional row count to use for scaling. Defaults to the</span>
-<span class="sd">                sample size when not provided.</span>
+<span class="sd">            n_rows: Optional row count for proportional scaling of the valid-weight</span>
+<span class="sd">                ESS. Defaults to the sample size; missing-weight rows never add</span>
+<span class="sd">                information to the underlying Kish estimate.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            tuple: ``(design_effect, effective_sample_size,</span>
@@ -3758,10 +3775,10 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">n_rows</span> <span class="ow">or</span> <span class="n">stats</span><span class="o">.</span><span class="n">deff</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">stats</span><span class="o">.</span><span class="n">deff</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
-        <span class="c1"># Scale ESS against caller-supplied ``n_rows`` (which may differ from</span>
-        <span class="c1"># ``len(weights)`` for filtered-subset diagnostics). ESSP is invariant</span>
-        <span class="c1"># under that override -- it always equals ``1 / deff``.</span>
-        <span class="k">return</span> <span class="n">stats</span><span class="o">.</span><span class="n">deff</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">n_rows</span> <span class="o">/</span> <span class="n">stats</span><span class="o">.</span><span class="n">deff</span><span class="p">),</span> <span class="n">stats</span><span class="o">.</span><span class="n">essp</span>
+        <span class="c1"># Preserve proportional scaling for caller-supplied subset sizes without</span>
+        <span class="c1"># adding missing-weight rows to the underlying effective sample size.</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">n_rows</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">stats</span><span class="o">.</span><span class="n">deff</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">stats</span><span class="o">.</span><span class="n">ess</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="n">stats</span><span class="o">.</span><span class="n">essp</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_quick_adjustment_details</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>

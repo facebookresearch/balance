@@ -655,6 +655,11 @@
         <span class="n">transformations_to_apply</span><span class="p">,</span>
     <span class="p">)</span>
 
+    <span class="n">sample_rows_kept</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sample_df</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">"drop"</span>
+        <span class="k">else</span> <span class="kc">None</span>
+    <span class="p">)</span>
     <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">balance_util</span><span class="o">.</span><span class="n">_apply_na_action_to_frame_pair</span><span class="p">(</span>
             <span class="n">sample_df</span><span class="p">,</span>
@@ -787,6 +792,8 @@
         <span class="s2">"iterations"</span><span class="p">:</span> <span class="n">iterations</span><span class="p">,</span>
         <span class="s2">"converged"</span><span class="p">:</span> <span class="n">converged</span><span class="p">,</span>
     <span class="p">}</span>
+    <span class="k">if</span> <span class="n">sample_rows_kept</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">model</span><span class="p">[</span><span class="s2">"sample_rows_kept"</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_rows_kept</span>
     <span class="k">if</span> <span class="n">store_fit_metadata</span><span class="p">:</span>
         <span class="c1"># Pickleability of `transformations_to_apply` was already validated</span>
         <span class="c1"># earlier (before the IPF compute), so persistence here is safe.</span>
@@ -979,6 +986,21 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Apply rake's stored NA policy to scoring frames."""</span>
     <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">"drop"</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample_weights</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample_df</span><span class="p">):</span>
+            <span class="n">keep</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sample_df</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">sample_df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">keep</span><span class="p">]):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">"Rake fit-time design weights do not match the non-missing "</span>
+                    <span class="s2">"scoring rows. Refit or pass aligned scoring weights."</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">sample_weights</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">"Rake filtered fit-time design weights must be finite. "</span>
+                    <span class="s2">"Refit or pass valid aligned scoring weights."</span>
+                <span class="p">)</span>
+            <span class="n">expanded_weights</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">sample_df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+            <span class="n">expanded_weights</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+            <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">expanded_weights</span>
         <span class="n">sample_clean</span><span class="p">,</span> <span class="n">sample_weights_clean</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">drop_na_rows</span><span class="p">(</span>
             <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">"sample"</span>
         <span class="p">)</span>
@@ -1053,15 +1075,25 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_restore_rake_dropped_index</span><span class="p">(</span>
-    <span class="n">predicted</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">sample_weights_full</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">predicted</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">sample_weights_full</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">kept_rows</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Restore rows dropped by ``na_action='drop'`` as missing predictions."""</span>
     <span class="k">if</span> <span class="n">na_action</span> <span class="o">!=</span> <span class="s2">"drop"</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">predicted</span>
+    <span class="n">kept</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">balance_util</span><span class="o">.</span><span class="n">_assert_type</span><span class="p">(</span><span class="n">kept_rows</span><span class="p">))</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">kept</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s2">"b"</span>
+        <span class="ow">or</span> <span class="n">kept</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sample_weights_full</span><span class="p">),)</span>
+        <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">kept</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">predicted</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Rake retained-row mask does not align with the weight rows."</span><span class="p">)</span>
     <span class="n">predicted_full</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
         <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">sample_weights_full</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span>
     <span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">predicted</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-    <span class="n">predicted_full</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">predicted</span><span class="o">.</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">predicted</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+    <span class="n">predicted_full</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">kept</span><span class="p">]</span> <span class="o">=</span> <span class="n">predicted</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">predicted_full</span>
 
 
@@ -1091,6 +1123,11 @@
         <span class="n">model</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span>
     <span class="p">)</span>
     <span class="n">_validate_rake_table_shape</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
+    <span class="n">kept_rows</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sample_df</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">metadata</span><span class="o">.</span><span class="n">na_action</span> <span class="o">==</span> <span class="s2">"drop"</span>
+        <span class="k">else</span> <span class="kc">None</span>
+    <span class="p">)</span>
     <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">_resolve_rake_sample_weights</span><span class="p">(</span>
         <span class="n">model</span><span class="p">,</span> <span class="n">sample_weights_full</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">na_action</span><span class="p">,</span> <span class="n">is_transfer</span>
     <span class="p">)</span>
@@ -1148,7 +1185,7 @@
         <span class="n">keep_sum_of_weights</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"keep_sum_of_weights"</span><span class="p">,</span> <span class="kc">True</span><span class="p">)),</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">_restore_rake_dropped_index</span><span class="p">(</span>
-        <span class="n">predicted</span><span class="p">,</span> <span class="n">sample_weights_full</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">na_action</span>
+        <span class="n">predicted</span><span class="p">,</span> <span class="n">sample_weights_full</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">na_action</span><span class="p">,</span> <span class="n">kept_rows</span>
     <span class="p">)</span>
 
 

@@ -168,6 +168,7 @@
             <span class="sa">f</span><span class="s2">"columns which start with '</span><span class="si">{</span><span class="n">NA_INDICATOR_PREFIX</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">already_na_cols</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="n">na</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span>
     <span class="n">na_cols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">na</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">"index"</span><span class="p">)])</span>
     <span class="n">na_indicators</span> <span class="o">=</span> <span class="n">na</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">na_cols</span><span class="p">]</span>
@@ -287,8 +288,9 @@
 <span class="sd">        Tuple[pd.DataFrame, pd.Series]: sample_df, sample_weights without NAs rows</span>
 <span class="sd">    """</span>
     <span class="n">sample_n</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
-    <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">sample_weights</span><span class="p">[</span><span class="n">sample_df</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+    <span class="n">keep</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sample_df</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span>
+    <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span>
     <span class="n">sample_n_after</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="n">_sample_rate</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">sample_n</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sample_n_after</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">sample_n</span><span class="si">}</span><span class="s2">"</span>
