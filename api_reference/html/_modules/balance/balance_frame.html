@@ -1545,11 +1545,22 @@
 <span class="sd">        does **not** produce predictions — call :meth:`predict_outcomes` (or</span>
 <span class="sd">        :meth:`fit_predict_outcomes`) to write the ``&lt;outcome&gt;_hat`` columns.</span>
 
+<span class="sd">        Supplying a different ``target`` changes the population used by later</span>
+<span class="sd">        outcome predictions, but preserves the current sample weights, weighting</span>
+<span class="sd">        model, adjustment history, and unadjusted baseline. Those weights may</span>
+<span class="sd">        still describe the previous target; this method does not refit or</span>
+<span class="sd">        reconcile the weighting model. Unlike :meth:`set_target`, it does not</span>
+<span class="sd">        reset adjusted weights. A warning is logged when an existing target's</span>
+<span class="sd">        data differ from the supplied target, including for ``inplace=False``.</span>
+<span class="sd">        Omitted targets and targets with equal data do not trigger this warning.</span>
+<span class="sd">        With ``weighted=True``, the outcome fit uses the preserved active weights.</span>
+
 <span class="sd">        Args:</span>
-<span class="sd">            target: Optional target population to set before fitting (mirrors</span>
-<span class="sd">                :meth:`fit`).  When provided, ``set_target(target, inplace=False)``</span>
-<span class="sd">                is applied first so immutability is preserved; the fit then</span>
-<span class="sd">                proceeds on the returned object.</span>
+<span class="sd">            target: Optional population for subsequent outcome predictions.</span>
+<span class="sd">                Defaults to the current target. When supplied, the target is</span>
+<span class="sd">                replaced on a copy before fitting, without changing the existing</span>
+<span class="sd">                weighting fit or weights. ``inplace`` controls whether the fitted</span>
+<span class="sd">                copy is committed back to this object.</span>
 <span class="sd">            inplace: If ``True`` (default), mutate this object (store the model</span>
 <span class="sd">                on the responder) and return ``self``; if ``False``, return a</span>
 <span class="sd">                new copy with the model stored and leave ``self`` untouched —</span>
@@ -1603,8 +1614,22 @@
 <span class="sd">            bf.outcomes_hat().mean()             # target row = μ̂_OM (g-computation estimate)</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="p">(</span><span class="n">SampleFrame</span><span class="p">,</span> <span class="n">BalanceFrame</span><span class="p">)):</span>
-            <span class="n">based</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">target_frame</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">_sf_sample</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">BalanceFrame</span><span class="p">)</span> <span class="k">else</span> <span class="n">target</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_covariate_overlap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">,</span> <span class="n">target_frame</span><span class="p">)</span>
+            <span class="n">based</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">based</span><span class="o">.</span><span class="n">_sf_target</span> <span class="o">=</span> <span class="n">target_frame</span>
+            <span class="n">_assert_type</span><span class="p">(</span><span class="n">based</span><span class="o">.</span><span class="n">_links</span><span class="p">)[</span><span class="s2">"target"</span><span class="p">]</span> <span class="o">=</span> <span class="n">target</span>
             <span class="n">based</span><span class="o">.</span><span class="n">fit_outcome_model</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span>
+                <span class="n">target_frame</span><span class="o">.</span><span class="n">df</span>
+            <span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">"fit_outcome_model() replaced the target. Existing sample weights, "</span>
+                    <span class="s2">"weighting model, and adjustment history are preserved and may "</span>
+                    <span class="s2">"refer to the previous target. Outcome predictions use the new target."</span>
+                <span class="p">)</span>
             <span class="k">if</span> <span class="n">inplace</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span> <span class="o">=</span> <span class="n">based</span><span class="o">.</span><span class="n">_sf_sample</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span> <span class="o">=</span> <span class="n">based</span><span class="o">.</span><span class="n">_sf_sample_pre_adjust</span>

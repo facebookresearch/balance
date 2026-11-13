@@ -654,13 +654,23 @@ than on the Sample’s own inherited attribute.</p>
 <p>Like sklearn’s <code class="docutils literal notranslate"><span class="pre">fit()</span></code> (and <code class="xref py py-meth docutils literal notranslate"><span class="pre">SampleFrame.fit_outcome_model()</span></code>), it
 does <strong>not</strong> produce predictions — call <a class="reference internal" href="#balance.balance_frame.BalanceFrame.predict_outcomes" title="balance.balance_frame.BalanceFrame.predict_outcomes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict_outcomes()</span></code></a> (or
 <a class="reference internal" href="#balance.balance_frame.BalanceFrame.fit_predict_outcomes" title="balance.balance_frame.BalanceFrame.fit_predict_outcomes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_predict_outcomes()</span></code></a>) to write the <code class="docutils literal notranslate"><span class="pre">&lt;outcome&gt;_hat</span></code> columns.</p>
+<p>Supplying a different <code class="docutils literal notranslate"><span class="pre">target</span></code> changes the population used by later
+outcome predictions, but preserves the current sample weights, weighting
+model, adjustment history, and unadjusted baseline. Those weights may
+still describe the previous target; this method does not refit or
+reconcile the weighting model. Unlike <a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_target" title="balance.balance_frame.BalanceFrame.set_target"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_target()</span></code></a>, it does not
+reset adjusted weights. A warning is logged when an existing target’s
+data differ from the supplied target, including for <code class="docutils literal notranslate"><span class="pre">inplace=False</span></code>.
+Omitted targets and targets with equal data do not trigger this warning.
+With <code class="docutils literal notranslate"><span class="pre">weighted=True</span></code>, the outcome fit uses the preserved active weights.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>target</strong> – Optional target population to set before fitting (mirrors
-<a class="reference internal" href="#balance.balance_frame.BalanceFrame.fit" title="balance.balance_frame.BalanceFrame.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a>).  When provided, <code class="docutils literal notranslate"><span class="pre">set_target(target,</span> <span class="pre">inplace=False)</span></code>
-is applied first so immutability is preserved; the fit then
-proceeds on the returned object.</p></li>
+<li><p><strong>target</strong> – Optional population for subsequent outcome predictions.
+Defaults to the current target. When supplied, the target is
+replaced on a copy before fitting, without changing the existing
+weighting fit or weights. <code class="docutils literal notranslate"><span class="pre">inplace</span></code> controls whether the fitted
+copy is committed back to this object.</p></li>
 <li><p><strong>inplace</strong> – If <code class="docutils literal notranslate"><span class="pre">True</span></code> (default), mutate this object (store the model
 on the responder) and return <code class="docutils literal notranslate"><span class="pre">self</span></code>; if <code class="docutils literal notranslate"><span class="pre">False</span></code>, return a
 new copy with the model stored and leave <code class="docutils literal notranslate"><span class="pre">self</span></code> untouched —

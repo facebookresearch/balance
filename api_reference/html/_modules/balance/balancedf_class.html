@@ -3501,7 +3501,14 @@
 <span class="sd">        Args:</span>
 <span class="sd">            cls (type[BalanceDFCovars]): Class object.</span>
 <span class="sd">            df (pd.DataFrame): A df.</span>
-<span class="sd">            weights (Optional[pd.Series], optional): _description_. Defaults to None.</span>
+<span class="sd">            weights (pd.Series | None, optional): Explicit sample weights,</span>
+<span class="sd">                independent of the Series name. A default unnamed ``RangeIndex``</span>
+<span class="sd">                is positional and must have one value per row. Otherwise, when</span>
+<span class="sd">                both indexes are unique, every data row must have a matching</span>
+<span class="sd">                weight label; weights are aligned and extra labels are ignored.</span>
+<span class="sd">                If either index is non-unique, equal-length weights are assigned</span>
+<span class="sd">                by row position. To explicitly use positional weights, pass</span>
+<span class="sd">                ``pd.Series(weights.to_numpy())``. Defaults to None.</span>
 <span class="sd">            formula (str | list[str] | None, optional): Optional formula to set on</span>
 <span class="sd">                the returned ``BalanceDFCovars`` object.</span>
 
@@ -3521,15 +3528,46 @@
             <span class="n">Sample</span><span class="p">,</span>
         <span class="p">)</span>
 
+        <span class="n">weight_index</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">weights</span><span class="o">.</span><span class="n">index</span>
+        <span class="n">positional_weights</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">weight_index</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">RangeIndex</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">weight_index</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="n">weight_index</span><span class="o">.</span><span class="n">start</span> <span class="o">==</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="n">weight_index</span><span class="o">.</span><span class="n">step</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="n">positional_weights</span>
+            <span class="ow">and</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">is_unique</span>
+            <span class="ow">and</span> <span class="n">weights</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">is_unique</span>
+        <span class="p">):</span>
+            <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+                <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">"weights index must cover every DataFrame row. "</span>
+                    <span class="s2">"For positional weights, use pd.Series(weights.to_numpy())."</span>
+                <span class="p">)</span>
+        <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"weights length (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="si">}</span><span class="s2">) must match DataFrame length (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2">)."</span>
+            <span class="p">)</span>
+
         <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
-        <span class="n">concat_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">df</span><span class="p">,</span>
-            <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">name</span><span class="o">=</span><span class="s2">"id"</span><span class="p">),</span>
-        <span class="p">]</span>
+        <span class="n">id_column</span> <span class="o">=</span> <span class="s2">"id"</span>
+        <span class="k">while</span> <span class="n">id_column</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">id_column</span> <span class="o">=</span> <span class="s2">"_"</span> <span class="o">+</span> <span class="n">id_column</span>
+        <span class="n">df</span><span class="p">[</span><span class="n">id_column</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span>
+
+        <span class="n">weight_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">concat_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">concat_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="s2">"id"</span><span class="p">)</span><span class="o">.</span><span class="n">covars</span><span class="p">(</span><span class="n">formula</span><span class="o">=</span><span class="n">formula</span><span class="p">)</span></div>
+            <span class="n">weight_column</span> <span class="o">=</span> <span class="s2">"weight"</span>
+            <span class="k">while</span> <span class="n">weight_column</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="n">weight_column</span> <span class="o">=</span> <span class="s2">"_"</span> <span class="o">+</span> <span class="n">weight_column</span>
+            <span class="n">df</span><span class="p">[</span><span class="n">weight_column</span><span class="p">]</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span>
+            <span class="n">df</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="n">id_column</span><span class="p">,</span> <span class="n">weight_column</span><span class="o">=</span><span class="n">weight_column</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">covars</span><span class="p">(</span><span class="n">formula</span><span class="o">=</span><span class="n">formula</span><span class="p">)</span></div>
 
 
     <span class="c1"># Single source of truth for the supported love-plot metrics: the</span>

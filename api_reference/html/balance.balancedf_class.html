@@ -1364,7 +1364,14 @@ This method is useful when you need to create a BalanceDFCovars object directly 
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>cls</strong> (<em>type</em><em>[</em><a class="reference internal" href="#balance.balancedf_class.BalanceDFCovars" title="balance.balancedf_class.BalanceDFCovars"><em>BalanceDFCovars</em></a><em>]</em>) – Class object.</p></li>
 <li><p><strong>df</strong> (<em>pd.DataFrame</em>) – A df.</p></li>
-<li><p><strong>weights</strong> (<em>Optional</em><em>[</em><em>pd.Series</em><em>]</em><em>, </em><em>optional</em>) – _description_. Defaults to None.</p></li>
+<li><p><strong>weights</strong> (<em>pd.Series</em><em> | </em><em>None</em><em>, </em><em>optional</em>) – Explicit sample weights,
+independent of the Series name. A default unnamed <code class="docutils literal notranslate"><span class="pre">RangeIndex</span></code>
+is positional and must have one value per row. Otherwise, when
+both indexes are unique, every data row must have a matching
+weight label; weights are aligned and extra labels are ignored.
+If either index is non-unique, equal-length weights are assigned
+by row position. To explicitly use positional weights, pass
+<code class="docutils literal notranslate"><span class="pre">pd.Series(weights.to_numpy())</span></code>. Defaults to None.</p></li>
 <li><p><strong>formula</strong> (<em>str</em><em> | </em><em>list</em><em>[</em><em>str</em><em>] </em><em>| </em><em>None</em><em>, </em><em>optional</em>) – Optional formula to set on
 the returned <code class="docutils literal notranslate"><span class="pre">BalanceDFCovars</span></code> object.</p></li>
 </ul>
