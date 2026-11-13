@@ -22,6 +22,18 @@
   so `fit()` and `adjust()` could return different weights for the same
   inputs. The stored model is now the full-data fit at the selected lambda.
 
+- **Poststratify no longer collapses numeric covariates that contain missing
+  values.** With `na_action="add_indicator"`, missing values were filled with
+  `"__NaN__"` before `transformations="default"` ran, which turned numeric
+  columns into `object` columns so they were lumped by `fct_lump` (typically
+  into a single cell, i.e. no adjustment) instead of binned by `quantize`.
+  Transformations now run before the missing-value fill (matching rake), so
+  numeric covariates are binned and missing values form their own `"__NaN__"`
+  cell; `predict_weights()` replay uses the same order. As in rake, a rare
+  missing level of a non-numeric covariate is now kept as its own `"__NaN__"`
+  cell instead of being lumped with other rare levels. `na_action="drop"` is
+  unchanged.
+
 # 0.23.0 (2026-08-04)
 
 ## Highlights

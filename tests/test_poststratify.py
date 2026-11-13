@@ -18,7 +18,10 @@ import pandas as pd
 from balance import adjustment as balance_adjustment
 from balance.sample_class import Sample
 from balance.util import _assert_type
-from balance.weighting_methods.poststratify import poststratify
+from balance.weighting_methods.poststratify import (
+    _predict_weights_from_model,
+    poststratify,
+)
 
 
 def _astype_str(s: pd.Series) -> pd.Series:
@@ -736,6 +739,52 @@ class Testpoststratify(
         )["weight"]
         expected = t_weights.loc[s.dropna().index].astype("float64")
         self.assertEqual(result_drop, expected)
+
+    def _numeric_with_missing_frames(
+        self,
+    ) -> tuple[pd.DataFrame, pd.Series, pd.Series]:
+        # Identical sample and target rows; the target up-weights age < 50.
+        age = pd.Series(list(np.arange(100, dtype=float)) + [np.nan] * 5)
+        df = pd.DataFrame({"age": age})
+        sample_weights = pd.Series(np.ones(len(df)))
+        target_weights = pd.Series(np.where(age < 50, 3.0, 1.0))
+        return df, sample_weights, target_weights
+
+    def test_poststratify_default_transformations_bin_numeric_with_missing(
+        self,
+    ) -> None:
+        """A numeric covariate with missing values is still binned by the
+        default transformations (NaN forms its own cell) instead of being
+        lumped into a single cell."""
+        df, sample_weights, target_weights = self._numeric_with_missing_frames()
+        result = poststratify(
+            sample_df=df,
+            sample_weights=sample_weights,
+            target_df=df.copy(),
+            target_weights=target_weights,
+        )["weight"]
+        np.testing.assert_allclose(result.to_numpy(), target_weights.to_numpy())
+
+    def test_poststratify_replay_bins_numeric_with_missing(self) -> None:
+        """In-place replay of a default-transformation fit reproduces the
+        binned numeric-with-missing weights."""
+        df, sample_weights, target_weights = self._numeric_with_missing_frames()
+        model = poststratify(
+            sample_df=df,
+            sample_weights=sample_weights,
+            target_df=df.copy(),
+            target_weights=target_weights,
+            store_fit_metadata=True,
+        )["model"]
+        replayed = _predict_weights_from_model(
+            model,
+            df,
+            sample_weights,
+            df.copy(),
+            target_weights,
+            is_transfer=False,
+        )
+        np.testing.assert_allclose(replayed.to_numpy(), target_weights.to_numpy())
 
     def test_poststratify_na_drop_warns(self) -> None:
         sample = Sample.from_frame(

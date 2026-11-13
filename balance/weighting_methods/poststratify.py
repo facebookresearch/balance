@@ -221,25 +221,21 @@ def poststratify(
     sample_df = sample_df.loc[:, variables]
     target_df = target_df.loc[:, variables]
 
-    sample_df, sample_weights, target_df, target_weights = (
-        balance_util._apply_na_action_to_frame_pair(
-            sample_df,
-            sample_weights,
-            target_df,
-            target_weights,
-            na_action,
-        )
-    )
-
-    if store_fit_metadata and transformations_to_apply == "default":
-        transformations_to_apply = balance_adjustment.default_transformations(
-            (sample_df, target_df)
-        )
-
-    sample_df, target_df = balance_adjustment.apply_transformations(
-        (sample_df, target_df),
+    (
+        sample_df,
+        sample_weights,
+        target_df,
+        target_weights,
+        transformations_to_apply,
+    ) = _apply_na_action_and_transformations(
+        sample_df,
+        sample_weights,
+        target_df,
+        target_weights,
+        na_action=na_action,
         transformations=transformations_to_apply,
-        drop=transformations_drop,
+        transformations_drop=transformations_drop,
+        resolve_default_transformations=store_fit_metadata,
     )
     variables = list(sample_df.columns)
     logger.debug(f"Final variables in the model after transformations: {variables}")
@@ -504,26 +500,22 @@ def _predict_weights_from_model(
     target_df = target_df.loc[:, input_variables]
 
     na_action = cast(str, model.get("na_action", "add_indicator"))
-    if na_action == "drop":
-        sample_df, sample_weights = balance_util.drop_na_rows(
-            sample_df, sample_weights, "sample"
-        )
-        target_df, target_weights = balance_util.drop_na_rows(
-            target_df, target_weights, "target"
-        )
-    elif na_action == "add_indicator":
-        sample_df = pd.DataFrame(_safe_fillna_and_infer(sample_df, "__NaN__"))
-        target_df = pd.DataFrame(_safe_fillna_and_infer(target_df, "__NaN__"))
-    else:
+    if na_action not in ("drop", "add_indicator"):
         raise ValueError(
             "Poststratify model has invalid na_action metadata "
             f"'{na_action}' for predict_weights()."
         )
 
-    sample_df, _target_df = balance_adjustment.apply_transformations(
-        (sample_df, target_df),
-        transformations=model["transformations"],
-        drop=bool(model["transformations_drop"]),
+    sample_df, sample_weights, _target_df, target_weights, _ = (
+        _apply_na_action_and_transformations(
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            na_action=na_action,
+            transformations=model["transformations"],
+            transformations_drop=bool(model["transformations_drop"]),
+        )
     )
     for column in variables:
         if column not in sample_df.columns:
@@ -584,6 +576,58 @@ def _predict_weights_from_model(
         predicted_full.loc[trimmed.index] = trimmed.to_numpy()
         trimmed = predicted_full
     return trimmed
+
+
+def _apply_na_action_and_transformations(
+    sample_df: pd.DataFrame,
+    sample_weights: pd.Series,
+    target_df: pd.DataFrame,
+    target_weights: pd.Series,
+    *,
+    na_action: str,
+    transformations: Union[Dict[str, Callable[..., Any]], str, None],
+    transformations_drop: bool,
+    resolve_default_transformations: bool = False,
+) -> tuple[
+    pd.DataFrame,
+    pd.Series,
+    pd.DataFrame,
+    pd.Series,
+    Union[Dict[str, Callable[..., Any]], str, None],
+]:
+    """Apply poststratify's NA policy and transformations.
+
+    ``"drop"`` drops incomplete rows before transforming; ``"add_indicator"``
+    transforms first and fills ``"__NaN__"`` afterwards, because filling first
+    turns numeric columns into ``object`` (so ``"default"`` would ``fct_lump``
+    instead of ``quantize`` them). With ``resolve_default_transformations``,
+    ``"default"`` is resolved to an explicit dict. Returns the processed
+    frames and weights plus the transformations applied.
+    """
+    if na_action == "drop":
+        sample_df, sample_weights, target_df, target_weights = (
+            balance_util._apply_na_action_to_frame_pair(
+                sample_df, sample_weights, target_df, target_weights, na_action
+            )
+        )
+
+    if resolve_default_transformations and transformations == "default":
+        transformations = balance_adjustment.default_transformations(
+            (sample_df, target_df)
+        )
+    sample_df, target_df = balance_adjustment.apply_transformations(
+        (sample_df, target_df),
+        transformations=transformations,
+        drop=transformations_drop,
+    )
+
+    if na_action != "drop":
+        sample_df, sample_weights, target_df, target_weights = (
+            balance_util._apply_na_action_to_frame_pair(
+                sample_df, sample_weights, target_df, target_weights, na_action
+            )
+        )
+    return sample_df, sample_weights, target_df, target_weights, transformations
 
 
 def _variables_from_formula(
