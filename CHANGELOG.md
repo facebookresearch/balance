@@ -95,6 +95,19 @@
   ignored when `max_de` is set), and the conflict is reported before fitting
   with that fix in the message.
 
+## New Features
+
+- **IPW and CBPS fit metadata keep the design-matrix `preprocessing_state`.**
+  When replay artifacts are stored (`ipw(store_fit_metadata=True)` or
+  `store_fit_matrices=True`; `cbps(store_fit_metadata=True)`), the model dict
+  now includes `preprocessing_state`, the fit-time state reported by the
+  model-matrix builder (`None` if the builder reports none), so replay can
+  reuse the fit-time preprocessing.
+
+## Statistics and utility fixes
+
+- Preserve caller missing values when returning a new NA-indicator frame.
+
 # 0.23.0 (2026-08-04)
 
 ## Highlights

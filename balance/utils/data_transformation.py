@@ -129,6 +129,7 @@ def add_na_indicator(
             f"columns which start with '{NA_INDICATOR_PREFIX}': {already_na_cols}"
         )
 
+    df = df.copy()
     na = df.isnull()
     na_cols = list(df.columns[na.any(axis="index")])
     na_indicators = na.loc[:, na_cols]
