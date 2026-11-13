@@ -113,7 +113,7 @@ def _run_ipf_numpy(
         conv_history.append(conv)
         iteration += 1
 
-    converged = int(iteration <= max_iteration)
+    converged = int(conv <= convergence_rate)
     iterations_df = pd.DataFrame(
         {"iteration": range(len(conv_history)), "conv": conv_history}
     ).set_index("iteration")
@@ -386,9 +386,11 @@ def rake(
     convergence_rate --- (float) convergence criteria; the maximum difference in proportions between
                           sample and target marginal distribution on any covariate in order
                           for algorithm to converge.
-    rate_tolerance --- (float) convergence criteria; if convergence rate does not move more
-                               than this amount than the algorithm is also considered to
-                               have converged.
+    rate_tolerance --- (float) stopping criterion; if the convergence rate does not move more
+                               than this amount, the algorithm stops. It is reported as
+                               converged only if the final convergence rate is at most
+                               ``convergence_rate``; otherwise ``converged`` is 0 and a
+                               warning is logged.
     weight_trimming_mean_ratio --- (float, int, optional) upper bound for weights expressed as a
                                    multiple of the mean weight. Delegated to
                                    :func:`balance.adjustment.trim_weights`.
@@ -675,8 +677,17 @@ def rake(
         f"and iteration meta data: {iterations}."
     )
 
-    if not converged:
+    if not converged and len(iterations) > max_iteration:
         logger.warning("Maximum iterations reached, convergence was not achieved")
+    elif not converged:
+        logger.warning(
+            "Raking stopped because the convergence rate stopped changing "
+            f"(rate_tolerance={rate_tolerance}), but the largest relative "
+            f"marginal deviation is still {iterations['conv'].iloc[-1]:.4g} > "
+            f"convergence_rate={convergence_rate}; convergence was not "
+            "achieved. The weighted sample may not match the target margins "
+            "(e.g. the margins are not attainable given the sample's joint cells)."
+        )
 
     # Look up each sample row's cell without merging, so the sample index is kept.
     sample_cells = pd.MultiIndex.from_frame(sample_df[alphabetized_variables])

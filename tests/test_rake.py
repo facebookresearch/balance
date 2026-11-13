@@ -14,6 +14,7 @@ from __future__ import (
 
 import warnings
 from typing import Any, Optional, Tuple, Type, Union
+from unittest import mock
 
 import balance.testutil
 import numpy as np
@@ -21,6 +22,7 @@ import pandas as pd
 from balance import adjustment as balance_adjustment
 from balance.sample_class import Sample
 from balance.util import _assert_type
+from balance.weighting_methods import rake as rake_module
 from balance.weighting_methods.poststratify import poststratify
 from balance.weighting_methods.rake import (
     _find_lcm_of_array_lengths,
@@ -1058,6 +1060,40 @@ class Testrake(
         np.testing.assert_allclose(
             adjusted.weights().df.iloc[:, 0].to_numpy(), reference.to_numpy()
         )
+
+    def test_run_ipf_numpy_stalled_fit_is_not_converged(self) -> None:
+        """A fit that stops on rate_tolerance above convergence_rate is not
+        reported as converged."""
+        # Only the diagonal cells are populated, so row and column margins
+        # (0.5/0.5 vs 0.8/0.2) cannot both be met.
+        table = np.array([[50.0, 0.0], [0.0, 50.0]])
+        margins = [np.array([50.0, 50.0]), np.array([80.0, 20.0])]
+        _, converged, iterations = _run_ipf_numpy(
+            table,
+            margins,
+            convergence_rate=0.0005,
+            max_iteration=1000,
+            rate_tolerance=1e-8,
+        )
+        self.assertLess(len(iterations), 1000)
+        self.assertGreater(iterations["conv"].iloc[-1], 0.0005)
+        self.assertEqual(converged, 0)
+
+    def test_rake_does_not_warn_when_margins_are_met(self) -> None:
+        """A raking problem that converges reports ``converged == 1`` and emits
+        no convergence warning."""
+        sample_df = pd.DataFrame({"a": ["x", "y", "x", "y"], "b": ["p", "p", "q", "q"]})
+        target_df = pd.DataFrame({"a": ["x", "x", "x", "y"], "b": ["p", "q", "q", "q"]})
+        with mock.patch.object(rake_module.logger, "warning") as warning:
+            result = rake(
+                sample_df,
+                pd.Series(np.ones(4)),
+                target_df,
+                pd.Series(np.ones(4)),
+                transformations=None,
+            )
+        self.assertEqual(result["model"]["converged"], 1)
+        warning.assert_not_called()
 
     def test_rake_nonuniform_design_weights_marginal_recovery(self) -> None:
         """
@@ -2125,7 +2161,8 @@ class Testrake(
         Test that _run_ipf_numpy respects rate_tolerance convergence criterion.
 
         The algorithm should stop when the change in convergence rate between
-        iterations is less than rate_tolerance, even if convergence_rate is not met.
+        iterations is less than rate_tolerance, even if convergence_rate is not
+        met; such a stop is not reported as converged.
         """
         # Create a simple 2x2 table that converges slowly
         original = np.array([[10.0, 20.0], [30.0, 40.0]])
@@ -2141,10 +2178,10 @@ class Testrake(
             rate_tolerance=0.1,  # But allow early stopping
         )
 
-        # Should converge (rate_tolerance allows it)
-        self.assertEqual(converged, 1)
-        # Should take relatively few iterations due to rate_tolerance
+        # Stops early because of rate_tolerance, above the strict convergence_rate
         self.assertLess(len(iterations), 100)
+        self.assertGreater(iterations["conv"].iloc[-1], 1e-10)
+        self.assertEqual(converged, 0)
 
 
 class TestRakeEdgeCases(balance.testutil.BalanceTestCase):

@@ -52,6 +52,15 @@
   the returned weights keep the sample index, including its name (previously
   always `"index"`).
 
+- **Rake no longer reports stalled fits as converged.** Raking also stops
+  when the convergence rate stops changing (`rate_tolerance`), and such stops
+  were reported as `converged=1` without a warning even when the weighted
+  margins were far from the target (e.g. target combinations the sample's
+  joint cells cannot reproduce). `converged` is now 1 only if the final
+  convergence rate is at most `convergence_rate`; a stall above it reports
+  `converged=0` and logs a warning with the remaining deviation. The stopping
+  rule itself is unchanged.
+
 # 0.23.0 (2026-08-04)
 
 ## Highlights
