@@ -4053,7 +4053,7 @@ class BalanceDFWeights(BalanceDF):
                     # 20                     prop(w >= 5)  0.00
                     # 21                    prop(w >= 10)  0.00
                     # 22               nonparametric_skew  0.20
-                    # 23  weighted_median_breakdown_point  0.25
+                    # 23  weighted_median_breakdown_point  0.50
         """
         # ----------------------------------------------------
         # Diagnostics on the weights

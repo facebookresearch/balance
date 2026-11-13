@@ -978,7 +978,7 @@ class TestBalanceDFWeights(BalanceTestCase):
                 20: 0.0,
                 21: 0.0,
                 22: 0.2,
-                23: 0.25,
+                23: 0.5,
             },
         }
         self.assertEqual(w.summary().round(2).to_dict(), exp)

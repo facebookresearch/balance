@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import logging
+import math
 import warnings
 from typing import Any, Literal, NamedTuple, overload, TypedDict
 
@@ -615,18 +616,18 @@ def weighted_median_breakdown_point(
     w = _weights_to_series(w)
     _check_weights_series_are_valid(w, require_positive=True)
 
-    # normalize weight to sample size:
-
     n = len(w)  # n users
-    w = w / w.sum()  # normalize to 1
-    # get a cumsum of sorted weights to find the median:
     # pyrefly: ignore [missing-attribute]
-    w_freq_cumsum = w.sort_values(ascending=False).cumsum()
-    numerator = (w_freq_cumsum <= 0.5).sum()
-    if numerator == 0:
-        numerator = (
-            1  # this happens if one observation has more than 50% of the weights
-        )
-    # find minimal proportion of samples needed to reach 50%
-    # the +1 trick is to deal with cases that 1 user has a weight that is larget then 50%.
-    return np.float64(numerator / n)  # breakdown_point
+    sorted_w = w.sort_values(ascending=False).to_numpy(dtype=np.float64)
+    half_total = math.fsum(sorted_w) / 2
+    # Locate the row whose cumulative weight first reaches half the total on the
+    # float cumsum, then confirm it with correctly rounded partial sums so that
+    # rounding in the running total cannot move the answer by one row.
+    crossing = min(
+        int(np.searchsorted(np.cumsum(sorted_w), half_total, side="left")), n - 1
+    )
+    while crossing > 0 and math.fsum(sorted_w[:crossing]) >= half_total:
+        crossing -= 1
+    while crossing < n - 1 and math.fsum(sorted_w[: crossing + 1]) < half_total:
+        crossing += 1
+    return np.float64((crossing + 1) / n)

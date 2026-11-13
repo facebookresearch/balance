@@ -1819,10 +1819,9 @@ class TestImpactOfWeightsOnOutcome(
         # Weights: [10, 8, 6, 4, 2], total = 30
         # Normalized: [1/3, 4/15, 1/5, 2/15, 1/15]
         # Sorted desc cumsum: [1/3≈0.33, 0.6, 0.8, 0.93, 1.0]
-        # Count where cumsum <= 0.5: only first element (1/3) is <= 0.5, so count = 1
-        # So breakdown point = 1/5 = 0.2
+        # The first two rows reach 60% of the total weight, so 2/5 are needed.
         result = weighted_median_breakdown_point(pd.Series([10, 8, 6, 4, 2]))
-        self.assertEqual(result, 0.2)
+        self.assertEqual(result, 0.4)
 
 
 class TestBalance_weighted_stats(
