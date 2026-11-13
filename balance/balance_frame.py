@@ -1489,11 +1489,22 @@ class BalanceFrame:
         does **not** produce predictions — call :meth:`predict_outcomes` (or
         :meth:`fit_predict_outcomes`) to write the ``<outcome>_hat`` columns.
 
+        Supplying a different ``target`` changes the population used by later
+        outcome predictions, but preserves the current sample weights, weighting
+        model, adjustment history, and unadjusted baseline. Those weights may
+        still describe the previous target; this method does not refit or
+        reconcile the weighting model. Unlike :meth:`set_target`, it does not
+        reset adjusted weights. A warning is logged when an existing target's
+        data differ from the supplied target, including for ``inplace=False``.
+        Omitted targets and targets with equal data do not trigger this warning.
+        With ``weighted=True``, the outcome fit uses the preserved active weights.
+
         Args:
-            target: Optional target population to set before fitting (mirrors
-                :meth:`fit`).  When provided, ``set_target(target, inplace=False)``
-                is applied first so immutability is preserved; the fit then
-                proceeds on the returned object.
+            target: Optional population for subsequent outcome predictions.
+                Defaults to the current target. When supplied, the target is
+                replaced on a copy before fitting, without changing the existing
+                weighting fit or weights. ``inplace`` controls whether the fitted
+                copy is committed back to this object.
             inplace: If ``True`` (default), mutate this object (store the model
                 on the responder) and return ``self``; if ``False``, return a
                 new copy with the model stored and leave ``self`` untouched —
@@ -1547,8 +1558,22 @@ class BalanceFrame:
             bf.outcomes_hat().mean()             # target row = μ̂_OM (g-computation estimate)
         """
         if isinstance(target, (SampleFrame, BalanceFrame)):
-            based = self.set_target(target, inplace=False)
+            target_frame = (
+                target._sf_sample if isinstance(target, BalanceFrame) else target
+            )
+            self._validate_covariate_overlap(self._sf_sample, target_frame)
+            based = deepcopy(self)
+            based._sf_target = target_frame
+            _assert_type(based._links)["target"] = target
             based.fit_outcome_model(inplace=True, **kwargs)
+            if self._sf_target is not None and not self._sf_target.df.equals(
+                target_frame.df
+            ):
+                logger.warning(
+                    "fit_outcome_model() replaced the target. Existing sample weights, "
+                    "weighting model, and adjustment history are preserved and may "
+                    "refer to the previous target. Outcome predictions use the new target."
+                )
             if inplace:
                 self._sf_sample = based._sf_sample
                 self._sf_sample_pre_adjust = based._sf_sample_pre_adjust

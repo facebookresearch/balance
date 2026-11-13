@@ -7,6 +7,7 @@
 - Synchronize `Sample` column-role accessors after row/column filtering.
 - Preserve canonical frame state, explicit column roles, weight history, and fitted outcome models through conversions.
 - Keep outcome-model summaries available when AIPW prerequisites are not met, with an explicit unavailable reason.
+- Preserve existing sample weights, weighting models, adjustment history, and the unadjusted baseline when `fit_outcome_model(target=...)` replaces the outcome target. Warn when the new target data differ from the previous target: the preserved weights may still describe the previous population, while subsequent outcome predictions use the new target.
 
 # 0.23.0 (2026-08-04)
 
