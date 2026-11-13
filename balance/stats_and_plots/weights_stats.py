@@ -308,7 +308,7 @@ def kish_deff_stats(
     """
     w_series = _weights_to_series(w)
     deff = float(design_effect(w_series))
-    n = len(w_series)
+    n = int(w_series.count())
     return KishStats(deff=deff, ess=float(n / deff), essp=1.0 / deff)
 
 
@@ -327,8 +327,8 @@ def kish_ess(
             DataFrame, only the first column is used.
 
     Returns:
-        float: ESS in the same units as ``len(w)``. Equals ``len(w)`` when
-        all weights are equal.
+        float: ESS in units of observations with non-missing weights. Equals
+        the number of non-missing weights when they are all equal.
 
     Raises:
         TypeError: If ``w`` is not numeric.
@@ -345,7 +345,7 @@ def kish_ess(
     """
     w_series = _weights_to_series(w)
     deff = float(design_effect(w_series))
-    return float(len(w_series) / deff)
+    return float(w_series.count() / deff)
 
 
 def kish_essp(

@@ -108,6 +108,7 @@
 
 ## Statistics and utility fixes
 
+- Exclude missing-weight rows from Kish effective sample size; Deff and ESSP remain based on valid weights.
 - Keep covariates and weights positionally aligned when dropping rows with duplicate index labels.
 - Preserve caller missing values when returning a new NA-indicator frame.
 

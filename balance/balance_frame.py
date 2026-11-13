@@ -3644,8 +3644,9 @@ class BalanceFrame:
         """Compute design effect, ESS, and ESSP from the responder weights.
 
         Args:
-            n_rows: Optional row count to use for scaling. Defaults to the
-                sample size when not provided.
+            n_rows: Optional row count for proportional scaling of the valid-weight
+                ESS. Defaults to the sample size; missing-weight rows never add
+                information to the underlying Kish estimate.
 
         Returns:
             tuple: ``(design_effect, effective_sample_size,
@@ -3678,10 +3679,10 @@ class BalanceFrame:
         if not n_rows or stats.deff == 0:
             return stats.deff, None, None
 
-        # Scale ESS against caller-supplied ``n_rows`` (which may differ from
-        # ``len(weights)`` for filtered-subset diagnostics). ESSP is invariant
-        # under that override -- it always equals ``1 / deff``.
-        return stats.deff, float(n_rows / stats.deff), stats.essp
+        # Preserve proportional scaling for caller-supplied subset sizes without
+        # adding missing-weight rows to the underlying effective sample size.
+        scale = n_rows / len(self._sf_sample)
+        return stats.deff, float(stats.ess * scale), stats.essp
 
     def _quick_adjustment_details(
         self,

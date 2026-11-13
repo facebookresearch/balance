@@ -4065,16 +4065,12 @@ class BalanceDFWeights(BalanceDF):
         weights_diag_value = []
 
         # adding design_effect and variations
-        the_weights_de = weights_stats.design_effect(the_weights)
+        the_weights_stats = weights_stats.kish_deff_stats(the_weights)
         weights_diag_var.extend(
             ["design_effect", "effective_sample_proportion", "effective_sample_size"]
         )
         weights_diag_value.extend(
-            [
-                the_weights_de,
-                1.0 / the_weights_de,
-                float(len(the_weights)) / the_weights_de,
-            ]
+            [the_weights_stats.deff, the_weights_stats.essp, the_weights_stats.ess]
         )
 
         # adding sum of weights, and then normalizing them to n (sample size)
@@ -4103,7 +4099,7 @@ class BalanceDFWeights(BalanceDF):
 
         weights_diag_var.append("weighted_median_breakdown_point")
         weights_diag_value.append(
-            weights_stats.weighted_median_breakdown_point(the_weights)
+            float(weights_stats.weighted_median_breakdown_point(the_weights))
         )
 
         return pd.DataFrame(
