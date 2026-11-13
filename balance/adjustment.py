@@ -181,7 +181,9 @@ def trim_weights(
     Raises:
         TypeError: If weights is not np.array or pd.Series.
         ValueError: If both weight_trimming_mean_ratio and weight_trimming_percentile
-            are specified, or if weight_trimming_percentile tuple has length != 2.
+            are specified, if weight_trimming_percentile tuple has length != 2,
+            or if both tails are requested and their limits sum to 1 or more
+            (so the lower winsorization bound would exceed the upper one).
 
     Returns:
         pd.Series (of type float64): Trimmed weights with the same index as input
@@ -275,6 +277,21 @@ def trim_weights(
             _validate_limit(normalized_limits[0], n_weights),
             _validate_limit(normalized_limits[1], n_weights),
         )
+        lower_requested = normalized_limits[0] or 0.0
+        upper_requested = normalized_limits[1] or 0.0
+        if (
+            normalized_limits[0] is not None
+            and normalized_limits[1] is not None
+            and np.isfinite(lower_requested)
+            and np.isfinite(upper_requested)
+            and lower_requested + upper_requested >= 1
+        ):
+            raise ValueError(
+                "weight_trimming_percentile limits must satisfy lower + upper < 1 "
+                f"(got lower={lower_requested}, upper={upper_requested}). A single "
+                "value winsorizes both tails, so it must be below 0.5. Use 0.05 "
+                "to winsorize 5% at each tail, or (0.0, 0.05) for only the top 5%."
+            )
 
         lower_limit_adjusted = adjusted_limits[0]
         upper_limit_adjusted = adjusted_limits[1]
@@ -295,10 +312,28 @@ def trim_weights(
                 "Winsorizing weights to %s percentile" % str(weight_trimming_percentile)
             )
 
+        if (
+            lower_bound is not None
+            and upper_bound is not None
+            and lower_bound > upper_bound
+        ):
+            raise ValueError(
+                "weight_trimming_percentile limits are too wide for these weights: "
+                f"the lower bound ({lower_bound}) exceeds the upper bound "
+                f"({upper_bound}). Use smaller percentile limits."
+            )
+
         weights = weights.clip(lower=lower_bound, upper=upper_bound)
 
     if keep_sum_of_weights:
-        weights = weights / np.mean(weights) * original_mean
+        trimmed_mean = float(np.mean(weights))
+        if trimmed_mean == 0.0:
+            if original_mean != 0.0:
+                raise ValueError(
+                    "Trimming removed all weight mass; cannot preserve the original sum."
+                )
+        else:
+            weights = weights / trimmed_mean * original_mean
 
     if target_sum_weights is not None:
         target_total = float(target_sum_weights)

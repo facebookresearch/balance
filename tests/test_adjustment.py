@@ -991,6 +991,70 @@ class TestAdjustment(balance.testutil.BalanceTestCase):
                 keep_sum_of_weights=False,
             )
 
+    def test_trim_weights_rejects_percentile_limits_summing_to_one(self) -> None:
+        """Lower and upper winsorization limits that overlap raise."""
+        weights = pd.Series(np.arange(1.0, 101.0))
+        for limits in (0.6, 0.5, (0.5, 0.5), (0.3, 0.7)):
+            with self.subTest(limits=limits):
+                with self.assertRaisesRegex(ValueError, "lower \\+ upper < 1"):
+                    trim_weights(
+                        weights,
+                        weight_trimming_percentile=limits,
+                        keep_sum_of_weights=False,
+                    )
+
+    def test_trim_weights_single_tail_full_percentile_preserves_contract(self) -> None:
+        weights = pd.Series([1.0, 2.0, 4.0], index=[10, 20, 30], name="survey_weight")
+        for limits, bound in (((1.0, 0.0), 4.0), ((0.0, 1.0), 1.0)):
+            for keep_sum in (False, True):
+                with self.subTest(limits=limits, keep_sum=keep_sum):
+                    result = trim_weights(
+                        weights,
+                        weight_trimming_percentile=limits,
+                        keep_sum_of_weights=keep_sum,
+                    )
+                    expected = pd.Series(
+                        [float(weights.mean()) if keep_sum else bound] * 3,
+                        index=weights.index,
+                        name=weights.name,
+                    )
+                    pd.testing.assert_series_equal(result, expected)
+        zero_minimum = pd.Series([0.0, 2.0, 4.0])
+        pd.testing.assert_series_equal(
+            trim_weights(
+                zero_minimum,
+                weight_trimming_percentile=(0.0, 1.0),
+                keep_sum_of_weights=False,
+            ),
+            pd.Series([0.0, 0.0, 0.0]),
+        )
+        with self.assertRaisesRegex(ValueError, "preserve.*sum|weight mass"):
+            trim_weights(zero_minimum, weight_trimming_percentile=(0.0, 1.0))
+        pd.testing.assert_series_equal(
+            weights,
+            pd.Series([1.0, 2.0, 4.0], index=[10, 20, 30], name="survey_weight"),
+        )
+
+    def test_trim_weights_preserves_zero_mass_without_nan_normalization(self) -> None:
+        weights = pd.Series([0.0, 0.0, 0.0], index=[10, 20, 30], name="survey_weight")
+        for limits in (None, (1.0, 0.0), (0.0, 1.0), (0.0, 0.1)):
+            with self.subTest(limits=limits):
+                result = trim_weights(weights, weight_trimming_percentile=limits)
+                pd.testing.assert_series_equal(result, weights)
+        with self.assertRaisesRegex(ValueError, "sum is zero"):
+            trim_weights(weights, target_sum_weights=1.0)
+
+    def test_trim_weights_rejects_crossing_percentile_bounds(self) -> None:
+        """Limits whose adjusted quantiles cross (lower bound > upper bound)
+        raise instead of returning arbitrarily clipped weights."""
+        weights = pd.Series(np.arange(1.0, 101.0))
+        with self.assertRaisesRegex(ValueError, "lower bound .* exceeds the upper"):
+            trim_weights(
+                weights,
+                weight_trimming_percentile=0.49,
+                keep_sum_of_weights=False,
+            )
+
     def test_trim_weights_percentile_verbose(self) -> None:
         """Test verbose logging for percentile trimming (line 294)."""
         weights = pd.Series([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0])

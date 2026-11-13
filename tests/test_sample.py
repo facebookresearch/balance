@@ -2406,14 +2406,14 @@ class TestSampleStrWeightTrimmingPercentile(balance.testutil.BalanceTestCase):
         )
         adjusted = sample.set_target(target).adjust(
             method="ipw",
-            weight_trimming_percentile=0.98,
+            weight_trimming_percentile=0.02,
             weight_trimming_mean_ratio=None,
             num_lambdas=1,
         )
         # Manually inject weight_trimming_percentile into the model to test display logic
         # This is needed because the IPW implementation does not store this value in the model
         if adjusted._adjustment_model is not None:
-            adjusted._adjustment_model["weight_trimming_percentile"] = 0.98
+            adjusted._adjustment_model["weight_trimming_percentile"] = 0.02
         output_str = adjusted.__str__()
         self.assertIn("weight trimming percentile", output_str)
 

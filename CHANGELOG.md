@@ -71,6 +71,19 @@
   pickled by earlier versions whose fit-time levels were integral floats
   (labels such as `"1.0"`) must be re-fit before in-place replay.
 
+- **`trim_weights` rejects overlapping percentile limits.** A single
+  `weight_trimming_percentile` value winsorizes *both* tails, so values of 0.5
+  or more (or a pair of nonzero `(lower, upper)` limits summing to 1 or more)
+  made the lower winsorization bound exceed the upper one and returned arbitrarily clipped
+  weights without an error (e.g. `0.95`, intended as "the 95th percentile",
+  collapsed CBPS weights to two values). These limits now raise `ValueError`
+  with guidance (use `0.05` for 5% at each tail or `(0.0, 0.05)` for only the
+  top 5%), as do limits whose computed bounds cross. A one-sided 100% limit
+  remains supported when the other tail is disabled; it does not create overlapping bounds.
+  Preserving an already-zero total leaves zero weights unchanged instead of
+  dividing by zero. A positive original total cannot be preserved after trimming
+  removes all weight mass, and raises an explicit error.
+
 # 0.23.0 (2026-08-04)
 
 ## Highlights

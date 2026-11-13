@@ -3239,8 +3239,8 @@ class TestBalanceDFWeights_edge_cases(BalanceTestCase):
 
         # Act
         weights.trim(
-            percentile=0.6
-        )  # trim returns None, modifies in place at 60th percentile
+            percentile=(0.0, 0.4)
+        )  # trim returns None, modifies in place: caps weights above the 60th percentile
 
         # Assert
         # Verify that trimming actually modified the weights

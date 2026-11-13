@@ -1320,7 +1320,7 @@ class Testcbps(
             target_weights,
             transformations=None,
             weight_trimming_mean_ratio=None,
-            weight_trimming_percentile=0.95,
+            weight_trimming_percentile=0.05,
         )
 
         # Test without any trimming to verify trimming is actually applied
