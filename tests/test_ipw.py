@@ -955,6 +955,86 @@ class TestIPW(
         self.assertNotIn("sample_link", result["model"])
         self.assertNotIn("target_probability", result["model"])
 
+    def _cv_path_ipw_inputs(
+        self,
+    ) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
+        rng = np.random.RandomState(0)
+        sample_df = pd.DataFrame(
+            {"x": rng.normal(0.7, 1, 300), "z": rng.normal(0, 1, 300)}
+        )
+        target_df = pd.DataFrame(
+            {"x": rng.normal(0, 1, 600), "z": rng.normal(0, 1, 600)}
+        )
+        return (
+            sample_df,
+            pd.Series(np.ones(len(sample_df))),
+            target_df,
+            pd.Series(np.ones(len(target_df))),
+        )
+
+    def test_ipw_cv_weights_do_not_depend_on_store_fit_metadata(self) -> None:
+        """The lambda.1se (cross-validation) path returns the same weights
+        whether or not fit metadata is stored."""
+        sample_df, sample_weights, target_df, target_weights = (
+            self._cv_path_ipw_inputs()
+        )
+        kwargs: dict[str, Any] = {
+            "transformations": None,
+            "num_lambdas": 20,
+            "max_de": None,
+        }
+        without_metadata = balance_ipw.ipw(
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            store_fit_metadata=False,
+            **kwargs,
+        )["weight"]
+        with_metadata = balance_ipw.ipw(
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            store_fit_metadata=True,
+            **kwargs,
+        )["weight"]
+        np.testing.assert_allclose(
+            with_metadata.to_numpy(), without_metadata.to_numpy(), rtol=1e-10
+        )
+
+    def test_ipw_cv_stored_fit_reproduces_returned_weights(self) -> None:
+        """On the cross-validation path, the stored estimator is the full-data
+        fit whose predictions produced the returned weights."""
+        sample_df, sample_weights, target_df, target_weights = (
+            self._cv_path_ipw_inputs()
+        )
+        result = balance_ipw.ipw(
+            sample_df,
+            sample_weights,
+            target_df,
+            target_weights,
+            transformations=None,
+            num_lambdas=20,
+            max_de=None,
+            store_fit_matrices=True,
+        )
+        model = result["model"]
+        stored_probability = model["fit"].predict_proba(model["model_matrix_sample"])[
+            :, 1
+        ]
+        reconstructed = balance_ipw.weights_from_link(
+            balance_ipw.link_transform(stored_probability),
+            model["balance_classes"],
+            sample_weights,
+            target_weights,
+            model["weight_trimming_mean_ratio"],
+            model["weight_trimming_percentile"],
+        )
+        np.testing.assert_allclose(
+            reconstructed.to_numpy(), result["weight"].to_numpy(), rtol=1e-10
+        )
+
     def test_ipw_warns_when_penalty_factor_with_custom_model(self) -> None:
         """Providing penalty_factor with custom models emits a warning."""
 

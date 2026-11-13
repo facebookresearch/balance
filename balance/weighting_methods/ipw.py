@@ -951,6 +951,11 @@ def ipw(
             ):
                 break
 
+            # Snapshot the full-data fit before cross-validation: calc_dev refits
+            # this same estimator on the CV folds.
+            # pyrefly: ignore [unsupported-operation]
+            fits[i] = copy.deepcopy(model)
+
             # Cross-validation procedure is only used for choosing best lambda if max_de is None
             # Previously, cross validation was run even when max_de is not None,
             # but the results weren't used for model selection.
@@ -968,8 +973,6 @@ def ipw(
 
             prev_prop_dev = prop_dev[i]
             links[i] = link_transform(pred)[:sample_n,]
-            # pyrefly: ignore [unsupported-operation]
-            fits[i] = copy.deepcopy(model)
 
     else:
         if penalty_factor is not None:

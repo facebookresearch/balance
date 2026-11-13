@@ -11,6 +11,17 @@
 - Honor explicitly supplied covariate-view weights regardless of their name; default unnamed RangeIndex weights stay positional even when data labels are reordered. Align complete matching unique labelled weights before length validation (ignoring unused labelled weights), and reject incomplete unique label matches rather than silently assigning them by position.
 - Keep flag-only Bento test invocations scoped to the package test directory without broadening explicit Python test selections when flags appear first.
 
+## Bug Fixes
+
+- **IPW stored the wrong fitted model on the cross-validation path.** With
+  `max_de=None` and `num_lambdas > 1`, the built-in logistic-regression path
+  saved the last cross-validation fold's refit (trained on 90% of the rows)
+  instead of the full-data fit. Weights computed with
+  `store_fit_metadata=True` (the `BalanceFrame.fit(method="ipw")` default) and
+  `model["fit"]`, coefficients, and stored probabilities used that fold model,
+  so `fit()` and `adjust()` could return different weights for the same
+  inputs. The stored model is now the full-data fit at the selected lambda.
+
 # 0.23.0 (2026-08-04)
 
 ## Highlights
