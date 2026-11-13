@@ -23,6 +23,7 @@ from balance import util as balance_util
 from balance.sample_class import Sample
 from balance.testutil import _SKLEARN_1_4_AVAILABLE
 from balance.weighting_methods import ipw as balance_ipw
+from balance.weighting_methods.ipw import ipw
 from scipy.sparse import csc_matrix, csr_matrix, issparse
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -1034,6 +1035,48 @@ class TestIPW(
         np.testing.assert_allclose(
             reconstructed.to_numpy(), result["weight"].to_numpy(), rtol=1e-10
         )
+
+    def test_ipw_percentile_requires_disabling_mean_ratio(self) -> None:
+        sample = pd.DataFrame({"x": [1.0, 2.0, 3.0, 4.0]})
+        target = pd.DataFrame({"x": [2.0, 3.0, 4.0, 5.0]})
+        weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+        with self.assertRaisesRegex(ValueError, "pass weight_trimming_mean_ratio=None"):
+            ipw(
+                sample,
+                weights,
+                target,
+                weights,
+                transformations=None,
+                num_lambdas=1,
+                weight_trimming_percentile=0.05,
+            )
+
+    def test_ipw_rejects_conflict_before_changing_fit_rng(self) -> None:
+        sample = pd.DataFrame({"x": [1.0, 2.0, 3.0, 4.0]})
+        target = pd.DataFrame({"x": [2.0, 3.0, 4.0, 5.0]})
+        weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+        original_state = balance_util._assert_type(
+            np.random.get_state(legacy=True), tuple
+        )
+        try:
+            np.random.seed(7)
+            before = balance_util._assert_type(np.random.get_state(legacy=True), tuple)
+            with self.assertRaises(ValueError):
+                ipw(
+                    sample,
+                    weights,
+                    target,
+                    weights,
+                    transformations=None,
+                    num_lambdas=1,
+                    weight_trimming_percentile=0.05,
+                )
+            after = balance_util._assert_type(np.random.get_state(legacy=True), tuple)
+            # Fitting resets this RNG to random_seed=2020; early validation must not.
+            np.testing.assert_array_equal(after[1], before[1])
+            self.assertEqual(after[2:], before[2:])
+        finally:
+            np.random.set_state(original_state)
 
     def test_ipw_warns_when_penalty_factor_with_custom_model(self) -> None:
         """Providing penalty_factor with custom models emits a warning."""

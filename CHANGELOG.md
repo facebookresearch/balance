@@ -84,6 +84,17 @@
   dividing by zero. A positive original total cannot be preserved after trimming
   removes all weight mass, and raises an explicit error.
 
+## Documentation
+
+- **`ipw()` / `cbps()` trimming arguments are documented accurately.** Their
+  docstrings said passing `weight_trimming_percentile` switches to
+  winsorization, but with the default `weight_trimming_mean_ratio=20` the call
+  failed after fitting with `Only one of weight_trimming_mean_ratio and
+  weight_trimming_percentile can be set`. The docstrings now state that
+  `weight_trimming_mean_ratio=None` is required (and, for `ipw`, that both are
+  ignored when `max_de` is set), and the conflict is reported before fitting
+  with that fix in the message.
+
 # 0.23.0 (2026-08-04)
 
 ## Highlights

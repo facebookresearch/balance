@@ -524,9 +524,12 @@ def ipw(
             ``predict_proba`` method returning class probabilities.
         weight_trimming_mean_ratio (Optional[Union[int, float]], optional): indicating the ratio from above according to which
             the weights are trimmed by mean(weights) * ratio.
-            Defaults to 20.
-        weight_trimming_percentile (Optional[float], optional): if weight_trimming_percentile is not none, winsorization is applied.
-            if None then trimming is applied. Defaults to None.
+            Defaults to 20. Set to None to use weight_trimming_percentile instead.
+        weight_trimming_percentile (Optional[float], optional): percentile limit(s) for winsorization
+            (see :func:`balance.adjustment.trim_weights`). Only one trimming option can be used,
+            so passing it requires ``weight_trimming_mean_ratio=None``; otherwise a ValueError
+            is raised. Ignored when ``max_de`` is set (trimming is then chosen by
+            :func:`choose_regularization`). Defaults to None.
         balance_classes (bool, optional): whether to balance the sample and target size for running the model.
             True is preferable for imbalanced cases.
             It shouldn't have an effect on the final weights as this is factored
@@ -732,6 +735,10 @@ def ipw(
         )
 
     logger.info("Starting ipw function")
+    if max_de is None:
+        balance_adjustment._check_single_trimming_option(
+            "ipw", weight_trimming_mean_ratio, weight_trimming_percentile
+        )
     np.random.seed(
         random_seed
     )  # setting random seed for cases of variations in sklearn

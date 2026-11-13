@@ -23,7 +23,9 @@ import scipy
 from balance.datasets import load_data
 from balance.sample_class import Sample
 from balance.stats_and_plots.weights_stats import design_effect
+from balance.util import _assert_type
 from balance.weighting_methods import cbps as balance_cbps
+from balance.weighting_methods.cbps import cbps
 from statsmodels.tools.sm_exceptions import PerfectSeparationWarning
 
 # Test constants for improved readability and maintainability
@@ -1354,6 +1356,44 @@ class Testcbps(
             places=5,
             msg="Percentile-trimmed weights should sum to target weight sum",
         )
+
+    def test_cbps_percentile_requires_disabling_mean_ratio(self) -> None:
+        sample = pd.DataFrame({"x": [1.0, 2.0, 3.0, 4.0]})
+        target = pd.DataFrame({"x": [2.0, 3.0, 4.0, 5.0]})
+        weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+        with self.assertRaisesRegex(ValueError, "pass weight_trimming_mean_ratio=None"):
+            cbps(
+                sample,
+                weights,
+                target,
+                weights,
+                transformations=None,
+                weight_trimming_percentile=0.05,
+            )
+
+    def test_cbps_rejects_conflict_before_changing_fit_rng(self) -> None:
+        sample = pd.DataFrame({"x": [1.0, 2.0, 3.0, 4.0]})
+        target = pd.DataFrame({"x": [2.0, 3.0, 4.0, 5.0]})
+        weights = pd.Series([1.0, 1.0, 1.0, 1.0])
+        original_state = _assert_type(np.random.get_state(legacy=True), tuple)
+        try:
+            np.random.seed(7)
+            before = _assert_type(np.random.get_state(legacy=True), tuple)
+            with self.assertRaises(ValueError):
+                cbps(
+                    sample,
+                    weights,
+                    target,
+                    weights,
+                    transformations=None,
+                    weight_trimming_percentile=0.05,
+                )
+            after = _assert_type(np.random.get_state(legacy=True), tuple)
+            # Fitting resets this RNG to random_seed=2020; early validation must not.
+            np.testing.assert_array_equal(after[1], before[1])
+            self.assertEqual(after[2:], before[2:])
+        finally:
+            np.random.set_state(original_state)
 
 
 class TestCbpsEdgeCases(balance.testutil.BalanceTestCase):

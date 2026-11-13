@@ -351,6 +351,34 @@ def trim_weights(
     return weights
 
 
+def _check_single_trimming_option(
+    method_name: str,
+    weight_trimming_mean_ratio: float | int | None,
+    weight_trimming_percentile: float | Tuple[float, float] | None,
+) -> None:
+    """Fail fast when a weighting method gets both trimming options.
+
+    ``ipw`` and ``cbps`` default to ``weight_trimming_mean_ratio=20``, so a
+    caller who only passes ``weight_trimming_percentile`` must also pass
+    ``weight_trimming_mean_ratio=None``.
+
+    Raises:
+        ValueError: If both trimming options are set.
+    """
+    if (
+        weight_trimming_mean_ratio is not None
+        and weight_trimming_percentile is not None
+    ):
+        raise ValueError(
+            f"{method_name}() got both weight_trimming_mean_ratio="
+            f"{weight_trimming_mean_ratio} and weight_trimming_percentile="
+            f"{weight_trimming_percentile}, but only one trimming option can be "
+            "used. weight_trimming_mean_ratio defaults to 20; pass "
+            "weight_trimming_mean_ratio=None to winsorize with "
+            "weight_trimming_percentile."
+        )
+
+
 def default_transformations(
     dfs: tuple[pd.DataFrame, ...] | list[pd.DataFrame],
 ) -> Dict[str, Callable[..., Any]]:

@@ -471,8 +471,11 @@ def cbps(  # noqa
             for other options. Defaults to None.
         weight_trimming_mean_ratio (Union[None, float, int], optional): indicating the ratio from above according to which
             the weights are trimmed by mean(weights) * ratio. Defaults to 20.
-        weight_trimming_percentile (Optional[float], optional): if weight_trimming_percentile is not none, winsorization is applied.
-            Default is None, i.e. trimming is applied.
+            Set to None to use weight_trimming_percentile instead.
+        weight_trimming_percentile (Optional[float], optional): percentile limit(s) for winsorization
+            (see :func:`balance.adjustment.trim_weights`). Only one trimming option can be used,
+            so passing it requires ``weight_trimming_mean_ratio=None``; otherwise a ValueError
+            is raised. Defaults to None.
         random_seed (int, optional): a random seed. Defaults to 2020.
         store_fit_metadata (bool, optional): Whether to persist fit-time
             metadata required for downstream ``BalanceFrame.predict_weights()``
@@ -533,6 +536,9 @@ def cbps(  # noqa
     """
 
     logger.info("Starting cbps function")
+    balance_adjustment._check_single_trimming_option(
+        "cbps", weight_trimming_mean_ratio, weight_trimming_percentile
+    )
     np.random.seed(random_seed)  # setting random seed for cases of variations in glmnet
 
     balance_util._check_weighting_methods_input(sample_df, sample_weights, "sample")
