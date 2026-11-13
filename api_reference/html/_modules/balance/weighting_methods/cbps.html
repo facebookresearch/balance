@@ -531,8 +531,11 @@
 <span class="sd">            for other options. Defaults to None.</span>
 <span class="sd">        weight_trimming_mean_ratio (Union[None, float, int], optional): indicating the ratio from above according to which</span>
 <span class="sd">            the weights are trimmed by mean(weights) * ratio. Defaults to 20.</span>
-<span class="sd">        weight_trimming_percentile (Optional[float], optional): if weight_trimming_percentile is not none, winsorization is applied.</span>
-<span class="sd">            Default is None, i.e. trimming is applied.</span>
+<span class="sd">            Set to None to use weight_trimming_percentile instead.</span>
+<span class="sd">        weight_trimming_percentile (Optional[float], optional): percentile limit(s) for winsorization</span>
+<span class="sd">            (see :func:`balance.adjustment.trim_weights`). Only one trimming option can be used,</span>
+<span class="sd">            so passing it requires ``weight_trimming_mean_ratio=None``; otherwise a ValueError</span>
+<span class="sd">            is raised. Defaults to None.</span>
 <span class="sd">        random_seed (int, optional): a random seed. Defaults to 2020.</span>
 <span class="sd">        store_fit_metadata (bool, optional): Whether to persist fit-time</span>
 <span class="sd">            metadata required for downstream ``BalanceFrame.predict_weights()``</span>
@@ -593,6 +596,9 @@
 <span class="sd">    """</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Starting cbps function"</span><span class="p">)</span>
+    <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">_check_single_trimming_option</span><span class="p">(</span>
+        <span class="s2">"cbps"</span><span class="p">,</span> <span class="n">weight_trimming_mean_ratio</span><span class="p">,</span> <span class="n">weight_trimming_percentile</span>
+    <span class="p">)</span>
     <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>  <span class="c1"># setting random seed for cases of variations in glmnet</span>
 
     <span class="n">balance_util</span><span class="o">.</span><span class="n">_check_weighting_methods_input</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">"sample"</span><span class="p">)</span>

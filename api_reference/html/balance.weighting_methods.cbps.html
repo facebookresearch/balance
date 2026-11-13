@@ -159,9 +159,12 @@ for other options. Defaults to “COBYLA”.</p></li>
 <li><p><strong>opt_opts</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>]</em><em>, </em><em>optional</em>) – A dictionary of solver options. Default is None. See <code class="xref py py-func docutils literal notranslate"><span class="pre">scipy.optimize.minimize()</span></code>
 for other options. Defaults to None.</p></li>
 <li><p><strong>weight_trimming_mean_ratio</strong> (<em>Union</em><em>[</em><em>None</em><em>, </em><em>float</em><em>, </em><em>int</em><em>]</em><em>, </em><em>optional</em>) – indicating the ratio from above according to which
-the weights are trimmed by mean(weights) * ratio. Defaults to 20.</p></li>
-<li><p><strong>weight_trimming_percentile</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em><em>, </em><em>optional</em>) – if weight_trimming_percentile is not none, winsorization is applied.
-Default is None, i.e. trimming is applied.</p></li>
+the weights are trimmed by mean(weights) * ratio. Defaults to 20.
+Set to None to use weight_trimming_percentile instead.</p></li>
+<li><p><strong>weight_trimming_percentile</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em><em>, </em><em>optional</em>) – percentile limit(s) for winsorization
+(see <a class="reference internal" href="balance.adjustment.html#balance.adjustment.trim_weights" title="balance.adjustment.trim_weights"><code class="xref py py-func docutils literal notranslate"><span class="pre">balance.adjustment.trim_weights()</span></code></a>). Only one trimming option can be used,
+so passing it requires <code class="docutils literal notranslate"><span class="pre">weight_trimming_mean_ratio=None</span></code>; otherwise a ValueError
+is raised. Defaults to None.</p></li>
 <li><p><strong>random_seed</strong> (<em>int</em><em>, </em><em>optional</em>) – a random seed. Defaults to 2020.</p></li>
 <li><p><strong>store_fit_metadata</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to persist fit-time
 metadata required for downstream <code class="docutils literal notranslate"><span class="pre">BalanceFrame.predict_weights()</span></code>

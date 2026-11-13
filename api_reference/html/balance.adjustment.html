@@ -199,7 +199,9 @@ target. <code class="docutils literal notranslate"><span class="pre">None</span>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>TypeError</strong> – If weights is not np.array or pd.Series.</p></li>
 <li><p><strong>ValueError</strong> – If both weight_trimming_mean_ratio and weight_trimming_percentile
-    are specified, or if weight_trimming_percentile tuple has length != 2.</p></li>
+    are specified, if weight_trimming_percentile tuple has length != 2,
+    or if both tails are requested and their limits sum to 1 or more
+    (so the lower winsorization bound would exceed the upper one).</p></li>
 </ul>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>

@@ -260,34 +260,34 @@
     <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
     <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
 
-    <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">balance_util</span><span class="o">.</span><span class="n">_apply_na_action_to_frame_pair</span><span class="p">(</span>
-            <span class="n">sample_df</span><span class="p">,</span>
-            <span class="n">sample_weights</span><span class="p">,</span>
-            <span class="n">target_df</span><span class="p">,</span>
-            <span class="n">target_weights</span><span class="p">,</span>
-            <span class="n">na_action</span><span class="p">,</span>
-        <span class="p">)</span>
-    <span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">store_fit_metadata</span> <span class="ow">and</span> <span class="n">transformations_to_apply</span> <span class="o">==</span> <span class="s2">"default"</span><span class="p">:</span>
-        <span class="n">transformations_to_apply</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">default_transformations</span><span class="p">(</span>
-            <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">)</span>
-        <span class="p">)</span>
-
-    <span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">apply_transformations</span><span class="p">(</span>
-        <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">),</span>
+    <span class="p">(</span>
+        <span class="n">sample_df</span><span class="p">,</span>
+        <span class="n">sample_weights</span><span class="p">,</span>
+        <span class="n">target_df</span><span class="p">,</span>
+        <span class="n">target_weights</span><span class="p">,</span>
+        <span class="n">transformations_to_apply</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="n">_apply_na_action_and_transformations</span><span class="p">(</span>
+        <span class="n">sample_df</span><span class="p">,</span>
+        <span class="n">sample_weights</span><span class="p">,</span>
+        <span class="n">target_df</span><span class="p">,</span>
+        <span class="n">target_weights</span><span class="p">,</span>
+        <span class="n">na_action</span><span class="o">=</span><span class="n">na_action</span><span class="p">,</span>
         <span class="n">transformations</span><span class="o">=</span><span class="n">transformations_to_apply</span><span class="p">,</span>
-        <span class="n">drop</span><span class="o">=</span><span class="n">transformations_drop</span><span class="p">,</span>
+        <span class="n">transformations_drop</span><span class="o">=</span><span class="n">transformations_drop</span><span class="p">,</span>
+        <span class="n">resolve_default_transformations</span><span class="o">=</span><span class="n">store_fit_metadata</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Final variables in the model after transformations: </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">weight</span><span class="o">=</span><span class="n">target_weights</span><span class="p">)</span>
-    <span class="n">target_cell_props</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">variables</span><span class="p">))[</span><span class="s2">"weight"</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">target_cell_props</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">variables</span><span class="p">),</span> <span class="n">observed</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span>
+        <span class="s2">"weight"</span>
+    <span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
     <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">design_weight</span><span class="o">=</span><span class="n">sample_weights</span><span class="p">)</span>
-    <span class="n">sample_cell_props</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">variables</span><span class="p">))[</span><span class="s2">"design_weight"</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">sample_cell_props</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">variables</span><span class="p">),</span> <span class="n">observed</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span>
+        <span class="s2">"design_weight"</span>
+    <span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
     <span class="n">combined</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
         <span class="n">target_cell_props</span><span class="p">,</span>
@@ -544,26 +544,22 @@
     <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">input_variables</span><span class="p">]</span>
 
     <span class="n">na_action</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"na_action"</span><span class="p">,</span> <span class="s2">"add_indicator"</span><span class="p">))</span>
-    <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">"drop"</span><span class="p">:</span>
-        <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">drop_na_rows</span><span class="p">(</span>
-            <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">"sample"</span>
-        <span class="p">)</span>
-        <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="n">balance_util</span><span class="o">.</span><span class="n">drop_na_rows</span><span class="p">(</span>
-            <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">"target"</span>
-        <span class="p">)</span>
-    <span class="k">elif</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">"add_indicator"</span><span class="p">:</span>
-        <span class="n">sample_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">_safe_fillna_and_infer</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="s2">"__NaN__"</span><span class="p">))</span>
-        <span class="n">target_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">_safe_fillna_and_infer</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="s2">"__NaN__"</span><span class="p">))</span>
-    <span class="k">else</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">na_action</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"drop"</span><span class="p">,</span> <span class="s2">"add_indicator"</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="s2">"Poststratify model has invalid na_action metadata "</span>
             <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">na_action</span><span class="si">}</span><span class="s2">' for predict_weights()."</span>
         <span class="p">)</span>
 
-    <span class="n">sample_df</span><span class="p">,</span> <span class="n">_target_df</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">apply_transformations</span><span class="p">(</span>
-        <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">),</span>
-        <span class="n">transformations</span><span class="o">=</span><span class="n">model</span><span class="p">[</span><span class="s2">"transformations"</span><span class="p">],</span>
-        <span class="n">drop</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">"transformations_drop"</span><span class="p">]),</span>
+    <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="n">_target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">_apply_na_action_and_transformations</span><span class="p">(</span>
+            <span class="n">sample_df</span><span class="p">,</span>
+            <span class="n">sample_weights</span><span class="p">,</span>
+            <span class="n">target_df</span><span class="p">,</span>
+            <span class="n">target_weights</span><span class="p">,</span>
+            <span class="n">na_action</span><span class="o">=</span><span class="n">na_action</span><span class="p">,</span>
+            <span class="n">transformations</span><span class="o">=</span><span class="n">model</span><span class="p">[</span><span class="s2">"transformations"</span><span class="p">],</span>
+            <span class="n">transformations_drop</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">"transformations_drop"</span><span class="p">]),</span>
+        <span class="p">)</span>
     <span class="p">)</span>
     <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">column</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
@@ -624,6 +620,58 @@
         <span class="n">predicted_full</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">trimmed</span><span class="o">.</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">trimmed</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
         <span class="n">trimmed</span> <span class="o">=</span> <span class="n">predicted_full</span>
     <span class="k">return</span> <span class="n">trimmed</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_apply_na_action_and_transformations</span><span class="p">(</span>
+    <span class="n">sample_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">sample_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">target_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">target_weights</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">transformations</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
+    <span class="n">transformations_drop</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">resolve_default_transformations</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
+<span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Apply poststratify's NA policy and transformations.</span>
+
+<span class="sd">    ``"drop"`` drops incomplete rows before transforming; ``"add_indicator"``</span>
+<span class="sd">    transforms first and fills ``"__NaN__"`` afterwards, because filling first</span>
+<span class="sd">    turns numeric columns into ``object`` (so ``"default"`` would ``fct_lump``</span>
+<span class="sd">    instead of ``quantize`` them). With ``resolve_default_transformations``,</span>
+<span class="sd">    ``"default"`` is resolved to an explicit dict. Returns the processed</span>
+<span class="sd">    frames and weights plus the transformations applied.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">"drop"</span><span class="p">:</span>
+        <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">balance_util</span><span class="o">.</span><span class="n">_apply_na_action_to_frame_pair</span><span class="p">(</span>
+                <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="n">na_action</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">resolve_default_transformations</span> <span class="ow">and</span> <span class="n">transformations</span> <span class="o">==</span> <span class="s2">"default"</span><span class="p">:</span>
+        <span class="n">transformations</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">default_transformations</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">apply_transformations</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span><span class="p">),</span>
+        <span class="n">transformations</span><span class="o">=</span><span class="n">transformations</span><span class="p">,</span>
+        <span class="n">drop</span><span class="o">=</span><span class="n">transformations_drop</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">na_action</span> <span class="o">!=</span> <span class="s2">"drop"</span><span class="p">:</span>
+        <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">balance_util</span><span class="o">.</span><span class="n">_apply_na_action_to_frame_pair</span><span class="p">(</span>
+                <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="n">na_action</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="n">transformations</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_variables_from_formula</span><span class="p">(</span>

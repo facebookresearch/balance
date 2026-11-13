@@ -189,9 +189,12 @@ instance as <code class="docutils literal notranslate"><span class="pre">model</
 <code class="docutils literal notranslate"><span class="pre">predict_proba</span></code> method returning class probabilities.</p>
 </dd>
 <dt>weight_trimming_mean_ratio (Optional[Union[int, float]], optional): indicating the ratio from above according to which</dt><dd><p>the weights are trimmed by mean(weights) * ratio.
-Defaults to 20.</p>
+Defaults to 20. Set to None to use weight_trimming_percentile instead.</p>
 </dd>
-<dt>weight_trimming_percentile (Optional[float], optional): if weight_trimming_percentile is not none, winsorization is applied.</dt><dd><p>if None then trimming is applied. Defaults to None.</p>
+<dt>weight_trimming_percentile (Optional[float], optional): percentile limit(s) for winsorization</dt><dd><p>(see <a class="reference internal" href="balance.adjustment.html#balance.adjustment.trim_weights" title="balance.adjustment.trim_weights"><code class="xref py py-func docutils literal notranslate"><span class="pre">balance.adjustment.trim_weights()</span></code></a>). Only one trimming option can be used,
+so passing it requires <code class="docutils literal notranslate"><span class="pre">weight_trimming_mean_ratio=None</span></code>; otherwise a ValueError
+is raised. Ignored when <code class="docutils literal notranslate"><span class="pre">max_de</span></code> is set (trimming is then chosen by
+<a class="reference internal" href="#balance.weighting_methods.ipw.choose_regularization" title="balance.weighting_methods.ipw.choose_regularization"><code class="xref py py-func docutils literal notranslate"><span class="pre">choose_regularization()</span></code></a>). Defaults to None.</p>
 </dd>
 <dt>balance_classes (bool, optional): whether to balance the sample and target size for running the model.</dt><dd><p>True is preferable for imbalanced cases.
 It shouldn’t have an effect on the final weights as this is factored

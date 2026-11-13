@@ -578,9 +578,12 @@
 <span class="sd">            ``predict_proba`` method returning class probabilities.</span>
 <span class="sd">        weight_trimming_mean_ratio (Optional[Union[int, float]], optional): indicating the ratio from above according to which</span>
 <span class="sd">            the weights are trimmed by mean(weights) * ratio.</span>
-<span class="sd">            Defaults to 20.</span>
-<span class="sd">        weight_trimming_percentile (Optional[float], optional): if weight_trimming_percentile is not none, winsorization is applied.</span>
-<span class="sd">            if None then trimming is applied. Defaults to None.</span>
+<span class="sd">            Defaults to 20. Set to None to use weight_trimming_percentile instead.</span>
+<span class="sd">        weight_trimming_percentile (Optional[float], optional): percentile limit(s) for winsorization</span>
+<span class="sd">            (see :func:`balance.adjustment.trim_weights`). Only one trimming option can be used,</span>
+<span class="sd">            so passing it requires ``weight_trimming_mean_ratio=None``; otherwise a ValueError</span>
+<span class="sd">            is raised. Ignored when ``max_de`` is set (trimming is then chosen by</span>
+<span class="sd">            :func:`choose_regularization`). Defaults to None.</span>
 <span class="sd">        balance_classes (bool, optional): whether to balance the sample and target size for running the model.</span>
 <span class="sd">            True is preferable for imbalanced cases.</span>
 <span class="sd">            It shouldn't have an effect on the final weights as this is factored</span>
@@ -786,6 +789,10 @@
         <span class="p">)</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Starting ipw function"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">max_de</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">_check_single_trimming_option</span><span class="p">(</span>
+            <span class="s2">"ipw"</span><span class="p">,</span> <span class="n">weight_trimming_mean_ratio</span><span class="p">,</span> <span class="n">weight_trimming_percentile</span>
+        <span class="p">)</span>
     <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span>
         <span class="n">random_seed</span>
     <span class="p">)</span>  <span class="c1"># setting random seed for cases of variations in sklearn</span>
@@ -1005,6 +1012,11 @@
             <span class="p">):</span>
                 <span class="k">break</span>
 
+            <span class="c1"># Snapshot the full-data fit before cross-validation: calc_dev refits</span>
+            <span class="c1"># this same estimator on the CV folds.</span>
+            <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
+            <span class="n">fits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
             <span class="c1"># Cross-validation procedure is only used for choosing best lambda if max_de is None</span>
             <span class="c1"># Previously, cross validation was run even when max_de is not None,</span>
             <span class="c1"># but the results weren't used for model selection.</span>
@@ -1022,8 +1034,6 @@
 
             <span class="n">prev_prop_dev</span> <span class="o">=</span> <span class="n">prop_dev</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
             <span class="n">links</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">link_transform</span><span class="p">(</span><span class="n">pred</span><span class="p">)[:</span><span class="n">sample_n</span><span class="p">,]</span>
-            <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
-            <span class="n">fits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">penalty_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>

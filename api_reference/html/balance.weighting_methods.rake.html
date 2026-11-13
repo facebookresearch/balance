@@ -121,8 +121,10 @@ convergence_rate — (float) convergence criteria; the maximum difference in pro
 for algorithm to converge.</p>
 </div></blockquote>
 <dl class="simple">
-<dt>rate_tolerance — (float) convergence criteria; if convergence rate does not move more</dt><dd><p>than this amount than the algorithm is also considered to
-have converged.</p>
+<dt>rate_tolerance — (float) stopping criterion; if the convergence rate does not move more</dt><dd><p>than this amount, the algorithm stops. It is reported as
+converged only if the final convergence rate is at most
+<code class="docutils literal notranslate"><span class="pre">convergence_rate</span></code>; otherwise <code class="docutils literal notranslate"><span class="pre">converged</span></code> is 0 and a
+warning is logged.</p>
 </dd>
 <dt>weight_trimming_mean_ratio — (float, int, optional) upper bound for weights expressed as a</dt><dd><p>multiple of the mean weight. Delegated to
 <a class="reference internal" href="balance.adjustment.html#balance.adjustment.trim_weights" title="balance.adjustment.trim_weights"><code class="xref py py-func docutils literal notranslate"><span class="pre">balance.adjustment.trim_weights()</span></code></a>.</p>

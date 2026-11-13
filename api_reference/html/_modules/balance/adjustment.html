@@ -220,7 +220,9 @@
 <span class="sd">    Raises:</span>
 <span class="sd">        TypeError: If weights is not np.array or pd.Series.</span>
 <span class="sd">        ValueError: If both weight_trimming_mean_ratio and weight_trimming_percentile</span>
-<span class="sd">            are specified, or if weight_trimming_percentile tuple has length != 2.</span>
+<span class="sd">            are specified, if weight_trimming_percentile tuple has length != 2,</span>
+<span class="sd">            or if both tails are requested and their limits sum to 1 or more</span>
+<span class="sd">            (so the lower winsorization bound would exceed the upper one).</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        pd.Series (of type float64): Trimmed weights with the same index as input</span>
@@ -314,6 +316,21 @@
             <span class="n">_validate_limit</span><span class="p">(</span><span class="n">normalized_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">n_weights</span><span class="p">),</span>
             <span class="n">_validate_limit</span><span class="p">(</span><span class="n">normalized_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">n_weights</span><span class="p">),</span>
         <span class="p">)</span>
+        <span class="n">lower_requested</span> <span class="o">=</span> <span class="n">normalized_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="mf">0.0</span>
+        <span class="n">upper_requested</span> <span class="o">=</span> <span class="n">normalized_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">or</span> <span class="mf">0.0</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">normalized_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="n">normalized_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">lower_requested</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">upper_requested</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">lower_requested</span> <span class="o">+</span> <span class="n">upper_requested</span> <span class="o">&gt;=</span> <span class="mi">1</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"weight_trimming_percentile limits must satisfy lower + upper &lt; 1 "</span>
+                <span class="sa">f</span><span class="s2">"(got lower=</span><span class="si">{</span><span class="n">lower_requested</span><span class="si">}</span><span class="s2">, upper=</span><span class="si">{</span><span class="n">upper_requested</span><span class="si">}</span><span class="s2">). A single "</span>
+                <span class="s2">"value winsorizes both tails, so it must be below 0.5. Use 0.05 "</span>
+                <span class="s2">"to winsorize 5</span><span class="si">% a</span><span class="s2">t each tail, or (0.0, 0.05) for only the top 5%."</span>
+            <span class="p">)</span>
 
         <span class="n">lower_limit_adjusted</span> <span class="o">=</span> <span class="n">adjusted_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">upper_limit_adjusted</span> <span class="o">=</span> <span class="n">adjusted_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -334,10 +351,28 @@
                 <span class="s2">"Winsorizing weights to </span><span class="si">%s</span><span class="s2"> percentile"</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">weight_trimming_percentile</span><span class="p">)</span>
             <span class="p">)</span>
 
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">lower_bound</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="n">upper_bound</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="n">lower_bound</span> <span class="o">&gt;</span> <span class="n">upper_bound</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"weight_trimming_percentile limits are too wide for these weights: "</span>
+                <span class="sa">f</span><span class="s2">"the lower bound (</span><span class="si">{</span><span class="n">lower_bound</span><span class="si">}</span><span class="s2">) exceeds the upper bound "</span>
+                <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">upper_bound</span><span class="si">}</span><span class="s2">). Use smaller percentile limits."</span>
+            <span class="p">)</span>
+
         <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">lower</span><span class="o">=</span><span class="n">lower_bound</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="n">upper_bound</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">keep_sum_of_weights</span><span class="p">:</span>
-        <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">*</span> <span class="n">original_mean</span>
+        <span class="n">trimmed_mean</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">weights</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">trimmed_mean</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">original_mean</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">"Trimming removed all weight mass; cannot preserve the original sum."</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">/</span> <span class="n">trimmed_mean</span> <span class="o">*</span> <span class="n">original_mean</span>
 
     <span class="k">if</span> <span class="n">target_sum_weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">target_total</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">target_sum_weights</span><span class="p">)</span>
@@ -354,6 +389,34 @@
     <span class="c1"># pyrefly: ignore [bad-return]</span>
     <span class="k">return</span> <span class="n">weights</span></div>
 
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_check_single_trimming_option</span><span class="p">(</span>
+    <span class="n">method_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">weight_trimming_mean_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weight_trimming_percentile</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Fail fast when a weighting method gets both trimming options.</span>
+
+<span class="sd">    ``ipw`` and ``cbps`` default to ``weight_trimming_mean_ratio=20``, so a</span>
+<span class="sd">    caller who only passes ``weight_trimming_percentile`` must also pass</span>
+<span class="sd">    ``weight_trimming_mean_ratio=None``.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If both trimming options are set.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">weight_trimming_mean_ratio</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="ow">and</span> <span class="n">weight_trimming_percentile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">method_name</span><span class="si">}</span><span class="s2">() got both weight_trimming_mean_ratio="</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">weight_trimming_mean_ratio</span><span class="si">}</span><span class="s2"> and weight_trimming_percentile="</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">weight_trimming_percentile</span><span class="si">}</span><span class="s2">, but only one trimming option can be "</span>
+            <span class="s2">"used. weight_trimming_mean_ratio defaults to 20; pass "</span>
+            <span class="s2">"weight_trimming_mean_ratio=None to winsorize with "</span>
+            <span class="s2">"weight_trimming_percentile."</span>
+        <span class="p">)</span>
 
 
 <div class="viewcode-block" id="default_transformations">

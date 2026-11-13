@@ -19,6 +19,91 @@ hide_title: true
 - Keep outcome-model summaries available when AIPW prerequisites are not met, with an explicit unavailable reason.
 - Preserve existing sample weights, weighting models, adjustment history, and the unadjusted baseline when `fit_outcome_model(target=...)` replaces the outcome target. Warn when the new target data differ from the previous target: the preserved weights may still describe the previous population, while subsequent outcome predictions use the new target.
 - Honor explicitly supplied covariate-view weights regardless of their name; default unnamed RangeIndex weights stay positional even when data labels are reordered. Align complete matching unique labelled weights before length validation (ignoring unused labelled weights), and reject incomplete unique label matches rather than silently assigning them by position.
+- Keep flag-only Bento test invocations scoped to the package test directory without broadening explicit Python test selections when flags appear first.
+
+## Bug Fixes
+
+- **IPW stored the wrong fitted model on the cross-validation path.** With
+  `max_de=None` and `num_lambdas > 1`, the built-in logistic-regression path
+  saved the last cross-validation fold's refit (trained on 90% of the rows)
+  instead of the full-data fit. Weights computed with
+  `store_fit_metadata=True` (the `BalanceFrame.fit(method="ipw")` default) and
+  `model["fit"]`, coefficients, and stored probabilities used that fold model,
+  so `fit()` and `adjust()` could return different weights for the same
+  inputs. The stored model is now the full-data fit at the selected lambda.
+
+- **Poststratify no longer collapses numeric covariates that contain missing
+  values.** With `na_action="add_indicator"`, missing values were filled with
+  `"__NaN__"` before `transformations="default"` ran, which turned numeric
+  columns into `object` columns so they were lumped by `fct_lump` (typically
+  into a single cell, i.e. no adjustment) instead of binned by `quantize`.
+  Transformations now run before the missing-value fill (matching rake), so
+  numeric covariates are binned and missing values form their own `"__NaN__"`
+  cell; `predict_weights()` replay uses the same order. As in rake, a rare
+  missing level of a non-numeric covariate is now kept as its own `"__NaN__"`
+  cell instead of being lumped with other rare levels. `na_action="drop"` is
+  unchanged.
+
+- **Poststratify cells now ignore unobserved categorical levels.** Cell totals
+  were computed with pandas' default `groupby(observed=False)`, so pandas
+  `Categorical` covariates produced every level combination. A sample cell
+  missing from the target got a target total of `0` instead of a missing
+  value, so `strict_matching=True` silently gave those rows weight 0 instead of
+  raising, and target-only cells stored an infinite `cell_weight_ratio`.
+  Cells are now built from observed combinations only, matching `object`
+  columns.
+
+- **Rake keeps the sample's own index on the returned weights.** Rake mapped
+  rows to cells with `reset_index()` + `set_index("index")`, so a sample with
+  a named index raised `KeyError: "None of ['index'] are in the columns"`
+  (also through `Sample.adjust(method="rake")` / `fit()`), a covariate named
+  `index` silently became the weights' index, and otherwise the weights'
+  index was renamed to `"index"`. Rows are now mapped to cells positionally;
+  the returned weights keep the sample index, including its name (previously
+  always `"index"`).
+
+- **Rake no longer reports stalled fits as converged.** Raking also stops
+  when the convergence rate stops changing (`rate_tolerance`), and such stops
+  were reported as `converged=1` without a warning even when the weighted
+  margins were far from the target (e.g. target combinations the sample's
+  joint cells cannot reproduce). `converged` is now 1 only if the final
+  convergence rate is at most `convergence_rate`; a stall above it reports
+  `converged=0` and logs a warning with the remaining deviation. The stopping
+  rule itself is unchanged.
+
+- **Rake treats integer and integral-float levels as the same level.** Levels
+  were compared after `astype(str)`, so an integer sample column (`"1"`) and a
+  target column that is float, e.g. because it contains missing values
+  (`"1.0"`), raised `All variable levels in sample must be present in target`
+  with `transformations=None`. Integral floats (including categorical
+  categories) are now labelled without the trailing `.0`, in fitting and in
+  `predict_weights()` replay. Rake models
+  pickled by earlier versions whose fit-time levels were integral floats
+  (labels such as `"1.0"`) must be re-fit before in-place replay.
+
+- **`trim_weights` rejects overlapping percentile limits.** A single
+  `weight_trimming_percentile` value winsorizes *both* tails, so values of 0.5
+  or more (or a pair of nonzero `(lower, upper)` limits summing to 1 or more)
+  made the lower winsorization bound exceed the upper one and returned arbitrarily clipped
+  weights without an error (e.g. `0.95`, intended as "the 95th percentile",
+  collapsed CBPS weights to two values). These limits now raise `ValueError`
+  with guidance (use `0.05` for 5% at each tail or `(0.0, 0.05)` for only the
+  top 5%), as do limits whose computed bounds cross. A one-sided 100% limit
+  remains supported when the other tail is disabled; it does not create overlapping bounds.
+  Preserving an already-zero total leaves zero weights unchanged instead of
+  dividing by zero. A positive original total cannot be preserved after trimming
+  removes all weight mass, and raises an explicit error.
+
+## Documentation
+
+- **`ipw()` / `cbps()` trimming arguments are documented accurately.** Their
+  docstrings said passing `weight_trimming_percentile` switches to
+  winsorization, but with the default `weight_trimming_mean_ratio=20` the call
+  failed after fitting with `Only one of weight_trimming_mean_ratio and
+  weight_trimming_percentile can be set`. The docstrings now state that
+  `weight_trimming_mean_ratio=None` is required (and, for `ipw`, that both are
+  ignored when `max_de` is set), and the conflict is reported before fitting
+  with that fix in the message.
 
 # 0.23.0 (2026-08-04)
 

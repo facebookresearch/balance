@@ -44,7 +44,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">collections.abc</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numbers</span>
@@ -151,12 +150,47 @@
         <span class="n">conv_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">conv</span><span class="p">)</span>
         <span class="n">iteration</span> <span class="o">+=</span> <span class="mi">1</span>
 
-    <span class="n">converged</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">iteration</span> <span class="o">&lt;=</span> <span class="n">max_iteration</span><span class="p">)</span>
+    <span class="n">converged</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">conv</span> <span class="o">&lt;=</span> <span class="n">convergence_rate</span><span class="p">)</span>
     <span class="n">iterations_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
         <span class="p">{</span><span class="s2">"iteration"</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">conv_history</span><span class="p">)),</span> <span class="s2">"conv"</span><span class="p">:</span> <span class="n">conv_history</span><span class="p">}</span>
     <span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">"iteration"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">table</span><span class="p">,</span> <span class="n">converged</span><span class="p">,</span> <span class="n">iterations_df</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_rake_level_label</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return the string label rake uses for one covariate level."""</span>
+    <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_scalar</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">and</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">"__NaN__"</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">))</span> <span class="ow">and</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">is_integer</span><span class="p">():</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_rake_level_labels</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Stringify rake covariate levels so equal numbers share one label.</span>
+
+<span class="sd">    Integral floats are written without a trailing ``.0`` so that, for</span>
+<span class="sd">    example, an integer sample column and a target column that became float</span>
+<span class="sd">    because it holds missing values both label the level ``1`` as ``"1"``.</span>
+<span class="sd">    Missing scalars (``NaN``, ``None``, ``pd.NA``) all get the ``"__NaN__"``</span>
+<span class="sd">    label used by ``na_action="add_indicator"``, and pandas extension dtypes</span>
+<span class="sd">    (nullable integers/floats/booleans, categoricals, strings) are labelled</span>
+<span class="sd">    value by value like their NumPy counterparts.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; _rake_level_labels(pd.Series([1.0, 2.5, "__NaN__"])).tolist()</span>
+<span class="sd">        ['1', '2.5', '__NaN__']</span>
+<span class="sd">        &gt;&gt;&gt; _rake_level_labels(pd.Series([1, pd.NA], dtype="Int64")).tolist()</span>
+<span class="sd">        ['1', '__NaN__']</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_float_dtype</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="n">series</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="nb">object</span>
+        <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">extensions</span><span class="o">.</span><span class="n">ExtensionDtype</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="k">return</span> <span class="n">series</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">_rake_level_label</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">series</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
 
 
 <span class="c1"># Inner category-label keys below are typed ``Any`` rather than ``Hashable``:</span>
@@ -426,9 +460,11 @@
 <span class="sd">    convergence_rate --- (float) convergence criteria; the maximum difference in proportions between</span>
 <span class="sd">                          sample and target marginal distribution on any covariate in order</span>
 <span class="sd">                          for algorithm to converge.</span>
-<span class="sd">    rate_tolerance --- (float) convergence criteria; if convergence rate does not move more</span>
-<span class="sd">                               than this amount than the algorithm is also considered to</span>
-<span class="sd">                               have converged.</span>
+<span class="sd">    rate_tolerance --- (float) stopping criterion; if the convergence rate does not move more</span>
+<span class="sd">                               than this amount, the algorithm stops. It is reported as</span>
+<span class="sd">                               converged only if the final convergence rate is at most</span>
+<span class="sd">                               ``convergence_rate``; otherwise ``converged`` is 0 and a</span>
+<span class="sd">                               warning is logged.</span>
 <span class="sd">    weight_trimming_mean_ratio --- (float, int, optional) upper bound for weights expressed as a</span>
 <span class="sd">                                   multiple of the mean weight. Delegated to</span>
 <span class="sd">                                   :func:`balance.adjustment.trim_weights`.</span>
@@ -643,8 +679,8 @@
     <span class="c1"># series of type Object, which won't work for the ipfn script</span>
     <span class="n">categories</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">alphabetized_variables</span><span class="p">:</span>
-        <span class="n">target_df</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_df</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
-        <span class="n">sample_df</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_df</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+        <span class="n">target_df</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">=</span> <span class="n">_rake_level_labels</span><span class="p">(</span><span class="n">target_df</span><span class="p">[</span><span class="n">variable</span><span class="p">])</span>
+        <span class="n">sample_df</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">=</span> <span class="n">_rake_level_labels</span><span class="p">(</span><span class="n">sample_df</span><span class="p">[</span><span class="n">variable</span><span class="p">])</span>
 
         <span class="n">sample_var_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">sample_df</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
         <span class="n">target_var_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">target_df</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
@@ -715,37 +751,32 @@
         <span class="sa">f</span><span class="s2">"and iteration meta data: </span><span class="si">{</span><span class="n">iterations</span><span class="si">}</span><span class="s2">."</span>
     <span class="p">)</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">converged</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">converged</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">iterations</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_iteration</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Maximum iterations reached, convergence was not achieved"</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">converged</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">"Raking stopped because the convergence rate stopped changing "</span>
+            <span class="sa">f</span><span class="s2">"(rate_tolerance=</span><span class="si">{</span><span class="n">rate_tolerance</span><span class="si">}</span><span class="s2">), but the largest relative "</span>
+            <span class="sa">f</span><span class="s2">"marginal deviation is still </span><span class="si">{</span><span class="n">iterations</span><span class="p">[</span><span class="s1">'conv'</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.4g</span><span class="si">}</span><span class="s2"> &gt; "</span>
+            <span class="sa">f</span><span class="s2">"convergence_rate=</span><span class="si">{</span><span class="n">convergence_rate</span><span class="si">}</span><span class="s2">; convergence was not "</span>
+            <span class="s2">"achieved. The weighted sample may not match the target margins "</span>
+            <span class="s2">"(e.g. the margins are not attainable given the sample's joint cells)."</span>
+        <span class="p">)</span>
 
-    <span class="n">combos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="n">categories</span><span class="p">))</span>
-    <span class="n">fit</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">combos</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">alphabetized_variables</span><span class="p">)</span>
-    <span class="n">fit</span><span class="p">[</span><span class="s2">"rake_weight"</span><span class="p">]</span> <span class="o">=</span> <span class="n">m_fit</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-
-    <span class="n">raked</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
-        <span class="n">sample_df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(),</span>
-        <span class="n">fit</span><span class="p">,</span>
-        <span class="n">how</span><span class="o">=</span><span class="s2">"left"</span><span class="p">,</span>
-        <span class="n">on</span><span class="o">=</span><span class="n">alphabetized_variables</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="n">raked_rescaled</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
-        <span class="n">raked</span><span class="p">,</span>
-        <span class="n">grouped_sample_series</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
-            <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">"weight"</span><span class="p">:</span> <span class="s2">"total_survey_weight"</span><span class="p">}</span>
-        <span class="p">),</span>
-        <span class="n">how</span><span class="o">=</span><span class="s2">"left"</span><span class="p">,</span>
-        <span class="n">on</span><span class="o">=</span><span class="n">alphabetized_variables</span><span class="p">,</span>
-    <span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">"index"</span><span class="p">)</span>
-
-    <span class="n">raked_rescaled</span><span class="p">[</span><span class="s2">"rake_weight"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">raked_rescaled</span><span class="p">[</span><span class="s2">"rake_weight"</span><span class="p">]</span>
-        <span class="o">*</span> <span class="n">raked_rescaled</span><span class="p">[</span><span class="s2">"weight"</span><span class="p">]</span>
-        <span class="o">/</span> <span class="n">raked_rescaled</span><span class="p">[</span><span class="s2">"total_survey_weight"</span><span class="p">]</span>
+    <span class="c1"># Look up each sample row's cell without merging, so the sample index is kept.</span>
+    <span class="n">sample_cells</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">sample_df</span><span class="p">[</span><span class="n">alphabetized_variables</span><span class="p">])</span>
+    <span class="n">cell_fit</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">m_fit</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">sample_cells</span><span class="p">)</span>
+    <span class="n">cell_sample_total</span> <span class="o">=</span> <span class="n">grouped_sample_full</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">sample_cells</span><span class="p">)</span>
+    <span class="n">raked_weight</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+        <span class="n">cell_fit</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+        <span class="o">*</span> <span class="n">sample_df</span><span class="p">[</span><span class="s2">"weight"</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+        <span class="o">/</span> <span class="n">cell_sample_total</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+        <span class="n">index</span><span class="o">=</span><span class="n">sample_df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">"rake_weight"</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">w</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">trim_weights</span><span class="p">(</span>
-        <span class="n">raked_rescaled</span><span class="p">[</span><span class="s2">"rake_weight"</span><span class="p">],</span>
+        <span class="n">raked_weight</span><span class="p">,</span>
         <span class="n">target_sum_weights</span><span class="o">=</span><span class="n">target_sum_weights</span><span class="p">,</span>
         <span class="n">weight_trimming_mean_ratio</span><span class="o">=</span><span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
         <span class="n">weight_trimming_percentile</span><span class="o">=</span><span class="n">weight_trimming_percentile</span><span class="p">,</span>
@@ -955,7 +986,9 @@
             <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">,</span> <span class="s2">"target"</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span>
-            <span class="n">sample_clean</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span>
+            <span class="n">balance_util</span><span class="o">.</span><span class="n">_assert_type</span><span class="p">(</span>
+                <span class="n">sample_clean</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">_rake_level_labels</span><span class="p">),</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+            <span class="p">),</span>
             <span class="n">sample_weights_clean</span><span class="p">,</span>
             <span class="n">target_clean</span><span class="p">,</span>
             <span class="n">dropped_target_weights</span><span class="p">,</span>
@@ -963,7 +996,14 @@
     <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">"add_indicator"</span><span class="p">:</span>
         <span class="n">sample_clean</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">_safe_fillna_and_infer</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="s2">"__NaN__"</span><span class="p">))</span>
         <span class="n">target_clean</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">_safe_fillna_and_infer</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="s2">"__NaN__"</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">sample_clean</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="n">target_clean</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">balance_util</span><span class="o">.</span><span class="n">_assert_type</span><span class="p">(</span>
+                <span class="n">sample_clean</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">_rake_level_labels</span><span class="p">),</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+            <span class="p">),</span>
+            <span class="n">sample_weights</span><span class="p">,</span>
+            <span class="n">target_clean</span><span class="p">,</span>
+            <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
         <span class="sa">f</span><span class="s2">"Rake model has invalid na_action metadata '</span><span class="si">{</span><span class="n">na_action</span><span class="si">}</span><span class="s2">' for predict_weights()."</span>
     <span class="p">)</span>
