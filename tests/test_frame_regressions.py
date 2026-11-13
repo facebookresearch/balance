@@ -9,6 +9,7 @@ import unittest
 
 import pandas as pd
 from balance import Sample
+from balance.balancedf_class import BalanceDFCovars
 from balance.util import _assert_type
 from sklearn.linear_model import LinearRegression
 
@@ -172,3 +173,28 @@ class OutcomeOnlySummaryTest(unittest.TestCase):
         self.assertIn("g-computation", summary)
         self.assertIn("unavailable", summary)
         self.assertIn("same population scale", summary)
+
+
+class CovariateFactoryWeightsTest(unittest.TestCase):
+    def test_matching_nondefault_indices_are_aligned_before_reset(self) -> None:
+        covars = BalanceDFCovars.from_frame(
+            pd.DataFrame({"x": [0.0, 10.0]}, index=pd.Index([8, 9])),
+            weights=pd.Series([1.0, 9.0], index=[8, 9], name="survey_weight"),
+        )
+
+        self.assertEqual(covars.mean(on_linked_samples=False)["x"].iloc[0], 9.0)
+        self.assertEqual(len(covars.df), 2)
+
+    def test_shuffled_matching_labels_retain_pandas_alignment(self) -> None:
+        covars = BalanceDFCovars.from_frame(
+            pd.DataFrame({"x": [0.0, 10.0]}),
+            weights=pd.Series([9.0, 1.0], index=[1, 0], name="survey_weight"),
+        )
+
+        self.assertEqual(covars.mean(on_linked_samples=False)["x"].iloc[0], 9.0)
+
+    def test_weight_length_mismatch_is_explicit(self) -> None:
+        with self.assertRaisesRegex(ValueError, "weights.*length"):
+            BalanceDFCovars.from_frame(
+                pd.DataFrame({"x": [0.0, 10.0]}), weights=pd.Series([1.0])
+            )

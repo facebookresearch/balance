@@ -3358,7 +3358,14 @@ class BalanceDFCovars(BalanceDF):
         Args:
             cls (type[BalanceDFCovars]): Class object.
             df (pd.DataFrame): A df.
-            weights (Optional[pd.Series], optional): _description_. Defaults to None.
+            weights (pd.Series | None, optional): Explicit sample weights,
+                independent of the Series name. A default unnamed ``RangeIndex``
+                is positional and must have one value per row. Otherwise, when
+                both indexes are unique, every data row must have a matching
+                weight label; weights are aligned and extra labels are ignored.
+                If either index is non-unique, equal-length weights are assigned
+                by row position. To explicitly use positional weights, pass
+                ``pd.Series(weights.to_numpy())``. Defaults to None.
             formula (str | list[str] | None, optional): Optional formula to set on
                 the returned ``BalanceDFCovars`` object.
 
@@ -3378,15 +3385,46 @@ class BalanceDFCovars(BalanceDF):
             Sample,
         )
 
+        weight_index = None if weights is None else weights.index
+        positional_weights = (
+            isinstance(weight_index, pd.RangeIndex)
+            and weight_index.name is None
+            and weight_index.start == 0
+            and weight_index.step == 1
+        )
+        if (
+            weights is not None
+            and not positional_weights
+            and df.index.is_unique
+            and weights.index.is_unique
+        ):
+            if df.index.isin(weights.index).all():
+                weights = weights.reindex(df.index)
+            elif len(weights) == len(df):
+                raise ValueError(
+                    "weights index must cover every DataFrame row. "
+                    "For positional weights, use pd.Series(weights.to_numpy())."
+                )
+        if weights is not None and len(weights) != len(df):
+            raise ValueError(
+                f"weights length ({len(weights)}) must match DataFrame length ({len(df)})."
+            )
+
         df = df.reset_index()
-        concat_list: list[pd.DataFrame | pd.Series] = [
-            df,
-            pd.Series(np.arange(0, df.shape[0]), name="id"),
-        ]
+        id_column = "id"
+        while id_column in df.columns:
+            id_column = "_" + id_column
+        df[id_column] = np.arange(len(df))
+
+        weight_column: str | None = None
         if weights is not None:
-            concat_list.append(weights)
-        df = pd.concat(concat_list, axis=1)
-        return Sample.from_frame(df, id_column="id").covars(formula=formula)
+            weight_column = "weight"
+            while weight_column in df.columns:
+                weight_column = "_" + weight_column
+            df[weight_column] = weights.to_numpy()
+        return Sample.from_frame(
+            df, id_column=id_column, weight_column=weight_column
+        ).covars(formula=formula)
 
     # Single source of truth for the supported love-plot metrics: the
     # ``Literal`` type drives the static (Pyre) check, and the runtime
