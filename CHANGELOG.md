@@ -111,6 +111,7 @@
 
 ## Statistics and utility fixes
 
+- Reject missing CLI batch keys before grouping instead of silently discarding those observations.
 - Accept upstream replicate-weight column lists, stratum-assignment lists and combined-weight boolean settings in the diff-diff adapter.
 - Preserve pandas CSV destination semantics, including append/exclusive modes, encoding and filename-based compression.
 - Forward the resolved histogram default for single numeric seaborn plots instead of the original None selector.

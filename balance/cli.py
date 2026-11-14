@@ -1384,7 +1384,18 @@ class BalanceCLI:
         if self.has_batch_columns():
             results = []
             diagnostics = []
-            for batch_name, batch_df in input_df.groupby(self.batch_columns()):
+            batch_columns = self.batch_columns()
+            missing_batch_columns = (
+                input_df[batch_columns]
+                .columns[input_df[batch_columns].isna().any()]
+                .tolist()
+            )
+            if missing_batch_columns:
+                raise ValueError(
+                    f"batch columns contain missing values: {missing_batch_columns}. "
+                    "Fill batch keys before weighting."
+                )
+            for batch_name, batch_df in input_df.groupby(batch_columns):
                 logger.info("Running weighting for batch = %s " % str(batch_name))
                 processed = self.process_batch(
                     batch_df,
