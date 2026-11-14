@@ -111,6 +111,7 @@
 
 ## Statistics and utility fixes
 
+- Retain batch identifiers on every CLI diagnostics row, prefixing conflicting diagnostic-field names with `batch_`; reject mismatched batch-key arity rather than silently truncating provenance.
 - Reject missing CLI batch keys before grouping instead of silently discarding those observations.
 - Accept upstream replicate-weight column lists, stratum-assignment lists and combined-weight boolean settings in the diff-diff adapter.
 - Preserve pandas CSV destination semantics, including append/exclusive modes, encoding and filename-based compression.

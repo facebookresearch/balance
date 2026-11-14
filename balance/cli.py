@@ -1412,7 +1412,24 @@ class BalanceCLI:
                     sample_package_name,
                 )
                 results.append(processed["adjusted"])
-                diagnostics.append(processed["diagnostics"])
+                batch_diagnostics = processed["diagnostics"].copy()
+                batch_values = (
+                    batch_name if isinstance(batch_name, tuple) else (batch_name,)
+                )
+                if len(batch_values) != len(batch_columns):
+                    raise ValueError(
+                        "Batch key arity mismatch: "
+                        f"expected {len(batch_columns)} values, got {len(batch_values)}. "
+                        "Cannot attach complete batch provenance."
+                    )
+                for column, value in zip(batch_columns, batch_values):
+                    diagnostic_column = column
+                    while diagnostic_column in batch_diagnostics.columns:
+                        diagnostic_column = f"batch_{diagnostic_column}"
+                    batch_diagnostics[diagnostic_column] = [value] * len(
+                        batch_diagnostics
+                    )
+                diagnostics.append(batch_diagnostics)
                 logger.info("Done processing batch %s" % str(batch_name))
 
             if (len(results) == 0) and len(diagnostics) == 0:
