@@ -764,7 +764,9 @@ def relative_frequency_table(
     if not (w is None or isinstance(w, pd.Series)):
         raise TypeError("argument `w` must be a pandas Series or None")
     if w is None:
-        w = pd.Series(np.ones(df.shape[0]))
+        if not isinstance(df, (pd.DataFrame, pd.Series)):
+            raise TypeError("argument `df` must be a pandas DataFrame or Series")
+        w = pd.Series(np.ones(df.shape[0]), index=df.index)
 
     w = w.rename("Freq")
 

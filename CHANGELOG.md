@@ -109,6 +109,7 @@
 
 ## Statistics and utility fixes
 
+- Align implicit unit weights with filtered indices in relative-frequency tables.
 - Exclude zero and missing weights from weighted-quantile interpolation so noncontributing rows cannot change QQ diagnostics.
 - **Missing observations are omitted from weighted statistics.** Weighted
   means, sample variances, variances of weighted means, standard deviations and
