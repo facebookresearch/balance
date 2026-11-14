@@ -110,6 +110,7 @@
 
 ## Statistics and utility fixes
 
+- Drop formula-generated missing rows with diagnostic warnings naming affected factors/columns, original sample/target row positions and labels, and bounded input/evaluated-value examples. Use common retained rows across formulas and align fit/replay weights and outcomes to those positions.
 - Expand only standalone formula dots, preserving decimal constants, attribute access and quoted labels; reject a standalone dot with no variables using an actionable error.
 - Align implicit unit weights with filtered indices in relative-frequency tables.
 - Exclude zero and missing weights from weighted-quantile interpolation so noncontributing rows cannot change QQ diagnostics.

@@ -362,6 +362,9 @@ def _build_fit_matrix(
         "fit_scaler": dm["fit_scaler"],
         "resolved_formula": dm["resolved_formula"],
         "categorical_levels": categorical_levels,
+        "sample_rows": np.asarray(
+            dm.get("sample_rows", np.arange(len(covars_df))), dtype=int
+        ),
     }
 
 
@@ -703,6 +706,7 @@ def fit_outcome_model(
     stored_matrix_type: str | None = None
     resolved_use_model_matrix: bool | None = None
     fit_matrix: Any = None
+    fit_rows: np.ndarray | None = None
 
     for outcome_col in outcome_columns:
         y_series = outcomes_df[outcome_col]
@@ -732,6 +736,13 @@ def fit_outcome_model(
             stored_formula = built["resolved_formula"]
             stored_categorical_levels = built["categorical_levels"]
             fit_matrix = built["fit_matrix"]
+            fit_rows = _assert_type(built["sample_rows"], np.ndarray)
+            if len(fit_rows) == 0:
+                raise ValueError(
+                    "Formula row dropping left no rows for outcome-model fitting."
+                )
+            if sample_weight_arr is not None:
+                sample_weight_arr = sample_weight_arr[fit_rows]
             stored_matrix_type = _fit_matrix_type(fit_matrix)
             # The native-categorical path (use_model_matrix=False) feeds raw
             # categorical dtypes to the estimator, which needs scikit-learn >= 1.4
@@ -753,6 +764,7 @@ def fit_outcome_model(
                     "scikit-learn."
                 )
 
+        y_series = outcomes_df[outcome_col].iloc[_assert_type(fit_rows)]
         fitted_estimator, pred_kind, col_perf = _fit_and_evaluate_outcome_column(
             estimator,
             fit_matrix,
@@ -823,7 +835,7 @@ def _predict_proba_class1(estimator: Any, matrix: Any) -> np.ndarray:
 def _build_replay_matrix(
     model: Dict[str, Any],
     new_covars_df: pd.DataFrame,
-) -> Any:
+) -> tuple[Any, np.ndarray]:
     """Build the REPLAY-mode design matrix on new covariates from a model dict.
 
     Restores stored ``categorical_levels`` on the raw path (so category codes
@@ -848,7 +860,8 @@ def _build_replay_matrix(
         matrix_type=model.get("fit_matrix_type"),
     )
     sample_n = dm["sample_n"]
-    return dm["combined_matrix"][:sample_n]
+    rows = np.asarray(dm.get("sample_rows", np.arange(len(new_covars_df))), dtype=int)
+    return dm["combined_matrix"][:sample_n], rows
 
 
 def predict_outcome(
@@ -869,7 +882,9 @@ def predict_outcome(
 
     Returns:
         Dict[str, np.ndarray]: ``{outcome_column: ŷ}`` with one prediction array
-        per fitted outcome, aligned row-wise with ``new_covars_df``.
+        per fitted outcome, aligned row-wise with ``new_covars_df``. Formula-
+        omitted rows receive NaN predictions at their original positions;
+        estimators consume only the retained feature rows.
 
     Examples:
     .. code-block:: python
@@ -903,11 +918,14 @@ def predict_outcome(
             f"method={model.get('method')!r} and keys "
             f"{sorted(map(str, model.keys()))}."
         )
-    matrix = _build_replay_matrix(model, new_covars_df)
+    matrix, rows = _build_replay_matrix(model, new_covars_df)
     fit: Dict[str, Any] = model["fit"]
     prediction_kind: Dict[str, str] = model.get("prediction_kind", {})
     out: Dict[str, np.ndarray] = {}
     for outcome_col, estimator in fit.items():
+        out[outcome_col] = np.full(len(new_covars_df), np.nan, dtype=float)
+        if len(rows) == 0:
+            continue
         estimator_matrix = matrix
         if _needs_dense(estimator) and issparse(estimator_matrix):
             estimator_matrix = _convert_to_dense_array(estimator_matrix)
@@ -915,9 +933,9 @@ def predict_outcome(
             outcome_col, "proba" if is_classifier(estimator) else "regression"
         )
         if kind == "proba":
-            out[outcome_col] = _predict_proba_class1(estimator, estimator_matrix)
+            out[outcome_col][rows] = _predict_proba_class1(estimator, estimator_matrix)
         else:
-            out[outcome_col] = np.asarray(
+            out[outcome_col][rows] = np.asarray(
                 estimator.predict(estimator_matrix), dtype=float
             )
     return out

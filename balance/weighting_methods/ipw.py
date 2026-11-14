@@ -155,6 +155,17 @@ def _compute_proportion_deviance(dev: float, null_dev: float) -> float:
     return 1 - dev / null_dev
 
 
+def _restore_dropped_rows(
+    values: np.ndarray | pd.Series,
+    rows: np.ndarray,
+    index: pd.Index,
+) -> pd.Series:
+    """Scatter retained outputs to their original caller positions."""
+    restored = np.full(len(index), np.nan, dtype=float)
+    restored[rows] = np.asarray(values, dtype=float)
+    return pd.Series(restored, index=index, name=getattr(values, "name", None))
+
+
 def _copy_fit_matrix_slice(
     X_matrix: Union[pd.DataFrame, np.ndarray, csc_matrix, csr_matrix],
     start: int,
@@ -690,7 +701,10 @@ def ipw(
         Dict[str, Any]: A dictionary with keys:
 
             ``"weight"``
-                The adjusted weights for the sample (pd.Series).
+                The adjusted weights for the sample (pd.Series). When formula
+                evaluation omits rows, the result uses the caller's original
+                row positions, with NaN weights for omitted rows. Raw-only
+                ``na_action="drop"`` keeps its historical compact return.
 
             ``"model"``
                 A dict with model parameters. Always-present keys:
@@ -751,6 +765,13 @@ def ipw(
 
     sample_df = sample_df.loc[:, variables]
     target_df = target_df.loc[:, variables]
+    sample_input_index = sample_df.index.copy()
+    target_input_index = target_df.index.copy()
+    sample_rows = np.arange(len(sample_df))
+    target_rows = np.arange(len(target_df))
+    if na_action == "drop":
+        sample_rows = np.flatnonzero(sample_df.notna().all(axis=1))
+        target_rows = np.flatnonzero(target_df.notna().all(axis=1))
 
     sample_df, sample_weights, target_df, target_weights = (
         balance_util._apply_na_action_to_frame_pair(
@@ -813,6 +834,42 @@ def ipw(
     X_matrix_columns_names: List[str] = dm_result["columns"]
     penalty_factor_expanded: List[float] = dm_result["penalty_factor_expanded"]
     resolved_formula = dm_result["resolved_formula"]
+    matrix_sample_rows = np.asarray(
+        dm_result.get("sample_rows", np.arange(len(sample_df))), dtype=int
+    )
+    matrix_target_rows = np.asarray(
+        dm_result.get("target_rows", np.arange(len(target_df))), dtype=int
+    )
+    matrix_rows_dropped = len(matrix_sample_rows) != len(sample_df) or len(
+        matrix_target_rows
+    ) != len(target_df)
+    sample_df = sample_df.iloc[matrix_sample_rows]
+    target_df = target_df.iloc[matrix_target_rows]
+    sample_weights = sample_weights.iloc[matrix_sample_rows]
+    target_weights = target_weights.iloc[matrix_target_rows]
+    sample_rows = sample_rows[matrix_sample_rows]
+    target_rows = target_rows[matrix_target_rows]
+    sample_n = len(sample_rows)
+    target_n = len(target_rows)
+    if matrix_rows_dropped and (sample_n == 0 or target_n == 0):
+        raise ValueError(
+            "Formula row dropping left an empty sample or target; "
+            "IPW fitting requires retained rows in both populations."
+        )
+
+    if (
+        len(sample_rows) != len(sample_input_index)
+        or len(target_rows) != len(target_input_index)
+    ) and (
+        not np.isfinite(sample_weights.sum())
+        or sample_weights.sum() <= 0
+        or not np.isfinite(target_weights.sum())
+        or target_weights.sum() <= 0
+    ):
+        raise ValueError(
+            "Row dropping left non-positive or non-finite sample or target weight mass; "
+            "IPW fitting requires positive finite retained weight sums."
+        )
 
     if use_model_matrix:
         logger.info("Building model matrix")
@@ -1157,6 +1214,12 @@ def ipw(
         ),
     }
 
+    if store_fit_metadata or store_fit_matrices:
+        model_out["sample_rows"] = sample_rows.copy()
+        model_out["target_rows"] = target_rows.copy()
+        model_out["sample_input_index"] = sample_input_index
+        model_out["target_input_index"] = target_input_index
+
     if store_fit_metadata:
         model_out.update(
             {
@@ -1168,6 +1231,11 @@ def ipw(
                 "target_index": target_df.index.copy(),
                 "training_sample_weights": sample_weights.copy(),
                 "training_target_weights": target_weights.copy(),
+                "training_sample_link": sample_link,
+                "training_sample_rows": sample_rows.copy(),
+                "training_target_rows": target_rows.copy(),
+                "training_sample_input_index": sample_input_index,
+                "training_target_input_index": target_input_index,
             }
         )
 
@@ -1186,7 +1254,11 @@ def ipw(
         )
 
     out = {
-        "weight": weights,
+        "weight": (
+            _restore_dropped_rows(weights, sample_rows, sample_input_index)
+            if matrix_rows_dropped
+            else weights
+        ),
         "model": model_out,
     }
 

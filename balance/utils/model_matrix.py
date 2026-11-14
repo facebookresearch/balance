@@ -33,6 +33,7 @@ from pandas.api.types import (
 )
 from patsy.contrasts import ContrastMatrix
 from patsy.highlevel import dmatrix, ModelDesc
+from patsy.missing import NAAction
 from scipy.sparse import csc_matrix, diags, hstack, spmatrix
 from sklearn.preprocessing import StandardScaler
 
@@ -304,13 +305,86 @@ def _stringify_categorical_values(series: pd.Series) -> pd.Series:
     )
 
 
+class _RecordFormulaDrops(NAAction):
+    """Record positional omission masks and factor diagnostics before patsy drops."""
+
+    def __init__(self) -> None:
+        super().__init__(on_NA="drop")
+        self.missing_rows: np.ndarray | None = None
+        self.missing_factors: list[dict[str, Any]] = []
+
+    def handle_NA(
+        self, values: list[np.ndarray], is_NAs: list[np.ndarray], origins: list[Any]
+    ) -> list[np.ndarray]:
+        if is_NAs:
+            self.missing_rows = np.logical_or.reduce(is_NAs)
+        self.missing_factors = [
+            {
+                "factor": (
+                    origin.relevant_code()[:200] if origin is not None else "unknown"
+                ),
+                "count": int(mask.sum()),
+                "positions": np.flatnonzero(mask)[:5].tolist(),
+                "evaluated_values": [
+                    repr(value[i])[:100] for i in np.flatnonzero(mask)[:5]
+                ],
+            }
+            for value, mask, origin in zip(values, is_NAs, origins)
+            if mask.any()
+        ]
+        return super().handle_NA(values, is_NAs, origins)
+
+
+def _warn_formula_drops(
+    df: pd.DataFrame, formula: str, columns: list[str], action: _RecordFormulaDrops
+) -> None:
+    """Log counts and bounded row/column/input diagnostics for formula omissions."""
+    missing_rows = _assert_type(action.missing_rows)
+    positions = np.flatnonzero(missing_rows)
+    examples = [
+        {
+            "position": int(position),
+            "index": repr(df.index[position])[:100],
+            "input_values": {
+                str(column)[:80]: repr(value)[:100]
+                for column, value in df.iloc[position, :8].items()
+            },
+        }
+        for position in positions[:5]
+    ]
+    logger.warning(
+        "Formula %r dropped %d of %d rows due to missing values. "
+        "Missing factors (%d; first 8): %s. Matrix columns (%d; first 20): %s. "
+        "Dropped row examples (first 5; positions are zero-based; first 8 input columns): %s.",
+        formula[:500],
+        len(positions),
+        len(df),
+        len(action.missing_factors),
+        action.missing_factors[:8],
+        len(columns),
+        [column[:100] for column in columns[:20]],
+        examples,
+    )
+
+
 def build_model_matrix(
     df: pd.DataFrame,
     formula: str = ".",
     factor_variables: List[str] | None = None,
     return_sparse: bool = False,
 ) -> Dict[str, Any]:
-    """Build a model matrix from a formula (using patsy.dmatrix)
+    """Build a model matrix from a formula (using patsy.dmatrix).
+
+    Formula-generated missing values drop rows, with a logged warning identifying
+    missing factors, matrix columns, original row labels and positions, and
+    bounded input/evaluated-value examples. ``row_positions`` identifies retained
+    rows positionally, including duplicate labels. Callers combining formula
+    blocks must use their common retained rows and filter weights/outcomes using
+    the same positions. No caller input is changed.
+
+    For example, ``build_model_matrix(pd.DataFrame({"x": [-1., 4.]}),
+    formula="I(x ** (1/2))")`` warns about row 0 and returns value 2 with
+    ``row_positions=[1]``.
 
     Args:
         df (pd.DataFrame): The data from which to create the model matrix (pandas dataframe)
@@ -331,9 +405,11 @@ def build_model_matrix(
         Exception: "Not all factor variables are contained in df"
 
     Returns:
-        Dict[str, Any]:     A dictionary of 2 elements:
+        Dict[str, Any]: A dictionary containing the encoded matrix and row metadata:
             1. model_matrix - this is a pd dataframe or a csc_matrix (depends on return_sparse), ordered by columns names
             2. model_matrix_columns - A list of the columns names of model_matrix
+            3. row_positions - Retained positions in the input DataFrame, used
+               to align other formula blocks and corresponding weights/outcomes.
             (We include model_matrix_columns as a separate argument since if we return a sparse X_matrix,
             it doesn't have a columns names argument and these need to be kept separately,
             see here:
@@ -370,15 +446,29 @@ def build_model_matrix(
     if coerced_columns:
         df = df.assign(**coerced_columns)
 
-    X_matrix = dmatrix(model_desc, data=df, return_type="dataframe")
+    na_action = _RecordFormulaDrops()
+    X_matrix = dmatrix(
+        model_desc, data=df, return_type="dataframe", NA_action=na_action
+    )
     # Sorting the output in order to eliminate edge cases that cause column order to be stochastic
     X_matrix = X_matrix.sort_index(axis=1)
     logger.debug(f"X_matrix shape: {X_matrix.shape}")
     X_matrix_columns = list(X_matrix.columns)
+    row_positions = (
+        np.arange(len(df))
+        if na_action.missing_rows is None
+        else np.flatnonzero(~na_action.missing_rows)
+    )
+    if len(row_positions) != len(df):
+        _warn_formula_drops(df, formula, X_matrix_columns, na_action)
     if return_sparse:
         X_matrix = csc_matrix(X_matrix)
 
-    return {"model_matrix": X_matrix, "model_matrix_columns": X_matrix_columns}
+    return {
+        "model_matrix": X_matrix,
+        "model_matrix_columns": X_matrix_columns,
+        "row_positions": row_positions,
+    }
 
 
 def _concat_frames(
@@ -444,9 +534,10 @@ def _prepare_input_model_matrix(
             sample has zero rows.
 
     Returns:
-        Dict[str, Any]: returns a dictionary containing two keys: 'all_data' and 'sample_n'.
-            The 'all_data' is a pd.DataFrame with all the rows of 'sample' (including 'target', if supplied)
-            The'sample_n' is the number of rows in the first input DataFrame ('sample').
+        Dict[str, Any]: Prepared data and positional maps. 'all_data' contains the
+            retained sample rows followed by target rows; 'sample_n' gives the
+            retained sample count. 'sample_rows' and 'target_rows' identify those
+            rows in their original caller frames, including raw-NA omissions.
     """
     variables = choose_variables(sample, target, variables=variables)
 
@@ -474,6 +565,8 @@ def _prepare_input_model_matrix(
     else:
         target_df = target.loc[:, variables]
 
+    sample_rows = np.arange(len(sample_df))
+    target_rows = np.arange(0 if target_df is None else len(target_df))
     if add_na:
         # Build a combined frame so NA indicators reflect sample/target union
         # (target-only missingness should still add NA indicator columns).
@@ -499,6 +592,7 @@ def _prepare_input_model_matrix(
             elif is_object_dtype(column_series) or is_string_dtype(column_series):
                 category_levels[column] = list(column_series.dropna().unique())
 
+        sample_rows = sample_rows[sample_df.notna().all(axis=1).to_numpy()]
         sample_df = sample_df.dropna()
         if sample_df.empty:
             raise ValueError(
@@ -507,6 +601,7 @@ def _prepare_input_model_matrix(
             )
         sample_n = sample_df.shape[0]
         if target_df is not None:
+            target_rows = target_rows[target_df.notna().all(axis=1).to_numpy()]
             target_df = target_df.dropna()
             if target_df.empty:
                 raise ValueError(
@@ -531,7 +626,13 @@ def _prepare_input_model_matrix(
         ).infer_objects()
         all_data = _make_df_column_names_unique(all_data)
 
-    return {"all_data": all_data, "sample_n": sample_n}
+    result = {
+        "all_data": all_data,
+        "sample_n": sample_n,
+        "sample_rows": sample_rows,
+        "target_rows": target_rows,
+    }
+    return result
 
 
 def model_matrix(
@@ -548,6 +649,14 @@ def model_matrix(
     """Create a model matrix from a sample (and target).
     The default is to use an additive formula for all variables (or the ones specified).
     Can also create a custom model matrix if a formula is provided.
+
+    Formula-generated missing rows are dropped with diagnostic warnings. Multiple
+    formula blocks use their common retained rows before the sample/target split.
+    ``sample_rows`` and ``target_rows`` give retained positions in the original
+    caller frames, including prior raw-NA omissions. Separate weights/outcomes
+    must use those same positions. Warnings include original labels and caller
+    positions, missing factors/columns, and bounded input/evaluated examples.
+
     """
     logger.debug("Starting building the model matrix")
     input_data = _prepare_input_model_matrix(sample, target, variables, add_na)
@@ -584,6 +693,8 @@ def model_matrix(
     X_matrix = []
     X_matrix_columns = []
     pf = []
+    block_rows: list[np.ndarray] = []
+    common_rows = np.arange(len(all_data))
     for idx, formula_item in enumerate(formula):
         logger.debug(f"Building model matrix for formula item {formula_item}")
 
@@ -597,6 +708,9 @@ def model_matrix(
             X_matrix_columns + model_matrix_result["model_matrix_columns"]
         )
         X_matrix.append(model_matrix_result["model_matrix"])
+        rows = _assert_type(model_matrix_result["row_positions"], np.ndarray)
+        block_rows.append(rows)
+        common_rows = np.intersect1d(common_rows, rows, assume_unique=True)
         pf.append(
             np.repeat(
                 penalty_factor[idx],
@@ -605,6 +719,48 @@ def model_matrix(
             )
         )
 
+    for idx, rows in enumerate(block_rows):
+        keep = np.searchsorted(rows, common_rows)
+        if return_var_type == "sparse":
+            X_matrix[idx] = X_matrix[idx][keep, :]
+        else:
+            X_matrix[idx] = X_matrix[idx].iloc[keep]
+    if len(common_rows) != len(all_data):
+        dropped = np.ones(len(all_data), dtype=bool)
+        dropped[common_rows] = False
+        example_positions = np.concatenate(
+            (
+                np.flatnonzero(dropped[:sample_n])[:5],
+                sample_n + np.flatnonzero(dropped[sample_n:])[:5],
+            )
+        )
+        examples = [
+            {
+                "population": "sample" if position < sample_n else "target",
+                "original_position": (
+                    int(input_data["sample_rows"][position])
+                    if position < sample_n
+                    else int(input_data["target_rows"][position - sample_n])
+                ),
+                "index": repr(all_data.index[position])[:100],
+            }
+            for position in example_positions
+        ]
+        logger.warning(
+            "Common formula-row filtering dropped %d sample rows and %d target rows. "
+            "Original caller-row examples (first 5 per population): %s. "
+            "Returned sample_rows/target_rows identify the retained original positions.",
+            int(dropped[:sample_n].sum()),
+            int(dropped[sample_n:].sum()),
+            examples,
+        )
+    sample_rows = _assert_type(input_data["sample_rows"], np.ndarray)[
+        common_rows[common_rows < sample_n]
+    ]
+    target_rows = _assert_type(input_data["target_rows"], np.ndarray)[
+        common_rows[common_rows >= sample_n] - sample_n
+    ]
+    sample_n = len(sample_rows)
     penalty_factor_updated = np.concatenate(pf, axis=0)
     if return_var_type == "sparse":
         X_matrix = hstack(X_matrix, format="csc")
@@ -617,6 +773,8 @@ def model_matrix(
 
     result = {
         "model_matrix_columns_names": X_matrix_columns,
+        "sample_rows": sample_rows,
+        "target_rows": target_rows,
         "penalty_factor": penalty_factor_updated,
         "formula": formula,
     }
@@ -649,6 +807,8 @@ _MatrixBuildResult = Tuple[
     List[str],  # columns
     Optional[List[float]],  # penalty_factor_expanded
     Optional[Union[str, List[str]]],  # resolved_formula
+    np.ndarray,  # retained sample positions
+    np.ndarray,  # retained target positions
 ]
 
 
@@ -730,11 +890,15 @@ def _build_projected_model_matrix(
     resolved_formula: str | list[str] | None = cast(
         Optional[Union[str, List[str]]], model_matrix_out.get("formula")
     )
+    rows = _assert_type(model_matrix_out["sample_rows"], np.ndarray)
+    original_sample_n = len(sample_covars)
     return (
         combined_matrix,
         project_to_columns,
         penalty_factor_expanded,
         resolved_formula,
+        rows[rows < original_sample_n],
+        rows[rows >= original_sample_n] - original_sample_n,
     )
 
 
@@ -782,7 +946,14 @@ def _build_training_model_matrix(
     resolved_formula: str | list[str] | None = cast(
         Optional[Union[str, List[str]]], model_matrix_output.get("formula")
     )
-    return combined_matrix, columns, penalty_factor_expanded, resolved_formula
+    return (
+        combined_matrix,
+        columns,
+        penalty_factor_expanded,
+        resolved_formula,
+        _assert_type(model_matrix_output["sample_rows"], np.ndarray),
+        _assert_type(model_matrix_output["target_rows"], np.ndarray),
+    )
 
 
 def _build_raw_covariates(
@@ -803,7 +974,14 @@ def _build_raw_covariates(
         combined_matrix[col] = pd.Categorical(combined_matrix[col])
 
     columns = combined_matrix.columns.tolist()
-    return combined_matrix, columns, [1.0] * len(columns), None
+    return (
+        combined_matrix,
+        columns,
+        [1.0] * len(columns),
+        None,
+        np.arange(len(sample_covars)),
+        np.arange(len(target_covars)),
+    )
 
 
 def build_design_matrix(
@@ -887,7 +1065,12 @@ def build_design_matrix(
         ``"combined_matrix"`` -- the preprocessed combined (sample + target)
         matrix.
 
-        ``"sample_n"`` -- number of sample rows (for splitting).
+        ``"sample_n"`` -- number of retained sample rows (for splitting).
+
+        ``"sample_rows"`` and ``"target_rows"`` -- retained positions in the
+        original input frames. Use them to align design weights and outputs.
+        Formula-generated missing rows are dropped with diagnostic warnings;
+        scaler weights are subset using the same positions before fitting.
 
         ``"columns"`` -- column names of the model matrix.
 
@@ -906,35 +1089,68 @@ def build_design_matrix(
 
     # -- Step 1: Build the combined matrix via one of three paths ----------
     if use_model_matrix and project_to_columns is not None:
-        combined_matrix, columns, penalty_factor_expanded, resolved_formula = (
-            _build_projected_model_matrix(
-                sample_covars,
-                target_covars,
-                formula=formula,
-                one_hot_encoding=one_hot_encoding,
-                na_action=na_action,
-                project_to_columns=project_to_columns,
-            )
+        (
+            combined_matrix,
+            columns,
+            penalty_factor_expanded,
+            resolved_formula,
+            sample_rows,
+            target_rows,
+        ) = _build_projected_model_matrix(
+            sample_covars,
+            target_covars,
+            formula=formula,
+            one_hot_encoding=one_hot_encoding,
+            na_action=na_action,
+            project_to_columns=project_to_columns,
         )
     elif use_model_matrix:
-        combined_matrix, columns, penalty_factor_expanded, resolved_formula = (
-            _build_training_model_matrix(
-                sample_covars,
-                target_covars,
-                formula=formula,
-                one_hot_encoding=one_hot_encoding,
-                na_action=na_action,
-                penalty_factor=penalty_factor,
-            )
+        (
+            combined_matrix,
+            columns,
+            penalty_factor_expanded,
+            resolved_formula,
+            sample_rows,
+            target_rows,
+        ) = _build_training_model_matrix(
+            sample_covars,
+            target_covars,
+            formula=formula,
+            one_hot_encoding=one_hot_encoding,
+            na_action=na_action,
+            penalty_factor=penalty_factor,
         )
     else:
-        combined_matrix, columns, penalty_factor_expanded, resolved_formula = (
-            _build_raw_covariates(
-                sample_covars,
-                target_covars,
-                na_action=na_action,
-            )
+        (
+            combined_matrix,
+            columns,
+            penalty_factor_expanded,
+            resolved_formula,
+            sample_rows,
+            target_rows,
+        ) = _build_raw_covariates(
+            sample_covars,
+            target_covars,
+            na_action=na_action,
         )
+
+    sample_n = len(sample_rows)
+    if scaler_weights is not None:
+        original_n = len(sample_covars) + len(target_covars)
+        if len(scaler_weights) != original_n:
+            raise ValueError(
+                f"scaler_weights length ({len(scaler_weights)}) must match "
+                f"the original combined rows ({original_n})."
+            )
+        retained_rows = np.concatenate((sample_rows, len(sample_covars) + target_rows))
+        scaler_weights = scaler_weights[retained_rows]
+        if len(retained_rows) < original_n and len(scaler_weights) > 0:
+            retained_mass = float(scaler_weights.sum())
+            if not np.isfinite(retained_mass) or retained_mass <= 0:
+                raise ValueError(
+                    "Formula row dropping left no finite positive scaler weight mass; "
+                    "fitting requires retained positive-weight rows."
+                )
 
     # -- Step 2: Reindex DataFrame to stored columns (raw holdout path) ----
     if isinstance(combined_matrix, pd.DataFrame) and project_to_columns is not None:
@@ -955,9 +1171,9 @@ def build_design_matrix(
 
     # -- Step 3: Scaler ----------------------------------------------------
     out_scaler: StandardScaler | None = fit_scaler
-    if fit_scaler is not None:
+    if fit_scaler is not None and combined_matrix.shape[0] > 0:
         combined_matrix = fit_scaler.transform(combined_matrix)
-    elif scaler_weights is not None:
+    elif scaler_weights is not None and combined_matrix.shape[0] > 0:
         scaler = StandardScaler(with_mean=False)
         combined_matrix = scaler.fit_transform(
             combined_matrix, sample_weight=scaler_weights
@@ -995,6 +1211,8 @@ def build_design_matrix(
     return {
         "combined_matrix": combined_matrix,
         "sample_n": sample_n,
+        "sample_rows": sample_rows,
+        "target_rows": target_rows,
         "columns": columns,
         "penalty_factor_expanded": penalty_factor_expanded,
         "resolved_formula": resolved_formula,

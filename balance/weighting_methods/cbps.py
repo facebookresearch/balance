@@ -17,6 +17,7 @@ import sklearn.utils.extmath
 import statsmodels.api as sm
 from balance import adjustment as balance_adjustment, util as balance_util
 from balance.stats_and_plots.weights_stats import design_effect
+from balance.weighting_methods.ipw import _restore_dropped_rows
 from scipy.sparse import csc_matrix
 from scipy.special import expit
 
@@ -489,7 +490,9 @@ def cbps(  # noqa
 
     Returns:
         Dict[str, Union[pd.Series, Dict]]: A dictionary includes:
-        "weight" --- The weights for the sample.
+        "weight" --- The weights for the sample. Formula-omitted rows receive
+            NaN weights at their original caller positions; raw-only
+            ``na_action="drop"`` retains its historical compact return.
         "model" -- dictionary with details about the fitted model:
             X_matrix_columns, deviance, beta_optimal, balance_optimize_result,
             gmm_optimize_result_glm_init, gmm_optimize_result_bal_init
@@ -550,8 +553,14 @@ def cbps(  # noqa
 
     sample_df = sample_df.loc[:, variables]
     target_df = target_df.loc[:, variables]
+    sample_input_index = sample_df.index.copy()
+    target_input_index = target_df.index.copy()
+    sample_rows = np.arange(len(sample_df))
+    target_rows = np.arange(len(target_df))
 
     if na_action == "drop":
+        sample_rows = np.flatnonzero(sample_df.notna().all(axis=1))
+        target_rows = np.flatnonzero(target_df.notna().all(axis=1))
         (sample_df, sample_weights) = balance_util.drop_na_rows(
             sample_df, sample_weights, "sample"
         )
@@ -582,6 +591,40 @@ def cbps(  # noqa
         formula=formula,
         one_hot_encoding=False,
     )
+    matrix_sample_rows = np.asarray(
+        model_matrix_output.get("sample_rows", np.arange(len(sample_df))), dtype=int
+    )
+    matrix_target_rows = np.asarray(
+        model_matrix_output.get("target_rows", np.arange(len(target_df))), dtype=int
+    )
+    matrix_rows_dropped = len(matrix_sample_rows) != len(sample_df) or len(
+        matrix_target_rows
+    ) != len(target_df)
+    sample_df = sample_df.iloc[matrix_sample_rows]
+    target_df = target_df.iloc[matrix_target_rows]
+    sample_weights = sample_weights.iloc[matrix_sample_rows]
+    target_weights = target_weights.iloc[matrix_target_rows]
+    sample_rows = sample_rows[matrix_sample_rows]
+    target_rows = target_rows[matrix_target_rows]
+    sample_index = sample_df.index
+    if matrix_rows_dropped and (len(sample_rows) == 0 or len(target_rows) == 0):
+        raise ValueError(
+            "Formula row dropping left an empty sample or target; "
+            "CBPS fitting requires retained rows in both populations."
+        )
+    if (
+        len(sample_rows) != len(sample_input_index)
+        or len(target_rows) != len(target_input_index)
+    ) and (
+        not np.isfinite(sample_weights.sum())
+        or sample_weights.sum() <= 0
+        or not np.isfinite(target_weights.sum())
+        or target_weights.sum() <= 0
+    ):
+        raise ValueError(
+            "Row dropping left non-positive or non-finite sample or target weight mass; "
+            "CBPS fitting requires positive finite retained weight sums."
+        )
     X_matrix = cast(
         csc_matrix,
         (model_matrix_output["model_matrix"]),
@@ -841,7 +884,11 @@ def cbps(  # noqa
     )
 
     out = {
-        "weight": weights,
+        "weight": (
+            _restore_dropped_rows(weights, sample_rows, sample_input_index)
+            if matrix_rows_dropped
+            else weights
+        ),
         "model": {
             "method": "cbps",
             "X_matrix_columns": X_matrix_columns_names,
@@ -873,6 +920,10 @@ def cbps(  # noqa
                 "weight_trimming_percentile": weight_trimming_percentile,
                 "sample_index": sample_index,
                 "target_index": target_df.index,
+                "sample_rows": sample_rows.copy(),
+                "target_rows": target_rows.copy(),
+                "sample_input_index": sample_input_index,
+                "target_input_index": target_input_index,
                 "training_sample_weights": sample_weights.copy(),
                 "training_target_weights": target_weights.copy(),
                 "model_matrix_mean": model_matrix_standardized["model_matrix_mean"],

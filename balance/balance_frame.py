@@ -35,6 +35,7 @@ from balance.util import (
 )
 from balance.utils.file_utils import _to_download
 from balance.utils.model_matrix import build_design_matrix
+from balance.weighting_methods.ipw import _restore_dropped_rows
 
 if TYPE_CHECKING:
     from typing import Self
@@ -1403,15 +1404,18 @@ class BalanceFrame:
                 )
 
         # --- Compute holdout weights ---
-        sample_matrix, _target_matrix = self._compute_ipw_matrices(model, source=self)
+        sample_matrix, target_matrix, sample_rows, target_rows = (
+            self._compute_ipw_matrices(model, source=self)
+        )
         fit_model = _assert_type(model.get("fit"))
-        class_index = self._ipw_class_index(fit_model)
-        prob = np.asarray(fit_model.predict_proba(sample_matrix)[:, class_index])
+        prob = self._compact_ipw_probabilities(fit_model, sample_matrix)
         link = link_transform(prob)
 
         # Use holdout's own design weights
-        sample_weights = self._sf_sample.df_weights.iloc[:, 0]
-        target_weights = _assert_type(self._sf_target).df_weights.iloc[:, 0]
+        sample_weights = self._sf_sample.df_weights.iloc[:, 0].iloc[sample_rows]
+        target_weights = (
+            _assert_type(self._sf_target).df_weights.iloc[:, 0].iloc[target_rows]
+        )
 
         # Warn if holdout target weight sum differs >1% from training
         training_target_weights = model.get("training_target_weights")
@@ -1429,14 +1433,21 @@ class BalanceFrame:
                     train_sum,
                 )
 
-        predicted = weights_from_link(
-            link=link,
-            balance_classes=bool(model.get("balance_classes", True)),
-            sample_weights=sample_weights,
-            target_weights=target_weights,
-            weight_trimming_mean_ratio=model.get("weight_trimming_mean_ratio"),
-            weight_trimming_percentile=model.get("weight_trimming_percentile"),
-        )
+        if len(sample_rows) == 0 or len(target_rows) == 0:
+            predicted = pd.Series(np.nan, index=self._sf_sample.df.index, dtype=float)
+        else:
+            predicted = _restore_dropped_rows(
+                weights_from_link(
+                    link=link,
+                    balance_classes=bool(model.get("balance_classes", True)),
+                    sample_weights=sample_weights,
+                    target_weights=target_weights,
+                    weight_trimming_mean_ratio=model.get("weight_trimming_mean_ratio"),
+                    weight_trimming_percentile=model.get("weight_trimming_percentile"),
+                ),
+                sample_rows,
+                self._sf_sample.df.index,
+            )
 
         # --- Build the result ---
         if inplace:
@@ -1464,6 +1475,46 @@ class BalanceFrame:
 
         # Store the model and set adjustment state
         bf._adjustment_model = dict(model)
+        bf._adjustment_model.update(
+            {
+                "scoring_sample_link": link,
+                "scoring_sample_weights": sample_weights.copy(),
+                "scoring_target_weights": target_weights.copy(),
+                "scoring_sample_rows": sample_rows.copy(),
+                "scoring_sample_input_index": bf._sf_sample.df.index.copy(),
+                "scoring_target_input_index": _assert_type(
+                    bf._sf_target
+                ).df.index.copy(),
+            }
+        )
+        persist_replay = (
+            len(sample_rows) != len(bf._sf_sample.df)
+            or len(target_rows) != len(_assert_type(bf._sf_target).df)
+            or any(
+                isinstance(model.get(f"{side}_rows"), np.ndarray)
+                and isinstance(model.get(f"{side}_input_index"), pd.Index)
+                and len(model[f"{side}_rows"]) != len(model[f"{side}_input_index"])
+                for side in ("sample", "target")
+            )
+        )
+        for side, matrix, rows, input_index in (
+            ("sample", sample_matrix, sample_rows, bf._sf_sample.df.index),
+            (
+                "target",
+                target_matrix,
+                target_rows,
+                _assert_type(bf._sf_target).df.index,
+            ),
+        ):
+            if not persist_replay:
+                break
+            probability = self._compact_ipw_probabilities(fit_model, matrix)
+            bf._adjustment_model[f"model_matrix_{side}"] = matrix
+            bf._adjustment_model[f"{side}_rows"] = rows
+            bf._adjustment_model[f"{side}_input_index"] = input_index.copy()
+            bf._adjustment_model[f"{side}_index"] = input_index.take(rows)
+            bf._adjustment_model[f"{side}_probability"] = probability
+            bf._adjustment_model[f"{side}_link"] = link_transform(probability)
         method_name = str(model.get("method", "set_fitted_model"))
         bf._adjustment_history = self._copy_adjustment_history_from(self, deep=False)
         bf._append_adjustment_history_entry(method_name, bf._adjustment_model)
@@ -1974,7 +2025,7 @@ class BalanceFrame:
         columns: list[str],
     ) -> pd.DataFrame:
         if isinstance(matrix, pd.DataFrame):
-            return matrix.reindex(columns=columns)
+            return matrix.reindex(columns=columns).set_axis(index, axis=0)
         if isinstance(matrix, np.ndarray):
             return pd.DataFrame(matrix, index=index, columns=columns)
         from scipy.sparse import spmatrix
@@ -2036,7 +2087,7 @@ class BalanceFrame:
         self,
         model: dict[str, Any],
         source: BalanceFrame | None = None,
-    ) -> tuple[Any, Any]:
+    ) -> tuple[Any, Any, np.ndarray, np.ndarray]:
         """Compute IPW design matrices using stored model config.
 
         Args:
@@ -2093,7 +2144,26 @@ class BalanceFrame:
         )
         combined_matrix = result["combined_matrix"]
         sample_n = result["sample_n"]
-        return combined_matrix[:sample_n], combined_matrix[sample_n:]
+        sample_rows = np.asarray(
+            result.get("sample_rows", np.arange(len(sample_covars))), dtype=int
+        )
+        target_rows = np.asarray(
+            result.get("target_rows", np.arange(len(target_covars))), dtype=int
+        )
+        return (
+            combined_matrix[:sample_n],
+            combined_matrix[sample_n:],
+            sample_rows,
+            target_rows,
+        )
+
+    @staticmethod
+    def _compact_ipw_probabilities(fit_model: Any, matrix: Any) -> np.ndarray:
+        """Predict only retained rows, including an empty scoring population."""
+        if matrix.shape[0] == 0:
+            return np.array([], dtype=float)
+        class_index = BalanceFrame._ipw_class_index(fit_model)
+        return np.asarray(fit_model.predict_proba(matrix)[:, class_index])
 
     @staticmethod
     def _is_artifact_stale(
@@ -2135,39 +2205,48 @@ class BalanceFrame:
             current_idx = _assert_type(self._sf_target).df.index
 
         stored_idx = pd.Index(model.get(f"{side}_index", current_idx))
+        input_idx = pd.Index(model.get(f"{side}_input_index", current_idx))
+        rows = np.asarray(model.get(f"{side}_rows", np.arange(len(current_idx))))
+        dropped_rows = len(rows) != len(input_idx)
+        matching_input = not dropped_rows or input_idx.equals(current_idx)
+        expected_idx = (
+            current_idx.take(rows) if dropped_rows and matching_input else current_idx
+        )
         matrix = model.get(f"model_matrix_{side}")
         probability = model.get(f"{side}_probability")
 
-        matrix_stale = self._is_artifact_stale(matrix, stored_idx, current_idx)
-        prob_stale = self._is_artifact_stale(probability, stored_idx, current_idx)
+        matrix_stale = not matching_input or self._is_artifact_stale(
+            matrix, stored_idx, expected_idx
+        )
+        prob_stale = not matching_input or self._is_artifact_stale(
+            probability, stored_idx, expected_idx
+        )
 
         if not matrix_stale and not prob_stale:
             return
 
-        # Recompute matrices (always produces both sides).
-        sample_matrix, target_matrix = self._compute_ipw_matrices(model)
-        # Cache both matrices — we already paid the cost of computing them.
-        model["model_matrix_sample"] = sample_matrix
-        model["model_matrix_target"] = target_matrix
-        # Only update the index for the side being refreshed. Writing the
-        # other side's index here would cause the staleness check to skip
-        # recomputation on the next call, returning stale predictions.
-        model[f"{side}_index"] = current_idx
-        recomputed_matrix = sample_matrix if side == "sample" else target_matrix
+        sample_matrix, target_matrix, sample_rows, target_rows = (
+            self._compute_ipw_matrices(model)
+        )
+        from balance.weighting_methods.ipw import link_transform
 
-        # Recompute predictions if stale.
-        if prob_stale:
-            from balance.weighting_methods.ipw import link_transform
-
-            fit_model = _assert_type(model.get("fit"))
-            class_index = self._ipw_class_index(fit_model)
-            prob = np.asarray(
-                fit_model.predict_proba(recomputed_matrix)[:, class_index]
-            )
-            link = link_transform(prob)
-            model[f"{side}_probability"] = prob
-            model[f"{side}_link"] = link
-            model[f"{side}_index"] = current_idx
+        fit_model = _assert_type(model.get("fit"))
+        for refreshed_side, refreshed_matrix, refreshed_rows, refreshed_index in (
+            ("sample", sample_matrix, sample_rows, self._sf_sample.df.index),
+            (
+                "target",
+                target_matrix,
+                target_rows,
+                _assert_type(self._sf_target).df.index,
+            ),
+        ):
+            prob = self._compact_ipw_probabilities(fit_model, refreshed_matrix)
+            model[f"model_matrix_{refreshed_side}"] = refreshed_matrix
+            model[f"{refreshed_side}_rows"] = refreshed_rows
+            model[f"{refreshed_side}_input_index"] = refreshed_index.copy()
+            model[f"{refreshed_side}_index"] = refreshed_index.take(refreshed_rows)
+            model[f"{refreshed_side}_probability"] = prob
+            model[f"{refreshed_side}_link"] = link_transform(prob)
 
     def _validate_data_covariates(self, data: BalanceFrame) -> None:
         """Validate that ``data`` has matching covariate columns to self."""
@@ -2237,7 +2316,9 @@ class BalanceFrame:
 
         Returns:
             A model-matrix DataFrame, or a tuple of two DataFrames when
-            ``on="both"``.
+            ``on="both"``. Matrices contain only rows retained by formula
+            evaluation, indexed by the corresponding caller labels; omitted
+            rows are not restored as NaN feature rows.
 
         Raises:
             ValueError: If the object is not IPW-adjusted, if target is missing
@@ -2277,16 +2358,16 @@ class BalanceFrame:
                 raise ValueError(
                     "data must have a target set for on='target' or on='both'."
                 )
-            sample_matrix, target_matrix = self._compute_ipw_matrices(
-                model, source=data
+            sample_matrix, target_matrix, sample_rows, target_rows = (
+                self._compute_ipw_matrices(model, source=data)
             )
             sample_df_result = self._matrix_to_dataframe(
-                sample_matrix, data._sf_sample.df.index, columns
+                sample_matrix, data._sf_sample.df.index.take(sample_rows), columns
             )
             target_df_result = (
                 self._matrix_to_dataframe(
                     target_matrix,
-                    _assert_type(data._sf_target).df.index,
+                    _assert_type(data._sf_target).df.index.take(target_rows),
                     columns,
                 )
                 if data._sf_target is not None
@@ -2311,16 +2392,16 @@ class BalanceFrame:
                 )
             self._ensure_fresh_ipw_artifacts(model, "sample")
             sample_idx = pd.Index(model.get("sample_index", self._sf_sample.df.index))
-            sample_df = cast(
-                pd.DataFrame,
-                self._align_to_index(
-                    self._matrix_to_dataframe(
-                        model["model_matrix_sample"], sample_idx, columns
-                    ),
-                    self._sf_sample.df.index,
-                    caller="design_matrix()",
-                ),
+            sample_df = self._matrix_to_dataframe(
+                model["model_matrix_sample"], sample_idx, columns
             )
+            if len(sample_df) == len(self._sf_sample.df):
+                sample_df = cast(
+                    pd.DataFrame,
+                    self._align_to_index(
+                        sample_df, self._sf_sample.df.index, "design_matrix()"
+                    ),
+                )
 
         if on in ("target", "both"):
             self._require_target()
@@ -2333,16 +2414,16 @@ class BalanceFrame:
             self._ensure_fresh_ipw_artifacts(model, "target")
             current_target_idx = _assert_type(self._sf_target).df.index
             target_idx = pd.Index(model.get("target_index", current_target_idx))
-            target_df = cast(
-                pd.DataFrame,
-                self._align_to_index(
-                    self._matrix_to_dataframe(
-                        model["model_matrix_target"], target_idx, columns
-                    ),
-                    current_target_idx,
-                    caller="design_matrix()",
-                ),
+            target_df = self._matrix_to_dataframe(
+                model["model_matrix_target"], target_idx, columns
             )
+            if len(target_df) == len(current_target_idx):
+                target_df = cast(
+                    pd.DataFrame,
+                    self._align_to_index(
+                        target_df, current_target_idx, "design_matrix()"
+                    ),
+                )
 
         if on == "sample":
             return _assert_type(sample_df)
@@ -2448,37 +2529,32 @@ class BalanceFrame:
                 raise ValueError(
                     "data must have a target set for on='target' or on='both'."
                 )
-            sample_matrix, target_matrix = self._compute_ipw_matrices(
-                model, source=data
+            sample_matrix, target_matrix, sample_rows, target_rows = (
+                self._compute_ipw_matrices(model, source=data)
             )
             fit_model = _assert_type(model.get("fit"))
-            class_index = self._ipw_class_index(fit_model)
 
             sample_series_result: pd.Series | None = None
             target_series_result: pd.Series | None = None
 
             if on in ("sample", "both"):
-                prob = np.asarray(
-                    fit_model.predict_proba(sample_matrix)[:, class_index]
-                )
+                prob = self._compact_ipw_probabilities(fit_model, sample_matrix)
                 if output == "link":
                     values_arr = link_transform(prob)
                 else:
                     values_arr = prob
-                sample_series_result = pd.Series(
-                    values_arr, index=data._sf_sample.df.index
+                sample_series_result = _restore_dropped_rows(
+                    values_arr, sample_rows, data._sf_sample.df.index
                 )
 
             if on in ("target", "both"):
-                prob = np.asarray(
-                    fit_model.predict_proba(target_matrix)[:, class_index]
-                )
+                prob = self._compact_ipw_probabilities(fit_model, target_matrix)
                 if output == "link":
                     values_arr = link_transform(prob)
                 else:
                     values_arr = prob
-                target_series_result = pd.Series(
-                    values_arr, index=_assert_type(data._sf_target).df.index
+                target_series_result = _restore_dropped_rows(
+                    values_arr, target_rows, _assert_type(data._sf_target).df.index
                 )
 
             if on == "sample":
@@ -2521,16 +2597,19 @@ class BalanceFrame:
                 current_idx = self._sf_sample.df.index
             else:
                 current_idx = _assert_type(self._sf_target).df.index
-            stored_idx = pd.Index(model.get(f"{side}_index", current_idx))
-
-            series = cast(
-                pd.Series,
-                self._align_to_index(
-                    pd.Series(_assert_type(values), index=stored_idx),
-                    current_idx,
-                    caller="predict_proba()",
-                ),
-            )
+            rows = np.asarray(model.get(f"{side}_rows", np.arange(len(current_idx))))
+            if len(rows) == len(current_idx):
+                stored_idx = pd.Index(model.get(f"{side}_index", current_idx))
+                series = cast(
+                    pd.Series,
+                    self._align_to_index(
+                        pd.Series(_assert_type(values), index=stored_idx),
+                        current_idx,
+                        "predict_proba()",
+                    ),
+                )
+            else:
+                series = _restore_dropped_rows(_assert_type(values), rows, current_idx)
             if side == "sample":
                 sample_series = series
             else:
@@ -2645,17 +2724,25 @@ class BalanceFrame:
                     "IPW model metadata is missing fitted model information."
                 )
 
-            sample_matrix, _target_matrix = self._compute_ipw_matrices(
-                model, source=data
+            sample_matrix, _target_matrix, sample_rows, target_rows = (
+                self._compute_ipw_matrices(model, source=data)
             )
-            class_index = self._ipw_class_index(fit_obj)
-            prob = np.asarray(fit_obj.predict_proba(sample_matrix)[:, class_index])
+            prob = self._compact_ipw_probabilities(fit_obj, sample_matrix)
             link = link_transform(prob)
 
             if data._sf_target is None:
                 raise ValueError("data must have a target set for predict_weights().")
-            sample_weights = data._sf_sample.df_weights.iloc[:, 0]
-            target_weights = _assert_type(data._sf_target).df_weights.iloc[:, 0]
+            sample_weights = data._sf_sample.df_weights.iloc[:, 0].iloc[sample_rows]
+            target_weights = (
+                _assert_type(data._sf_target).df_weights.iloc[:, 0].iloc[target_rows]
+            )
+            if len(sample_rows) == 0 or len(target_rows) == 0:
+                return pd.Series(
+                    np.nan,
+                    index=data._sf_sample.df.index,
+                    name=getattr(data._sf_sample.weight_series, "name", None),
+                    dtype=float,
+                )
 
             training_target_weights = model.get("training_target_weights")
             if isinstance(training_target_weights, pd.Series):
@@ -2681,9 +2768,9 @@ class BalanceFrame:
                 weight_trimming_percentile=model.get("weight_trimming_percentile"),
             )
             weight_name = getattr(data._sf_sample.weight_series, "name", None)
-            return pd.Series(predicted.values, index=data._sf_sample.df.index).rename(
-                weight_name
-            )
+            return _restore_dropped_rows(
+                predicted, sample_rows, data._sf_sample.df.index
+            ).rename(weight_name)
 
         self._require_target()
         model = self._require_fitted_model()
@@ -2815,6 +2902,51 @@ class BalanceFrame:
         if fit is None or not isinstance(columns, list):
             raise ValueError("IPW model metadata is missing fitted model information.")
 
+        current_sample_idx = self._sf_sample.df.index
+        current_target_idx = _assert_type(self._sf_target).df.index
+        for prefix in ("scoring", "training"):
+            input_sample_idx = model.get(f"{prefix}_sample_input_index")
+            input_target_idx = model.get(f"{prefix}_target_input_index")
+            stored_link = model.get(f"{prefix}_sample_link")
+            stored_sample_weights = model.get(f"{prefix}_sample_weights")
+            stored_target_weights = model.get(f"{prefix}_target_weights")
+            rows = model.get(f"{prefix}_sample_rows")
+            if not (
+                isinstance(input_sample_idx, pd.Index)
+                and input_sample_idx.equals(current_sample_idx)
+                and isinstance(input_target_idx, pd.Index)
+                and input_target_idx.equals(current_target_idx)
+                and isinstance(stored_link, np.ndarray)
+                and isinstance(stored_sample_weights, pd.Series)
+                and isinstance(stored_target_weights, pd.Series)
+                and isinstance(rows, np.ndarray)
+            ):
+                continue
+            if (
+                prefix == "training"
+                and len(rows) == len(current_sample_idx)
+                and len(stored_target_weights) == len(current_target_idx)
+            ):
+                continue
+            if len(rows) == 0 or len(stored_target_weights) == 0:
+                return pd.Series(
+                    np.nan,
+                    index=current_sample_idx,
+                    name=getattr(self.weight_series, "name", None),
+                    dtype=float,
+                )
+            predicted = weights_from_link(
+                stored_link,
+                bool(model.get("balance_classes", True)),
+                stored_sample_weights,
+                stored_target_weights,
+                model.get("weight_trimming_mean_ratio"),
+                model.get("weight_trimming_percentile"),
+            )
+            return _restore_dropped_rows(predicted, rows, current_sample_idx).rename(
+                getattr(self.weight_series, "name", None)
+            )
+
         link = self._resolve_ipw_link(model)
         sample_weights, target_weights = self._resolve_design_weights(model, link)
 
@@ -2914,7 +3046,7 @@ class BalanceFrame:
         svd_s: np.ndarray,
         svd_Vh: np.ndarray,
         beta_opt_model_space: np.ndarray,
-    ) -> tuple[np.ndarray, int, int]:
+    ) -> tuple[np.ndarray, int, int, np.ndarray, np.ndarray]:
         """Rebuild the CBPS scoring matrix ``U`` from stored fit artifacts."""
         sample_covars = bf._sf_sample.covars().df.copy()
         target_covars = _assert_type(bf._sf_target).covars().df.copy()
@@ -2939,6 +3071,12 @@ class BalanceFrame:
         combined_matrix = np.asarray(matrix_out["combined_matrix"])
         sample_n = cast(int, matrix_out["sample_n"])
         target_n = combined_matrix.shape[0] - sample_n
+        sample_rows = np.asarray(
+            matrix_out.get("sample_rows", np.arange(len(sample_covars))), dtype=int
+        )
+        target_rows = np.asarray(
+            matrix_out.get("target_rows", np.arange(len(target_covars))), dtype=int
+        )
 
         model_matrix_mean = np.asarray(model.get("model_matrix_mean"), dtype=float)
         model_matrix_std = np.asarray(model.get("model_matrix_std"), dtype=float)
@@ -2976,7 +3114,7 @@ class BalanceFrame:
                 "CBPS model metadata has incompatible coefficient dimensions for "
                 "predict_weights()."
             )
-        return U_matrix, sample_n, target_n
+        return U_matrix, sample_n, target_n, sample_rows, target_rows
 
     @staticmethod
     def _resolve_cbps_training_weights(
@@ -2997,9 +3135,22 @@ class BalanceFrame:
             if not (
                 isinstance(training_sample_weights, pd.Series)
                 and isinstance(training_target_weights, pd.Series)
-                and training_sample_weights.index.equals(bf._sf_sample.df.index)
+                and training_sample_weights.index.equals(
+                    bf._sf_sample.df.index.take(
+                        np.asarray(
+                            model.get("sample_rows", np.arange(len(bf._sf_sample.df)))
+                        )
+                    )
+                )
                 and training_target_weights.index.equals(
-                    _assert_type(bf._sf_target).df.index
+                    _assert_type(bf._sf_target).df.index.take(
+                        np.asarray(
+                            model.get(
+                                "target_rows",
+                                np.arange(len(_assert_type(bf._sf_target).df)),
+                            )
+                        )
+                    )
                 )
             ):
                 raise ValueError(
@@ -3076,20 +3227,32 @@ class BalanceFrame:
             na_action,
         ) = self._validate_cbps_metadata(model)
 
-        U_matrix, sample_n, _ = self._build_cbps_scoring_matrix(
-            bf,
-            model,
-            fit_columns,
-            variables,
-            na_action,
-            svd_s,
-            svd_Vh,
-            beta_opt_model_space,
+        U_matrix, sample_n, target_n, sample_rows, target_rows = (
+            self._build_cbps_scoring_matrix(
+                bf,
+                model,
+                fit_columns,
+                variables,
+                na_action,
+                svd_s,
+                svd_Vh,
+                beta_opt_model_space,
+            )
         )
+        if sample_n == 0 or target_n == 0:
+            return pd.Series(
+                np.nan,
+                index=bf._sf_sample.df.index,
+                name=getattr(bf._sf_sample.weight_series, "name", None),
+                dtype=float,
+            )
 
         sample_weights, target_weights = self._resolve_cbps_training_weights(
             bf, model, use_training_weights=source is None
         )
+        if source is not None:
+            sample_weights = sample_weights[sample_rows]
+            target_weights = target_weights[target_rows]
         sample_n_actual = sample_weights.shape[0]
         target_n_actual = target_weights.shape[0]
         if sample_n != sample_n_actual:
@@ -3135,9 +3298,9 @@ class BalanceFrame:
         if original_sum <= 0:
             raise ValueError("CBPS predict_weights() produced non-positive weight sum.")
         weights = weights / original_sum * float(np.sum(target_weights))
-        return pd.Series(weights, index=bf._sf_sample.df.index).rename(
-            getattr(bf._sf_sample.weight_series, "name", None)
-        )
+        return _restore_dropped_rows(
+            weights, sample_rows, bf._sf_sample.df.index
+        ).rename(getattr(bf._sf_sample.weight_series, "name", None))
 
     def _predict_weights_poststratify(
         self,

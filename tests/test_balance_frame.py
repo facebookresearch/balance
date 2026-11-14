@@ -3104,7 +3104,9 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         model = scored_holdout._require_ipw_model()
         fit_model = _assert_type(model.get("fit"))
         class_index = scored_holdout._ipw_class_index(fit_model)
-        sample_matrix, target_matrix = scored_holdout._compute_ipw_matrices(model)
+        sample_matrix, target_matrix, _sample_rows, _target_rows = (
+            scored_holdout._compute_ipw_matrices(model)
+        )
         expected_sample = np.asarray(
             fit_model.predict_proba(sample_matrix)[:, class_index]
         )
@@ -6031,7 +6033,9 @@ class TestBalanceFrameComputeIpwMatricesInferType(BalanceTestCase):
         # Store a sparse matrix in model_matrix_sample to trigger inference
         model["model_matrix_sample"] = csr_matrix(np.eye(8))
         # The method should infer matrix_type as "sparse" and not crash
-        sample_matrix, target_matrix = fitted._compute_ipw_matrices(model)
+        sample_matrix, target_matrix, _sample_rows, _target_rows = (
+            fitted._compute_ipw_matrices(model)
+        )
         self.assertIsNotNone(sample_matrix)
         self.assertIsNotNone(target_matrix)
 
@@ -6064,7 +6068,9 @@ class TestBalanceFrameComputeIpwMatricesInferType(BalanceTestCase):
         model = _assert_type(fitted.model)
         model.pop("fit_matrix_type", None)
         model["model_matrix_sample"] = np.eye(8)
-        sample_matrix, target_matrix = fitted._compute_ipw_matrices(model)
+        sample_matrix, target_matrix, _sample_rows, _target_rows = (
+            fitted._compute_ipw_matrices(model)
+        )
         self.assertIsNotNone(sample_matrix)
 
     def test_infer_matrix_type_from_dataframe_artifact(self) -> None:
@@ -6072,7 +6078,9 @@ class TestBalanceFrameComputeIpwMatricesInferType(BalanceTestCase):
         model = _assert_type(fitted.model)
         model.pop("fit_matrix_type", None)
         model["model_matrix_sample"] = pd.DataFrame(np.eye(8))
-        sample_matrix, target_matrix = fitted._compute_ipw_matrices(model)
+        sample_matrix, target_matrix, _sample_rows, _target_rows = (
+            fitted._compute_ipw_matrices(model)
+        )
         self.assertIsNotNone(sample_matrix)
 
 
@@ -6653,7 +6661,12 @@ class TestBalanceFramePredictAndCbpsEdgeCoverage(BalanceTestCase):
             patch.object(
                 self.bf,
                 "_compute_ipw_matrices",
-                return_value=(np.zeros((2, 1)), np.zeros((2, 1))),
+                return_value=(
+                    np.zeros((2, 1)),
+                    np.zeros((2, 1)),
+                    np.arange(2),
+                    np.arange(2),
+                ),
             ),
             patch.object(self.bf, "_ipw_class_index", return_value=1),
             patch.object(
@@ -6704,7 +6717,7 @@ class TestBalanceFramePredictAndCbpsEdgeCoverage(BalanceTestCase):
             patch.object(
                 BalanceFrame,
                 "_build_cbps_scoring_matrix",
-                return_value=(np.ones((3, 1)), 5, 0),
+                return_value=(np.ones((3, 1)), 5, 1, np.arange(5), np.arange(1)),
             ),
             patch.object(
                 BalanceFrame,
@@ -6731,7 +6744,7 @@ class TestBalanceFramePredictAndCbpsEdgeCoverage(BalanceTestCase):
             patch.object(
                 BalanceFrame,
                 "_build_cbps_scoring_matrix",
-                return_value=(np.ones((99, 1)), 2, 0),
+                return_value=(np.ones((99, 1)), 2, 1, np.arange(2), np.arange(1)),
             ),
             patch.object(
                 BalanceFrame,
@@ -6767,7 +6780,7 @@ class TestBalanceFramePredictAndCbpsEdgeCoverage(BalanceTestCase):
             patch.object(
                 BalanceFrame,
                 "_build_cbps_scoring_matrix",
-                return_value=(np.ones((3, 1)), 2, 0),
+                return_value=(np.ones((3, 1)), 2, 1, np.arange(2), np.arange(1)),
             ),
             patch.object(
                 BalanceFrame,
@@ -6807,7 +6820,7 @@ class TestBalanceFramePredictAndCbpsEdgeCoverage(BalanceTestCase):
             patch.object(
                 BalanceFrame,
                 "_build_cbps_scoring_matrix",
-                return_value=(np.ones((3, 1)), 2, 0),
+                return_value=(np.ones((3, 1)), 2, 1, np.arange(2), np.arange(1)),
             ),
             patch.object(
                 BalanceFrame,
@@ -6851,7 +6864,7 @@ class TestBalanceFramePredictAndCbpsEdgeCoverage(BalanceTestCase):
             patch.object(
                 BalanceFrame,
                 "_build_cbps_scoring_matrix",
-                return_value=(np.ones((3, 1)), 2, 0),
+                return_value=(np.ones((3, 1)), 2, 1, np.arange(2), np.arange(1)),
             ),
             patch.object(
                 BalanceFrame,
