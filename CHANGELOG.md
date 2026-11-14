@@ -2,6 +2,7 @@
 
 ## Fixed
 
+- Return warning-backed NaN quantiles for zero or missing weight mass, including scalar quantile requests, so real QQ diagnostics remain usable; filter contributing rows positionally.
 - Reject non-finite caller-filtered rake fit-time design weights before expanding them onto complete scoring rows.
 - Restore filtered rake fit-time design weights to scoring-row positions before NA-drop replay, preserving full output indices without filtering weights twice. Use retained row positions for both fitted and replayed weights, so repeated index labels neither assign weight to dropped rows nor duplicate retained values.
 - Keep `Sample` active-weight selection, renaming, accessors, and updates aligned with its responder frame.
@@ -108,6 +109,7 @@
 
 ## Statistics and utility fixes
 
+- Exclude zero and missing weights from weighted-quantile interpolation so noncontributing rows cannot change QQ diagnostics.
 - **Missing observations are omitted from weighted statistics.** Weighted
   means, sample variances, variances of weighted means, standard deviations and
   confidence intervals omit a missing value and its weight separately for each

@@ -468,7 +468,7 @@ def weighted_r2(
 
 def weighted_quantile(
     v: list[Any] | pd.Series | pd.DataFrame | npt.NDArray | np.matrix,
-    quantiles: list[Any] | pd.Series | npt.NDArray,
+    quantiles: float | list[Any] | pd.Series | npt.NDArray,
     w: list[Any] | pd.Series | npt.NDArray | None = None,
     inf_rm: bool = False,
 ) -> pd.DataFrame:
@@ -481,7 +481,7 @@ def weighted_quantile(
 
     Args:
         v (Union[ List, pd.Series, pd.DataFrame, np.array, np.matrix, ]): values to get the weighted quantiles for.
-        quantiles (Union[ List, pd.Series, ]): the quantiles to calculate.
+        quantiles (float | list | pd.Series | np.ndarray): A single quantile or a collection of quantiles to calculate.
         w (Union[ List, pd.Series, np.array, ] optional): weights. Defaults to None.
         inf_rm (bool, optional): whether to remove infinite (from weights or values) from the computation. Defaults to False.
 
@@ -489,6 +489,8 @@ def weighted_quantile(
         pd.DataFrame: The index (names p) has the values from quantiles. The columns are based on v:
             If it's a pd.Series it's one column, if it's a pd.DataFrame with several columns, than each column
             in the output corrosponds to the column in v.
+            When weights contain no positive non-missing entry, every quantile
+            is undefined and returned as NaN; weight validation emits a warning.
 
     Examples:
     .. code-block:: python
@@ -499,6 +501,16 @@ def weighted_quantile(
     """
 
     v, w = _prepare_weighted_stat_args(v, w, inf_rm)
+    quantiles = np.atleast_1d(quantiles)
+    contributing = np.asarray(w.notna() & (w > 0), dtype=bool)
+    if not contributing.any():
+        return pd.DataFrame(
+            np.nan,
+            index=pd.Index(np.asarray(quantiles), name="p"),
+            columns=[f"col{i + 1}" for i in range(v.shape[1])],
+        )
+    v = v.iloc[contributing]
+    w = w.iloc[contributing]
 
     v = np.array(v)
     w = np.array(w)
