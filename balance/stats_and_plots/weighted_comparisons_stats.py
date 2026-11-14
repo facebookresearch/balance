@@ -302,6 +302,14 @@ def _kl_divergence_continuous_quad(
             raise ValueError(f"{label} must contain at least two samples for KDE.")
         if weights_arr is not None and np.any(weights_arr < 0):
             raise ValueError(f"{label} weights must be non-negative.")
+        if weights_arr is not None:
+            contributing = weights_arr > 0
+            samples = samples[contributing]
+            weights_arr = weights_arr[contributing]
+            if samples.size < 2:
+                raise ValueError(
+                    f"{label} must contain at least two positive-weight samples for KDE."
+                )
         return samples, weights_arr
 
     p_samples, p_weights = _validate_samples(p_samples, p_weights, "p_samples")
