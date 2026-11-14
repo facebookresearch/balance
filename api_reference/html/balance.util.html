@@ -196,7 +196,16 @@ other columns as values. At the moment, this will only find a single key column<
 <dl class="py function">
 <dt class="sig sig-object py" id="balance.util.build_model_matrix">
 <span class="sig-prename descclassname"><span class="pre">balance.util.</span></span><span class="sig-name descname"><span class="pre">build_model_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formula</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_sparse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/balance/utils/model_matrix.html#build_model_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.util.build_model_matrix" title="Link to this definition">¶</a></dt>
-<dd><p>Build a model matrix from a formula (using patsy.dmatrix)</p>
+<dd><p>Build a model matrix from a formula (using patsy.dmatrix).</p>
+<p>Formula-generated missing values drop rows, with a logged warning identifying
+missing factors, matrix columns, original row labels and positions, and
+bounded input/evaluated-value examples. <code class="docutils literal notranslate"><span class="pre">row_positions</span></code> identifies retained
+rows positionally, including duplicate labels. Callers combining formula
+blocks must use their common retained rows and filter weights/outcomes using
+the same positions. No caller input is changed.</p>
+<p>For example, <code class="docutils literal notranslate"><span class="pre">build_model_matrix(pd.DataFrame({&quot;x&quot;:</span> <span class="pre">[-1.,</span> <span class="pre">4.]}),</span>
+<span class="pre">formula=&quot;I(x</span> <span class="pre">**</span> <span class="pre">(1/2))&quot;)</span></code> warns about row 0 and returns value 2 with
+<code class="docutils literal notranslate"><span class="pre">row_positions=[1]</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -222,11 +231,13 @@ column for variables with 2 levels (treatment contrast).</p></li>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><dl>
-<dt>A dictionary of 2 elements:</dt><dd><ol class="arabic simple">
+<dt>A dictionary containing the encoded matrix and row metadata:</dt><dd><ol class="arabic simple">
 <li><p>model_matrix - this is a pd dataframe or a csc_matrix (depends on return_sparse), ordered by columns names</p></li>
+<li><p>model_matrix_columns - A list of the columns names of model_matrix</p></li>
+<li><p>row_positions - Retained positions in the input DataFrame, used
+to align other formula blocks and corresponding weights/outcomes.</p></li>
 </ol>
-<p>2. model_matrix_columns - A list of the columns names of model_matrix
-(We include model_matrix_columns as a separate argument since if we return a sparse X_matrix,
+<p>(We include model_matrix_columns as a separate argument since if we return a sparse X_matrix,
 it doesn’t have a columns names argument and these need to be kept separately,
 see here:
 <a class="reference external" href="https://stackoverflow.com/questions/35086940/how-can-i-give-row-and-column-names-to-scipys-csr-matrix">https://stackoverflow.com/questions/35086940/how-can-i-give-row-and-column-names-to-scipys-csr-matrix</a>.)</p>
@@ -470,6 +481,12 @@ to [“id”].</p></li>
 <dd><p>Create a model matrix from a sample (and target).
 The default is to use an additive formula for all variables (or the ones specified).
 Can also create a custom model matrix if a formula is provided.</p>
+<p>Formula-generated missing rows are dropped with diagnostic warnings. Multiple
+formula blocks use their common retained rows before the sample/target split.
+<code class="docutils literal notranslate"><span class="pre">sample_rows</span></code> and <code class="docutils literal notranslate"><span class="pre">target_rows</span></code> give retained positions in the original
+caller frames, including prior raw-NA omissions. Separate weights/outcomes
+must use those same positions. Warnings include original labels and caller
+positions, missing factors/columns, and bounded input/evaluated examples.</p>
 </dd></dl>
 
 <dl class="py class">

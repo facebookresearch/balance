@@ -12,9 +12,11 @@ hide_title: true
 
 ## Fixed
 
+- Fill nullable numeric extension columns with string NA sentinels through a safe object fallback while preserving native numeric fills and dtypes.
 - Report malformed formula tokenizer failures as actionable ValueError messages while preserving valid decimal, attribute, quoted and standalone-dot expressions.
-- Return warning-backed NaN quantiles for zero or missing weight mass, including scalar quantile requests, so real QQ diagnostics remain usable; filter contributing rows positionally.
 - Reject non-finite caller-filtered rake fit-time design weights before expanding them onto complete scoring rows.
+- Return warning-backed NaN quantiles for zero or missing weight mass, including scalar quantile requests, so real QQ diagnostics remain usable; filter contributing rows positionally.
+- Reject non-finite, negative, and zero-total CVMD weight mass before numeric or categorical probability normalization.
 - Restore filtered rake fit-time design weights to scoring-row positions before NA-drop replay, preserving full output indices without filtering weights twice. Use retained row positions for both fitted and replayed weights, so repeated index labels neither assign weight to dropped rows nor duplicate retained values.
 - Keep `Sample` active-weight selection, renaming, accessors, and updates aligned with its responder frame.
 - Preserve a separate pre-fit baseline when `fit(inplace=True)` adopts adjusted state.
@@ -120,6 +122,18 @@ hide_title: true
 
 ## Statistics and utility fixes
 
+- Fill categorical NA-action columns safely in both weighting training and replay, preserving complete categories and adding sentinels only when missing values need filling.
+- Retain batch identifiers on every CLI diagnostics row, prefixing conflicting diagnostic-field names with `batch_`; reject mismatched batch-key arity rather than silently truncating provenance.
+- Reject missing CLI batch keys before grouping instead of silently discarding those observations.
+- Accept upstream replicate-weight column lists, stratum-assignment lists and combined-weight boolean settings in the diff-diff adapter.
+- Preserve pandas CSV destination semantics, including append/exclusive modes, encoding and filename-based compression.
+- Forward the resolved histogram default for single numeric seaborn plots instead of the original None selector.
+- Honor `weighted=False` and uniform `weight=None` through Plotly distribution dispatch without inserting empty weight columns.
+- Exclude zero-weight observations before continuous KLD KDE fitting and integration-bound selection.
+- Preserve infinite ASMD for unequal constants with zero reference SD; equal constants now have zero deviation.
+- Use a common equal-mixture probability measure for categorical and numeric CVMD, including disjoint supports and independently normalized weights.
+- Freeze pickle-safe model-matrix schemas for categorical replay; reject unseen categories and unsupported stateful replay instead of silently changing trained features.
+- Drop formula-generated missing rows with diagnostic warnings naming affected factors/columns, original sample/target row positions and labels, and bounded input/evaluated-value examples. Use common retained rows across formulas and align fit/replay weights and outcomes to those positions.
 - Expand only standalone formula dots, preserving decimal constants, attribute access and quoted labels; reject a standalone dot with no variables using an actionable error.
 - Align implicit unit weights with filtered indices in relative-frequency tables.
 - Exclude zero and missing weights from weighted-quantile interpolation so noncontributing rows cannot change QQ diagnostics.

@@ -342,6 +342,14 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> must contain at least two samples for KDE."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">weights_arr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">weights_arr</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> weights must be non-negative."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">weights_arr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">contributing</span> <span class="o">=</span> <span class="n">weights_arr</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">contributing</span><span class="p">]</span>
+            <span class="n">weights_arr</span> <span class="o">=</span> <span class="n">weights_arr</span><span class="p">[</span><span class="n">contributing</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">samples</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> must contain at least two positive-weight samples for KDE."</span>
+                <span class="p">)</span>
         <span class="k">return</span> <span class="n">samples</span><span class="p">,</span> <span class="n">weights_arr</span>
 
     <span class="n">p_samples</span><span class="p">,</span> <span class="n">p_weights</span> <span class="o">=</span> <span class="n">_validate_samples</span><span class="p">(</span><span class="n">p_samples</span><span class="p">,</span> <span class="n">p_weights</span><span class="p">,</span> <span class="s2">"p_samples"</span><span class="p">)</span>
@@ -682,12 +690,13 @@
         <span class="n">sample_std</span> <span class="o">=</span> <span class="n">descriptive_stats</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="s2">"std"</span><span class="p">)</span>
         <span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(((</span><span class="n">sample_std</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">target_std</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
 
-    <span class="n">out</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">sample_mean</span> <span class="o">-</span> <span class="n">target_mean</span><span class="p">)</span> <span class="o">/</span> <span class="n">std</span>
+    <span class="n">difference</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">sample_mean</span> <span class="o">-</span> <span class="n">target_mean</span><span class="p">)</span>
+    <span class="n">std</span> <span class="o">=</span> <span class="n">std</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">difference</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">(</span><span class="n">difference</span> <span class="o">/</span> <span class="n">std</span><span class="p">)</span><span class="o">.</span><span class="n">mask</span><span class="p">((</span><span class="n">difference</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">std</span> <span class="o">==</span> <span class="mi">0</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">)</span>
 
     <span class="c1">#  Remove na indicator columns; it's OK to assume that these columns are</span>
     <span class="c1">#  indicators because add_na_indicator enforces it</span>
     <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">(</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">c</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"_is_na_"</span><span class="p">))]</span>
-    <span class="n">out</span> <span class="o">=</span> <span class="n">_safe_replace_and_infer</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
 
     <span class="n">weights</span> <span class="o">=</span> <span class="n">_weights_per_covars_names</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())[</span>
         <span class="p">[</span><span class="s2">"weight"</span><span class="p">]</span>
@@ -1102,6 +1111,18 @@
             <span class="n">target_df</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">target_weights_arr</span><span class="p">,</span> <span class="s2">"target_df column"</span>
         <span class="p">)</span>
 
+        <span class="k">for</span> <span class="n">weights</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="p">((</span><span class="n">sample_w</span><span class="p">,</span> <span class="s2">"sample"</span><span class="p">),</span> <span class="p">(</span><span class="n">target_w</span><span class="p">,</span> <span class="s2">"target"</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">weights</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"CVMD </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> weights must be finite and non-negative."</span>
+                <span class="p">)</span>
+            <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">over</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">):</span>
+                <span class="n">total_weight</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">total_weight</span><span class="p">)</span> <span class="ow">or</span> <span class="n">total_weight</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"CVMD </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> weights must sum to a positive finite value."</span>
+                <span class="p">)</span>
+
         <span class="k">if</span> <span class="n">_is_discrete_series</span><span class="p">(</span><span class="n">sample_series</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_is_discrete_series</span><span class="p">(</span><span class="n">target_series</span><span class="p">):</span>
             <span class="n">categories</span> <span class="o">=</span> <span class="n">_sorted_unique_categories</span><span class="p">(</span>
                 <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">sample_series</span><span class="p">,</span> <span class="n">target_series</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -1116,9 +1137,12 @@
             <span class="n">target_cdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span>
                 <span class="n">target_pmf</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">categories</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
             <span class="p">)</span>
-            <span class="n">combined_pmf</span> <span class="o">=</span> <span class="p">(</span><span class="n">sample_pmf</span> <span class="o">+</span> <span class="n">target_pmf</span><span class="p">)</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span>
-                <span class="n">categories</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.0</span>
-            <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">combined_pmf</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">sample_pmf</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">target_pmf</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span>
+                    <span class="n">categories</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.0</span>
+                <span class="p">)</span>
+                <span class="o">/</span> <span class="mi">2</span>
+            <span class="p">)</span>
             <span class="n">out_dict</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">sample_cdf</span> <span class="o">-</span> <span class="n">target_cdf</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">combined_pmf</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">())</span>
             <span class="p">)</span>
@@ -1129,12 +1153,25 @@
             <span class="n">target_vals</span><span class="p">,</span> <span class="n">target_w_numeric</span> <span class="o">=</span> <span class="n">_coerce_to_numeric_and_validate</span><span class="p">(</span>
                 <span class="n">target_series</span><span class="p">,</span> <span class="n">target_w</span><span class="p">,</span> <span class="s2">"Target numeric column"</span>
             <span class="p">)</span>
+            <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">over</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">):</span>
+                <span class="n">sample_total</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sample_w_numeric</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+                <span class="n">target_total</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">target_w_numeric</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">total</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="p">((</span><span class="n">sample_total</span><span class="p">,</span> <span class="s2">"sample"</span><span class="p">),</span> <span class="p">(</span><span class="n">target_total</span><span class="p">,</span> <span class="s2">"target"</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">total</span><span class="p">)</span> <span class="ow">or</span> <span class="n">total</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">"CVMD </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> numeric weights must sum to a positive finite value."</span>
+                    <span class="p">)</span>
 
             <span class="n">sample_sorted</span><span class="p">,</span> <span class="n">sample_cdf</span> <span class="o">=</span> <span class="n">_weighted_ecdf</span><span class="p">(</span><span class="n">sample_vals</span><span class="p">,</span> <span class="n">sample_w_numeric</span><span class="p">)</span>
             <span class="n">target_sorted</span><span class="p">,</span> <span class="n">target_cdf</span> <span class="o">=</span> <span class="n">_weighted_ecdf</span><span class="p">(</span><span class="n">target_vals</span><span class="p">,</span> <span class="n">target_w_numeric</span><span class="p">)</span>
             <span class="n">combined_values</span><span class="p">,</span> <span class="n">combined_weights</span> <span class="o">=</span> <span class="n">_combined_weights</span><span class="p">(</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sample_vals</span><span class="p">,</span> <span class="n">target_vals</span><span class="p">)),</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sample_w_numeric</span><span class="p">,</span> <span class="n">target_w_numeric</span><span class="p">)),</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                    <span class="p">(</span>
+                        <span class="n">sample_w_numeric</span> <span class="o">/</span> <span class="n">sample_total</span><span class="p">,</span>
+                        <span class="n">target_w_numeric</span> <span class="o">/</span> <span class="n">target_total</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">),</span>
             <span class="p">)</span>
             <span class="n">sample_eval</span> <span class="o">=</span> <span class="n">_evaluate_ecdf</span><span class="p">(</span><span class="n">sample_sorted</span><span class="p">,</span> <span class="n">sample_cdf</span><span class="p">,</span> <span class="n">combined_values</span><span class="p">)</span>
             <span class="n">target_eval</span> <span class="o">=</span> <span class="n">_evaluate_ecdf</span><span class="p">(</span><span class="n">target_sorted</span><span class="p">,</span> <span class="n">target_cdf</span><span class="p">,</span> <span class="n">combined_values</span><span class="p">)</span>
@@ -1380,6 +1417,8 @@
 <span class="sd">        np.float64: The improvement is taking the (before_mean_asmd-after_mean_asmd)/before_mean_asmd.</span>
 <span class="sd">        The asmd is calculated using :func:`asmd`.</span>
 <span class="sd">        Returns 0.0 when asmd_mean_before is zero or very close to zero (&lt; 1e-10).</span>
+<span class="sd">        Returns NaN when asmd_mean_before is infinite, because relative</span>
+<span class="sd">        improvement is undefined.</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">    .. code-block:: python</span>
@@ -1401,6 +1440,8 @@
     <span class="c1"># Avoid division by zero when asmd_mean_before is zero or very close to zero</span>
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">asmd_mean_before</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-10</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">asmd_mean_before</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="p">(</span><span class="n">asmd_mean_before</span> <span class="o">-</span> <span class="n">asmd_mean_after</span><span class="p">)</span> <span class="o">/</span> <span class="n">asmd_mean_before</span></div>
 

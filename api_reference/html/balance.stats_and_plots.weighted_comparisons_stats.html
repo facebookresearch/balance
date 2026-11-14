@@ -193,7 +193,9 @@ True,</p>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The improvement is taking the (before_mean_asmd-after_mean_asmd)/before_mean_asmd.
 The asmd is calculated using <a class="reference internal" href="#balance.stats_and_plots.weighted_comparisons_stats.asmd" title="balance.stats_and_plots.weighted_comparisons_stats.asmd"><code class="xref py py-func docutils literal notranslate"><span class="pre">asmd()</span></code></a>.
-Returns 0.0 when asmd_mean_before is zero or very close to zero (&lt; 1e-10).</p>
+Returns 0.0 when asmd_mean_before is zero or very close to zero (&lt; 1e-10).
+Returns NaN when asmd_mean_before is infinite, because relative
+improvement is undefined.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>np.float64</p>

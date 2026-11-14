@@ -814,7 +814,9 @@
                 <span class="n">plot_qq</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="n">axes_list</span><span class="p">[</span><span class="n">io</span><span class="p">],</span> <span class="n">weighted</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># At this point, dist_type is guaranteed to be one of "hist", "kde", or "ecdf"</span>
-                <span class="n">hist_kde_dist_type</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Literal</span><span class="p">[</span><span class="s2">"hist"</span><span class="p">,</span> <span class="s2">"kde"</span><span class="p">,</span> <span class="s2">"ecdf"</span><span class="p">],</span> <span class="n">dist_type</span><span class="p">)</span>
+                <span class="n">hist_kde_dist_type</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+                    <span class="n">Literal</span><span class="p">[</span><span class="s2">"hist"</span><span class="p">,</span> <span class="s2">"kde"</span><span class="p">,</span> <span class="s2">"ecdf"</span><span class="p">],</span> <span class="n">dist_type_resolved</span>
+                <span class="p">)</span>
                 <span class="n">plot_hist_kde</span><span class="p">(</span>
                     <span class="n">dfs</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="n">axes_list</span><span class="p">[</span><span class="n">io</span><span class="p">],</span> <span class="n">weighted</span><span class="p">,</span> <span class="n">hist_kde_dist_type</span>
                 <span class="p">)</span>
@@ -1367,6 +1369,11 @@
 <span class="sd">            plotly_plot_dist(dict_of_dfs, dist_type="qq")</span>
 <span class="sd">    """</span>
     <span class="n">dict_of_all_plots</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">weighted</span><span class="p">:</span>
+        <span class="n">dict_of_dfs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">name</span><span class="p">:</span> <span class="n">frame</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">"weight"</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
     <span class="c1">#  Choose set of variables to plot</span>
     <span class="n">variables</span> <span class="o">=</span> <span class="n">choose_variables</span><span class="p">(</span>
         <span class="o">*</span><span class="p">(</span><span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="p">),</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span>
@@ -1614,7 +1621,17 @@
             <span class="nb">zip</span><span class="p">(</span>
                 <span class="n">names</span><span class="p">,</span>
                 <span class="p">(</span>
-                    <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">d</span><span class="p">[</span><span class="s2">"df"</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">"weight"</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"weight"</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="p">(</span>
+                        <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+                            <span class="p">(</span>
+                                <span class="n">d</span><span class="p">[</span><span class="s2">"df"</span><span class="p">]</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">"weight"</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">),</span>
+                                <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">"weight"</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"weight"</span><span class="p">),</span>
+                            <span class="p">),</span>
+                            <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                        <span class="p">)</span>
+                        <span class="k">if</span> <span class="n">weighted</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="s2">"weight"</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                        <span class="k">else</span> <span class="n">d</span><span class="p">[</span><span class="s2">"df"</span><span class="p">]</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">"weight"</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">)</span>
+                    <span class="p">)</span>
                     <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dfs</span>
                 <span class="p">),</span>
             <span class="p">)</span>

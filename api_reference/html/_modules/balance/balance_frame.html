@@ -72,6 +72,7 @@
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.file_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_to_download</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.model_matrix</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_design_matrix</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods.ipw</span><span class="w"> </span><span class="kn">import</span> <span class="n">_restore_dropped_rows</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Self</span>
@@ -1456,15 +1457,18 @@
                 <span class="p">)</span>
 
         <span class="c1"># --- Compute holdout weights ---</span>
-        <span class="n">sample_matrix</span><span class="p">,</span> <span class="n">_target_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_ipw_matrices</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">sample_matrix</span><span class="p">,</span> <span class="n">target_matrix</span><span class="p">,</span> <span class="n">sample_rows</span><span class="p">,</span> <span class="n">target_rows</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_compute_ipw_matrices</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="p">)</span>
         <span class="n">fit_model</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"fit"</span><span class="p">))</span>
-        <span class="n">class_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ipw_class_index</span><span class="p">(</span><span class="n">fit_model</span><span class="p">)</span>
-        <span class="n">prob</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">fit_model</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">sample_matrix</span><span class="p">)[:,</span> <span class="n">class_index</span><span class="p">])</span>
+        <span class="n">prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compact_ipw_probabilities</span><span class="p">(</span><span class="n">fit_model</span><span class="p">,</span> <span class="n">sample_matrix</span><span class="p">)</span>
         <span class="n">link</span> <span class="o">=</span> <span class="n">link_transform</span><span class="p">(</span><span class="n">prob</span><span class="p">)</span>
 
         <span class="c1"># Use holdout's own design weights</span>
-        <span class="n">sample_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df_weights</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
-        <span class="n">target_weights</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df_weights</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">sample_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df_weights</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">sample_rows</span><span class="p">]</span>
+        <span class="n">target_weights</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">_assert_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df_weights</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">target_rows</span><span class="p">]</span>
+        <span class="p">)</span>
 
         <span class="c1"># Warn if holdout target weight sum differs &gt;1% from training</span>
         <span class="n">training_target_weights</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"training_target_weights"</span><span class="p">)</span>
@@ -1482,14 +1486,21 @@
                     <span class="n">train_sum</span><span class="p">,</span>
                 <span class="p">)</span>
 
-        <span class="n">predicted</span> <span class="o">=</span> <span class="n">weights_from_link</span><span class="p">(</span>
-            <span class="n">link</span><span class="o">=</span><span class="n">link</span><span class="p">,</span>
-            <span class="n">balance_classes</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"balance_classes"</span><span class="p">,</span> <span class="kc">True</span><span class="p">)),</span>
-            <span class="n">sample_weights</span><span class="o">=</span><span class="n">sample_weights</span><span class="p">,</span>
-            <span class="n">target_weights</span><span class="o">=</span><span class="n">target_weights</span><span class="p">,</span>
-            <span class="n">weight_trimming_mean_ratio</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"weight_trimming_mean_ratio"</span><span class="p">),</span>
-            <span class="n">weight_trimming_percentile</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"weight_trimming_percentile"</span><span class="p">),</span>
-        <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample_rows</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">target_rows</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">predicted</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">predicted</span> <span class="o">=</span> <span class="n">_restore_dropped_rows</span><span class="p">(</span>
+                <span class="n">weights_from_link</span><span class="p">(</span>
+                    <span class="n">link</span><span class="o">=</span><span class="n">link</span><span class="p">,</span>
+                    <span class="n">balance_classes</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"balance_classes"</span><span class="p">,</span> <span class="kc">True</span><span class="p">)),</span>
+                    <span class="n">sample_weights</span><span class="o">=</span><span class="n">sample_weights</span><span class="p">,</span>
+                    <span class="n">target_weights</span><span class="o">=</span><span class="n">target_weights</span><span class="p">,</span>
+                    <span class="n">weight_trimming_mean_ratio</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"weight_trimming_mean_ratio"</span><span class="p">),</span>
+                    <span class="n">weight_trimming_percentile</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"weight_trimming_percentile"</span><span class="p">),</span>
+                <span class="p">),</span>
+                <span class="n">sample_rows</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+            <span class="p">)</span>
 
         <span class="c1"># --- Build the result ---</span>
         <span class="k">if</span> <span class="n">inplace</span><span class="p">:</span>
@@ -1517,6 +1528,46 @@
 
         <span class="c1"># Store the model and set adjustment state</span>
         <span class="n">bf</span><span class="o">.</span><span class="n">_adjustment_model</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">bf</span><span class="o">.</span><span class="n">_adjustment_model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">"scoring_sample_link"</span><span class="p">:</span> <span class="n">link</span><span class="p">,</span>
+                <span class="s2">"scoring_sample_weights"</span><span class="p">:</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">"scoring_target_weights"</span><span class="p">:</span> <span class="n">target_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">"scoring_sample_rows"</span><span class="p">:</span> <span class="n">sample_rows</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">"scoring_sample_input_index"</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">"scoring_target_input_index"</span><span class="p">:</span> <span class="n">_assert_type</span><span class="p">(</span>
+                    <span class="n">bf</span><span class="o">.</span><span class="n">_sf_target</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="n">persist_replay</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">sample_rows</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">target_rows</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">_assert_type</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_rows"</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_input_index"</span><span class="p">),</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_rows"</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_input_index"</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">side</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"sample"</span><span class="p">,</span> <span class="s2">"target"</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">side</span><span class="p">,</span> <span class="n">matrix</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="n">input_index</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="p">(</span><span class="s2">"sample"</span><span class="p">,</span> <span class="n">sample_matrix</span><span class="p">,</span> <span class="n">sample_rows</span><span class="p">,</span> <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">),</span>
+            <span class="p">(</span>
+                <span class="s2">"target"</span><span class="p">,</span>
+                <span class="n">target_matrix</span><span class="p">,</span>
+                <span class="n">target_rows</span><span class="p">,</span>
+                <span class="n">_assert_type</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+            <span class="p">),</span>
+        <span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">persist_replay</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">probability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compact_ipw_probabilities</span><span class="p">(</span><span class="n">fit_model</span><span class="p">,</span> <span class="n">matrix</span><span class="p">)</span>
+            <span class="n">bf</span><span class="o">.</span><span class="n">_adjustment_model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"model_matrix_</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">matrix</span>
+            <span class="n">bf</span><span class="o">.</span><span class="n">_adjustment_model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_rows"</span><span class="p">]</span> <span class="o">=</span> <span class="n">rows</span>
+            <span class="n">bf</span><span class="o">.</span><span class="n">_adjustment_model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_input_index"</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_index</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">bf</span><span class="o">.</span><span class="n">_adjustment_model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_index"</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_index</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+            <span class="n">bf</span><span class="o">.</span><span class="n">_adjustment_model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_probability"</span><span class="p">]</span> <span class="o">=</span> <span class="n">probability</span>
+            <span class="n">bf</span><span class="o">.</span><span class="n">_adjustment_model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_link"</span><span class="p">]</span> <span class="o">=</span> <span class="n">link_transform</span><span class="p">(</span><span class="n">probability</span><span class="p">)</span>
         <span class="n">method_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"method"</span><span class="p">,</span> <span class="s2">"set_fitted_model"</span><span class="p">))</span>
         <span class="n">bf</span><span class="o">.</span><span class="n">_adjustment_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy_adjustment_history_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">bf</span><span class="o">.</span><span class="n">_append_adjustment_history_entry</span><span class="p">(</span><span class="n">method_name</span><span class="p">,</span> <span class="n">bf</span><span class="o">.</span><span class="n">_adjustment_model</span><span class="p">)</span>
@@ -2040,7 +2091,7 @@
         <span class="n">columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">matrix</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">matrix</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span><span class="o">.</span><span class="n">set_axis</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.sparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">spmatrix</span>
@@ -2102,7 +2153,7 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
         <span class="n">source</span><span class="p">:</span> <span class="n">BalanceFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""Compute IPW design matrices using stored model config.</span>
 
 <span class="sd">        Args:</span>
@@ -2159,7 +2210,26 @@
         <span class="p">)</span>
         <span class="n">combined_matrix</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">"combined_matrix"</span><span class="p">]</span>
         <span class="n">sample_n</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">"sample_n"</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">combined_matrix</span><span class="p">[:</span><span class="n">sample_n</span><span class="p">],</span> <span class="n">combined_matrix</span><span class="p">[</span><span class="n">sample_n</span><span class="p">:]</span>
+        <span class="n">sample_rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sample_rows"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sample_covars</span><span class="p">))),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span>
+        <span class="p">)</span>
+        <span class="n">target_rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"target_rows"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">target_covars</span><span class="p">))),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">combined_matrix</span><span class="p">[:</span><span class="n">sample_n</span><span class="p">],</span>
+            <span class="n">combined_matrix</span><span class="p">[</span><span class="n">sample_n</span><span class="p">:],</span>
+            <span class="n">sample_rows</span><span class="p">,</span>
+            <span class="n">target_rows</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compact_ipw_probabilities</span><span class="p">(</span><span class="n">fit_model</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">matrix</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Predict only retained rows, including an empty scoring population."""</span>
+        <span class="k">if</span> <span class="n">matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">class_index</span> <span class="o">=</span> <span class="n">BalanceFrame</span><span class="o">.</span><span class="n">_ipw_class_index</span><span class="p">(</span><span class="n">fit_model</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">fit_model</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">matrix</span><span class="p">)[:,</span> <span class="n">class_index</span><span class="p">])</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_is_artifact_stale</span><span class="p">(</span>
@@ -2201,39 +2271,48 @@
             <span class="n">current_idx</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span>
 
         <span class="n">stored_idx</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_index"</span><span class="p">,</span> <span class="n">current_idx</span><span class="p">))</span>
+        <span class="n">input_idx</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_input_index"</span><span class="p">,</span> <span class="n">current_idx</span><span class="p">))</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_rows"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">current_idx</span><span class="p">))))</span>
+        <span class="n">dropped_rows</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_idx</span><span class="p">)</span>
+        <span class="n">matching_input</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">dropped_rows</span> <span class="ow">or</span> <span class="n">input_idx</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">current_idx</span><span class="p">)</span>
+        <span class="n">expected_idx</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">current_idx</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span> <span class="k">if</span> <span class="n">dropped_rows</span> <span class="ow">and</span> <span class="n">matching_input</span> <span class="k">else</span> <span class="n">current_idx</span>
+        <span class="p">)</span>
         <span class="n">matrix</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"model_matrix_</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">probability</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_probability"</span><span class="p">)</span>
 
-        <span class="n">matrix_stale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_artifact_stale</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">stored_idx</span><span class="p">,</span> <span class="n">current_idx</span><span class="p">)</span>
-        <span class="n">prob_stale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_artifact_stale</span><span class="p">(</span><span class="n">probability</span><span class="p">,</span> <span class="n">stored_idx</span><span class="p">,</span> <span class="n">current_idx</span><span class="p">)</span>
+        <span class="n">matrix_stale</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">matching_input</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_artifact_stale</span><span class="p">(</span>
+            <span class="n">matrix</span><span class="p">,</span> <span class="n">stored_idx</span><span class="p">,</span> <span class="n">expected_idx</span>
+        <span class="p">)</span>
+        <span class="n">prob_stale</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">matching_input</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_artifact_stale</span><span class="p">(</span>
+            <span class="n">probability</span><span class="p">,</span> <span class="n">stored_idx</span><span class="p">,</span> <span class="n">expected_idx</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">matrix_stale</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">prob_stale</span><span class="p">:</span>
             <span class="k">return</span>
 
-        <span class="c1"># Recompute matrices (always produces both sides).</span>
-        <span class="n">sample_matrix</span><span class="p">,</span> <span class="n">target_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_ipw_matrices</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-        <span class="c1"># Cache both matrices — we already paid the cost of computing them.</span>
-        <span class="n">model</span><span class="p">[</span><span class="s2">"model_matrix_sample"</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_matrix</span>
-        <span class="n">model</span><span class="p">[</span><span class="s2">"model_matrix_target"</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_matrix</span>
-        <span class="c1"># Only update the index for the side being refreshed. Writing the</span>
-        <span class="c1"># other side's index here would cause the staleness check to skip</span>
-        <span class="c1"># recomputation on the next call, returning stale predictions.</span>
-        <span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_index"</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_idx</span>
-        <span class="n">recomputed_matrix</span> <span class="o">=</span> <span class="n">sample_matrix</span> <span class="k">if</span> <span class="n">side</span> <span class="o">==</span> <span class="s2">"sample"</span> <span class="k">else</span> <span class="n">target_matrix</span>
+        <span class="n">sample_matrix</span><span class="p">,</span> <span class="n">target_matrix</span><span class="p">,</span> <span class="n">sample_rows</span><span class="p">,</span> <span class="n">target_rows</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_compute_ipw_matrices</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods.ipw</span><span class="w"> </span><span class="kn">import</span> <span class="n">link_transform</span>
 
-        <span class="c1"># Recompute predictions if stale.</span>
-        <span class="k">if</span> <span class="n">prob_stale</span><span class="p">:</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods.ipw</span><span class="w"> </span><span class="kn">import</span> <span class="n">link_transform</span>
-
-            <span class="n">fit_model</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"fit"</span><span class="p">))</span>
-            <span class="n">class_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ipw_class_index</span><span class="p">(</span><span class="n">fit_model</span><span class="p">)</span>
-            <span class="n">prob</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
-                <span class="n">fit_model</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">recomputed_matrix</span><span class="p">)[:,</span> <span class="n">class_index</span><span class="p">]</span>
-            <span class="p">)</span>
-            <span class="n">link</span> <span class="o">=</span> <span class="n">link_transform</span><span class="p">(</span><span class="n">prob</span><span class="p">)</span>
-            <span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_probability"</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob</span>
-            <span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_link"</span><span class="p">]</span> <span class="o">=</span> <span class="n">link</span>
-            <span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_index"</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_idx</span>
+        <span class="n">fit_model</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"fit"</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">refreshed_side</span><span class="p">,</span> <span class="n">refreshed_matrix</span><span class="p">,</span> <span class="n">refreshed_rows</span><span class="p">,</span> <span class="n">refreshed_index</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="p">(</span><span class="s2">"sample"</span><span class="p">,</span> <span class="n">sample_matrix</span><span class="p">,</span> <span class="n">sample_rows</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">),</span>
+            <span class="p">(</span>
+                <span class="s2">"target"</span><span class="p">,</span>
+                <span class="n">target_matrix</span><span class="p">,</span>
+                <span class="n">target_rows</span><span class="p">,</span>
+                <span class="n">_assert_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+            <span class="p">),</span>
+        <span class="p">):</span>
+            <span class="n">prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compact_ipw_probabilities</span><span class="p">(</span><span class="n">fit_model</span><span class="p">,</span> <span class="n">refreshed_matrix</span><span class="p">)</span>
+            <span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"model_matrix_</span><span class="si">{</span><span class="n">refreshed_side</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">refreshed_matrix</span>
+            <span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">refreshed_side</span><span class="si">}</span><span class="s2">_rows"</span><span class="p">]</span> <span class="o">=</span> <span class="n">refreshed_rows</span>
+            <span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">refreshed_side</span><span class="si">}</span><span class="s2">_input_index"</span><span class="p">]</span> <span class="o">=</span> <span class="n">refreshed_index</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">refreshed_side</span><span class="si">}</span><span class="s2">_index"</span><span class="p">]</span> <span class="o">=</span> <span class="n">refreshed_index</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">refreshed_rows</span><span class="p">)</span>
+            <span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">refreshed_side</span><span class="si">}</span><span class="s2">_probability"</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob</span>
+            <span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">refreshed_side</span><span class="si">}</span><span class="s2">_link"</span><span class="p">]</span> <span class="o">=</span> <span class="n">link_transform</span><span class="p">(</span><span class="n">prob</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_validate_data_covariates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">BalanceFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Validate that ``data`` has matching covariate columns to self."""</span>
@@ -2305,7 +2384,9 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A model-matrix DataFrame, or a tuple of two DataFrames when</span>
-<span class="sd">            ``on="both"``.</span>
+<span class="sd">            ``on="both"``. Matrices contain only rows retained by formula</span>
+<span class="sd">            evaluation, indexed by the corresponding caller labels; omitted</span>
+<span class="sd">            rows are not restored as NaN feature rows.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: If the object is not IPW-adjusted, if target is missing</span>
@@ -2345,16 +2426,16 @@
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                     <span class="s2">"data must have a target set for on='target' or on='both'."</span>
                 <span class="p">)</span>
-            <span class="n">sample_matrix</span><span class="p">,</span> <span class="n">target_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_ipw_matrices</span><span class="p">(</span>
-                <span class="n">model</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">data</span>
+            <span class="n">sample_matrix</span><span class="p">,</span> <span class="n">target_matrix</span><span class="p">,</span> <span class="n">sample_rows</span><span class="p">,</span> <span class="n">target_rows</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_compute_ipw_matrices</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
             <span class="p">)</span>
             <span class="n">sample_df_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix_to_dataframe</span><span class="p">(</span>
-                <span class="n">sample_matrix</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">columns</span>
+                <span class="n">sample_matrix</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">sample_rows</span><span class="p">),</span> <span class="n">columns</span>
             <span class="p">)</span>
             <span class="n">target_df_result</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_matrix_to_dataframe</span><span class="p">(</span>
                     <span class="n">target_matrix</span><span class="p">,</span>
-                    <span class="n">_assert_type</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                    <span class="n">_assert_type</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">target_rows</span><span class="p">),</span>
                     <span class="n">columns</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">_sf_target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
@@ -2379,16 +2460,16 @@
                 <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_fresh_ipw_artifacts</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">"sample"</span><span class="p">)</span>
             <span class="n">sample_idx</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sample_index"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">))</span>
-            <span class="n">sample_df</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
-                <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_align_to_index</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_matrix_to_dataframe</span><span class="p">(</span>
-                        <span class="n">model</span><span class="p">[</span><span class="s2">"model_matrix_sample"</span><span class="p">],</span> <span class="n">sample_idx</span><span class="p">,</span> <span class="n">columns</span>
-                    <span class="p">),</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
-                    <span class="n">caller</span><span class="o">=</span><span class="s2">"design_matrix()"</span><span class="p">,</span>
-                <span class="p">),</span>
+            <span class="n">sample_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix_to_dataframe</span><span class="p">(</span>
+                <span class="n">model</span><span class="p">[</span><span class="s2">"model_matrix_sample"</span><span class="p">],</span> <span class="n">sample_idx</span><span class="p">,</span> <span class="n">columns</span>
             <span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample_df</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="p">):</span>
+                <span class="n">sample_df</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+                    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_align_to_index</span><span class="p">(</span>
+                        <span class="n">sample_df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s2">"design_matrix()"</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">on</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"target"</span><span class="p">,</span> <span class="s2">"both"</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_require_target</span><span class="p">()</span>
@@ -2401,16 +2482,16 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_fresh_ipw_artifacts</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">"target"</span><span class="p">)</span>
             <span class="n">current_target_idx</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span>
             <span class="n">target_idx</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"target_index"</span><span class="p">,</span> <span class="n">current_target_idx</span><span class="p">))</span>
-            <span class="n">target_df</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
-                <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_align_to_index</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_matrix_to_dataframe</span><span class="p">(</span>
-                        <span class="n">model</span><span class="p">[</span><span class="s2">"model_matrix_target"</span><span class="p">],</span> <span class="n">target_idx</span><span class="p">,</span> <span class="n">columns</span>
-                    <span class="p">),</span>
-                    <span class="n">current_target_idx</span><span class="p">,</span>
-                    <span class="n">caller</span><span class="o">=</span><span class="s2">"design_matrix()"</span><span class="p">,</span>
-                <span class="p">),</span>
+            <span class="n">target_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix_to_dataframe</span><span class="p">(</span>
+                <span class="n">model</span><span class="p">[</span><span class="s2">"model_matrix_target"</span><span class="p">],</span> <span class="n">target_idx</span><span class="p">,</span> <span class="n">columns</span>
             <span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">target_df</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">current_target_idx</span><span class="p">):</span>
+                <span class="n">target_df</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+                    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_align_to_index</span><span class="p">(</span>
+                        <span class="n">target_df</span><span class="p">,</span> <span class="n">current_target_idx</span><span class="p">,</span> <span class="s2">"design_matrix()"</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">on</span> <span class="o">==</span> <span class="s2">"sample"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">sample_df</span><span class="p">)</span>
@@ -2519,37 +2600,32 @@
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                     <span class="s2">"data must have a target set for on='target' or on='both'."</span>
                 <span class="p">)</span>
-            <span class="n">sample_matrix</span><span class="p">,</span> <span class="n">target_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_ipw_matrices</span><span class="p">(</span>
-                <span class="n">model</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">data</span>
+            <span class="n">sample_matrix</span><span class="p">,</span> <span class="n">target_matrix</span><span class="p">,</span> <span class="n">sample_rows</span><span class="p">,</span> <span class="n">target_rows</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_compute_ipw_matrices</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
             <span class="p">)</span>
             <span class="n">fit_model</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"fit"</span><span class="p">))</span>
-            <span class="n">class_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ipw_class_index</span><span class="p">(</span><span class="n">fit_model</span><span class="p">)</span>
 
             <span class="n">sample_series_result</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">target_series_result</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
             <span class="k">if</span> <span class="n">on</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"sample"</span><span class="p">,</span> <span class="s2">"both"</span><span class="p">):</span>
-                <span class="n">prob</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
-                    <span class="n">fit_model</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">sample_matrix</span><span class="p">)[:,</span> <span class="n">class_index</span><span class="p">]</span>
-                <span class="p">)</span>
+                <span class="n">prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compact_ipw_probabilities</span><span class="p">(</span><span class="n">fit_model</span><span class="p">,</span> <span class="n">sample_matrix</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">output</span> <span class="o">==</span> <span class="s2">"link"</span><span class="p">:</span>
                     <span class="n">values_arr</span> <span class="o">=</span> <span class="n">link_transform</span><span class="p">(</span><span class="n">prob</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">values_arr</span> <span class="o">=</span> <span class="n">prob</span>
-                <span class="n">sample_series_result</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
-                    <span class="n">values_arr</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span>
+                <span class="n">sample_series_result</span> <span class="o">=</span> <span class="n">_restore_dropped_rows</span><span class="p">(</span>
+                    <span class="n">values_arr</span><span class="p">,</span> <span class="n">sample_rows</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span>
                 <span class="p">)</span>
 
             <span class="k">if</span> <span class="n">on</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"target"</span><span class="p">,</span> <span class="s2">"both"</span><span class="p">):</span>
-                <span class="n">prob</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
-                    <span class="n">fit_model</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">target_matrix</span><span class="p">)[:,</span> <span class="n">class_index</span><span class="p">]</span>
-                <span class="p">)</span>
+                <span class="n">prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compact_ipw_probabilities</span><span class="p">(</span><span class="n">fit_model</span><span class="p">,</span> <span class="n">target_matrix</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">output</span> <span class="o">==</span> <span class="s2">"link"</span><span class="p">:</span>
                     <span class="n">values_arr</span> <span class="o">=</span> <span class="n">link_transform</span><span class="p">(</span><span class="n">prob</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">values_arr</span> <span class="o">=</span> <span class="n">prob</span>
-                <span class="n">target_series_result</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
-                    <span class="n">values_arr</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">_assert_type</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span>
+                <span class="n">target_series_result</span> <span class="o">=</span> <span class="n">_restore_dropped_rows</span><span class="p">(</span>
+                    <span class="n">values_arr</span><span class="p">,</span> <span class="n">target_rows</span><span class="p">,</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span>
                 <span class="p">)</span>
 
             <span class="k">if</span> <span class="n">on</span> <span class="o">==</span> <span class="s2">"sample"</span><span class="p">:</span>
@@ -2592,16 +2668,19 @@
                 <span class="n">current_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">current_idx</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span>
-            <span class="n">stored_idx</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_index"</span><span class="p">,</span> <span class="n">current_idx</span><span class="p">))</span>
-
-            <span class="n">series</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
-                <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_align_to_index</span><span class="p">(</span>
-                    <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">_assert_type</span><span class="p">(</span><span class="n">values</span><span class="p">),</span> <span class="n">index</span><span class="o">=</span><span class="n">stored_idx</span><span class="p">),</span>
-                    <span class="n">current_idx</span><span class="p">,</span>
-                    <span class="n">caller</span><span class="o">=</span><span class="s2">"predict_proba()"</span><span class="p">,</span>
-                <span class="p">),</span>
-            <span class="p">)</span>
+            <span class="n">rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_rows"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">current_idx</span><span class="p">))))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">current_idx</span><span class="p">):</span>
+                <span class="n">stored_idx</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_index"</span><span class="p">,</span> <span class="n">current_idx</span><span class="p">))</span>
+                <span class="n">series</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+                    <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_align_to_index</span><span class="p">(</span>
+                        <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">_assert_type</span><span class="p">(</span><span class="n">values</span><span class="p">),</span> <span class="n">index</span><span class="o">=</span><span class="n">stored_idx</span><span class="p">),</span>
+                        <span class="n">current_idx</span><span class="p">,</span>
+                        <span class="s2">"predict_proba()"</span><span class="p">,</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">series</span> <span class="o">=</span> <span class="n">_restore_dropped_rows</span><span class="p">(</span><span class="n">_assert_type</span><span class="p">(</span><span class="n">values</span><span class="p">),</span> <span class="n">rows</span><span class="p">,</span> <span class="n">current_idx</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">side</span> <span class="o">==</span> <span class="s2">"sample"</span><span class="p">:</span>
                 <span class="n">sample_series</span> <span class="o">=</span> <span class="n">series</span>
             <span class="k">else</span><span class="p">:</span>
@@ -2719,17 +2798,25 @@
                     <span class="s2">"IPW model metadata is missing fitted model information."</span>
                 <span class="p">)</span>
 
-            <span class="n">sample_matrix</span><span class="p">,</span> <span class="n">_target_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_ipw_matrices</span><span class="p">(</span>
-                <span class="n">model</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">data</span>
+            <span class="n">sample_matrix</span><span class="p">,</span> <span class="n">_target_matrix</span><span class="p">,</span> <span class="n">sample_rows</span><span class="p">,</span> <span class="n">target_rows</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_compute_ipw_matrices</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
             <span class="p">)</span>
-            <span class="n">class_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ipw_class_index</span><span class="p">(</span><span class="n">fit_obj</span><span class="p">)</span>
-            <span class="n">prob</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">fit_obj</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">sample_matrix</span><span class="p">)[:,</span> <span class="n">class_index</span><span class="p">])</span>
+            <span class="n">prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compact_ipw_probabilities</span><span class="p">(</span><span class="n">fit_obj</span><span class="p">,</span> <span class="n">sample_matrix</span><span class="p">)</span>
             <span class="n">link</span> <span class="o">=</span> <span class="n">link_transform</span><span class="p">(</span><span class="n">prob</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">_sf_target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"data must have a target set for predict_weights()."</span><span class="p">)</span>
-            <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df_weights</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
-            <span class="n">target_weights</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df_weights</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df_weights</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">sample_rows</span><span class="p">]</span>
+            <span class="n">target_weights</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">_assert_type</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df_weights</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">target_rows</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample_rows</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">target_rows</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
+                    <span class="n">index</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                    <span class="n">name</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">weight_series</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                <span class="p">)</span>
 
             <span class="n">training_target_weights</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"training_target_weights"</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">training_target_weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
@@ -2755,9 +2842,9 @@
                 <span class="n">weight_trimming_percentile</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"weight_trimming_percentile"</span><span class="p">),</span>
             <span class="p">)</span>
             <span class="n">weight_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">weight_series</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">predicted</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
-                <span class="n">weight_name</span>
-            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">_restore_dropped_rows</span><span class="p">(</span>
+                <span class="n">predicted</span><span class="p">,</span> <span class="n">sample_rows</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">weight_name</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_require_target</span><span class="p">()</span>
         <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_require_fitted_model</span><span class="p">()</span>
@@ -2890,6 +2977,51 @@
         <span class="k">if</span> <span class="n">fit</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">columns</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"IPW model metadata is missing fitted model information."</span><span class="p">)</span>
 
+        <span class="n">current_sample_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span>
+        <span class="n">current_target_idx</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span>
+        <span class="k">for</span> <span class="n">prefix</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"scoring"</span><span class="p">,</span> <span class="s2">"training"</span><span class="p">):</span>
+            <span class="n">input_sample_idx</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_sample_input_index"</span><span class="p">)</span>
+            <span class="n">input_target_idx</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_target_input_index"</span><span class="p">)</span>
+            <span class="n">stored_link</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_sample_link"</span><span class="p">)</span>
+            <span class="n">stored_sample_weights</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_sample_weights"</span><span class="p">)</span>
+            <span class="n">stored_target_weights</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_target_weights"</span><span class="p">)</span>
+            <span class="n">rows</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_sample_rows"</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_sample_idx</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="n">input_sample_idx</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">current_sample_idx</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_target_idx</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="n">input_target_idx</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">current_target_idx</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stored_link</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stored_sample_weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stored_target_weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">prefix</span> <span class="o">==</span> <span class="s2">"training"</span>
+                <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">current_sample_idx</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">stored_target_weights</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">current_target_idx</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">stored_target_weights</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
+                    <span class="n">index</span><span class="o">=</span><span class="n">current_sample_idx</span><span class="p">,</span>
+                    <span class="n">name</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_series</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="n">predicted</span> <span class="o">=</span> <span class="n">weights_from_link</span><span class="p">(</span>
+                <span class="n">stored_link</span><span class="p">,</span>
+                <span class="nb">bool</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"balance_classes"</span><span class="p">,</span> <span class="kc">True</span><span class="p">)),</span>
+                <span class="n">stored_sample_weights</span><span class="p">,</span>
+                <span class="n">stored_target_weights</span><span class="p">,</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"weight_trimming_mean_ratio"</span><span class="p">),</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"weight_trimming_percentile"</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">_restore_dropped_rows</span><span class="p">(</span><span class="n">predicted</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="n">current_sample_idx</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+                <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_series</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="p">)</span>
+
         <span class="n">link</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_ipw_link</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
         <span class="n">sample_weights</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_design_weights</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">link</span><span class="p">)</span>
 
@@ -2989,7 +3121,7 @@
         <span class="n">svd_s</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">svd_Vh</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">beta_opt_model_space</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""Rebuild the CBPS scoring matrix ``U`` from stored fit artifacts."""</span>
         <span class="n">sample_covars</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">target_covars</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -3014,6 +3146,12 @@
         <span class="n">combined_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">matrix_out</span><span class="p">[</span><span class="s2">"combined_matrix"</span><span class="p">])</span>
         <span class="n">sample_n</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">matrix_out</span><span class="p">[</span><span class="s2">"sample_n"</span><span class="p">])</span>
         <span class="n">target_n</span> <span class="o">=</span> <span class="n">combined_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">sample_n</span>
+        <span class="n">sample_rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+            <span class="n">matrix_out</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sample_rows"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sample_covars</span><span class="p">))),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span>
+        <span class="p">)</span>
+        <span class="n">target_rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+            <span class="n">matrix_out</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"target_rows"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">target_covars</span><span class="p">))),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span>
+        <span class="p">)</span>
 
         <span class="n">model_matrix_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"model_matrix_mean"</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
         <span class="n">model_matrix_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"model_matrix_std"</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
@@ -3051,7 +3189,7 @@
                 <span class="s2">"CBPS model metadata has incompatible coefficient dimensions for "</span>
                 <span class="s2">"predict_weights()."</span>
             <span class="p">)</span>
-        <span class="k">return</span> <span class="n">U_matrix</span><span class="p">,</span> <span class="n">sample_n</span><span class="p">,</span> <span class="n">target_n</span>
+        <span class="k">return</span> <span class="n">U_matrix</span><span class="p">,</span> <span class="n">sample_n</span><span class="p">,</span> <span class="n">target_n</span><span class="p">,</span> <span class="n">sample_rows</span><span class="p">,</span> <span class="n">target_rows</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_cbps_training_weights</span><span class="p">(</span>
@@ -3072,9 +3210,22 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
                 <span class="nb">isinstance</span><span class="p">(</span><span class="n">training_sample_weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span>
                 <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">training_target_weights</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span>
-                <span class="ow">and</span> <span class="n">training_sample_weights</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="n">training_sample_weights</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span>
+                    <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">take</span><span class="p">(</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+                            <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sample_rows"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="p">)))</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
                 <span class="ow">and</span> <span class="n">training_target_weights</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span>
-                    <span class="n">_assert_type</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span>
+                    <span class="n">_assert_type</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">take</span><span class="p">(</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+                            <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                                <span class="s2">"target_rows"</span><span class="p">,</span>
+                                <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">_assert_type</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df</span><span class="p">)),</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
                 <span class="p">)</span>
             <span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -3151,20 +3302,32 @@
             <span class="n">na_action</span><span class="p">,</span>
         <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_cbps_metadata</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
-        <span class="n">U_matrix</span><span class="p">,</span> <span class="n">sample_n</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_cbps_scoring_matrix</span><span class="p">(</span>
-            <span class="n">bf</span><span class="p">,</span>
-            <span class="n">model</span><span class="p">,</span>
-            <span class="n">fit_columns</span><span class="p">,</span>
-            <span class="n">variables</span><span class="p">,</span>
-            <span class="n">na_action</span><span class="p">,</span>
-            <span class="n">svd_s</span><span class="p">,</span>
-            <span class="n">svd_Vh</span><span class="p">,</span>
-            <span class="n">beta_opt_model_space</span><span class="p">,</span>
+        <span class="n">U_matrix</span><span class="p">,</span> <span class="n">sample_n</span><span class="p">,</span> <span class="n">target_n</span><span class="p">,</span> <span class="n">sample_rows</span><span class="p">,</span> <span class="n">target_rows</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_build_cbps_scoring_matrix</span><span class="p">(</span>
+                <span class="n">bf</span><span class="p">,</span>
+                <span class="n">model</span><span class="p">,</span>
+                <span class="n">fit_columns</span><span class="p">,</span>
+                <span class="n">variables</span><span class="p">,</span>
+                <span class="n">na_action</span><span class="p">,</span>
+                <span class="n">svd_s</span><span class="p">,</span>
+                <span class="n">svd_Vh</span><span class="p">,</span>
+                <span class="n">beta_opt_model_space</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="p">)</span>
+        <span class="k">if</span> <span class="n">sample_n</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">target_n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
+                <span class="n">index</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">weight_series</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="p">)</span>
 
         <span class="n">sample_weights</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_cbps_training_weights</span><span class="p">(</span>
             <span class="n">bf</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">use_training_weights</span><span class="o">=</span><span class="n">source</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="p">)</span>
+        <span class="k">if</span> <span class="n">source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">sample_weights</span><span class="p">[</span><span class="n">sample_rows</span><span class="p">]</span>
+            <span class="n">target_weights</span> <span class="o">=</span> <span class="n">target_weights</span><span class="p">[</span><span class="n">target_rows</span><span class="p">]</span>
         <span class="n">sample_n_actual</span> <span class="o">=</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">target_n_actual</span> <span class="o">=</span> <span class="n">target_weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">sample_n</span> <span class="o">!=</span> <span class="n">sample_n_actual</span><span class="p">:</span>
@@ -3210,9 +3373,9 @@
         <span class="k">if</span> <span class="n">original_sum</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"CBPS predict_weights() produced non-positive weight sum."</span><span class="p">)</span>
         <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">/</span> <span class="n">original_sum</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">target_weights</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
-            <span class="nb">getattr</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">weight_series</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">_restore_dropped_rows</span><span class="p">(</span>
+            <span class="n">weights</span><span class="p">,</span> <span class="n">sample_rows</span><span class="p">,</span> <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">weight_series</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_predict_weights_poststratify</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>

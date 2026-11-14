@@ -365,7 +365,10 @@ NotImplementedError: If <code class="docutils literal notranslate"><span class="
 <dt>Returns:</dt><dd><p>Dict[str, Any]: A dictionary with keys:</p>
 <blockquote>
 <div><dl>
-<dt><code class="docutils literal notranslate"><span class="pre">&quot;weight&quot;</span></code></dt><dd><p>The adjusted weights for the sample (pd.Series).</p>
+<dt><code class="docutils literal notranslate"><span class="pre">&quot;weight&quot;</span></code></dt><dd><p>The adjusted weights for the sample (pd.Series). When formula
+evaluation omits rows, the result uses the caller’s original
+row positions, with NaN weights for omitted rows. Raw-only
+<code class="docutils literal notranslate"><span class="pre">na_action=&quot;drop&quot;</span></code> keeps its historical compact return.</p>
 </dd>
 <dt><code class="docutils literal notranslate"><span class="pre">&quot;model&quot;</span></code></dt><dd><p>A dict with model parameters. Always-present keys:
 <code class="docutils literal notranslate"><span class="pre">method</span></code>, <code class="docutils literal notranslate"><span class="pre">X_matrix_columns</span></code>, <code class="docutils literal notranslate"><span class="pre">fit</span></code> (estimator),

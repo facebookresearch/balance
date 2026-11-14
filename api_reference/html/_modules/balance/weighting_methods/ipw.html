@@ -198,6 +198,17 @@
     <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">dev</span> <span class="o">/</span> <span class="n">null_dev</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_restore_dropped_rows</span><span class="p">(</span>
+    <span class="n">values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">rows</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">index</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Scatter retained outputs to their original caller positions."""</span>
+    <span class="n">restored</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">restored</span><span class="p">[</span><span class="n">rows</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">restored</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_copy_fit_matrix_slice</span><span class="p">(</span>
     <span class="n">X_matrix</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">csc_matrix</span><span class="p">,</span> <span class="n">csr_matrix</span><span class="p">],</span>
     <span class="n">start</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -744,7 +755,10 @@
 <span class="sd">        Dict[str, Any]: A dictionary with keys:</span>
 
 <span class="sd">            ``"weight"``</span>
-<span class="sd">                The adjusted weights for the sample (pd.Series).</span>
+<span class="sd">                The adjusted weights for the sample (pd.Series). When formula</span>
+<span class="sd">                evaluation omits rows, the result uses the caller's original</span>
+<span class="sd">                row positions, with NaN weights for omitted rows. Raw-only</span>
+<span class="sd">                ``na_action="drop"`` keeps its historical compact return.</span>
 
 <span class="sd">            ``"model"``</span>
 <span class="sd">                A dict with model parameters. Always-present keys:</span>
@@ -805,6 +819,13 @@
 
     <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
     <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variables</span><span class="p">]</span>
+    <span class="n">sample_input_index</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">target_input_index</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">sample_rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sample_df</span><span class="p">))</span>
+    <span class="n">target_rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">target_df</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">"drop"</span><span class="p">:</span>
+        <span class="n">sample_rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">sample_df</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">target_rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">target_df</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 
     <span class="n">sample_df</span><span class="p">,</span> <span class="n">sample_weights</span><span class="p">,</span> <span class="n">target_df</span><span class="p">,</span> <span class="n">target_weights</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">balance_util</span><span class="o">.</span><span class="n">_apply_na_action_to_frame_pair</span><span class="p">(</span>
@@ -867,6 +888,42 @@
     <span class="n">X_matrix_columns_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">dm_result</span><span class="p">[</span><span class="s2">"columns"</span><span class="p">]</span>
     <span class="n">penalty_factor_expanded</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">dm_result</span><span class="p">[</span><span class="s2">"penalty_factor_expanded"</span><span class="p">]</span>
     <span class="n">resolved_formula</span> <span class="o">=</span> <span class="n">dm_result</span><span class="p">[</span><span class="s2">"resolved_formula"</span><span class="p">]</span>
+    <span class="n">matrix_sample_rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+        <span class="n">dm_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sample_rows"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sample_df</span><span class="p">))),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span>
+    <span class="p">)</span>
+    <span class="n">matrix_target_rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+        <span class="n">dm_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"target_rows"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">target_df</span><span class="p">))),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span>
+    <span class="p">)</span>
+    <span class="n">matrix_rows_dropped</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">matrix_sample_rows</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample_df</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span>
+        <span class="n">matrix_target_rows</span>
+    <span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">target_df</span><span class="p">)</span>
+    <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">matrix_sample_rows</span><span class="p">]</span>
+    <span class="n">target_df</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">matrix_target_rows</span><span class="p">]</span>
+    <span class="n">sample_weights</span> <span class="o">=</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">matrix_sample_rows</span><span class="p">]</span>
+    <span class="n">target_weights</span> <span class="o">=</span> <span class="n">target_weights</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">matrix_target_rows</span><span class="p">]</span>
+    <span class="n">sample_rows</span> <span class="o">=</span> <span class="n">sample_rows</span><span class="p">[</span><span class="n">matrix_sample_rows</span><span class="p">]</span>
+    <span class="n">target_rows</span> <span class="o">=</span> <span class="n">target_rows</span><span class="p">[</span><span class="n">matrix_target_rows</span><span class="p">]</span>
+    <span class="n">sample_n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample_rows</span><span class="p">)</span>
+    <span class="n">target_n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">target_rows</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">matrix_rows_dropped</span> <span class="ow">and</span> <span class="p">(</span><span class="n">sample_n</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">target_n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"Formula row dropping left an empty sample or target; "</span>
+            <span class="s2">"IPW fitting requires retained rows in both populations."</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">sample_rows</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample_input_index</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">target_rows</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">target_input_index</span><span class="p">)</span>
+    <span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+        <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">sample_weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="ow">or</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="mi">0</span>
+        <span class="ow">or</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">target_weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="ow">or</span> <span class="n">target_weights</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="mi">0</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"Row dropping left non-positive or non-finite sample or target weight mass; "</span>
+            <span class="s2">"IPW fitting requires positive finite retained weight sums."</span>
+        <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">use_model_matrix</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Building model matrix"</span><span class="p">)</span>
@@ -1211,6 +1268,12 @@
         <span class="p">),</span>
     <span class="p">}</span>
 
+    <span class="k">if</span> <span class="n">store_fit_metadata</span> <span class="ow">or</span> <span class="n">store_fit_matrices</span><span class="p">:</span>
+        <span class="n">model_out</span><span class="p">[</span><span class="s2">"sample_rows"</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_rows</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">model_out</span><span class="p">[</span><span class="s2">"target_rows"</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_rows</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">model_out</span><span class="p">[</span><span class="s2">"sample_input_index"</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_input_index</span>
+        <span class="n">model_out</span><span class="p">[</span><span class="s2">"target_input_index"</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_input_index</span>
+
     <span class="k">if</span> <span class="n">store_fit_metadata</span><span class="p">:</span>
         <span class="n">model_out</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
             <span class="p">{</span>
@@ -1222,6 +1285,11 @@
                 <span class="s2">"target_index"</span><span class="p">:</span> <span class="n">target_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
                 <span class="s2">"training_sample_weights"</span><span class="p">:</span> <span class="n">sample_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
                 <span class="s2">"training_target_weights"</span><span class="p">:</span> <span class="n">target_weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">"training_sample_link"</span><span class="p">:</span> <span class="n">sample_link</span><span class="p">,</span>
+                <span class="s2">"training_sample_rows"</span><span class="p">:</span> <span class="n">sample_rows</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">"training_target_rows"</span><span class="p">:</span> <span class="n">target_rows</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">"training_sample_input_index"</span><span class="p">:</span> <span class="n">sample_input_index</span><span class="p">,</span>
+                <span class="s2">"training_target_input_index"</span><span class="p">:</span> <span class="n">target_input_index</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">)</span>
 
@@ -1240,7 +1308,11 @@
         <span class="p">)</span>
 
     <span class="n">out</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">"weight"</span><span class="p">:</span> <span class="n">weights</span><span class="p">,</span>
+        <span class="s2">"weight"</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">_restore_dropped_rows</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">sample_rows</span><span class="p">,</span> <span class="n">sample_input_index</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">matrix_rows_dropped</span>
+            <span class="k">else</span> <span class="n">weights</span>
+        <span class="p">),</span>
         <span class="s2">"model"</span><span class="p">:</span> <span class="n">model_out</span><span class="p">,</span>
     <span class="p">}</span>
 

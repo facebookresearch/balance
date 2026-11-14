@@ -181,10 +181,13 @@ reconstruction (for CBPS models). Defaults to False.</p></li>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><p>A dictionary includes:
-“weight” — The weights for the sample.
-“model” – dictionary with details about the fitted model:</p>
+“weight” — The weights for the sample. Formula-omitted rows receive</p>
 <blockquote>
-<div><p>X_matrix_columns, deviance, beta_optimal, balance_optimize_result,
+<div><p>NaN weights at their original caller positions; raw-only
+<code class="docutils literal notranslate"><span class="pre">na_action=&quot;drop&quot;</span></code> retains its historical compact return.</p>
+</div></blockquote>
+<dl>
+<dt>”model” – dictionary with details about the fitted model:</dt><dd><p>X_matrix_columns, deviance, beta_optimal, balance_optimize_result,
 gmm_optimize_result_glm_init, gmm_optimize_result_bal_init
 It has the following shape:
 “model”: {</p>
@@ -207,7 +210,8 @@ if cbps_method == “over”
 else None,</p>
 </div></blockquote>
 <p>},</p>
-</div></blockquote>
+</dd>
+</dl>
 </p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>

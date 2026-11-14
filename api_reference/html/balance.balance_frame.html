@@ -367,7 +367,9 @@ provides covariates.  Must have matching covariate column names.</p></li>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A model-matrix DataFrame, or a tuple of two DataFrames when
-<code class="docutils literal notranslate"><span class="pre">on=&quot;both&quot;</span></code>.</p>
+<code class="docutils literal notranslate"><span class="pre">on=&quot;both&quot;</span></code>. Matrices contain only rows retained by formula
+evaluation, indexed by the corresponding caller labels; omitted
+rows are not restored as NaN feature rows.</p>
 </dd>
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>ValueError</strong> – If the object is not IPW-adjusted, if target is missing

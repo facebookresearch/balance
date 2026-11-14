@@ -1530,7 +1530,18 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_batch_columns</span><span class="p">():</span>
             <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">diagnostics</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">batch_name</span><span class="p">,</span> <span class="n">batch_df</span> <span class="ow">in</span> <span class="n">input_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_columns</span><span class="p">()):</span>
+            <span class="n">batch_columns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_columns</span><span class="p">()</span>
+            <span class="n">missing_batch_columns</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">input_df</span><span class="p">[</span><span class="n">batch_columns</span><span class="p">]</span>
+                <span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">input_df</span><span class="p">[</span><span class="n">batch_columns</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">()]</span>
+                <span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">missing_batch_columns</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"batch columns contain missing values: </span><span class="si">{</span><span class="n">missing_batch_columns</span><span class="si">}</span><span class="s2">. "</span>
+                    <span class="s2">"Fill batch keys before weighting."</span>
+                <span class="p">)</span>
+            <span class="k">for</span> <span class="n">batch_name</span><span class="p">,</span> <span class="n">batch_df</span> <span class="ow">in</span> <span class="n">input_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">batch_columns</span><span class="p">):</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Running weighting for batch = </span><span class="si">%s</span><span class="s2"> "</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">batch_name</span><span class="p">))</span>
                 <span class="n">processed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_batch</span><span class="p">(</span>
                     <span class="n">batch_df</span><span class="p">,</span>
@@ -1547,7 +1558,24 @@
                     <span class="n">sample_package_name</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">processed</span><span class="p">[</span><span class="s2">"adjusted"</span><span class="p">])</span>
-                <span class="n">diagnostics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">processed</span><span class="p">[</span><span class="s2">"diagnostics"</span><span class="p">])</span>
+                <span class="n">batch_diagnostics</span> <span class="o">=</span> <span class="n">processed</span><span class="p">[</span><span class="s2">"diagnostics"</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">batch_values</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">batch_name</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">batch_name</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="n">batch_name</span><span class="p">,)</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch_values</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch_columns</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">"Batch key arity mismatch: "</span>
+                        <span class="sa">f</span><span class="s2">"expected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">batch_columns</span><span class="p">)</span><span class="si">}</span><span class="s2"> values, got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">batch_values</span><span class="p">)</span><span class="si">}</span><span class="s2">. "</span>
+                        <span class="s2">"Cannot attach complete batch provenance."</span>
+                    <span class="p">)</span>
+                <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">batch_columns</span><span class="p">,</span> <span class="n">batch_values</span><span class="p">):</span>
+                    <span class="n">diagnostic_column</span> <span class="o">=</span> <span class="n">column</span>
+                    <span class="k">while</span> <span class="n">diagnostic_column</span> <span class="ow">in</span> <span class="n">batch_diagnostics</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                        <span class="n">diagnostic_column</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"batch_</span><span class="si">{</span><span class="n">diagnostic_column</span><span class="si">}</span><span class="s2">"</span>
+                    <span class="n">batch_diagnostics</span><span class="p">[</span><span class="n">diagnostic_column</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">value</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span>
+                        <span class="n">batch_diagnostics</span>
+                    <span class="p">)</span>
+                <span class="n">diagnostics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batch_diagnostics</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Done processing batch </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">batch_name</span><span class="p">))</span>
 
             <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">diagnostics</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
