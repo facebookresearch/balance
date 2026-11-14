@@ -640,12 +640,13 @@ def asmd(
         sample_std = descriptive_stats(sample_df, sample_weights, "std")
         std = np.sqrt(((sample_std**2) + (target_std**2)) / 2)
 
-    out = abs(sample_mean - target_mean) / std
+    difference = abs(sample_mean - target_mean)
+    std = std.reindex(columns=difference.columns)
+    out = (difference / std).mask((difference == 0) & (std == 0), 0.0)
 
     #  Remove na indicator columns; it's OK to assume that these columns are
     #  indicators because add_na_indicator enforces it
     out = out.loc[:, (c for c in out.columns.values if not c.startswith("_is_na_"))]
-    out = _safe_replace_and_infer(out)
 
     weights = _weights_per_covars_names(out.columns.values.tolist())[
         ["weight"]
@@ -1351,6 +1352,8 @@ def asmd_improvement(
         np.float64: The improvement is taking the (before_mean_asmd-after_mean_asmd)/before_mean_asmd.
         The asmd is calculated using :func:`asmd`.
         Returns 0.0 when asmd_mean_before is zero or very close to zero (< 1e-10).
+        Returns NaN when asmd_mean_before is infinite, because relative
+        improvement is undefined.
 
     Examples:
     .. code-block:: python
@@ -1372,6 +1375,8 @@ def asmd_improvement(
     # Avoid division by zero when asmd_mean_before is zero or very close to zero
     if np.abs(asmd_mean_before) < 1e-10:
         return np.float64(0.0)
+    if np.isinf(asmd_mean_before):
+        return np.float64(np.nan)
 
     return (asmd_mean_before - asmd_mean_after) / asmd_mean_before
 

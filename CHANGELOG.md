@@ -111,6 +111,7 @@
 
 ## Statistics and utility fixes
 
+- Preserve infinite ASMD for unequal constants with zero reference SD; equal constants now have zero deviation.
 - Use a common equal-mixture probability measure for categorical and numeric CVMD, including disjoint supports and independently normalized weights.
 - Freeze pickle-safe model-matrix schemas for categorical replay; reject unseen categories and unsupported stateful replay instead of silently changing trained features.
 - Drop formula-generated missing rows with diagnostic warnings naming affected factors/columns, original sample/target row positions and labels, and bounded input/evaluated-value examples. Use common retained rows across formulas and align fit/replay weights and outcomes to those positions.
