@@ -111,6 +111,7 @@
 
 ## Statistics and utility fixes
 
+- Preserve pandas CSV destination semantics, including append/exclusive modes, encoding and filename-based compression.
 - Forward the resolved histogram default for single numeric seaborn plots instead of the original None selector.
 - Honor `weighted=False` and uniform `weight=None` through Plotly distribution dispatch without inserting empty weight columns.
 - Exclude zero-weight observations before continuous KLD KDE fitting and integration-bound selection.

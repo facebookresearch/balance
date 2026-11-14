@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-import os
 from typing import Any
 
 import pandas as pd
@@ -32,10 +31,9 @@ def to_csv_with_defaults(
 ) -> str | None:
     """Write a DataFrame to CSV with consistent defaults and newline handling.
 
-    When the destination is a string or ``PathLike``, the file is opened with
-    ``newline=""`` so pandas does not translate line endings on Windows, keeping
-    the on-disk output aligned with the in-memory string returned when
-    ``path_or_buf`` is ``None``.
+    Destination opening is delegated to pandas so append/exclusive modes,
+    encoding, filename-based compression and newline handling retain their
+    normal CSV semantics.
 
     Examples:
     .. code-block:: python
@@ -49,9 +47,5 @@ def to_csv_with_defaults(
     """
 
     _apply_csv_defaults(kwargs)
-
-    if isinstance(path_or_buf, (str, os.PathLike)):
-        with open(path_or_buf, "w", newline="", encoding="utf-8") as buffer:
-            return df.to_csv(*args, path_or_buf=buffer, **kwargs)
 
     return df.to_csv(*args, path_or_buf=path_or_buf, **kwargs)
