@@ -12,6 +12,8 @@ hide_title: true
 
 ## Fixed
 
+- Report malformed formula tokenizer failures as actionable ValueError messages while preserving valid decimal, attribute, quoted and standalone-dot expressions.
+- Return warning-backed NaN quantiles for zero or missing weight mass, including scalar quantile requests, so real QQ diagnostics remain usable; filter contributing rows positionally.
 - Reject non-finite caller-filtered rake fit-time design weights before expanding them onto complete scoring rows.
 - Restore filtered rake fit-time design weights to scoring-row positions before NA-drop replay, preserving full output indices without filtering weights twice. Use retained row positions for both fitted and replayed weights, so repeated index labels neither assign weight to dropped rows nor duplicate retained values.
 - Keep `Sample` active-weight selection, renaming, accessors, and updates aligned with its responder frame.
@@ -118,6 +120,16 @@ hide_title: true
 
 ## Statistics and utility fixes
 
+- Expand only standalone formula dots, preserving decimal constants, attribute access and quoted labels; reject a standalone dot with no variables using an actionable error.
+- Align implicit unit weights with filtered indices in relative-frequency tables.
+- Exclude zero and missing weights from weighted-quantile interpolation so noncontributing rows cannot change QQ diagnostics.
+- **Missing observations are omitted from weighted statistics.** Weighted
+  means, sample variances, variances of weighted means, standard deviations and
+  confidence intervals omit a missing value and its weight separately for each
+  column. Missing weights are excluded throughout; real zeros still count.
+  **Behavior change:** missing values previously contributed zero to the mean
+  while keeping their weights in the denominator. Use `fillna(0)` explicitly
+  before calling these statistics only when zero imputation is intended.
 - Count the observation that first reaches 50% of weight in the weighted-median breakdown diagnostic.
 - Exclude missing-weight rows from Kish effective sample size; Deff and ESSP remain based on valid weights.
 - Keep covariates and weights positionally aligned when dropping rows with duplicate index labels.
