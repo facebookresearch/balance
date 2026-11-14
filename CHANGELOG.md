@@ -111,6 +111,7 @@
 
 ## Statistics and utility fixes
 
+- Honor `weighted=False` and uniform `weight=None` through Plotly distribution dispatch without inserting empty weight columns.
 - Exclude zero-weight observations before continuous KLD KDE fitting and integration-bound selection.
 - Preserve infinite ASMD for unequal constants with zero reference SD; equal constants now have zero deviation.
 - Use a common equal-mixture probability measure for categorical and numeric CVMD, including disjoint supports and independently normalized weights.

@@ -1298,6 +1298,11 @@ def plotly_plot_dist(
             plotly_plot_dist(dict_of_dfs, dist_type="qq")
     """
     dict_of_all_plots = {}
+    if not weighted:
+        dict_of_dfs = {
+            name: frame.drop(columns=["weight"], errors="ignore")
+            for name, frame in dict_of_dfs.items()
+        }
     #  Choose set of variables to plot
     variables = choose_variables(
         *(dict_of_dfs[name] for name in dict_of_dfs), variables=variables
@@ -1539,7 +1544,17 @@ def plot_dist(
             zip(
                 names,
                 (
-                    pd.concat((d["df"], pd.Series(d["weight"], name="weight")), axis=1)
+                    (
+                        pd.concat(
+                            (
+                                d["df"].drop(columns=["weight"], errors="ignore"),
+                                pd.Series(d["weight"], name="weight"),
+                            ),
+                            axis=1,
+                        )
+                        if weighted and d["weight"] is not None
+                        else d["df"].drop(columns=["weight"], errors="ignore")
+                    )
                     for d in dfs
                 ),
             )
