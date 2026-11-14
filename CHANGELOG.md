@@ -111,6 +111,7 @@
 
 ## Statistics and utility fixes
 
+- Accept upstream replicate-weight column lists, stratum-assignment lists and combined-weight boolean settings in the diff-diff adapter.
 - Preserve pandas CSV destination semantics, including append/exclusive modes, encoding and filename-based compression.
 - Forward the resolved histogram default for single numeric seaborn plots instead of the original None selector.
 - Honor `weighted=False` and uniform `weight=None` through Plotly distribution dispatch without inserting empty weight columns.

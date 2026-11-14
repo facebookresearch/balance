@@ -142,6 +142,8 @@ _LITERAL_VALUE_DESIGN_FIELDS: frozenset[str] = frozenset(
         "fay_rho",
         "replicate_scale",
         "replicate_rscales",
+        "replicate_strata",
+        "combined_weights",
         "mse",
         "nest",
     }
@@ -220,8 +222,25 @@ def _resolve_design_columns(
     # literals (e.g. ``replicate_method="JK1"``, ``fay_rho=0.5``,
     # ``mse=True``), not column references on ``sample.df``.
     df_columns_raw: set[object] = set(sample.df.columns)
+    replicate_columns = user.get("replicate_weights")
+    if replicate_columns is not None:
+        if not isinstance(replicate_columns, (list, tuple)) or not all(
+            isinstance(column, str) for column in replicate_columns
+        ):
+            raise ValueError(
+                "replicate_weights must be a list of dataframe column names."
+            )
+        missing_replicates = [
+            column for column in replicate_columns if column not in df_columns_raw
+        ]
+        if missing_replicates:
+            raise ValueError(
+                f"Replicate weight columns do not exist in sample.df: {missing_replicates}."
+            )
     column_ref_keys: dict[str, object] = {
-        k: v for k, v in user.items() if k not in _LITERAL_VALUE_DESIGN_FIELDS
+        k: v
+        for k, v in user.items()
+        if k not in _LITERAL_VALUE_DESIGN_FIELDS and k != "replicate_weights"
     }
     non_string_column_refs: dict[str, object] = {
         k: v for k, v in column_ref_keys.items() if not isinstance(v, str)
@@ -258,6 +277,8 @@ def _resolve_design_columns(
     # ``"stratum"`` / ``"fpc"`` can opt out of having it silently promoted
     # into ``SurveyDesign``.
     merged: dict[str, object] = dict(user)
+    if replicate_columns is not None:
+        merged["replicate_weights"] = list(replicate_columns)
     auto_populate: bool = design_columns is None
     for key, default_col in DEFAULT_DESIGN_COLUMNS.items():
         if key in merged or key == "weights":
@@ -300,9 +321,10 @@ def to_survey_design(
         ``sample.df`` column name (``str``) or a literal config value.
         Keys are validated against the documented ``SurveyDesign``
         field set (``survey.py:27-72`` in diff-diff). Most keys
-        (``strata``, ``psu``, ``fpc``, ``replicate_weights``,
-        ``replicate_strata``, ``combined_weights``) take column names;
-        the literal-value keys ``mse`` / ``nest`` (bool), ``fay_rho``
+        (``strata``, ``psu``, ``fpc``) take single column names;
+        ``replicate_weights`` takes a list of column names, and
+        ``replicate_strata`` takes a list of stratum assignments. The
+        literal-value keys ``mse`` / ``nest`` / ``combined_weights`` (bool), ``fay_rho``
         / ``replicate_scale`` (float), ``replicate_method`` (str),
         and ``replicate_rscales`` (list/array) accept their natural
         Python types directly. The ``weights`` slot is always sourced
