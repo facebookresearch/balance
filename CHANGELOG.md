@@ -2,6 +2,7 @@
 
 ## Fixed
 
+- Fill nullable numeric extension columns with string NA sentinels through a safe object fallback while preserving native numeric fills and dtypes.
 - Report malformed formula tokenizer failures as actionable ValueError messages while preserving valid decimal, attribute, quoted and standalone-dot expressions.
 - Reject non-finite caller-filtered rake fit-time design weights before expanding them onto complete scoring rows.
 - Return warning-backed NaN quantiles for zero or missing weight mass, including scalar quantile requests, so real QQ diagnostics remain usable; filter contributing rows positionally.
@@ -111,6 +112,7 @@
 
 ## Statistics and utility fixes
 
+- Fill categorical NA-action columns safely in both weighting training and replay, preserving complete categories and adding sentinels only when missing values need filling.
 - Retain batch identifiers on every CLI diagnostics row, prefixing conflicting diagnostic-field names with `batch_`; reject mismatched batch-key arity rather than silently truncating provenance.
 - Reject missing CLI batch keys before grouping instead of silently discarding those observations.
 - Accept upstream replicate-weight column lists, stratum-assignment lists and combined-weight boolean settings in the diff-diff adapter.
