@@ -1051,6 +1051,18 @@ def cvmd(
             target_df[col], target_weights_arr, "target_df column"
         )
 
+        for weights, label in ((sample_w, "sample"), (target_w, "target")):
+            if not np.isfinite(weights).all() or np.any(weights < 0):
+                raise ValueError(
+                    f"CVMD {label} weights must be finite and non-negative."
+                )
+            with np.errstate(over="ignore"):
+                total_weight = float(weights.sum())
+            if not np.isfinite(total_weight) or total_weight <= 0:
+                raise ValueError(
+                    f"CVMD {label} weights must sum to a positive finite value."
+                )
+
         if _is_discrete_series(sample_series) or _is_discrete_series(target_series):
             categories = _sorted_unique_categories(
                 pd.concat([sample_series, target_series], axis=0)
@@ -1065,9 +1077,12 @@ def cvmd(
             target_cdf = np.cumsum(
                 target_pmf.reindex(categories, fill_value=0.0).to_numpy()
             )
-            combined_pmf = (sample_pmf + target_pmf).reindex(
-                categories, fill_value=0.0
-            ) / 2
+            combined_pmf = (
+                sample_pmf.add(target_pmf, fill_value=0.0).reindex(
+                    categories, fill_value=0.0
+                )
+                / 2
+            )
             out_dict[col] = float(
                 np.sum((sample_cdf - target_cdf) ** 2 * combined_pmf.to_numpy())
             )
@@ -1078,12 +1093,25 @@ def cvmd(
             target_vals, target_w_numeric = _coerce_to_numeric_and_validate(
                 target_series, target_w, "Target numeric column"
             )
+            with np.errstate(over="ignore"):
+                sample_total = float(sample_w_numeric.sum())
+                target_total = float(target_w_numeric.sum())
+            for total, label in ((sample_total, "sample"), (target_total, "target")):
+                if not np.isfinite(total) or total <= 0:
+                    raise ValueError(
+                        f"CVMD {label} numeric weights must sum to a positive finite value."
+                    )
 
             sample_sorted, sample_cdf = _weighted_ecdf(sample_vals, sample_w_numeric)
             target_sorted, target_cdf = _weighted_ecdf(target_vals, target_w_numeric)
             combined_values, combined_weights = _combined_weights(
                 np.concatenate((sample_vals, target_vals)),
-                np.concatenate((sample_w_numeric, target_w_numeric)),
+                np.concatenate(
+                    (
+                        sample_w_numeric / sample_total,
+                        target_w_numeric / target_total,
+                    )
+                ),
             )
             sample_eval = _evaluate_ecdf(sample_sorted, sample_cdf, combined_values)
             target_eval = _evaluate_ecdf(target_sorted, target_cdf, combined_values)
