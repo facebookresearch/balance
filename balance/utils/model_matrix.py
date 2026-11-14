@@ -6,8 +6,10 @@
 
 from __future__ import annotations
 
+import io
 import logging
 import re
+import tokenize
 from typing import Any, cast, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -100,11 +102,41 @@ def dot_expansion(formula: str, variables: List[str]) -> str:
             "a dataframe, insert variables = list(df.columns)"
         )
     if formula.find(".") == -1:
-        rhs = formula
-    else:
-        dot = "(" + "+".join(x for x in variables) + ")"
-        rhs = str(formula).replace(".", dot)
-    return rhs
+        return formula
+    try:
+        tokens = list(tokenize.generate_tokens(io.StringIO(formula).readline))
+    except (tokenize.TokenError, IndentationError) as exc:
+        raise ValueError(
+            f"Invalid formula {formula!r}: tokenization failed. "
+            "Check quotes, brackets, and indentation."
+        ) from exc
+    lines = formula.splitlines(keepends=True)
+    positions = [
+        sum(len(line) for line in lines[: token.start[0] - 1]) + token.start[1]
+        for index, token in enumerate(tokens[:-1])
+        if token.type == tokenize.OP
+        and token.string == "."
+        and (
+            index == 0
+            or (
+                tokens[index - 1].type
+                not in (tokenize.NAME, tokenize.NUMBER, tokenize.STRING)
+                and tokens[index - 1].string not in (")", "]", "}")
+            )
+        )
+        and tokens[index + 1].type
+        not in (tokenize.NAME, tokenize.NUMBER, tokenize.STRING)
+        and tokens[index + 1].string not in ("(", "[", "{")
+    ]
+    if positions and not variables:
+        raise ValueError(
+            "Cannot expand a standalone '.' without variables. "
+            "Provide a non-empty list of variables or use an explicit formula."
+        )
+    dot = "(" + "+".join(variables) + ")"
+    for position in reversed(positions):
+        formula = formula[:position] + dot + formula[position + 1 :]
+    return formula
 
 
 class one_hot_encoding_greater_2:

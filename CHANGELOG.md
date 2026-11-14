@@ -2,6 +2,7 @@
 
 ## Fixed
 
+- Report malformed formula tokenizer failures as actionable ValueError messages while preserving valid decimal, attribute, quoted and standalone-dot expressions.
 - Return warning-backed NaN quantiles for zero or missing weight mass, including scalar quantile requests, so real QQ diagnostics remain usable; filter contributing rows positionally.
 - Reject non-finite caller-filtered rake fit-time design weights before expanding them onto complete scoring rows.
 - Restore filtered rake fit-time design weights to scoring-row positions before NA-drop replay, preserving full output indices without filtering weights twice. Use retained row positions for both fitted and replayed weights, so repeated index labels neither assign weight to dropped rows nor duplicate retained values.
@@ -109,6 +110,7 @@
 
 ## Statistics and utility fixes
 
+- Expand only standalone formula dots, preserving decimal constants, attribute access and quoted labels; reject a standalone dot with no variables using an actionable error.
 - Align implicit unit weights with filtered indices in relative-frequency tables.
 - Exclude zero and missing weights from weighted-quantile interpolation so noncontributing rows cannot change QQ diagnostics.
 - **Missing observations are omitted from weighted statistics.** Weighted
