@@ -124,10 +124,11 @@ def weighted_mean(
     Uses :func:`_prepare_weighted_stat_args`.
 
     Args:
-        v (Union[ List, pd.Series, pd.DataFrame, np.matrix, ]): values to average. None (or np.nan) values are treated like 0.
-            If v is a DataFrame than the average of the values from each column will be returned, all using the same set of weights from w.
+        v (Union[ List, pd.Series, pd.DataFrame, np.matrix, ]): values to average.
+            Missing values (None, np.nan, or pd.NA) and their weights are omitted
+            separately for each column. Real zeros remain observations.
         w (Union[ List, pd.Series], optional): weights. Defaults to None.
-            If there is None value in the weights, that value will be ignored from the calculation.
+            Rows with missing weights are omitted from every column.
         inf_rm (bool, optional): whether to remove infinite (from weights or values) from the computation. Defaults to False.
 
     Returns:
@@ -159,7 +160,8 @@ def weighted_mean(
                 # dtype: float64
     """
     v, w = _prepare_weighted_stat_args(v, w, inf_rm)
-    return v.multiply(w, axis="index").sum() / w.sum()
+    observed_weights = v.notna().multiply(w, axis="index")
+    return v.multiply(w, axis="index").sum() / observed_weights.sum()
 
 
 def var_of_weighted_mean(
@@ -176,8 +178,11 @@ def var_of_weighted_mean(
 
     Uses :func:`_prepare_weighted_stat_args`.
 
-    v (Union[List, pd.Series, pd.DataFrame, np.matrix]): A series of values. If v is a DataFrame, the weighted variance will be calculated for each column using the same set of weights from `w`.
-    w (Optional[Union[List, pd.Series, np.ndarray]]): A series of weights to be used with `v`. If None, all values will be weighted equally.
+    v (Union[List, pd.Series, pd.DataFrame, np.matrix]): A series of values.
+        Missing values and their weights are omitted separately for each column,
+        using the same observed rows as weighted_mean. Real zeros are retained.
+    w (Optional[Union[List, pd.Series, np.ndarray]]): A series of weights to be used with `v`.
+        Missing weights are omitted. If None, all values will be weighted equally.
     inf_rm (bool, optional): Whether to remove infinite (from weights or values) from the computation. Defaults to False.
 
     Returns:
@@ -212,12 +217,13 @@ def var_of_weighted_mean(
                 # dtype: float64
     """
     v, w = _prepare_weighted_stat_args(v, w, inf_rm)
+    observed_weights = v.notna().multiply(w, axis="index")
     weighed_mean_of_v = weighted_mean(v, w, inf_rm)  # This is a pd.Series
     # NOTE: the multiply needs to be called from the pd.Series. Unfortunately this makes the code less readable.
     sum_of_squared_weighted_diffs = (
         ((v - weighed_mean_of_v).multiply(w, axis="index")).pow(2).sum()
     )
-    squared_sum_of_w = w.sum() ** 2  # This is a pd.series
+    squared_sum_of_w = observed_weights.sum() ** 2
     return sum_of_squared_weighted_diffs / squared_sum_of_w
 
 
@@ -230,6 +236,11 @@ def ci_of_weighted_mean(
 ) -> pd.Series:
     """
     Computes the confidence interval of the weighted mean of a list of values and their corresponding weights.
+
+    Missing values and missing weights are omitted per column by both
+    weighted_mean and var_of_weighted_mean, so the center and uncertainty use
+    the same observed rows. A column without observed positive weight returns
+    a pair of NaNs.
 
     If no weights are supplied, it assumes that all values have equal weights of 1.0.
 
@@ -318,10 +329,12 @@ def weighted_var(
     Uses :func:`weighted_mean` and :func:`_prepare_weighted_stat_args`.
 
     Args:
-        v (Union[ List, pd.Series, pd.DataFrame, np.matrix, ]): values to get the weighted variance for. None values are treated like 0.
-            If v is a DataFrame than the average of the values from each column will be returned, all using the same set of weights from w.
+        v (Union[ List, pd.Series, pd.DataFrame, np.matrix, ]): values to get the weighted variance for.
+            Missing values and their weights are omitted separately for each
+            column, using the same observed rows as weighted_mean. Real zeros
+            are retained.
         w (Union[ List, pd.Series], optional): weights. Defaults to None.
-            If there is None value in the weights, that value will be ignored from the calculation.
+            Rows with missing weights are omitted from every column.
         inf_rm (bool, optional): whether to remove infinite (from weights or values) from the computation. Defaults to False.
 
     Returns:
@@ -340,9 +353,10 @@ def weighted_var(
         # [1.0]
     """
     v, w = _prepare_weighted_stat_args(v, w, inf_rm)
+    observed_weights = v.notna().multiply(w, axis="index")
     means = weighted_mean(v, w)
-    v1 = w.sum()
-    v2 = (w**2).sum()
+    v1 = observed_weights.sum()
+    v2 = observed_weights.pow(2).sum()
     # Avoid divide by zero warning
     denominator = v1**2 - v2
     with np.errstate(divide="ignore", invalid="ignore"):

@@ -1938,7 +1938,7 @@ class TestBalance_weighted_stats(
 
         # No weights
         self.assertEqual(weighted_mean(pd.Series([-1, 0, 1, 2])), pd.Series(0.5))
-        self.assertEqual(weighted_mean(pd.Series([-1, None, 1, 2])), pd.Series(0.5))
+        self.assertEqual(weighted_mean(pd.Series([-1, None, 1, 2])), pd.Series(2 / 3))
 
         # No weights, with one inf value
         self.assertEqual(
@@ -1947,7 +1947,7 @@ class TestBalance_weighted_stats(
         )
         self.assertEqual(
             weighted_mean(pd.Series([-1, np.inf, 1, 2]), inf_rm=True),
-            pd.Series(0.5),
+            pd.Series(2 / 3),
         )
 
         # Inf value in weights
@@ -1978,8 +1978,7 @@ class TestBalance_weighted_stats(
             pd.Series(2 / 3),
         )
 
-        # Notice that while None values are ignored, their weights will still be used in the denominator
-        # Hence, None in values acts like 0
+        # Missing values and their weights are omitted from this column.
         self.assertEqual(
             weighted_mean(pd.Series([-1, None, 1, 2]), w=pd.Series([1, 0, 1, 1])),
             pd.Series(2 / 3),
@@ -1990,12 +1989,12 @@ class TestBalance_weighted_stats(
         )
         self.assertEqual(
             weighted_mean(pd.Series([-1, None, 1, 2]), w=pd.Series([1, 1, 1, 1])),
-            pd.Series(1 / 2),
+            pd.Series(2 / 3),
         )
-        # None in the values is just like 0
+        # An omitted observation is not an imputed zero.
         self.assertEqual(
             weighted_mean(pd.Series([-1, None, 1, 2]), w=pd.Series([1, 1, 1, 1])),
-            weighted_mean(pd.Series([-1, 0, 1, 2]), w=pd.Series([1, 1, 1, 1])),
+            weighted_mean(pd.Series([-1, 1, 2]), w=pd.Series([1, 1, 1])),
         )
 
         # pd.DataFrame v
@@ -2837,9 +2836,8 @@ class TestBalance_weighted_comparisons_stats(
                     3.485_685_011_586_675_3
                     + 0.519_615_242_270_663_2 * (1 / 3)
                     + 0.099_999_999_999_999_98 * (1 / 3)
-                    + 0 * (1 / 3)
                 )
-                / (2),
+                / (1 + 2 / 3),
             ),
             index=("a", "c[x]", "c[y]", "c[z]", "mean(asmd)"),
         )

@@ -1493,7 +1493,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
                         + 0.265606 * 0.25
                         + 0.533422 * 0.25
                     )
-                    / 3,
+                    / (2 + 3 * 0.25),
                 ),
                 index=("a", "b", "c[v]", "c[x]", "c[y]", "c[z]", "mean(asmd)"),
                 name="self",
@@ -1510,8 +1510,8 @@ class TestBalanceDF_asmd(BalanceTestCase):
                 "c[y]": {"self": 0.266, "unadjusted": 0.266, "unadjusted - self": 0.0},
                 "c[z]": {"self": 0.533, "unadjusted": 0.533, "unadjusted - self": 0.0},
                 "mean(asmd)": {
-                    "self": 3.175,
-                    "unadjusted": 3.175,
+                    "self": 3.463,
+                    "unadjusted": 3.463,
                     "unadjusted - self": 0.0,
                 },
             },
@@ -1526,7 +1526,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
                 "c[x]": {"covars": 0.069},
                 "c[y]": {"covars": 0.266},
                 "c[z]": {"covars": 0.533},
-                "mean(asmd)": {"covars": 3.175},
+                "mean(asmd)": {"covars": 3.463},
             },
         )
 
@@ -1544,9 +1544,9 @@ class TestBalanceDF_asmd(BalanceTestCase):
                     "unadjusted - self": 0.315,
                 },
                 "mean(asmd)": {
-                    "self": 2.835,
-                    "unadjusted": 3.175,
-                    "unadjusted - self": 0.34,
+                    "self": 3.093,
+                    "unadjusted": 3.463,
+                    "unadjusted - self": 0.371,
                 },
             },
         )
@@ -2431,7 +2431,7 @@ class TestBalanceDF_asmd(BalanceTestCase):
         s3_unadjusted = deepcopy(s3)
         s3_unadjusted.set_weights(pd.Series([1, 1, 1, 1], index=s3.df.index))
         s3_2 = s3.set_unadjusted(s3_unadjusted)
-        self.assertEqual(s3_2.covars().asmd_improvement(), 0.3224900694460681)
+        self.assertAlmostEqual(s3_2.covars().asmd_improvement(), 0.3224900694460681)
 
         s1_with_unadjusted = deepcopy(s1)
         s1_with_unadjusted = s1.set_unadjusted(s3_unadjusted)

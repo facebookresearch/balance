@@ -5480,7 +5480,7 @@ class TestBlogV0_20_0SimDataHoldout(BalanceTestCase):
             "    weight trimming mean ratio: 20\n"
             "Covariate diagnostics:\n"
             "    Covar ASMD reduction: 5.4%\n"
-            "    Covar ASMD (7 variables): 0.336 -> 0.318\n"
+            "    Covar ASMD (7 variables): 0.378 -> 0.357\n"
             "    Covar mean KLD reduction: 37.2%\n"
             "    Covar mean KLD (3 variables): 0.188 -> 0.118\n"
             "Weight diagnostics:\n"
@@ -5651,7 +5651,7 @@ class TestBlogV0_20_0SimDataHoldout(BalanceTestCase):
 
         self.assertIn("method: poststratify", summary)
         self.assertIn("Covar ASMD reduction: 47.9%", summary)
-        self.assertIn("Covar ASMD (7 variables): 0.336 -> 0.175", summary)
+        self.assertIn("Covar ASMD (7 variables): 0.378 -> 0.197", summary)
         self.assertIn("Covar mean KLD reduction: 67.2%", summary)
         self.assertIn("Covar mean KLD (3 variables): 0.188 -> 0.062", summary)
         self.assertIn("design effect (Deff): 2.395", summary)

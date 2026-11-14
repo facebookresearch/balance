@@ -108,6 +108,13 @@
 
 ## Statistics and utility fixes
 
+- **Missing observations are omitted from weighted statistics.** Weighted
+  means, sample variances, variances of weighted means, standard deviations and
+  confidence intervals omit a missing value and its weight separately for each
+  column. Missing weights are excluded throughout; real zeros still count.
+  **Behavior change:** missing values previously contributed zero to the mean
+  while keeping their weights in the denominator. Use `fillna(0)` explicitly
+  before calling these statistics only when zero imputation is intended.
 - Count the observation that first reaches 50% of weight in the weighted-median breakdown diagnostic.
 - Exclude missing-weight rows from Kish effective sample size; Deff and ESSP remain based on valid weights.
 - Keep covariates and weights positionally aligned when dropping rows with duplicate index labels.
