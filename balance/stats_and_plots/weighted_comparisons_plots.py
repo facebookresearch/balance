@@ -760,7 +760,9 @@ def seaborn_plot_dist(
                 plot_qq(dfs, names, o, axes_list[io], weighted)
             else:
                 # At this point, dist_type is guaranteed to be one of "hist", "kde", or "ecdf"
-                hist_kde_dist_type = cast(Literal["hist", "kde", "ecdf"], dist_type)
+                hist_kde_dist_type = cast(
+                    Literal["hist", "kde", "ecdf"], dist_type_resolved
+                )
                 plot_hist_kde(
                     dfs, names, o, axes_list[io], weighted, hist_kde_dist_type
                 )
