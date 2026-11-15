@@ -25,12 +25,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-24.04, macos-latest, windows-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
         extras: ['']
         diff-diff-pin: ['']
         include:
-          # diff-diff [did] integration coverage. Restricted to ubuntu-latest
+          # diff-diff [did] integration coverage. Restricted to ubuntu-24.04
           # AND a single Python version (3.12) to keep the matrix small (2
           # jobs total: one min-pin, one resolved-latest). diff-diff is a
           # pure-Python adapter dependency, so multi-Python coverage adds
@@ -40,11 +40,11 @@ jobs:
           # absolute latest PyPI release (no pin) on 3.12. If you need
           # macOS/Windows or other-Python coverage of the [did] arm, add
           # explicit matrix entries here rather than relying on the canary.
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             python-version: '3.12'
             extras: 'did'
             diff-diff-pin: '==3.3.0'
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             python-version: '3.12'
             extras: 'did'
             diff-diff-pin: 'resolved-latest'
