@@ -117,7 +117,7 @@
                 <span class="sa">f</span><span class="s2">"""</span>
 <span class="s2">                df and df_target must have the exact same columns.</span>
 <span class="s2">                Instead, thes column names are, (df, df_target) = (</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">df_target</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">)</span>
-<span class="s2">                """</span>
+<span class="s2">                """</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="c1"># If they are, we can proceed forward:</span>
@@ -131,7 +131,7 @@
             <span class="sa">f</span><span class="s2">"""</span>
 <span class="s2">            The number of (notnull) rows in df MUST be smaller or equal to the number of rows in df_target.</span>
 <span class="s2">            These were, (df_n_notnull_rows, target_n_notnull_rows) = (</span><span class="si">{</span><span class="n">df_n_notnull_rows</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">target_n_notnull_rows</span><span class="si">}</span><span class="s2">)</span>
-<span class="s2">            """</span>
+<span class="s2">            """</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
