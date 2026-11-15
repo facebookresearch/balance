@@ -540,7 +540,9 @@
 <span class="sd">        random_seed (int, optional): a random seed. Defaults to 2020.</span>
 <span class="sd">        store_fit_metadata (bool, optional): Whether to persist fit-time</span>
 <span class="sd">            metadata required for downstream ``BalanceFrame.predict_weights()``</span>
-<span class="sd">            reconstruction (for CBPS models). Defaults to False.</span>
+<span class="sd">            reconstruction (for CBPS models), including the model-matrix</span>
+<span class="sd">            builder's ``preprocessing_state`` result (``None`` when it does</span>
+<span class="sd">            not provide one). Defaults to False.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        Exception: _description_</span>
@@ -991,6 +993,7 @@
                 <span class="s2">"beta_optimal_model_space"</span><span class="p">:</span> <span class="n">beta_opt_model_space</span><span class="p">,</span>
                 <span class="s2">"svd_s"</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
                 <span class="s2">"svd_Vh"</span><span class="p">:</span> <span class="n">Vh</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="s2">"preprocessing_state"</span><span class="p">:</span> <span class="n">model_matrix_output</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"preprocessing_state"</span><span class="p">),</span>
                 <span class="s2">"store_fit_metadata"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">)</span>

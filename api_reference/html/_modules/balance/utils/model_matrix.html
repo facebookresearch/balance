@@ -43,6 +43,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">ast</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
@@ -61,14 +62,19 @@
     <span class="n">_isinstance_sample</span><span class="p">,</span>
     <span class="n">choose_variables</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.pandas_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_make_df_column_names_unique</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.pandas_utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">_make_df_column_names_unique</span><span class="p">,</span>
+    <span class="n">_sorted_unique_categories</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pandas.api.types</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">is_bool_dtype</span><span class="p">,</span>
     <span class="n">is_numeric_dtype</span><span class="p">,</span>
     <span class="n">is_object_dtype</span><span class="p">,</span>
     <span class="n">is_string_dtype</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">patsy.builtins</span><span class="w"> </span><span class="kn">import</span> <span class="n">C</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">patsy.contrasts</span><span class="w"> </span><span class="kn">import</span> <span class="n">ContrastMatrix</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">patsy.eval</span><span class="w"> </span><span class="kn">import</span> <span class="n">EvalFactor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">patsy.highlevel</span><span class="w"> </span><span class="kn">import</span> <span class="n">dmatrix</span><span class="p">,</span> <span class="n">ModelDesc</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">patsy.missing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NAAction</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.sparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">csc_matrix</span><span class="p">,</span> <span class="n">diags</span><span class="p">,</span> <span class="n">hstack</span><span class="p">,</span> <span class="n">spmatrix</span>
@@ -126,8 +132,9 @@
 <span class="sd">        variables (List): List of all variables in the dataframe we build the formula for.</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        Exception: "Variables should not be empty. Please provide a list of strings."</span>
-<span class="sd">        Exception:  "Variables should be a list of strings and have to be included."</span>
+<span class="sd">        TypeError: If variables is None or is not a list.</span>
+<span class="sd">        ValueError: If formula tokenization fails, or a standalone dot requires</span>
+<span class="sd">            expansion but no variables are supplied.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        A string formula replacing the '.'' with all variables in variables.</span>
@@ -354,6 +361,58 @@
     <span class="p">)</span>
 
 
+<span class="k">class</span><span class="w"> </span><span class="nc">_FrozenCategoricalFactor</span><span class="p">(</span><span class="n">EvalFactor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Apply frozen category levels after evaluating the original expression."""</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">:</span> <span class="n">EvalFactor</span><span class="p">,</span> <span class="n">levels</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">factor</span><span class="o">.</span><span class="n">code</span><span class="p">,</span> <span class="n">factor</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">levels</span> <span class="o">=</span> <span class="n">levels</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">eval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memorize_state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">C</span><span class="p">(</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">memorize_state</span><span class="p">,</span> <span class="n">data</span><span class="p">),</span> <span class="n">levels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">levels</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_freeze_factor_levels</span><span class="p">(</span><span class="n">model_desc</span><span class="p">:</span> <span class="n">ModelDesc</span><span class="p">,</span> <span class="n">levels</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">model_desc</span><span class="o">.</span><span class="n">rhs_termlist</span><span class="p">:</span>
+        <span class="n">term</span><span class="o">.</span><span class="n">factors</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="n">_FrozenCategoricalFactor</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="n">levels</span><span class="p">[</span><span class="n">factor</span><span class="o">.</span><span class="n">code</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">factor</span><span class="o">.</span><span class="n">code</span> <span class="ow">in</span> <span class="n">levels</span>
+                <span class="k">else</span> <span class="n">factor</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="n">term</span><span class="o">.</span><span class="n">factors</span>
+        <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_schema_factor_levels</span><span class="p">(</span>
+    <span class="n">model_desc</span><span class="p">:</span> <span class="n">ModelDesc</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]]:</span>
+    <span class="k">if</span> <span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="s2">"factor_levels"</span> <span class="ow">in</span> <span class="n">state</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">state</span><span class="p">[</span><span class="s2">"factor_levels"</span><span class="p">]</span>
+    <span class="n">levels</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">model_desc</span><span class="o">.</span><span class="n">rhs_termlist</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="n">term</span><span class="o">.</span><span class="n">factors</span><span class="p">:</span>
+            <span class="n">expression</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">factor</span><span class="o">.</span><span class="n">code</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"eval"</span><span class="p">)</span><span class="o">.</span><span class="n">body</span>
+            <span class="n">column</span> <span class="o">=</span> <span class="n">expression</span><span class="o">.</span><span class="n">id</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Call</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expression</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="n">expression</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="s2">"C"</span>
+                <span class="ow">and</span> <span class="n">expression</span><span class="o">.</span><span class="n">args</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expression</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ast</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">keyword</span><span class="o">.</span><span class="n">arg</span> <span class="o">==</span> <span class="s2">"levels"</span> <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">expression</span><span class="o">.</span><span class="n">keywords</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="n">column</span> <span class="o">=</span> <span class="n">expression</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">id</span>
+            <span class="k">if</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">state</span><span class="p">[</span><span class="s2">"category_levels"</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_bool_dtype</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">column</span><span class="p">]):</span>
+                <span class="n">levels</span><span class="p">[</span><span class="n">factor</span><span class="o">.</span><span class="n">code</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">value</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">)</span> <span class="k">else</span> <span class="n">value</span>
+                    <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">state</span><span class="p">[</span><span class="s2">"category_levels"</span><span class="p">][</span><span class="n">column</span><span class="p">]</span>
+                <span class="p">]</span>
+    <span class="k">return</span> <span class="n">levels</span>
+
+
 <span class="k">class</span><span class="w"> </span><span class="nc">_RecordFormulaDrops</span><span class="p">(</span><span class="n">NAAction</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Record positional omission masks and factor diagnostics before patsy drops."""</span>
 
@@ -423,6 +482,7 @@
     <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"."</span><span class="p">,</span>
     <span class="n">factor_variables</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">return_sparse</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">preprocessing_state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Build a model matrix from a formula (using patsy.dmatrix).</span>
 
@@ -450,6 +510,10 @@
 <span class="sd">                         number of columns will be equal to the number of categories), and only 1</span>
 <span class="sd">                         column for variables with 2 levels (treatment contrast).</span>
 <span class="sd">        return_sparse (bool, optional): whether to return a sparse matrix using scipy.sparse.csc_matrix. Defaults to False.</span>
+<span class="sd">        preprocessing_state: Optional fit-time schema supplied by ``model_matrix``</span>
+<span class="sd">            after preparing replay data. It preserves which categorical columns</span>
+<span class="sd">            were stringified at fit time. For example, ``model_matrix`` forwards</span>
+<span class="sd">            ``training["preprocessing_state"]`` here when reusing a fitted schema.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        Exception: "Variable names cannot contain characters '[' or ']'"</span>
@@ -492,15 +556,46 @@
             <span class="c1"># Hence converting all numeric columns to float64.</span>
             <span class="n">coerced_columns</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float64"</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">):</span>
-            <span class="n">coerced_columns</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">_stringify_categorical_values</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">])</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">preprocessing_state</span> <span class="ow">is</span> <span class="kc">None</span>
+                <span class="ow">or</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">preprocessing_state</span><span class="p">[</span><span class="s2">"stringify_categoricals"</span><span class="p">]</span>
+            <span class="p">):</span>
+                <span class="n">coerced_columns</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">_stringify_categorical_values</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">])</span>
 
     <span class="k">if</span> <span class="n">coerced_columns</span><span class="p">:</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="o">**</span><span class="n">coerced_columns</span><span class="p">)</span>
 
+    <span class="n">frozen_levels</span> <span class="o">=</span> <span class="n">_schema_factor_levels</span><span class="p">(</span><span class="n">model_desc</span><span class="p">,</span> <span class="n">preprocessing_state</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+    <span class="n">_freeze_factor_levels</span><span class="p">(</span><span class="n">model_desc</span><span class="p">,</span> <span class="n">frozen_levels</span><span class="p">)</span>
     <span class="n">na_action</span> <span class="o">=</span> <span class="n">_RecordFormulaDrops</span><span class="p">()</span>
     <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">dmatrix</span><span class="p">(</span>
         <span class="n">model_desc</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">"dataframe"</span><span class="p">,</span> <span class="n">NA_action</span><span class="o">=</span><span class="n">na_action</span>
     <span class="p">)</span>
+    <span class="n">categorical_infos</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">factor</span><span class="o">.</span><span class="n">code</span><span class="p">:</span> <span class="n">info</span><span class="o">.</span><span class="n">categories</span>
+        <span class="k">for</span> <span class="n">factor</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">X_matrix</span><span class="o">.</span><span class="n">design_info</span><span class="o">.</span><span class="n">factor_infos</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"categorical"</span>
+    <span class="p">}</span>
+    <span class="n">factor_levels</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">code</span><span class="p">:</span> <span class="p">[</span>
+            <span class="n">value</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">)</span> <span class="k">else</span> <span class="n">value</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">levels</span>
+        <span class="p">]</span>
+        <span class="k">for</span> <span class="n">code</span><span class="p">,</span> <span class="n">levels</span> <span class="ow">in</span> <span class="n">categorical_infos</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span>
+        <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">levels</span> <span class="ow">in</span> <span class="n">categorical_infos</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">levels</span>
+    <span class="p">):</span>
+        <span class="n">_freeze_factor_levels</span><span class="p">(</span><span class="n">model_desc</span><span class="p">,</span> <span class="n">factor_levels</span><span class="p">)</span>
+        <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">dmatrix</span><span class="p">(</span>
+            <span class="n">model_desc</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">"dataframe"</span><span class="p">,</span> <span class="n">NA_action</span><span class="o">=</span><span class="n">na_action</span>
+        <span class="p">)</span>
+    <span class="n">unsupported_stateful_formulas</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">factor</span><span class="o">.</span><span class="n">code</span>
+        <span class="k">for</span> <span class="n">factor</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">X_matrix</span><span class="o">.</span><span class="n">design_info</span><span class="o">.</span><span class="n">factor_infos</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"transforms"</span><span class="p">)</span>
+    <span class="p">]</span>
     <span class="c1"># Sorting the output in order to eliminate edge cases that cause column order to be stochastic</span>
     <span class="n">X_matrix</span> <span class="o">=</span> <span class="n">X_matrix</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"X_matrix shape: </span><span class="si">{</span><span class="n">X_matrix</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
@@ -519,6 +614,8 @@
         <span class="s2">"model_matrix"</span><span class="p">:</span> <span class="n">X_matrix</span><span class="p">,</span>
         <span class="s2">"model_matrix_columns"</span><span class="p">:</span> <span class="n">X_matrix_columns</span><span class="p">,</span>
         <span class="s2">"row_positions"</span><span class="p">:</span> <span class="n">row_positions</span><span class="p">,</span>
+        <span class="s2">"unsupported_stateful_formulas"</span><span class="p">:</span> <span class="n">unsupported_stateful_formulas</span><span class="p">,</span>
+        <span class="s2">"factor_levels"</span><span class="p">:</span> <span class="n">factor_levels</span><span class="p">,</span>
     <span class="p">}</span></div>
 
 
@@ -548,6 +645,7 @@
     <span class="n">variables</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">add_na</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">fix_columns_names</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">preserve_raw_values</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Helper function to model_matrix. Prepare and check input of sample and target:</span>
 <span class="sd">        - Choose joint variables to sample and target (or by given variables)</span>
@@ -619,6 +717,7 @@
 
     <span class="n">sample_rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sample_df</span><span class="p">))</span>
     <span class="n">target_rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span> <span class="k">if</span> <span class="n">target_df</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="n">target_df</span><span class="p">))</span>
+    <span class="n">category_levels</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">if</span> <span class="n">add_na</span><span class="p">:</span>
         <span class="c1"># Build a combined frame so NA indicators reflect sample/target union</span>
         <span class="c1"># (target-only missingness should still add NA indicator columns).</span>
@@ -636,7 +735,6 @@
                 <span class="s2">"Dropping rows led to empty target. Consider using add_na=True to add "</span>
                 <span class="s2">"NA indicator columns instead of dropping rows."</span>
             <span class="p">)</span>
-        <span class="n">category_levels</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">all_data</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
             <span class="n">column_series</span> <span class="o">=</span> <span class="n">all_data</span><span class="p">[</span><span class="n">column</span><span class="p">]</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">column_series</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">):</span>
@@ -662,6 +760,10 @@
                 <span class="p">)</span>
         <span class="k">if</span> <span class="n">category_levels</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">levels</span> <span class="ow">in</span> <span class="n">category_levels</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">preserve_raw_values</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="n">all_data</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">CategoricalDtype</span>
+                <span class="p">):</span>
+                    <span class="k">continue</span>
                 <span class="k">if</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
                     <span class="n">sample_df</span> <span class="o">=</span> <span class="n">sample_df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
                         <span class="o">**</span><span class="p">{</span><span class="n">column</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">sample_df</span><span class="p">[</span><span class="n">column</span><span class="p">],</span> <span class="n">categories</span><span class="o">=</span><span class="n">levels</span><span class="p">)}</span>
@@ -684,7 +786,85 @@
         <span class="s2">"sample_rows"</span><span class="p">:</span> <span class="n">sample_rows</span><span class="p">,</span>
         <span class="s2">"target_rows"</span><span class="p">:</span> <span class="n">target_rows</span><span class="p">,</span>
     <span class="p">}</span>
+    <span class="k">if</span> <span class="n">preserve_raw_values</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">add_na</span><span class="p">:</span>
+        <span class="n">result</span><span class="p">[</span><span class="s2">"category_levels"</span><span class="p">]</span> <span class="o">=</span> <span class="n">category_levels</span>
     <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_freeze_preprocessing_state</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">formula</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">one_hot_encoding</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">unsupported</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">stringify_categoricals</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Freeze pickle-safe labels/schema without retaining Patsy objects."""</span>
+    <span class="n">category_levels</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">stringified</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">column</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">):</span>
+            <span class="n">levels</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">categories</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">stringify_categoricals</span><span class="p">:</span>
+                <span class="n">levels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">level</span><span class="p">)</span> <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">levels</span><span class="p">))</span>
+                <span class="n">stringified</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">column</span><span class="p">)</span>
+            <span class="n">category_levels</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">levels</span>
+        <span class="k">elif</span> <span class="p">(</span>
+            <span class="n">is_object_dtype</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_string_dtype</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_bool_dtype</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="n">category_levels</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">_sorted_unique_categories</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"version"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">"variables"</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+        <span class="s2">"category_levels"</span><span class="p">:</span> <span class="n">category_levels</span><span class="p">,</span>
+        <span class="s2">"stringify_categoricals"</span><span class="p">:</span> <span class="n">stringified</span><span class="p">,</span>
+        <span class="s2">"formula"</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">formula</span><span class="p">),</span>
+        <span class="s2">"one_hot_encoding"</span><span class="p">:</span> <span class="n">one_hot_encoding</span><span class="p">,</span>
+        <span class="s2">"unsupported_stateful_formulas"</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">unsupported</span><span class="p">)),</span>
+    <span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_apply_preprocessing_state</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">allow_unknown_categories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">preserve_raw_values</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Replay frozen labels; reject unknown schemas/categories and stateful fits."""</span>
+    <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"version"</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Unsupported model-matrix preprocessing_state version."</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"unsupported_stateful_formulas"</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"Cannot replay stateful formulas with pickle-safe preprocessing_state: "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">state</span><span class="p">[</span><span class="s1">'unsupported_stateful_formulas'</span><span class="p">]</span><span class="si">}</span><span class="s2">. Use stateless formulas or refit."</span>
+        <span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">state</span><span class="p">[</span><span class="s2">"variables"</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">column</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"_is_na_"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">column</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">column</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="s2">"_is_na_"</span><span class="p">)</span> <span class="p">:]</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">missing</span> <span class="o">=</span> <span class="n">_ordered_unique_missing_columns</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">"variables"</span><span class="p">],</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Replay data is missing fit-time variables: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">state</span><span class="p">[</span><span class="s2">"variables"</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">levels</span> <span class="ow">in</span> <span class="n">state</span><span class="p">[</span><span class="s2">"category_levels"</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">state</span><span class="p">[</span><span class="s2">"stringify_categoricals"</span><span class="p">]:</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">isna</span><span class="p">(),</span> <span class="n">values</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="nb">str</span><span class="p">))</span>
+        <span class="n">unknown</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">values</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">levels</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">unknown</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">allow_unknown_categories</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"Replay variable </span><span class="si">{</span><span class="n">column</span><span class="si">!r}</span><span class="s2"> has unseen categories: "</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">values</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">unknown</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">. Refit with these levels."</span>
+                <span class="p">)</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">unknown</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">preserve_raw_values</span> <span class="ow">and</span> <span class="n">column</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">state</span><span class="p">[</span><span class="s2">"stringify_categoricals"</span><span class="p">]:</span>
+            <span class="k">continue</span>
+        <span class="n">data</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="n">levels</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">data</span>
 
 
 <div class="viewcode-block" id="model_matrix">
@@ -699,7 +879,10 @@
     <span class="n">formula</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">penalty_factor</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">one_hot_encoding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">csc_matrix</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+    <span class="n">preprocessing_state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span>
+    <span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">csc_matrix</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+<span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Create a model matrix from a sample (and target).</span>
 <span class="sd">    The default is to use an additive formula for all variables (or the ones specified).</span>
 <span class="sd">    Can also create a custom model matrix if a formula is provided.</span>
@@ -711,11 +894,26 @@
 <span class="sd">    must use those same positions. Warnings include original labels and caller</span>
 <span class="sd">    positions, missing factors/columns, and bounded input/evaluated examples.</span>
 
+<span class="sd">    ``preprocessing_state`` reuses the pickle-safe schema returned by a training</span>
+<span class="sd">    call. Unknown categories and fitted stateful transforms are rejected on</span>
+<span class="sd">    replay; training/statistics with stateful formulas remain supported.</span>
+<span class="sd">    For example, pass ``preprocessing_state=training['preprocessing_state']``</span>
+<span class="sd">    and the same ``one_hot_encoding`` setting when scoring new rows.</span>
 <span class="sd">    """</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Starting building the model matrix"</span><span class="p">)</span>
-    <span class="n">input_data</span> <span class="o">=</span> <span class="n">_prepare_input_model_matrix</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">add_na</span><span class="p">)</span>
+    <span class="n">input_data</span> <span class="o">=</span> <span class="n">_prepare_input_model_matrix</span><span class="p">(</span>
+        <span class="n">sample</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">add_na</span><span class="p">,</span> <span class="n">preserve_raw_values</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
     <span class="n">all_data</span> <span class="o">=</span> <span class="n">input_data</span><span class="p">[</span><span class="s2">"all_data"</span><span class="p">]</span>
     <span class="n">sample_n</span> <span class="o">=</span> <span class="n">input_data</span><span class="p">[</span><span class="s2">"sample_n"</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">preprocessing_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">all_data</span> <span class="o">=</span> <span class="n">_apply_preprocessing_state</span><span class="p">(</span>
+            <span class="n">all_data</span><span class="p">,</span> <span class="n">preprocessing_state</span><span class="p">,</span> <span class="n">preserve_raw_values</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">one_hot_encoding</span> <span class="o">!=</span> <span class="n">preprocessing_state</span><span class="p">[</span><span class="s2">"one_hot_encoding"</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Replay one_hot_encoding must match the fit-time setting."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">formula</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">formula</span> <span class="o">=</span> <span class="n">preprocessing_state</span><span class="p">[</span><span class="s2">"formula"</span><span class="p">]</span>
 
     <span class="c1"># Arrange formula</span>
     <span class="k">if</span> <span class="n">formula</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -724,7 +922,23 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
         <span class="n">formula</span> <span class="o">=</span> <span class="p">[</span><span class="n">formula</span><span class="p">]</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The formula used to build the model matrix: </span><span class="si">{</span><span class="n">formula</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">preprocessing_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">formula</span> <span class="o">!=</span> <span class="n">preprocessing_state</span><span class="p">[</span><span class="s2">"formula"</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Replay formula must match the fit-time formula."</span><span class="p">)</span>
     <span class="c1"># If formula is given we rely on patsy formula checker to check it.</span>
+
+    <span class="n">training_state</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">preprocessing_state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">training_state</span> <span class="o">=</span> <span class="n">_freeze_preprocessing_state</span><span class="p">(</span>
+            <span class="n">all_data</span><span class="p">,</span> <span class="n">formula</span><span class="p">,</span> <span class="n">one_hot_encoding</span><span class="p">,</span> <span class="p">[]</span>
+        <span class="p">)</span>
+        <span class="n">category_levels</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"category_levels"</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">levels</span> <span class="ow">in</span> <span class="n">category_levels</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">training_state</span><span class="p">[</span><span class="s2">"stringify_categoricals"</span><span class="p">]:</span>
+                <span class="n">levels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">level</span><span class="p">)</span> <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">levels</span><span class="p">))</span>
+            <span class="n">training_state</span><span class="p">[</span><span class="s2">"category_levels"</span><span class="p">][</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">levels</span>
+        <span class="n">all_data</span> <span class="o">=</span> <span class="n">_apply_preprocessing_state</span><span class="p">(</span>
+            <span class="n">all_data</span><span class="p">,</span> <span class="n">training_state</span><span class="p">,</span> <span class="n">preserve_raw_values</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
 
     <span class="c1"># Arrange penalty factor</span>
     <span class="k">if</span> <span class="n">penalty_factor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -736,7 +950,7 @@
     <span class="c1"># Arrange factor variables</span>
     <span class="k">if</span> <span class="n">one_hot_encoding</span><span class="p">:</span>
         <span class="n">factor_variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
-            <span class="n">all_data</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">([</span><span class="s2">"category"</span><span class="p">,</span> <span class="s2">"string"</span><span class="p">,</span> <span class="s2">"boolean"</span><span class="p">,</span> <span class="s2">"object"</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span>
+            <span class="n">all_data</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">([</span><span class="s2">"category"</span><span class="p">,</span> <span class="s2">"string"</span><span class="p">,</span> <span class="s2">"bool"</span><span class="p">,</span> <span class="s2">"object"</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span>
         <span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"These variables will be encoded using one-hot encoding: </span><span class="si">{</span><span class="n">factor_variables</span><span class="si">}</span><span class="s2">"</span>
@@ -747,6 +961,8 @@
     <span class="n">X_matrix</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">X_matrix_columns</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">pf</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">unsupported</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">factor_levels</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">block_rows</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">common_rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">all_data</span><span class="p">))</span>
     <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">formula_item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">formula</span><span class="p">):</span>
@@ -757,7 +973,10 @@
             <span class="n">formula_item</span><span class="p">,</span>
             <span class="n">factor_variables</span><span class="o">=</span><span class="n">factor_variables</span><span class="p">,</span>
             <span class="n">return_sparse</span><span class="o">=</span><span class="p">(</span><span class="n">return_var_type</span> <span class="o">==</span> <span class="s2">"sparse"</span><span class="p">),</span>
+            <span class="n">preprocessing_state</span><span class="o">=</span><span class="n">preprocessing_state</span> <span class="ow">or</span> <span class="n">training_state</span><span class="p">,</span>
         <span class="p">)</span>
+        <span class="n">unsupported</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">model_matrix_result</span><span class="p">[</span><span class="s2">"unsupported_stateful_formulas"</span><span class="p">])</span>
+        <span class="n">factor_levels</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">model_matrix_result</span><span class="p">[</span><span class="s2">"factor_levels"</span><span class="p">])</span>
         <span class="n">X_matrix_columns</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">X_matrix_columns</span> <span class="o">+</span> <span class="n">model_matrix_result</span><span class="p">[</span><span class="s2">"model_matrix_columns"</span><span class="p">]</span>
         <span class="p">)</span>
@@ -831,6 +1050,12 @@
         <span class="s2">"target_rows"</span><span class="p">:</span> <span class="n">target_rows</span><span class="p">,</span>
         <span class="s2">"penalty_factor"</span><span class="p">:</span> <span class="n">penalty_factor_updated</span><span class="p">,</span>
         <span class="s2">"formula"</span><span class="p">:</span> <span class="n">formula</span><span class="p">,</span>
+        <span class="s2">"preprocessing_state"</span><span class="p">:</span> <span class="n">preprocessing_state</span>
+        <span class="ow">or</span> <span class="p">{</span>
+            <span class="o">**</span><span class="n">_assert_type</span><span class="p">(</span><span class="n">training_state</span><span class="p">,</span> <span class="nb">dict</span><span class="p">),</span>
+            <span class="s2">"unsupported_stateful_formulas"</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">unsupported</span><span class="p">)),</span>
+            <span class="s2">"factor_levels"</span><span class="p">:</span> <span class="n">factor_levels</span><span class="p">,</span>
+        <span class="p">},</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="n">return_type</span> <span class="o">==</span> <span class="s2">"one"</span><span class="p">:</span>
         <span class="n">result</span><span class="p">[</span><span class="s2">"model_matrix"</span><span class="p">]</span> <span class="o">=</span> <span class="n">X_matrix</span>
@@ -862,6 +1087,7 @@
     <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>  <span class="c1"># columns</span>
     <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>  <span class="c1"># penalty_factor_expanded</span>
     <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]],</span>  <span class="c1"># resolved_formula</span>
+    <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>  <span class="c1"># pickle-safe preprocessing_state</span>
     <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>  <span class="c1"># retained sample positions</span>
     <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>  <span class="c1"># retained target positions</span>
 <span class="p">]</span>
@@ -875,6 +1101,7 @@
     <span class="n">one_hot_encoding</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">project_to_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">preprocessing_state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_MatrixBuildResult</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Holdout path: build model matrix and project to stored fit-time columns."""</span>
     <span class="k">if</span> <span class="n">na_action</span> <span class="o">==</span> <span class="s2">"drop"</span><span class="p">:</span>
@@ -885,6 +1112,16 @@
             <span class="s2">"na_action='add_indicator' or score using matching fit-time rows."</span>
         <span class="p">)</span>
 
+    <span class="k">if</span> <span class="n">preprocessing_state</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="s2">"["</span> <span class="ow">in</span> <span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">project_to_columns</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"Categorical replay requires fit-time preprocessing_state. Refit the model."</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">preprocessing_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">preprocessing_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+        <span class="s2">"unsupported_stateful_formulas"</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"Cannot replay stateful formulas; use stateless formulas or refit."</span>
+        <span class="p">)</span>
     <span class="c1"># Pre-add NA indicators so the model matrix sees the same columns</span>
     <span class="c1"># that were present at fit time.</span>
     <span class="n">combined</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">sample_covars</span><span class="p">,</span> <span class="n">target_covars</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -910,13 +1147,26 @@
         <span class="n">formula</span><span class="o">=</span><span class="n">formula</span><span class="p">,</span>
         <span class="n">one_hot_encoding</span><span class="o">=</span><span class="n">one_hot_encoding</span><span class="p">,</span>
         <span class="n">add_na</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">preprocessing_state</span><span class="o">=</span><span class="n">preprocessing_state</span><span class="p">,</span>
     <span class="p">)</span>
+    <span class="n">stored_state</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">model_matrix_out</span><span class="p">[</span><span class="s2">"preprocessing_state"</span><span class="p">],</span> <span class="nb">dict</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">stored_state</span><span class="p">[</span><span class="s2">"unsupported_stateful_formulas"</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"Cannot replay stateful formulas; use stateless formulas or refit."</span>
+        <span class="p">)</span>
     <span class="n">sparse_matrix</span><span class="p">:</span> <span class="n">csc_matrix</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span>
         <span class="n">model_matrix_out</span><span class="p">[</span><span class="s2">"model_matrix"</span><span class="p">],</span> <span class="n">csc_matrix</span>
     <span class="p">)</span>
     <span class="n">sparse_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span>
         <span class="n">model_matrix_out</span><span class="p">[</span><span class="s2">"model_matrix_columns_names"</span><span class="p">],</span> <span class="nb">list</span>
     <span class="p">)</span>
+    <span class="k">if</span> <span class="n">preprocessing_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">missing_columns</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">project_to_columns</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">sparse_columns</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">missing_columns</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"Fit-time columns are absent after frozen preprocessing replay: "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">missing_columns</span><span class="si">}</span><span class="s2">. Refit the model to refresh its preprocessing_state."</span>
+            <span class="p">)</span>
 
     <span class="c1"># Project to the stored column set.</span>
     <span class="n">sparse_col_to_idx</span> <span class="o">=</span> <span class="p">{</span><span class="n">col</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sparse_columns</span><span class="p">)}</span>
@@ -952,6 +1202,7 @@
         <span class="n">project_to_columns</span><span class="p">,</span>
         <span class="n">penalty_factor_expanded</span><span class="p">,</span>
         <span class="n">resolved_formula</span><span class="p">,</span>
+        <span class="n">stored_state</span><span class="p">,</span>
         <span class="n">rows</span><span class="p">[</span><span class="n">rows</span> <span class="o">&lt;</span> <span class="n">original_sample_n</span><span class="p">],</span>
         <span class="n">rows</span><span class="p">[</span><span class="n">rows</span> <span class="o">&gt;=</span> <span class="n">original_sample_n</span><span class="p">]</span> <span class="o">-</span> <span class="n">original_sample_n</span><span class="p">,</span>
     <span class="p">)</span>
@@ -965,6 +1216,7 @@
     <span class="n">one_hot_encoding</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">na_action</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">penalty_factor</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">preprocessing_state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_MatrixBuildResult</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Training path: build model matrix via formula expansion."""</span>
     <span class="n">formula_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="p">[</span><span class="n">formula</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">formula</span>
@@ -977,6 +1229,7 @@
         <span class="n">formula</span><span class="o">=</span><span class="n">formula_list</span><span class="p">,</span>
         <span class="n">penalty_factor</span><span class="o">=</span><span class="n">penalty_factor</span><span class="p">,</span>
         <span class="n">one_hot_encoding</span><span class="o">=</span><span class="n">one_hot_encoding</span><span class="p">,</span>
+        <span class="n">preprocessing_state</span><span class="o">=</span><span class="n">preprocessing_state</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">combined_matrix</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">csc_matrix</span><span class="p">]</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
         <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">csc_matrix</span><span class="p">],</span>
@@ -1006,6 +1259,7 @@
         <span class="n">columns</span><span class="p">,</span>
         <span class="n">penalty_factor_expanded</span><span class="p">,</span>
         <span class="n">resolved_formula</span><span class="p">,</span>
+        <span class="n">_assert_type</span><span class="p">(</span><span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">"preprocessing_state"</span><span class="p">],</span> <span class="nb">dict</span><span class="p">),</span>
         <span class="n">_assert_type</span><span class="p">(</span><span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">"sample_rows"</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">),</span>
         <span class="n">_assert_type</span><span class="p">(</span><span class="n">model_matrix_output</span><span class="p">[</span><span class="s2">"target_rows"</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">),</span>
     <span class="p">)</span>
@@ -1023,7 +1277,7 @@
         <span class="n">combined_matrix</span> <span class="o">=</span> <span class="n">add_na_indicator_to_combined</span><span class="p">(</span><span class="n">combined_matrix</span><span class="p">)</span>
 
     <span class="n">categorical_cols</span> <span class="o">=</span> <span class="n">combined_matrix</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span>
-        <span class="p">[</span><span class="s2">"string"</span><span class="p">,</span> <span class="s2">"boolean"</span><span class="p">,</span> <span class="s2">"object"</span><span class="p">]</span>
+        <span class="p">[</span><span class="s2">"string"</span><span class="p">,</span> <span class="s2">"bool"</span><span class="p">,</span> <span class="s2">"object"</span><span class="p">]</span>
     <span class="p">)</span><span class="o">.</span><span class="n">columns</span>
     <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">categorical_cols</span><span class="p">:</span>
         <span class="n">combined_matrix</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">combined_matrix</span><span class="p">[</span><span class="n">col</span><span class="p">])</span>
@@ -1034,6 +1288,9 @@
         <span class="n">columns</span><span class="p">,</span>
         <span class="p">[</span><span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">columns</span><span class="p">),</span>
         <span class="kc">None</span><span class="p">,</span>
+        <span class="n">_freeze_preprocessing_state</span><span class="p">(</span>
+            <span class="n">combined_matrix</span><span class="p">,</span> <span class="p">[],</span> <span class="kc">False</span><span class="p">,</span> <span class="p">[],</span> <span class="n">stringify_categoricals</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">),</span>
         <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sample_covars</span><span class="p">)),</span>
         <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">target_covars</span><span class="p">)),</span>
     <span class="p">)</span>
@@ -1053,6 +1310,7 @@
     <span class="n">scaler_weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">fit_penalties_skl</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">matrix_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">preprocessing_state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Build the combined design matrix used by IPW weighting.</span>
 
@@ -1114,6 +1372,14 @@
 <span class="sd">        matrix as-is (may be sparse, dense, or DataFrame depending on</span>
 <span class="sd">        the path).</span>
 
+<span class="sd">    preprocessing_state:</span>
+<span class="sd">        Optional pickle-safe fit-time schema returned under the same result key.</span>
+<span class="sd">        Pass ``preprocessing_state=training["preprocessing_state"]`` with stored</span>
+<span class="sd">        columns, scaler and penalties on replay. Unseen categories and fitted</span>
+<span class="sd">        stateful formulas raise actionable errors instead of being re-encoded.</span>
+<span class="sd">        Raw native-categorical replay maps novel categories to missing values,</span>
+<span class="sd">        preserving the estimator's existing missing-category policy.</span>
+
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    dict[str, Any]</span>
@@ -1149,6 +1415,7 @@
             <span class="n">columns</span><span class="p">,</span>
             <span class="n">penalty_factor_expanded</span><span class="p">,</span>
             <span class="n">resolved_formula</span><span class="p">,</span>
+            <span class="n">out_state</span><span class="p">,</span>
             <span class="n">sample_rows</span><span class="p">,</span>
             <span class="n">target_rows</span><span class="p">,</span>
         <span class="p">)</span> <span class="o">=</span> <span class="n">_build_projected_model_matrix</span><span class="p">(</span>
@@ -1158,6 +1425,7 @@
             <span class="n">one_hot_encoding</span><span class="o">=</span><span class="n">one_hot_encoding</span><span class="p">,</span>
             <span class="n">na_action</span><span class="o">=</span><span class="n">na_action</span><span class="p">,</span>
             <span class="n">project_to_columns</span><span class="o">=</span><span class="n">project_to_columns</span><span class="p">,</span>
+            <span class="n">preprocessing_state</span><span class="o">=</span><span class="n">preprocessing_state</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">elif</span> <span class="n">use_model_matrix</span><span class="p">:</span>
         <span class="p">(</span>
@@ -1165,6 +1433,7 @@
             <span class="n">columns</span><span class="p">,</span>
             <span class="n">penalty_factor_expanded</span><span class="p">,</span>
             <span class="n">resolved_formula</span><span class="p">,</span>
+            <span class="n">out_state</span><span class="p">,</span>
             <span class="n">sample_rows</span><span class="p">,</span>
             <span class="n">target_rows</span><span class="p">,</span>
         <span class="p">)</span> <span class="o">=</span> <span class="n">_build_training_model_matrix</span><span class="p">(</span>
@@ -1174,6 +1443,7 @@
             <span class="n">one_hot_encoding</span><span class="o">=</span><span class="n">one_hot_encoding</span><span class="p">,</span>
             <span class="n">na_action</span><span class="o">=</span><span class="n">na_action</span><span class="p">,</span>
             <span class="n">penalty_factor</span><span class="o">=</span><span class="n">penalty_factor</span><span class="p">,</span>
+            <span class="n">preprocessing_state</span><span class="o">=</span><span class="n">preprocessing_state</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="p">(</span>
@@ -1181,6 +1451,7 @@
             <span class="n">columns</span><span class="p">,</span>
             <span class="n">penalty_factor_expanded</span><span class="p">,</span>
             <span class="n">resolved_formula</span><span class="p">,</span>
+            <span class="n">out_state</span><span class="p">,</span>
             <span class="n">sample_rows</span><span class="p">,</span>
             <span class="n">target_rows</span><span class="p">,</span>
         <span class="p">)</span> <span class="o">=</span> <span class="n">_build_raw_covariates</span><span class="p">(</span>
@@ -1206,6 +1477,14 @@
                     <span class="s2">"Formula row dropping left no finite positive scaler weight mass; "</span>
                     <span class="s2">"fitting requires retained positive-weight rows."</span>
                 <span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">use_model_matrix</span> <span class="ow">and</span> <span class="n">preprocessing_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">combined_matrix</span> <span class="o">=</span> <span class="n">_apply_preprocessing_state</span><span class="p">(</span>
+            <span class="n">_assert_type</span><span class="p">(</span><span class="n">combined_matrix</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">),</span>
+            <span class="n">preprocessing_state</span><span class="p">,</span>
+            <span class="n">allow_unknown_categories</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">out_state</span> <span class="o">=</span> <span class="n">preprocessing_state</span>
 
     <span class="c1"># -- Step 2: Reindex DataFrame to stored columns (raw holdout path) ----</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">combined_matrix</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="ow">and</span> <span class="n">project_to_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1271,6 +1550,7 @@
         <span class="s2">"columns"</span><span class="p">:</span> <span class="n">columns</span><span class="p">,</span>
         <span class="s2">"penalty_factor_expanded"</span><span class="p">:</span> <span class="n">penalty_factor_expanded</span><span class="p">,</span>
         <span class="s2">"resolved_formula"</span><span class="p">:</span> <span class="n">resolved_formula</span><span class="p">,</span>
+        <span class="s2">"preprocessing_state"</span><span class="p">:</span> <span class="n">out_state</span><span class="p">,</span>
         <span class="s2">"fit_scaler"</span><span class="p">:</span> <span class="n">out_scaler</span><span class="p">,</span>
         <span class="s2">"fit_penalties_skl"</span><span class="p">:</span> <span class="n">out_penalties</span><span class="p">,</span>
     <span class="p">}</span>

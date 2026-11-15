@@ -381,6 +381,10 @@ row positions, with NaN weights for omitted rows. Raw-only
 <p>When <code class="docutils literal notranslate"><span class="pre">store_fit_matrices=True</span></code>: adds
 <code class="docutils literal notranslate"><span class="pre">model_matrix_sample</span></code>, <code class="docutils literal notranslate"><span class="pre">model_matrix_target</span></code>,
 <code class="docutils literal notranslate"><span class="pre">sample_index</span></code>, <code class="docutils literal notranslate"><span class="pre">target_index</span></code>.</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">store_fit_matrices=True</span></code> or
+<code class="docutils literal notranslate"><span class="pre">store_fit_metadata=True</span></code>: adds <code class="docutils literal notranslate"><span class="pre">preprocessing_state</span></code>,
+the design-matrix builder’s <code class="docutils literal notranslate"><span class="pre">preprocessing_state</span></code> result
+(<code class="docutils literal notranslate"><span class="pre">None</span></code> when the builder does not provide one).</p>
 <p>When <code class="docutils literal notranslate"><span class="pre">store_fit_metadata=True</span></code>: adds
 <code class="docutils literal notranslate"><span class="pre">sample_probability</span></code>, <code class="docutils literal notranslate"><span class="pre">target_probability</span></code>,
 <code class="docutils literal notranslate"><span class="pre">sample_link</span></code>, <code class="docutils literal notranslate"><span class="pre">target_link</span></code>,

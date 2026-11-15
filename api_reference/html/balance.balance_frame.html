@@ -1223,6 +1223,12 @@ alternative to the <code class="docutils literal notranslate"><span class="pre">
 </div>
 <p>When <code class="docutils literal notranslate"><span class="pre">data</span></code> is None (default), uses this object’s own data
 (original behavior).</p>
+<p>For IPW/CBPS fits with data-dependent transformations, <code class="docutils literal notranslate"><span class="pre">data=</span></code> replay
+is supported only when both raw covariate frames match this fitted
+object’s frames under <code class="docutils literal notranslate"><span class="pre">DataFrame.equals</span></code> (including covariate dtypes,
+labels, ordering and missingness). Unchanged copies and pickle round
+trips qualify; dtype casts or changed row labels do not. For different
+data, fit deterministic transformations or refit on the scoring frames.</p>
 <p>Dispatches by the adjustment method stored in the model dict:</p>
 <ul class="simple">
 <li><p><strong>IPW</strong>: uses stored fit-time metadata (links, class balancing,

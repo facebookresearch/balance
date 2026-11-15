@@ -187,6 +187,10 @@
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">sf</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></div>
 
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">__getnewargs__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">SampleFrame</span><span class="p">,</span> <span class="n">SampleFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Give pickle the internal frame arguments accepted by ``__new__``."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">__deepcopy__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memo</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Sample</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Return an independent deep copy of this Sample.</span>
 

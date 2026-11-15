@@ -168,7 +168,9 @@ is raised. Defaults to None.</p></li>
 <li><p><strong>random_seed</strong> (<em>int</em><em>, </em><em>optional</em>) – a random seed. Defaults to 2020.</p></li>
 <li><p><strong>store_fit_metadata</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to persist fit-time
 metadata required for downstream <code class="docutils literal notranslate"><span class="pre">BalanceFrame.predict_weights()</span></code>
-reconstruction (for CBPS models). Defaults to False.</p></li>
+reconstruction (for CBPS models), including the model-matrix
+builder’s <code class="docutils literal notranslate"><span class="pre">preprocessing_state</span></code> result (<code class="docutils literal notranslate"><span class="pre">None</span></code> when it does
+not provide one). Defaults to False.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>

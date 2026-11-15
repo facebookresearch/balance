@@ -73,6 +73,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.file_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_to_download</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.utils.model_matrix</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_design_matrix</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods.ipw</span><span class="w"> </span><span class="kn">import</span> <span class="n">_restore_dropped_rows</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods.rake</span><span class="w"> </span><span class="kn">import</span> <span class="n">_restore_rake_dropped_index</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Self</span>
@@ -905,8 +906,6 @@
             <span class="ow">and</span> <span class="n">row_model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"method"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"rake"</span>
             <span class="ow">and</span> <span class="n">row_model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sample_rows_kept"</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="p">):</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">balance.weighting_methods.rake</span><span class="w"> </span><span class="kn">import</span> <span class="n">_restore_rake_dropped_index</span>
-
             <span class="n">adjusted_weights</span> <span class="o">=</span> <span class="n">_restore_rake_dropped_index</span><span class="p">(</span>
                 <span class="n">adjusted_weights</span><span class="p">,</span>
                 <span class="n">_assert_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_series</span><span class="p">),</span>
@@ -1561,7 +1560,11 @@
         <span class="p">):</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">persist_replay</span><span class="p">:</span>
                 <span class="k">break</span>
-            <span class="n">probability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compact_ipw_probabilities</span><span class="p">(</span><span class="n">fit_model</span><span class="p">,</span> <span class="n">matrix</span><span class="p">)</span>
+            <span class="n">probability</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">prob</span>
+                <span class="k">if</span> <span class="n">side</span> <span class="o">==</span> <span class="s2">"sample"</span>
+                <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compact_ipw_probabilities</span><span class="p">(</span><span class="n">fit_model</span><span class="p">,</span> <span class="n">matrix</span><span class="p">)</span>
+            <span class="p">)</span>
             <span class="n">bf</span><span class="o">.</span><span class="n">_adjustment_model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"model_matrix_</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">matrix</span>
             <span class="n">bf</span><span class="o">.</span><span class="n">_adjustment_model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_rows"</span><span class="p">]</span> <span class="o">=</span> <span class="n">rows</span>
             <span class="n">bf</span><span class="o">.</span><span class="n">_adjustment_model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">_input_index"</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_index</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -2069,10 +2072,9 @@
         <span class="c1"># shallow copy of the model dict keeps the "fit" estimators as the same</span>
         <span class="c1"># objects, so scored.outcome_model["fit"][c] is train.outcome_model["fit"][c].</span>
         <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">fitted_model</span><span class="p">)</span>
-        <span class="k">if</span> <span class="s2">"training_inputs"</span> <span class="ow">in</span> <span class="n">fitted_model</span><span class="p">:</span>
-            <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span><span class="p">[</span><span class="s2">"training_inputs"</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span>
-                <span class="n">fitted_model</span><span class="p">[</span><span class="s2">"training_inputs"</span><span class="p">]</span>
-            <span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"training_inputs"</span><span class="p">,</span> <span class="s2">"preprocessing_state"</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">fitted_model</span><span class="p">:</span>
+                <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">fitted_model</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">outcomes_hat_columns</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                 <span class="s2">"set_fitted_outcome_model() preserved existing sample predictions "</span>
@@ -2182,6 +2184,31 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Stored IPW estimator is missing class label 1."</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">classes</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_transfer_transformations</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">data</span><span class="p">:</span> <span class="n">BalanceFrame</span><span class="p">,</span> <span class="n">method_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Allow matching raw covariates, not dtype/index-normalized transfer.</span>
+
+<span class="sd">        The same-data exemption uses ``DataFrame.equals`` on both current raw</span>
+<span class="sd">        responder and target covariate frames before applying transformations.</span>
+<span class="sd">        Covariate values, dtypes, labels, ordering and missingness must match.</span>
+<span class="sd">        Ordinary copies and pickle round trips are supported; dtype casts or new</span>
+<span class="sd">        row labels count as transfer even when numeric values look equivalent.</span>
+<span class="sd">        """</span>
+        <span class="n">same_data</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">model</span> <span class="ow">is</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adjustment_model</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="n">data</span><span class="o">.</span><span class="n">_sf_target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="n">data</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df_covars</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df_covars</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df_covars</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span>
+                <span class="n">_assert_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">df_covars</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">same_data</span><span class="p">:</span>
+            <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">_reject_data_dependent_transfer</span><span class="p">(</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"transformations"</span><span class="p">),</span> <span class="n">method_name</span><span class="o">=</span><span class="n">method_name</span>
+            <span class="p">)</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_compute_ipw_matrices</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
@@ -2203,6 +2230,9 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">"data must have a target set when computing design matrices."</span>
             <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_transfer_transformations</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">bf</span><span class="p">,</span> <span class="s2">"ipw"</span><span class="p">)</span>
 
         <span class="n">sample_covars</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">target_covars</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -2240,6 +2270,7 @@
             <span class="n">fit_scaler</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"fit_scaler"</span><span class="p">),</span>
             <span class="n">fit_penalties_skl</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"fit_penalties_skl"</span><span class="p">),</span>
             <span class="n">matrix_type</span><span class="o">=</span><span class="n">matrix_type</span><span class="p">,</span>
+            <span class="n">preprocessing_state</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"preprocessing_state"</span><span class="p">),</span>
         <span class="p">)</span>
         <span class="n">combined_matrix</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">"combined_matrix"</span><span class="p">]</span>
         <span class="n">sample_n</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">"sample_n"</span><span class="p">]</span>
@@ -2751,6 +2782,13 @@
 <span class="sd">        When ``data`` is None (default), uses this object's own data</span>
 <span class="sd">        (original behavior).</span>
 
+<span class="sd">        For IPW/CBPS fits with data-dependent transformations, ``data=`` replay</span>
+<span class="sd">        is supported only when both raw covariate frames match this fitted</span>
+<span class="sd">        object's frames under ``DataFrame.equals`` (including covariate dtypes,</span>
+<span class="sd">        labels, ordering and missingness). Unchanged copies and pickle round</span>
+<span class="sd">        trips qualify; dtype casts or changed row labels do not. For different</span>
+<span class="sd">        data, fit deterministic transformations or refit on the scoring frames.</span>
+
 <span class="sd">        Dispatches by the adjustment method stored in the model dict:</span>
 
 <span class="sd">        - **IPW**: uses stored fit-time metadata (links, class balancing,</span>
@@ -3156,6 +3194,7 @@
         <span class="n">beta_opt_model_space</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""Rebuild the CBPS scoring matrix ``U`` from stored fit artifacts."""</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_transfer_transformations</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">bf</span><span class="p">,</span> <span class="s2">"cbps"</span><span class="p">)</span>
         <span class="n">sample_covars</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">target_covars</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span><span class="o">.</span><span class="n">covars</span><span class="p">()</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">sample_covars</span><span class="p">,</span> <span class="n">target_covars</span> <span class="o">=</span> <span class="n">balance_adjustment</span><span class="o">.</span><span class="n">apply_transformations</span><span class="p">(</span>
@@ -3175,6 +3214,7 @@
             <span class="n">na_action</span><span class="o">=</span><span class="n">na_action</span><span class="p">,</span>
             <span class="n">project_to_columns</span><span class="o">=</span><span class="n">projected_columns</span><span class="p">,</span>
             <span class="n">matrix_type</span><span class="o">=</span><span class="s2">"dense"</span><span class="p">,</span>
+            <span class="n">preprocessing_state</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"preprocessing_state"</span><span class="p">),</span>
         <span class="p">)</span>
         <span class="n">combined_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">matrix_out</span><span class="p">[</span><span class="s2">"combined_matrix"</span><span class="p">])</span>
         <span class="n">sample_n</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">matrix_out</span><span class="p">[</span><span class="s2">"sample_n"</span><span class="p">])</span>
