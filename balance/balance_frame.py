@@ -1507,7 +1507,11 @@ class BalanceFrame:
         ):
             if not persist_replay:
                 break
-            probability = self._compact_ipw_probabilities(fit_model, matrix)
+            probability = (
+                prob
+                if side == "sample"
+                else self._compact_ipw_probabilities(fit_model, matrix)
+            )
             bf._adjustment_model[f"model_matrix_{side}"] = matrix
             bf._adjustment_model[f"{side}_rows"] = rows
             bf._adjustment_model[f"{side}_input_index"] = input_index.copy()

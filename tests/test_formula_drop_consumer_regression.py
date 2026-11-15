@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -126,6 +127,27 @@ class FormulaDropConsumerRegressionTest(unittest.TestCase):
             fitted.responders.df["weight_adjusted_1"],
             fitted.weight_series,
             equal_nan=True,
+        )
+
+    def test_transfer_scores_each_retained_population_once(self) -> None:
+        sample, sw, target, tw = self._inputs(raw_missing=False)
+        fitted = self._frame(sample, sw, target, tw).fit(
+            method="ipw", formula=_FORMULA, transformations=None, num_lambdas=1
+        )
+        estimator = _assert_type(fitted.model)["fit"]
+        with patch.object(
+            estimator, "predict_proba", wraps=estimator.predict_proba
+        ) as predict:
+            scored = self._frame(sample, sw, target, tw).set_fitted_model(
+                fitted, inplace=False
+            )
+        self.assertEqual(predict.call_count, 2)
+        self.assertEqual(
+            scored.predict_proba(on="sample").isna().tolist(),
+            [True, True, False, False],
+        )
+        np.testing.assert_allclose(
+            scored.predict_weights(), scored.weight_series, equal_nan=True
         )
 
     def test_ipw_custom_classifier_uses_retained_labels_and_weights(self) -> None:

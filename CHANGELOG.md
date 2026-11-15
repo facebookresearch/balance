@@ -2,6 +2,7 @@
 
 ## Fixed
 
+- Reuse sample probabilities when caching transferred weighting models after formula-induced row drops, avoiding a duplicate sample prediction pass without changing weights or output positions.
 - Fill nullable numeric extension columns with string NA sentinels through a safe object fallback while preserving native numeric fills and dtypes.
 - Report malformed formula tokenizer failures as actionable ValueError messages while preserving valid decimal, attribute, quoted and standalone-dot expressions.
 - Reject non-finite caller-filtered rake fit-time design weights before expanding them onto complete scoring rows.
