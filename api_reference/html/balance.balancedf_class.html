@@ -2065,13 +2065,14 @@ fit → predict → average loop.  This requires the view be backed by a
 <a class="reference internal" href="balance.balance_frame.html#balance.balance_frame.BalanceFrame" title="balance.balance_frame.BalanceFrame"><code class="xref py py-class docutils literal notranslate"><span class="pre">BalanceFrame</span></code></a> <strong>with a target</strong> and a
 <strong>fitted outcome model</strong> — otherwise it raises (a lone <code class="docutils literal notranslate"><span class="pre">SampleFrame</span></code>
 or a target-less <code class="docutils literal notranslate"><span class="pre">Sample</span></code> has nothing to bootstrap).  It resamples the
-responders with replacement (keeping their weights), refits <code class="docutils literal notranslate"><span class="pre">ĝ*</span></code> with
-the same fit configuration as the stored model (honouring the stored
-fit-weighting), predicts on the <strong>fixed</strong> target, and averages with the
-target weights; the returned interval is a percentile CI over the
-replicates.  The point estimate is the full-sample <code class="docutils literal notranslate"><span class="pre">μ̂_OM</span></code> (the target
-row).  It is <strong>deterministic</strong> given <code class="docutils literal notranslate"><span class="pre">random_seed</span></code> and bypasses
-<code class="docutils literal notranslate"><span class="pre">_call_on_linked</span></code> (which cannot reach the learner), so the returned
+original training rows with replacement (keeping the actual fitting
+weights and selected variables), even after model transfer or later
+weight adjustment. It refits <code class="docutils literal notranslate"><span class="pre">ĝ*</span></code> with the same fit configuration,
+predicts on the <strong>fixed</strong> target, and averages with the target weights.
+The point estimate replays the stored model, without refitting it;
+the returned interval is a percentile CI over the replicates. It is
+<strong>deterministic</strong> given <code class="docutils literal notranslate"><span class="pre">random_seed</span></code> and deterministic learners, and
+bypasses <code class="docutils literal notranslate"><span class="pre">_call_on_linked</span></code> (which cannot reach the learner), so the returned
 table has just the <strong>target</strong> row (<code class="docutils literal notranslate"><span class="pre">target</span></code> mean + <code class="docutils literal notranslate"><span class="pre">target_ci</span></code>).</p></li>
 <li><p>any other <code class="docutils literal notranslate"><span class="pre">ci_method</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;analytic&quot;</span></code>): the inherited analytic
 path (<a class="reference internal" href="#balance.balancedf_class.BalanceDF.mean_with_ci" title="balance.balancedf_class.BalanceDF.mean_with_ci"><code class="xref py py-meth docutils literal notranslate"><span class="pre">BalanceDF.mean_with_ci()</span></code></a>), which treats <code class="docutils literal notranslate"><span class="pre">ŷ</span></code> as fixed and

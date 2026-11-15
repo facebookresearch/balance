@@ -3192,13 +3192,14 @@
 <span class="sd">          :class:`~balance.balance_frame.BalanceFrame` **with a target** and a</span>
 <span class="sd">          **fitted outcome model** — otherwise it raises (a lone ``SampleFrame``</span>
 <span class="sd">          or a target-less ``Sample`` has nothing to bootstrap).  It resamples the</span>
-<span class="sd">          responders with replacement (keeping their weights), refits ``ĝ*`` with</span>
-<span class="sd">          the same fit configuration as the stored model (honouring the stored</span>
-<span class="sd">          fit-weighting), predicts on the **fixed** target, and averages with the</span>
-<span class="sd">          target weights; the returned interval is a percentile CI over the</span>
-<span class="sd">          replicates.  The point estimate is the full-sample ``μ̂_OM`` (the target</span>
-<span class="sd">          row).  It is **deterministic** given ``random_seed`` and bypasses</span>
-<span class="sd">          ``_call_on_linked`` (which cannot reach the learner), so the returned</span>
+<span class="sd">          original training rows with replacement (keeping the actual fitting</span>
+<span class="sd">          weights and selected variables), even after model transfer or later</span>
+<span class="sd">          weight adjustment. It refits ``ĝ*`` with the same fit configuration,</span>
+<span class="sd">          predicts on the **fixed** target, and averages with the target weights.</span>
+<span class="sd">          The point estimate replays the stored model, without refitting it;</span>
+<span class="sd">          the returned interval is a percentile CI over the replicates. It is</span>
+<span class="sd">          **deterministic** given ``random_seed`` and deterministic learners, and</span>
+<span class="sd">          bypasses ``_call_on_linked`` (which cannot reach the learner), so the returned</span>
 <span class="sd">          table has just the **target** row (``target`` mean + ``target_ci``).</span>
 <span class="sd">        - any other ``ci_method`` (e.g. ``"analytic"``): the inherited analytic</span>
 <span class="sd">          path (:meth:`BalanceDF.mean_with_ci`), which treats ``ŷ`` as fixed and</span>
@@ -3257,23 +3258,20 @@
 
         <span class="n">bf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_require_fitted_balanceframe_with_target</span><span class="p">()</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">outcome_model</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
-        <span class="n">responder</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span>
-        <span class="n">target</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">_sf_target</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_target</span><span class="p">)</span>
+        <span class="n">training</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"training_inputs"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"bootstrap CI requires stored outcome-model training inputs; "</span>
+                <span class="s2">"this legacy model has no training provenance. Refit with "</span>
+                <span class="s2">"fit_outcome_model(...) on the original training frame, or use "</span>
+                <span class="s2">"ci_method='analytic' for fixed-prediction uncertainty."</span>
+            <span class="p">)</span>
 
         <span class="n">outcome_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">model</span><span class="p">[</span><span class="s2">"outcome_columns"</span><span class="p">]]</span>
-        <span class="n">covars</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">df_covars</span>
-        <span class="n">outcomes</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="n">outcome_columns</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="c1"># Drop responder rows with a missing outcome so the resampled fit uses</span>
-        <span class="c1"># only complete observations (mirroring SampleFrame.fit_outcome_model).</span>
-        <span class="n">complete</span> <span class="o">=</span> <span class="n">outcomes</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">covars</span> <span class="o">=</span> <span class="n">covars</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">complete</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">outcomes</span> <span class="o">=</span> <span class="n">outcomes</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">complete</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-        <span class="n">sample_weight</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"weighted"</span><span class="p">,</span> <span class="kc">False</span><span class="p">)):</span>
-            <span class="n">weight_values</span> <span class="o">=</span> <span class="n">responder</span><span class="o">.</span><span class="n">weight_series</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">complete</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-            <span class="n">sample_weight</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">weight_values</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">covars</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-
+        <span class="n">covars</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">training</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"covars"</span><span class="p">),</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
+        <span class="n">outcomes</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span><span class="n">training</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"outcomes"</span><span class="p">),</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
+        <span class="n">sample_weight</span> <span class="o">=</span> <span class="n">training</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sample_weight"</span><span class="p">)</span>
         <span class="n">target_weight</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">weight_series</span>
 
         <span class="n">results</span> <span class="o">=</span> <span class="n">bootstrap_outcome_estimate</span><span class="p">(</span>
@@ -3283,6 +3281,7 @@
             <span class="n">target</span><span class="o">.</span><span class="n">df_covars</span><span class="p">,</span>
             <span class="n">target_weight</span><span class="p">,</span>
             <span class="n">fit_kwargs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_fit_kwargs_from_model</span><span class="p">(</span><span class="n">model</span><span class="p">),</span>
+            <span class="n">fitted_model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
             <span class="n">n_bootstrap</span><span class="o">=</span><span class="n">n_bootstrap</span><span class="p">,</span>
             <span class="n">random_seed</span><span class="o">=</span><span class="n">random_seed</span><span class="p">,</span>
             <span class="n">conf_level</span><span class="o">=</span><span class="n">conf_level</span><span class="p">,</span>

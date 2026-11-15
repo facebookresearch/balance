@@ -2046,6 +2046,10 @@
         <span class="c1"># shallow copy of the model dict keeps the "fit" estimators as the same</span>
         <span class="c1"># objects, so scored.outcome_model["fit"][c] is train.outcome_model["fit"][c].</span>
         <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">fitted_model</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">"training_inputs"</span> <span class="ow">in</span> <span class="n">fitted_model</span><span class="p">:</span>
+            <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span><span class="p">[</span><span class="s2">"training_inputs"</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span>
+                <span class="n">fitted_model</span><span class="p">[</span><span class="s2">"training_inputs"</span><span class="p">]</span>
+            <span class="p">)</span>
         <span class="c1"># A transferred model supersedes any Ŷ already on the responder.</span>
         <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_drop_outcomes_hat_columns</span><span class="p">()</span>
         <span class="n">bf</span><span class="o">.</span><span class="n">_sync_sampleframe_state_from_responder</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">)</span>

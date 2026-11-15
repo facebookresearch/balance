@@ -149,6 +149,20 @@ hide_title: true
 - Keep covariates and weights positionally aligned when dropping rows with duplicate index labels.
 - Preserve caller missing values when returning a new NA-indicator frame.
 
+# Unreleased
+
+## Bug fixes
+
+- Outcome-model bootstrap CIs retain the original fitting-variable subset,
+  complete training rows, and actual fit weights after adjustment or transfer.
+  The point estimate replays the stored model rather than refitting it. Stored
+  models now retain one extra copy of their raw training inputs (also copied by
+  frame deep copies); legacy models without these inputs must be refit to obtain
+  bootstrap CIs, or use `ci_method="analytic"` for fixed-prediction uncertainty.
+  Temporary bootstrap fits, including the fallback point-estimate fit, skip unused
+  raw-input snapshots, reducing allocation overhead without changing estimates,
+  intervals, or outer-model provenance.
+
 # 0.23.0 (2026-08-04)
 
 ## Highlights
