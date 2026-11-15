@@ -1555,6 +1555,11 @@ class BalanceFrame:
         Like sklearn's ``fit()`` (and :meth:`SampleFrame.fit_outcome_model`), it
         does **not** produce predictions — call :meth:`predict_outcomes` (or
         :meth:`fit_predict_outcomes`) to write the ``<outcome>_hat`` columns.
+        A successful fit preserves attached predicted-outcome columns on both
+        responder and target, including manually attached predictions. A warning
+        names existing predictions and their refresh call. Rerun
+        ``frame.predict_outcomes(on='target')`` to update target predictions;
+        use ``on='sample'`` for responder predictions. Shared targets are unchanged.
 
         Supplying a different ``target`` changes the population used by later
         outcome predictions, but preserves the current sample weights, weighting
@@ -1654,8 +1659,21 @@ class BalanceFrame:
         # Delegate to the responder so the model lands on _sf_sample (single
         # source of truth) and rides adjust()/set_target().
         bf._sf_sample.fit_outcome_model(inplace=True, **kwargs)
+        bf._warn_target_outcome_predictions()
         bf._sync_sampleframe_state_from_responder(bf._sf_sample)
         return bf
+
+    def _warn_target_outcome_predictions(self) -> None:
+        """Preserve target predictions and explain how to refresh them."""
+        target = self._sf_target
+        if target is None or not target.outcomes_hat_columns:
+            return
+        logger.warning(
+            "Existing target predictions in columns %s were preserved and may be "
+            "stale after replacing the outcome model. "
+            "Rerun frame.predict_outcomes(on='target') to update them.",
+            target.outcomes_hat_columns,
+        )
 
     @overload
     def predict_outcomes(  # noqa: E704
@@ -1876,7 +1894,12 @@ class BalanceFrame:
         :meth:`set_fitted_model`), so ``self.predict_outcomes(on="target")`` then
         replays the transferred model on ``self``'s own target and
         ``self.outcomes_hat().mean()`` is the g-computation estimate ``μ̂_OM`` on
-        the holdout target.
+        the holdout target. Transferring a model preserves attached predicted
+        outcomes on both responder and target, including manual predictions.
+        Warnings name the existing columns and the explicit refresh calls:
+        ``frame.predict_outcomes(on='target')`` for the target, or ``on='sample'``
+        for the responder. Shared targets remain unchanged until an explicit
+        prediction call writes to a copy.
 
         On a :class:`~balance.sample_class.Sample`, this ``BalanceFrame`` method
         is reached via the MRO; the model lands on ``self._sf_sample`` (the single
@@ -1985,8 +2008,14 @@ class BalanceFrame:
             bf._sf_sample._outcome_model["training_inputs"] = deepcopy(
                 fitted_model["training_inputs"]
             )
-        # A transferred model supersedes any Ŷ already on the responder.
-        bf._sf_sample._drop_outcomes_hat_columns()
+        if bf._sf_sample.outcomes_hat_columns:
+            logger.warning(
+                "set_fitted_outcome_model() preserved existing sample predictions "
+                "in columns %s. They may be stale after replacing the outcome model. "
+                "Rerun frame.predict_outcomes(on='sample') to update them.",
+                bf._sf_sample.outcomes_hat_columns,
+            )
+        bf._warn_target_outcome_predictions()
         bf._sync_sampleframe_state_from_responder(bf._sf_sample)
         return bf
 

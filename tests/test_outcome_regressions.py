@@ -8,6 +8,7 @@ from __future__ import annotations
 import pickle
 import unittest
 from copy import deepcopy
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -240,3 +241,214 @@ class OutcomeFitProvenanceTest(unittest.TestCase):
         _assert_type(frame.outcome_model).pop("training_inputs", None)
         with self.assertRaisesRegex(ValueError, "(?i)training.*refit|refit.*training"):
             _interval(frame)
+
+
+class OutcomePredictionPreservationTest(unittest.TestCase):
+    def _populated(self) -> Sample:
+        frame = (
+            _sample().set_target(_target()).fit_outcome_model(model=LinearRegression())
+        )
+        frame.predict_outcomes(on="both")
+        return frame
+
+    def _assert_refresh_warning(self, output: list[str]) -> None:
+        warning = " ".join(output)
+        self.assertIn("Existing target predictions", warning)
+        self.assertIn("y_hat", warning)
+        self.assertIn("preserved", warning)
+        self.assertIn("stale", warning)
+        self.assertIn("frame.predict_outcomes(on='target')", warning)
+
+    def _assert_preserved_then_refresh(self, frame: BalanceFrame) -> None:
+        self.assertIsNotNone(_assert_type(frame.target).df_outcomes_hat)
+        self.assertAlmostEqual(
+            _assert_type(frame.outcomes_hat()).mean().loc["target", "y_hat"], 4.32
+        )
+        predictions = frame.predict_outcomes(on="target")
+        target = _assert_type(frame.target, SampleFrame)
+        expected = np.average(predictions["y_hat"], weights=target.weight_series)
+        self.assertAlmostEqual(expected, 3.2142857142857144)
+        self.assertAlmostEqual(
+            _assert_type(frame.outcomes_hat()).mean().loc["target", "y_hat"], expected
+        )
+
+    def test_refit_preserves_target_predictions_and_warns_until_refresh(self) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {"id": ["a", "b", "c"], "x": [0.0, 1.0, 2.0], "y": [2.0, 4.0, 6.0]}
+            ),
+            outcome_columns=["y"],
+        )
+        target = Sample.from_frame(pd.DataFrame({"id": ["t1", "t2"], "x": [1.0, 2.0]}))
+        frame = sample.set_target(target).fit_outcome_model(
+            model=LinearRegression(fit_intercept=True), transformations=None
+        )
+        np.testing.assert_allclose(
+            frame.predict_outcomes(on="target")["y_hat"], [4.0, 6.0]
+        )
+        shared_target = _assert_type(frame.target)
+        with self.assertLogs("balance", level="WARNING") as logs:
+            frame.fit_outcome_model(
+                model=LinearRegression(fit_intercept=False), transformations=None
+            )
+        self._assert_refresh_warning(logs.output)
+        self.assertIs(frame.target, shared_target)
+        np.testing.assert_allclose(
+            _assert_type(shared_target.df_outcomes_hat)["y_hat"], [4.0, 6.0]
+        )
+        self.assertAlmostEqual(
+            _assert_type(frame.outcomes_hat()).mean().loc["target", "y_hat"], 5.0
+        )
+        np.testing.assert_allclose(
+            frame.predict_outcomes(on="target")["y_hat"], [3.2, 6.4]
+        )
+        self.assertAlmostEqual(
+            _assert_type(frame.outcomes_hat()).mean().loc["target", "y_hat"], 4.8
+        )
+        np.testing.assert_allclose(
+            _assert_type(shared_target.df_outcomes_hat)["y_hat"], [4.0, 6.0]
+        )
+
+    def test_transfer_preserves_target_predictions_and_warns_until_refresh(
+        self,
+    ) -> None:
+        sample = Sample.from_frame(
+            pd.DataFrame(
+                {"id": ["a", "b", "c"], "x": [0.0, 1.0, 2.0], "y": [2.0, 4.0, 6.0]}
+            ),
+            outcome_columns=["y"],
+        )
+        target = Sample.from_frame(pd.DataFrame({"id": ["t1", "t2"], "x": [1.0, 2.0]}))
+        frame = sample.set_target(target).fit_outcome_model(
+            model=LinearRegression(), transformations=None
+        )
+        np.testing.assert_allclose(
+            frame.predict_outcomes(on="target")["y_hat"], [4.0, 6.0]
+        )
+        replacement = sample.fit_outcome_model(
+            model=LinearRegression(fit_intercept=False), inplace=False
+        )
+        with self.assertLogs("balance", level="WARNING") as logs:
+            frame.set_fitted_outcome_model(replacement)
+        self._assert_refresh_warning(logs.output)
+        np.testing.assert_allclose(
+            _assert_type(_assert_type(frame.target).df_outcomes_hat)["y_hat"],
+            [4.0, 6.0],
+        )
+        self.assertAlmostEqual(
+            _assert_type(frame.outcomes_hat()).mean().loc["target", "y_hat"], 5.0
+        )
+        np.testing.assert_allclose(
+            frame.predict_outcomes(on="target")["y_hat"], [3.2, 6.4]
+        )
+        self.assertAlmostEqual(
+            _assert_type(frame.outcomes_hat()).mean().loc["target", "y_hat"], 4.8
+        )
+
+    def test_refit_copy_preserves_predictions_and_leaves_original_unchanged(
+        self,
+    ) -> None:
+        original = self._populated()
+        before = _assert_type(original.target).df.copy(deep=True)
+        sample_before = _assert_type(original.df_outcomes_hat).copy(deep=True)
+        with self.assertLogs("balance", level="WARNING") as logs:
+            fitted = original.fit_outcome_model(
+                model=LinearRegression(fit_intercept=False), inplace=False
+            )
+        self._assert_refresh_warning(logs.output)
+        pd.testing.assert_frame_equal(fitted.df_outcomes_hat, sample_before)
+        self._assert_preserved_then_refresh(fitted)
+        pd.testing.assert_frame_equal(_assert_type(original.target).df, before)
+
+    def test_transfer_copy_preserves_predictions_and_leaves_original_unchanged(
+        self,
+    ) -> None:
+        original = self._populated()
+        before = _assert_type(original.target).df.copy(deep=True)
+        sample_before = _assert_type(original.df_outcomes_hat).copy(deep=True)
+        train = _sample().fit_outcome_model(model=LinearRegression(fit_intercept=False))
+        with self.assertLogs("balance", level="WARNING") as logs:
+            fitted = original.set_fitted_outcome_model(train, inplace=False)
+        self._assert_refresh_warning(logs.output)
+        pd.testing.assert_frame_equal(fitted.df_outcomes_hat, sample_before)
+        self._assert_preserved_then_refresh(fitted)
+        pd.testing.assert_frame_equal(_assert_type(original.target).df, before)
+
+    def test_refit_does_not_mutate_shared_populated_target(self) -> None:
+        first = self._populated()
+        shared = _assert_type(first.target, SampleFrame)
+        second = BalanceFrame(sample=_sample()._sf_sample, target=shared)
+        before = shared.df.copy(deep=True)
+        with self.assertLogs("balance", level="WARNING") as logs:
+            first.fit_outcome_model(model=LinearRegression(fit_intercept=False))
+        self._assert_refresh_warning(logs.output)
+        self.assertIs(first.target, shared)
+        self._assert_preserved_then_refresh(first)
+        self.assertIsNot(first.target, shared)
+        pd.testing.assert_frame_equal(_assert_type(second.target).df, before)
+
+    def test_transfer_does_not_mutate_shared_populated_target(self) -> None:
+        first = self._populated()
+        shared = _assert_type(first.target, SampleFrame)
+        second = BalanceFrame(sample=_sample()._sf_sample, target=shared)
+        before = shared.df.copy(deep=True)
+        train = _sample().fit_outcome_model(model=LinearRegression(fit_intercept=False))
+        with self.assertLogs("balance", level="WARNING") as logs:
+            first.set_fitted_outcome_model(train)
+        self._assert_refresh_warning(logs.output)
+        self.assertIs(first.target, shared)
+        self._assert_preserved_then_refresh(first)
+        self.assertIsNot(first.target, shared)
+        pd.testing.assert_frame_equal(_assert_type(second.target).df, before)
+
+    def test_manual_predictions_and_metadata_are_preserved(self) -> None:
+        frame = self._populated()
+        target = _assert_type(frame.target)
+        target.add_outcomes_hat_column(
+            "manual_hat", pd.Series(np.arange(len(target.df)), index=target.df.index)
+        )
+        target_before = target.df.copy(deep=True)
+        roles = list(target.outcomes_hat_columns)
+        metadata = dict(target._prediction_metadata)
+        sample_before = _assert_type(frame.df_outcomes_hat).copy(deep=True)
+        for action in ("refit", "transfer"):
+            with self.subTest(action=action):
+                with self.assertLogs("balance", level="WARNING") as logs:
+                    if action == "refit":
+                        frame.fit_outcome_model(
+                            model=LinearRegression(fit_intercept=False)
+                        )
+                    else:
+                        frame.set_fitted_outcome_model(
+                            _sample().fit_outcome_model(model=LinearRegression())
+                        )
+                self._assert_refresh_warning(logs.output)
+                self.assertIn("manual_hat", " ".join(logs.output))
+                pd.testing.assert_frame_equal(target.df, target_before)
+                self.assertEqual(target.outcomes_hat_columns, roles)
+                self.assertEqual(target._prediction_metadata, metadata)
+                pd.testing.assert_frame_equal(frame.df_outcomes_hat, sample_before)
+
+    def test_no_warning_when_no_predictions_exist(self) -> None:
+        frame = _sample().set_target(_target())
+        train = _sample().fit_outcome_model(model=LinearRegression())
+        with patch("balance.balance_frame.logger.warning") as warning:
+            frame.fit_outcome_model(model=LinearRegression())
+            frame.set_fitted_outcome_model(train)
+        warning.assert_not_called()
+        self.assertIsNone(_assert_type(frame.target).df_outcomes_hat)
+
+    def test_failed_refit_preserves_predictions_and_does_not_warn_of_a_new_model(
+        self,
+    ) -> None:
+        frame = self._populated()
+        model_before = frame.outcome_model
+        before = _assert_type(frame.target).df.copy(deep=True)
+        sample_before = _assert_type(frame.df_outcomes_hat).copy(deep=True)
+        with patch("balance.balance_frame.logger.warning") as warning:
+            with self.assertRaises(ValueError):
+                frame.fit_outcome_model(transformations={"x": "quantize"})
+        warning.assert_not_called()
+        self.assertIs(frame.outcome_model, model_before)
+        pd.testing.assert_frame_equal(_assert_type(frame.target).df, before)
+        pd.testing.assert_frame_equal(frame.df_outcomes_hat, sample_before)

@@ -1668,14 +1668,16 @@ class TestSampleFrameFitOutcomeModel(BalanceTestCase):
         self.assertIsNone(sf.outcome_model)
         self.assertEqual(_assert_type(fitted.outcome_model)["method"], "outcome_model")
 
-    def test_refit_drops_stale_yhat(self) -> None:
+    def test_refit_preserves_stale_yhat_with_refresh_warning(self) -> None:
         sf = self._make_sf()
         sf.fit_predict_outcomes(model="auto")
-        self.assertIn("happiness_hat", sf.outcomes_hat_columns)
-        # Re-fit must drop the superseded Ŷ column so it can't linger.
-        sf.fit_outcome_model(model="auto")
-        self.assertEqual(sf.outcomes_hat_columns, [])
-        self.assertNotIn("happiness_hat", sf._df.columns)
+        before = _assert_type(sf.df_outcomes_hat).copy(deep=True)
+        with self.assertLogs("balance", level="WARNING") as logs:
+            sf.fit_outcome_model(model="auto")
+        self.assertEqual(sf.outcomes_hat_columns, ["happiness_hat"])
+        pd.testing.assert_frame_equal(_assert_type(sf.df_outcomes_hat), before)
+        self.assertIn("happiness_hat", " ".join(logs.output))
+        self.assertIn("frame.predict_outcomes()", " ".join(logs.output))
 
     def test_predict_twice_replaces_column(self) -> None:
         sf = self._make_sf()

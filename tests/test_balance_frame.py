@@ -7772,8 +7772,9 @@ class TestBalanceFrameSetFittedOutcomeModel(BalanceTestCase):
         scored.predict_outcomes(on="target")
         self.assertIn("target", _assert_type(scored.outcomes_hat()).mean().index)
 
-    def test_transfer_drops_stale_outcomes_hat_on_holdout(self) -> None:
-        # If the holdout responder already carries Ŷ, a transfer supersedes it.
+    def test_transfer_preserves_stale_outcomes_hat_on_holdout_with_warning(
+        self,
+    ) -> None:
         from sklearn.linear_model import LinearRegression
 
         train_bf = self._make_train_bf()
@@ -7784,9 +7785,14 @@ class TestBalanceFrameSetFittedOutcomeModel(BalanceTestCase):
             pd.Series(np.zeros(40), index=holdout_bf._sf_sample.df.index),
         )
         self.assertEqual(holdout_bf._sf_sample.outcomes_hat_columns, ["happiness_hat"])
-        scored = holdout_bf.set_fitted_outcome_model(train_bf, inplace=False)
-        # The scored copy's responder no longer carries the stale Ŷ.
-        self.assertEqual(scored._sf_sample.outcomes_hat_columns, [])
+        with self.assertLogs("balance", level="WARNING") as logs:
+            scored = holdout_bf.set_fitted_outcome_model(train_bf, inplace=False)
+        self.assertEqual(scored._sf_sample.outcomes_hat_columns, ["happiness_hat"])
+        np.testing.assert_allclose(
+            _assert_type(scored._sf_sample.df_outcomes_hat)["happiness_hat"],
+            np.zeros(40),
+        )
+        self.assertIn("frame.predict_outcomes(on='sample')", " ".join(logs.output))
 
     @pytest.mark.requires_sklearn_1_4
     @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires sklearn >= 1.4")

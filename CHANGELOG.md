@@ -143,6 +143,13 @@
 
 ## Bug fixes
 
+- Refitting or transferring an outcome model preserves attached predictions
+  on both responder and target, including manually attached predictions. Warnings
+  identify the existing columns and explain that they may be stale; rerun
+  `frame.predict_outcomes(on='target')` to refresh the target (or `on='sample'`
+  for the responder). Explicit target prediction still copies shared targets
+  before writing.
+
 - Outcome-model bootstrap CIs retain the original fitting-variable subset,
   complete training rows, and actual fit weights after adjustment or transfer.
   The point estimate replays the stored model rather than refitting it. Stored

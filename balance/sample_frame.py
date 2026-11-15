@@ -1624,9 +1624,10 @@ class SampleFrame:
         aligned to the covariate index before it is passed through.  Rows whose
         outcome ``Y`` is missing (NaN) are dropped before fitting — the
         covariates and weights are aligned to the retained rows, so the fit uses
-        only complete outcome observations.  Re-fitting drops any
-        ``<outcome>_hat`` columns left by a previous :meth:`predict_outcomes` so
-        a stale prediction cannot linger against a newly-fit model.
+        complete outcome observations. Existing ``<outcome>_hat`` columns are
+        preserved, including manually attached predictions. A successful fit
+        warns that they may be stale; call ``frame.predict_outcomes()`` to refresh
+        them (``frame.predict_outcomes(on='sample')`` on a BalanceFrame).
 
         Args:
             model: ``"auto"`` (a ``HistGradientBoosting`` regressor/classifier
@@ -1728,10 +1729,15 @@ class SampleFrame:
             calibrate=calibrate,
         )
 
-        # Drop any superseded <outcome>_hat columns from a prior
-        # predict_outcomes so a stale Ŷ can't linger against the new model.
-        target._drop_outcomes_hat_columns()
         target._outcome_model = fitted_model
+        if target.outcomes_hat_columns:
+            logger.warning(
+                "fit_outcome_model() preserved existing predictions in columns %s. "
+                "They may be stale after replacing the outcome model. "
+                "Rerun frame.predict_outcomes() to update them "
+                "(frame.predict_outcomes(on='sample') on a BalanceFrame).",
+                target.outcomes_hat_columns,
+            )
         return target
 
     def _drop_outcomes_hat_columns(self) -> None:
