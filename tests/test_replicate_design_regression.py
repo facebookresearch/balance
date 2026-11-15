@@ -6,12 +6,14 @@
 from __future__ import annotations
 
 import unittest
+from contextlib import ExitStack
 from types import ModuleType
 from typing import Any
 from unittest.mock import patch
 
 import pandas as pd
 from balance import Sample
+from balance.interop import diff_diff as balance_diff_diff
 from balance.interop.diff_diff import to_survey_design
 
 try:
@@ -28,8 +30,10 @@ class ReplicateDesignValidationTest(unittest.TestCase):
             pd.DataFrame({"id": ["a", "b"], "w": [1.0, 1.0], "r1": [0.0, 2.0]}),
             weight_column="w",
         )
-        self.enterContext(patch("balance.interop.diff_diff._IMPORT_ERROR", None))
-        self.enterContext(
+        patches = ExitStack()
+        self.addCleanup(patches.close)
+        patches.enter_context(patch("balance.interop.diff_diff._IMPORT_ERROR", None))
+        patches.enter_context(
             patch("balance.interop.diff_diff._dd", ModuleType("diff_diff"))
         )
 
@@ -48,6 +52,26 @@ class ReplicateDesignValidationTest(unittest.TestCase):
             to_survey_design(
                 self.sample, design_columns={"replicate_weights": ["r1", "missing"]}
             )
+
+
+class ReplicateDesignPatchCleanupTest(unittest.TestCase):
+    def test_optional_dependency_patches_are_restored_after_setup_failure(self) -> None:
+        import_error = balance_diff_diff._IMPORT_ERROR
+        dependency = balance_diff_diff._dd
+
+        class SetupFailure(ReplicateDesignValidationTest):
+            def setUp(self) -> None:
+                super().setUp()
+                raise RuntimeError("later setup failed")
+
+        case = SetupFailure("test_replicate_weights_rejects_an_absent_column")
+        result = unittest.TestResult()
+        case.run(result)
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(len(result.errors), 1)
+        self.assertIn("later setup failed", result.errors[0][1])
+        self.assertIs(balance_diff_diff._IMPORT_ERROR, import_error)
+        self.assertIs(balance_diff_diff._dd, dependency)
 
 
 @unittest.skipUnless(HAS_DIFF_DIFF, "requires diff-diff")
