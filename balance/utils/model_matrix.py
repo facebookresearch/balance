@@ -896,7 +896,7 @@ def model_matrix(
     # Arrange factor variables
     if one_hot_encoding:
         factor_variables = list(
-            all_data.select_dtypes(["category", "string", "boolean", "object"]).columns
+            all_data.select_dtypes(["category", "string", "bool", "object"]).columns
         )
         logger.debug(
             f"These variables will be encoded using one-hot encoding: {factor_variables}"
@@ -1222,7 +1222,7 @@ def _build_raw_covariates(
         combined_matrix = add_na_indicator_to_combined(combined_matrix)
 
     categorical_cols = combined_matrix.select_dtypes(
-        ["string", "boolean", "object"]
+        ["string", "bool", "object"]
     ).columns
     for col in categorical_cols:
         combined_matrix[col] = pd.Categorical(combined_matrix[col])

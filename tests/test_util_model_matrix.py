@@ -655,6 +655,71 @@ class TestUtil(
         sample_result_750 = _assert_type(r["sample"], pd.DataFrame)
         self.assertEqual(sample_result_750.sort_index(axis=1), e, lazy=True)
 
+        # Replay rows without missing b values must retain the fitted indicator.
+        replay_df = pd.DataFrame(
+            {"a": [0, 2], "b": [0, 2], "c": ["a", "b"], "id": [4, 5]}
+        )
+        replay = model_matrix(
+            Sample.from_frame(replay_df),
+            one_hot_encoding=True,
+            preprocessing_state=_assert_type(r["preprocessing_state"], dict),
+        )
+        replay_sample = _assert_type(replay["sample"], pd.DataFrame)
+        expected_replay = pd.DataFrame(
+            {
+                "C(_is_na_b, one_hot_encoding_greater_2)[True]": [0.0, 0.0],
+                "C(c, one_hot_encoding_greater_2)[b]": [0.0, 1.0],
+                "a": [0.0, 2.0],
+                "b": [0.0, 2.0],
+            }
+        )
+        self.assertEqual(replay_sample, expected_replay)
+        self.assertEqual(replay["model_matrix_columns_names"], list(e.columns))
+
+    def test_build_design_matrix_raw_boolean_covariates(self) -> None:
+        sample_df = pd.DataFrame({"b": [0.0, None, 2.0], "flag": [False, True, False]})
+        target_df = pd.DataFrame({"b": [3.0, 4.0], "flag": [True, False]})
+        original_sample = sample_df.copy(deep=True)
+        original_target = target_df.copy(deep=True)
+
+        result = build_design_matrix(sample_df, target_df, use_model_matrix=False)
+        matrix = _assert_type(result["combined_matrix"], pd.DataFrame)
+        expected = pd.DataFrame(
+            {
+                "b": [0.0, 0.0, 2.0, 3.0, 4.0],
+                "flag": pd.Categorical(
+                    [False, True, False, True, False], categories=[False, True]
+                ),
+                "_is_na_b": pd.Categorical(
+                    [False, True, False, False, False], categories=[False, True]
+                ),
+            },
+            index=pd.Index([0, 1, 2, 0, 1]),
+        )
+        self.assertEqual(matrix, expected)
+        self.assertEqual(result["columns"], list(expected.columns))
+        self.assertEqual(sample_df, original_sample)
+        self.assertEqual(target_df, original_target)
+
+        replay = build_design_matrix(
+            pd.DataFrame({"b": [1.0, 2.0], "flag": [False, False]}),
+            pd.DataFrame({"b": [3.0], "flag": [True]}),
+            use_model_matrix=False,
+            project_to_columns=result["columns"],
+            preprocessing_state=result["preprocessing_state"],
+        )
+        expected_replay = pd.DataFrame(
+            {
+                "b": [1.0, 2.0, 3.0],
+                "flag": pd.Categorical([False, False, True], categories=[False, True]),
+                "_is_na_b": pd.Categorical(
+                    [False, False, False], categories=[False, True]
+                ),
+            },
+            index=pd.Index([0, 1, 0]),
+        )
+        self.assertEqual(replay["combined_matrix"], expected_replay)
+
     def test_one_hot_encoding_greater_2(self) -> None:
         """Test one-hot encoding for categorical variables with >2 categories.
 
