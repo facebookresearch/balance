@@ -66,8 +66,8 @@ class CLIBatchKeyArityTest(unittest.TestCase):
             diagnostics["metric"] == "adjustment_failure", ["batch", "region"]
         ]
         self.assertEqual(
-            set(actual.itertuples(index=False, name=None)),
             {("a", "north"), ("a", "south"), ("b", "north"), ("b", "south")},
+            set(actual.itertuples(index=False, name=None)),
         )
 
     def test_malformed_external_group_key_fails_before_output(self) -> None:
@@ -79,6 +79,8 @@ class CLIBatchKeyArityTest(unittest.TestCase):
                 path / "unused_weights.csv",
                 path / "unused_diagnostics.csv",
             )
+            # Inject a malformed group key to exercise the defensive arity check;
+            # leave batch processing and the validation under test unchanged.
             with (
                 patch.object(cli, "load_and_check_input", return_value=frame),
                 patch.object(frame, "groupby", return_value=[("a", frame)]),
@@ -89,3 +91,5 @@ class CLIBatchKeyArityTest(unittest.TestCase):
                 ):
                     cli.main()
             output.assert_not_called()
+            self.assertFalse((path / "unused_weights.csv").exists())
+            self.assertFalse((path / "unused_diagnostics.csv").exists())

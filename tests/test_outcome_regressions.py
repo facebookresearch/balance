@@ -522,47 +522,7 @@ class MixedOutcomeLearnersTest(unittest.TestCase):
     @pytest.mark.requires_sklearn_1_4
     @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires sklearn >= 1.4")
     def test_column_map_both_orders_pickle_and_replay(self) -> None:
-        covars = pd.DataFrame({"cat": ["a", "b", "a", "b"], "x": [0.0, 1.0, 2.0, 3.0]})
-        outcomes = pd.DataFrame(
-            {"reg": [2.0, 4.0, 6.0, 8.0], "binary": [0.0, 1.0, 0.0, 1.0]}
-        )
-        binary_predictions = []
-        for order in (["reg", "binary"], ["binary", "reg"]):
-            with self.subTest(order=order):
-                model = fit_outcome_model(
-                    covars,
-                    outcomes[order],
-                    model={
-                        "reg": HistGradientBoostingRegressor(
-                            categorical_features="from_dtype",
-                            max_iter=2,
-                            learning_rate=1.0,
-                            min_samples_leaf=1,
-                            early_stopping=False,
-                            random_state=0,
-                        ),
-                        "binary": LogisticRegression(
-                            solver="liblinear",
-                            C=1.0,
-                            max_iter=100,
-                            random_state=0,
-                        ),
-                    },
-                    transformations=None,
-                    use_model_matrix="auto",
-                )
-                self.assertTrue(model["use_model_matrix"])
-                predictions = predict_outcome(model, covars.iloc[[3, 0]])
-                np.testing.assert_allclose(predictions["reg"], [8.0, 2.0], atol=1e-12)
-                replayed = predict_outcome(
-                    pickle.loads(pickle.dumps(model)), covars.iloc[[3, 0]]
-                )
-                np.testing.assert_array_equal(replayed["reg"], predictions["reg"])
-                np.testing.assert_array_equal(replayed["binary"], predictions["binary"])
-                binary_predictions.append(predictions["binary"])
-        np.testing.assert_allclose(
-            binary_predictions[0], binary_predictions[1], atol=1e-12
-        )
+        self._assert_orders()
 
     @pytest.mark.requires_sklearn_1_4
     @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires sklearn >= 1.4")

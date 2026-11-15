@@ -10,35 +10,49 @@ import unittest
 import numpy as np
 import pandas as pd
 from balance import Sample
-from balance.utils.data_transformation import _fill_missing_for_na_action
+from balance.utils.data_transformation import add_na_indicator
 from balance.utils.pandas_utils import _safe_fillna_and_infer
 
 
 class CategoricalNAActionRegressionTest(unittest.TestCase):
-    def test_fill_keeps_complete_categorical_columns(self) -> None:
+    def test_public_indicator_keeps_complete_categorical_columns(self) -> None:
         frame = pd.DataFrame({"a": pd.Categorical(["a", "b"])})
-        pd.testing.assert_frame_equal(
-            _fill_missing_for_na_action(frame, "__NaN__"), frame
-        )
-        pd.testing.assert_frame_equal(_safe_fillna_and_infer(frame, "__NaN__"), frame)
+        result = add_na_indicator(frame, replace_val_obj="__NaN__")
+        pd.testing.assert_frame_equal(frame, result)
 
-    def test_shared_fill_adds_missing_category_for_replay(self) -> None:
+    def test_public_indicator_adds_missing_category_without_mutating_input(
+        self,
+    ) -> None:
         frame = pd.DataFrame({"a": pd.Categorical(["a", None])})
         original = frame.copy(deep=True)
-        result = _safe_fillna_and_infer(frame, "__NaN__")
-        self.assertEqual(result["a"].tolist(), ["a", "__NaN__"])
-        pd.testing.assert_frame_equal(frame, original)
+        result = add_na_indicator(frame, replace_val_obj="__NaN__")
+        self.assertEqual(["a", "__NaN__"], result["a"].tolist())
+        self.assertEqual([False, True], result["_is_na_a"].tolist())
+        pd.testing.assert_frame_equal(original, frame)
+
+    def test_public_indicator_numeric_fill_preserves_nullable_dtype(self) -> None:
+        for dtype in ("Int64", "Float64"):
+            with self.subTest(dtype=dtype):
+                frame = pd.DataFrame({"a": pd.Series([1, pd.NA], dtype=dtype)})
+                original = frame.copy(deep=True)
+                result = add_na_indicator(frame)
+                self.assertEqual([1, 0], result["a"].tolist())
+                self.assertEqual(dtype, str(result["a"].dtype))
+                self.assertEqual([False, True], result["_is_na_a"].tolist())
+                pd.testing.assert_frame_equal(original, frame)
 
     def test_nullable_numeric_fill_uses_object_only_for_string_sentinel(self) -> None:
         for dtype in ("Int64", "Float64"):
             with self.subTest(dtype=dtype):
                 series = pd.Series([1, pd.NA], dtype=dtype)
+                original = series.copy(deep=True)
                 sentinel = _safe_fillna_and_infer(series, "__NaN__")
                 self.assertEqual(sentinel.tolist(), [1, "__NaN__"])
                 self.assertEqual(sentinel.dtype, object)
                 numeric = _safe_fillna_and_infer(series, 0)
                 self.assertEqual(numeric.tolist(), [1, 0])
                 self.assertEqual(str(numeric.dtype), dtype)
+                pd.testing.assert_series_equal(series, original)
 
     def test_public_nullable_numeric_fit_and_weight_replay(self) -> None:
         for method in ("rake", "poststratify"):
