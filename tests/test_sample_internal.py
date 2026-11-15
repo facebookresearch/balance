@@ -12,7 +12,6 @@ it clear which tests can be removed when Sample's internals are replaced by
 SampleFrame/BalanceFrame.
 """
 
-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 from copy import deepcopy
@@ -22,7 +21,6 @@ import balance.testutil
 import pandas as pd
 from balance.sample_class import Sample
 from balance.sample_frame import SampleFrame
-
 
 # Test sample fixtures - shared across multiple test methods
 # These represent common test scenarios for Sample functionality

@@ -18,7 +18,6 @@ from balance.weighting_methods.cbps import cbps
 from balance.weighting_methods.ipw import ipw
 from sklearn.linear_model import LinearRegression, LogisticRegression
 
-
 _FORMULA = "I(x ** (1/2))"
 
 

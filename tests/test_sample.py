@@ -17,7 +17,6 @@ The tests are organized into several test classes focusing on different aspects
 of Sample functionality.
 """
 
-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import logging
@@ -1202,7 +1201,7 @@ class TestSample_metrics_methods(
             source
             self       0.480
             unadjusted 0.480
-            """
+            """,
             )
             .strip()
             .splitlines()

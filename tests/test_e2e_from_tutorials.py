@@ -29,7 +29,6 @@ from balance.balance_frame import BalanceFrame
 from balance.sample_frame import SampleFrame
 from balance.testutil import _SKLEARN_1_4_AVAILABLE
 
-
 # ---------------------------------------------------------------------------
 # Fixed lambda from the tutorial run — avoids the slow CV search.
 # ---------------------------------------------------------------------------

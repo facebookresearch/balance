@@ -78,7 +78,7 @@ def relative_response_rates(
                 f"""
                 df and df_target must have the exact same columns.
                 Instead, thes column names are, (df, df_target) = ({df.columns.tolist()}, {df_target.columns.tolist()})
-                """
+                """,
             )
 
         # If they are, we can proceed forward:
@@ -92,7 +92,7 @@ def relative_response_rates(
             f"""
             The number of (notnull) rows in df MUST be smaller or equal to the number of rows in df_target.
             These were, (df_n_notnull_rows, target_n_notnull_rows) = ({df_n_notnull_rows}, {target_n_notnull_rows})
-            """
+            """,
         )
 
     return pd.DataFrame(

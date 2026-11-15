@@ -563,10 +563,10 @@ def cbps(  # noqa
     if na_action == "drop":
         sample_rows = np.flatnonzero(sample_df.notna().all(axis=1))
         target_rows = np.flatnonzero(target_df.notna().all(axis=1))
-        (sample_df, sample_weights) = balance_util.drop_na_rows(
+        sample_df, sample_weights = balance_util.drop_na_rows(
             sample_df, sample_weights, "sample"
         )
-        (target_df, target_weights) = balance_util.drop_na_rows(
+        target_df, target_weights = balance_util.drop_na_rows(
             target_df, target_weights, "target"
         )
     # keeping index of sample df to use for final weights

@@ -4771,7 +4771,7 @@ class BalanceFrame:
         adjustment details:
             {details}
                 """.format(
-                    details="\n            ".join(adjustment_details)
+                    details="\n            ".join(adjustment_details),
                 )
 
         if self.has_target():
