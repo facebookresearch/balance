@@ -92,6 +92,10 @@
 
 ## Documentation
 
+- **`dot_expansion()` lists its validation errors.** Its Raises section now
+  distinguishes invalid variable arguments from malformed formula tokens and
+  standalone-dot expansion without variables.
+
 - **`ipw()` / `cbps()` trimming arguments are documented accurately.** Their
   docstrings said passing `weight_trimming_percentile` switches to
   winsorization, but with the default `weight_trimming_mean_ratio=20` the call

@@ -90,8 +90,9 @@ def dot_expansion(formula: str, variables: List[str]) -> str:
         variables (List): List of all variables in the dataframe we build the formula for.
 
     Raises:
-        Exception: "Variables should not be empty. Please provide a list of strings."
-        Exception:  "Variables should be a list of strings and have to be included."
+        TypeError: If variables is None or is not a list.
+        ValueError: If formula tokenization fails, or a standalone dot requires
+            expansion but no variables are supplied.
 
     Returns:
         A string formula replacing the '.'' with all variables in variables.
