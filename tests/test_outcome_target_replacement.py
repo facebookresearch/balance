@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import logging
 import unittest
 from copy import deepcopy
 
@@ -101,19 +102,23 @@ class OutcomeTargetReplacementTest(unittest.TestCase):
     def test_unchanged_or_omitted_target_does_not_warn_or_reset_weights(self) -> None:
         for target in (None, self.old_target, deepcopy(self.old_target)):
             with self.subTest(target=target):
-                with self.assertNoLogs("balance", level="WARNING"):
+                with self.assertLogs("balance", level="WARNING") as warnings:
+                    logging.getLogger("balance").warning("capture start")
                     result = self.adjusted.fit_outcome_model(
                         target=target, model=LinearRegression(), inplace=False
                     )
+                self.assertEqual(warnings.output, ["WARNING:balance:capture start"])
                 self.assertEqual(result.df_weights["weight"].tolist(), [3.0, 1.0])
                 self.assertTrue(result.is_adjusted)
                 self.assertIsNotNone(result.outcome_model)
 
     def test_first_target_does_not_report_a_target_change(self) -> None:
-        with self.assertNoLogs("balance", level="WARNING"):
+        with self.assertLogs("balance", level="WARNING") as warnings:
+            logging.getLogger("balance").warning("capture start")
             result = self.sample.fit_outcome_model(
                 target=self.new_target, model=LinearRegression(), inplace=False
             )
+        self.assertEqual(warnings.output, ["WARNING:balance:capture start"])
         self.assertFalse(result.is_adjusted)
         self.assertEqual(result.df_weights["weight"].tolist(), [1.0, 1.0])
         self.assertEqual(_assert_type(result.df_target)["id"].tolist(), ["e", "f"])
