@@ -212,6 +212,11 @@ class FormulaDropConsumerRegressionTest(unittest.TestCase):
         np.testing.assert_allclose(
             fitted["fit_scaler"].mean_, control["fit_scaler"].mean_
         )
+        pd.testing.assert_frame_equal(fitted["training_inputs"]["covars"], covars)
+        pd.testing.assert_frame_equal(fitted["training_inputs"]["outcomes"], outcomes)
+        pd.testing.assert_series_equal(
+            fitted["training_inputs"]["sample_weight"], weights
+        )
         predictions = predict_outcome(fitted, covars)["y"]
         self.assertEqual(np.isnan(predictions).tolist(), [True, False, False])
         np.testing.assert_allclose(predictions[[1, 2]], [10.0, 20.0])

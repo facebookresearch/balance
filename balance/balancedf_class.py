@@ -3061,13 +3061,14 @@ class BalanceDFOutcomesHat(BalanceDF):
           :class:`~balance.balance_frame.BalanceFrame` **with a target** and a
           **fitted outcome model** — otherwise it raises (a lone ``SampleFrame``
           or a target-less ``Sample`` has nothing to bootstrap).  It resamples the
-          responders with replacement (keeping their weights), refits ``ĝ*`` with
-          the same fit configuration as the stored model (honouring the stored
-          fit-weighting), predicts on the **fixed** target, and averages with the
-          target weights; the returned interval is a percentile CI over the
-          replicates.  The point estimate is the full-sample ``μ̂_OM`` (the target
-          row).  It is **deterministic** given ``random_seed`` and bypasses
-          ``_call_on_linked`` (which cannot reach the learner), so the returned
+          original training rows with replacement (keeping the actual fitting
+          weights and selected variables), even after model transfer or later
+          weight adjustment. It refits ``ĝ*`` with the same fit configuration,
+          predicts on the **fixed** target, and averages with the target weights.
+          The point estimate replays the stored model, without refitting it;
+          the returned interval is a percentile CI over the replicates. It is
+          **deterministic** given ``random_seed`` and deterministic learners, and
+          bypasses ``_call_on_linked`` (which cannot reach the learner), so the returned
           table has just the **target** row (``target`` mean + ``target_ci``).
         - any other ``ci_method`` (e.g. ``"analytic"``): the inherited analytic
           path (:meth:`BalanceDF.mean_with_ci`), which treats ``ŷ`` as fixed and
@@ -3126,23 +3127,20 @@ class BalanceDFOutcomesHat(BalanceDF):
 
         bf = self._require_fitted_balanceframe_with_target()
         model = _assert_type(bf.outcome_model, dict)
-        responder = bf._sf_sample
-        target = bf._sf_target
+        target = _assert_type(bf._sf_target)
+        training = model.get("training_inputs")
+        if not isinstance(training, dict):
+            raise ValueError(
+                "bootstrap CI requires stored outcome-model training inputs; "
+                "this legacy model has no training provenance. Refit with "
+                "fit_outcome_model(...) on the original training frame, or use "
+                "ci_method='analytic' for fixed-prediction uncertainty."
+            )
 
         outcome_columns: list[str] = [str(c) for c in model["outcome_columns"]]
-        covars = responder.df_covars
-        outcomes = responder._df[outcome_columns].copy()
-        # Drop responder rows with a missing outcome so the resampled fit uses
-        # only complete observations (mirroring SampleFrame.fit_outcome_model).
-        complete = outcomes.notna().all(axis=1)
-        covars = covars.loc[complete].reset_index(drop=True)
-        outcomes = outcomes.loc[complete].reset_index(drop=True)
-
-        sample_weight: pd.Series | None = None
-        if bool(model.get("weighted", False)):
-            weight_values = responder.weight_series.loc[complete].to_numpy(dtype=float)
-            sample_weight = pd.Series(weight_values, index=covars.index)
-
+        covars = _assert_type(training.get("covars"), pd.DataFrame)
+        outcomes = _assert_type(training.get("outcomes"), pd.DataFrame)
+        sample_weight = training.get("sample_weight")
         target_weight = target.weight_series
 
         results = bootstrap_outcome_estimate(
@@ -3152,6 +3150,7 @@ class BalanceDFOutcomesHat(BalanceDF):
             target.df_covars,
             target_weight,
             fit_kwargs=self._fit_kwargs_from_model(model),
+            fitted_model=model,
             n_bootstrap=n_bootstrap,
             random_seed=random_seed,
             conf_level=conf_level,

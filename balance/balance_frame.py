@@ -1981,6 +1981,10 @@ class BalanceFrame:
         # shallow copy of the model dict keeps the "fit" estimators as the same
         # objects, so scored.outcome_model["fit"][c] is train.outcome_model["fit"][c].
         bf._sf_sample._outcome_model = dict(fitted_model)
+        if "training_inputs" in fitted_model:
+            bf._sf_sample._outcome_model["training_inputs"] = deepcopy(
+                fitted_model["training_inputs"]
+            )
         # A transferred model supersedes any Ŷ already on the responder.
         bf._sf_sample._drop_outcomes_hat_columns()
         bf._sync_sampleframe_state_from_responder(bf._sf_sample)

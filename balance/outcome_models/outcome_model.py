@@ -587,6 +587,7 @@ def fit_outcome_model(
     na_action: str = "add_indicator",
     use_model_matrix: bool | str = "auto",
     calibrate: bool = False,
+    _store_training_inputs: bool = True,
 ) -> Dict[str, Any]:
     """Fit an outcome model ``ĝ(X) ≈ E[Y|X]`` and return a stored model dict.
 
@@ -627,6 +628,10 @@ def fit_outcome_model(
         calibrate: When ``True``, wrap each classifier in
             :class:`~sklearn.calibration.CalibratedClassifierCV` (binary outcomes
             only). Ignored for regressors. Defaults to ``False``.
+        _store_training_inputs: Internal bootstrap optimization. Defaults to
+            ``True`` so ordinary fits retain immutable training provenance.
+            ``False`` omits only raw training snapshots for temporary replicate
+            models that are used for predictions and immediately discarded.
 
     Returns:
         Dict[str, Any]: the ``_outcome_model`` dict. Keys:
@@ -640,7 +645,12 @@ def fit_outcome_model(
             (``{col: "regression"|"proba"}``), ``"calibrated"``,
             ``"categorical_levels"`` (or ``None``), ``"outcome_columns"``,
             ``"learner"`` (repr), ``"perf"`` (``{col: {...}}``), and
-            ``"training_sample_index"``.
+            ``"training_sample_index"``, and ``"training_inputs"`` (snapshots of
+            raw ``covars``, ``outcomes``, and ``sample_weight`` with their original
+            row index). These snapshots retain the selected variables and actual
+            fitting weights for bootstrap inference after adjustment or transfer.
+            They cost one additional copy of the training inputs, not of the
+            fitted design matrix; frame deep copies also copy this metadata.
 
     Raises:
         ValueError: If ``na_action="drop"``, if ``transformations`` is not
@@ -678,6 +688,7 @@ def fit_outcome_model(
     weighted, sample_weight_arr, fit_weight_column = _prepare_sample_weight(
         sample_weight, covars_df
     )
+    training_weight_arr = sample_weight_arr
 
     outcome_columns: List[str] = [str(c) for c in outcomes_df.columns]
     outcome_is_discrete: Dict[str, bool] = {
@@ -792,7 +803,7 @@ def fit_outcome_model(
         fit_weight_uniform = bool(np.allclose(sample_weight_arr, sample_weight_arr[0]))
     else:
         fit_weight_uniform = True
-    return {
+    fitted_model: Dict[str, Any] = {
         "method": "outcome_model",
         "fit": fit,
         "X_matrix_columns": _assert_type(stored_columns, list),
@@ -814,6 +825,21 @@ def fit_outcome_model(
         "perf": perf,
         "training_sample_index": covars_df.index.copy(),
     }
+    if _store_training_inputs:
+        fitted_model["training_inputs"] = {
+            "covars": covars_df.copy(deep=True),
+            "outcomes": outcomes_df.copy(deep=True),
+            "sample_weight": (
+                pd.Series(
+                    training_weight_arr.copy(),
+                    index=covars_df.index.copy(),
+                    name=fit_weight_column,
+                )
+                if training_weight_arr is not None
+                else None
+            ),
+        }
+    return fitted_model
 
 
 def _predict_proba_class1(estimator: Any, matrix: Any) -> np.ndarray:
@@ -1013,6 +1039,7 @@ def bootstrap_outcome_estimate(
     target_weight: pd.Series | np.ndarray | None,
     *,
     fit_kwargs: Dict[str, Any],
+    fitted_model: Dict[str, Any] | None = None,
     n_bootstrap: int = 200,
     random_seed: int = 2020,
     conf_level: float = 0.95,
@@ -1029,14 +1056,15 @@ def bootstrap_outcome_estimate(
     the fixed target covariates, and averages the predictions with the target
     weights (:func:`~balance.stats_and_plots.weighted_stats.weighted_mean`) to get
     one scalar ``μ̂_OM*(b)`` per outcome.  Only the ``B`` scalar outputs per
-    outcome are kept — never ``B`` fitted models — so memory stays flat in ``B``.
+    outcome are kept — never ``B`` fitted models — so memory stays flat in ``B``. Temporary replicate fits do not copy or retain
+    raw training snapshots; the original model keeps its full provenance.
 
-    The reported **point estimate** is the full-sample ``μ̂_OM`` — ``ĝ`` refit once
-    on all responders (via ``fit_kwargs``) and averaged over the fixed target; for a
-    deterministic estimator this equals ``outcomes_hat().mean()``.  The bootstrap only
-    supplies the interval.  The interval is a **percentile** CI over ``{μ̂_OM*(b)}``.  The
-    routine is **deterministic** given ``random_seed`` (it uses
-    :func:`numpy.random.default_rng`), so the same seed yields identical CIs.
+    The reported **point estimate** is the supplied ``fitted_model`` averaged
+    over the fixed target, without refitting it. If no model is supplied, fit
+    once on all ``sample_covars`` using ``fit_kwargs`` for the point estimate.
+    The bootstrap only supplies the interval. The interval is a **percentile**
+    CI over ``{μ̂_OM*(b)}``. The routine is **deterministic** given ``random_seed``
+    and deterministic learners (it uses :func:`numpy.random.default_rng`).
 
     Args:
         sample_covars: Responder covariates ``X_R`` (rows are resampled).
@@ -1054,6 +1082,9 @@ def bootstrap_outcome_estimate(
             the refit matches the stored model's configuration.  Whether the
             refit is weighted is controlled by passing (or omitting)
             ``sample_weight``, not by ``fit_kwargs``.
+        fitted_model: Optional stored model used only for the point estimate.
+            The supplied training inputs and ``fit_kwargs`` must describe its
+            original fit, not a holdout or subsequently reweighted frame.
         n_bootstrap: Number of bootstrap replicates ``B``.  Defaults to 200.
         random_seed: Seed for the resampling RNG.  Defaults to 2020.
         conf_level: Confidence level for the percentile interval.  Defaults to
@@ -1090,11 +1121,18 @@ def bootstrap_outcome_estimate(
     """
     outcome_columns: List[str] = [str(c) for c in outcomes.columns]
 
-    # Full-sample point estimate: fit once on all responders, average over the
-    # fixed target with the target weights.
-    full_model = fit_outcome_model(
-        sample_covars, outcomes, sample_weight=sample_weight, **fit_kwargs
-    )
+    full_model = fitted_model
+    if full_model is None:
+        point_fit_kwargs: dict[str, Any] = {
+            **fit_kwargs,
+            "_store_training_inputs": False,
+        }
+        full_model = fit_outcome_model(
+            sample_covars,
+            outcomes,
+            sample_weight=sample_weight,
+            **point_fit_kwargs,
+        )
     full_predictions = predict_outcome(full_model, target_covars)
     point_estimate: Dict[str, float] = {
         col: float(
@@ -1104,6 +1142,8 @@ def bootstrap_outcome_estimate(
     }
 
     n_responders = sample_covars.shape[0]
+    bootstrap_fit_kwargs = dict(fit_kwargs)
+    bootstrap_fit_kwargs["_store_training_inputs"] = False
     rng = np.random.default_rng(random_seed)
     boot_estimates: Dict[str, List[float]] = {col: [] for col in outcome_columns}
     skipped = 0
@@ -1130,7 +1170,10 @@ def bootstrap_outcome_estimate(
 
             try:
                 boot_model = fit_outcome_model(
-                    boot_covars, boot_outcomes, sample_weight=boot_weight, **fit_kwargs
+                    boot_covars,
+                    boot_outcomes,
+                    sample_weight=boot_weight,
+                    **bootstrap_fit_kwargs,
                 )
             except ValueError:
                 # A resample can be degenerate (e.g. a single observed class for
