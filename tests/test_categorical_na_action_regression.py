@@ -18,7 +18,7 @@ class CategoricalNAActionRegressionTest(unittest.TestCase):
     def test_public_indicator_keeps_complete_categorical_columns(self) -> None:
         frame = pd.DataFrame({"a": pd.Categorical(["a", "b"])})
         result = add_na_indicator(frame, replace_val_obj="__NaN__")
-        pd.testing.assert_frame_equal(frame, result)
+        pd.testing.assert_frame_equal(result, frame)
 
     def test_public_indicator_adds_missing_category_without_mutating_input(
         self,
@@ -26,9 +26,9 @@ class CategoricalNAActionRegressionTest(unittest.TestCase):
         frame = pd.DataFrame({"a": pd.Categorical(["a", None])})
         original = frame.copy(deep=True)
         result = add_na_indicator(frame, replace_val_obj="__NaN__")
-        self.assertEqual(["a", "__NaN__"], result["a"].tolist())
-        self.assertEqual([False, True], result["_is_na_a"].tolist())
-        pd.testing.assert_frame_equal(original, frame)
+        self.assertEqual(result["a"].tolist(), ["a", "__NaN__"])
+        self.assertEqual(result["_is_na_a"].tolist(), [False, True])
+        pd.testing.assert_frame_equal(frame, original)
 
     def test_public_indicator_numeric_fill_preserves_nullable_dtype(self) -> None:
         for dtype in ("Int64", "Float64"):
@@ -36,10 +36,10 @@ class CategoricalNAActionRegressionTest(unittest.TestCase):
                 frame = pd.DataFrame({"a": pd.Series([1, pd.NA], dtype=dtype)})
                 original = frame.copy(deep=True)
                 result = add_na_indicator(frame)
-                self.assertEqual([1, 0], result["a"].tolist())
-                self.assertEqual(dtype, str(result["a"].dtype))
-                self.assertEqual([False, True], result["_is_na_a"].tolist())
-                pd.testing.assert_frame_equal(original, frame)
+                self.assertEqual(result["a"].tolist(), [1, 0])
+                self.assertEqual(str(result["a"].dtype), dtype)
+                self.assertEqual(result["_is_na_a"].tolist(), [False, True])
+                pd.testing.assert_frame_equal(frame, original)
 
     def test_nullable_numeric_fill_uses_object_only_for_string_sentinel(self) -> None:
         for dtype in ("Int64", "Float64"):

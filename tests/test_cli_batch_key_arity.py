@@ -66,8 +66,8 @@ class CLIBatchKeyArityTest(unittest.TestCase):
             diagnostics["metric"] == "adjustment_failure", ["batch", "region"]
         ]
         self.assertEqual(
-            {("a", "north"), ("a", "south"), ("b", "north"), ("b", "south")},
             set(actual.itertuples(index=False, name=None)),
+            {("a", "north"), ("a", "south"), ("b", "north"), ("b", "south")},
         )
 
     def test_malformed_external_group_key_fails_before_output(self) -> None:
