@@ -22,9 +22,10 @@ from pathlib import Path
 )
 class BentoRunnerScopeTest(unittest.TestCase):
     def _pytest_arguments(self, *arguments: str) -> tuple[list[str], str]:
-        with tempfile.TemporaryDirectory() as temporary, as_file(
-            files("balance").joinpath("run_balance_tests.sh")
-        ) as runner:
+        with (
+            tempfile.TemporaryDirectory() as temporary,
+            as_file(files("balance").joinpath("run_balance_tests.sh")) as runner,
+        ):
             home = Path(temporary)
             log = home / "argv.json"
             kernel = home / "bento_kernel_core_stats_binary-inplace#link-tree"
@@ -51,9 +52,10 @@ class BentoRunnerScopeTest(unittest.TestCase):
             return argv[2:], str(runner.parent / "parent_balance" / "tests")
 
     def test_flag_only_run_includes_package_test_directory(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary, as_file(
-            files("balance").joinpath("run_balance_tests.sh")
-        ) as runner:
+        with (
+            tempfile.TemporaryDirectory() as temporary,
+            as_file(files("balance").joinpath("run_balance_tests.sh")) as runner,
+        ):
             home = Path(temporary)
             log = home / "argv.json"
             kernel = home / "bento_kernel_core_stats_binary-inplace#link-tree"

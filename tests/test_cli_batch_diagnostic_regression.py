@@ -16,9 +16,10 @@ from balance.cli import BalanceCLI, make_parser
 class CLIBatchDiagnosticRegressionTest(unittest.TestCase):
     def test_diagnostics_retain_batch_provenance(self) -> None:
         for batch_column in ("batch", "metric"):
-            with self.subTest(
-                batch_column=batch_column
-            ), tempfile.TemporaryDirectory() as directory:
+            with (
+                self.subTest(batch_column=batch_column),
+                tempfile.TemporaryDirectory() as directory,
+            ):
                 path = Path(directory)
                 frame = pd.DataFrame(
                     {

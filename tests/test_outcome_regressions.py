@@ -539,8 +539,9 @@ class MixedOutcomeLearnersTest(unittest.TestCase):
     def test_explicit_native_mixed_categorical_has_actionable_error(self) -> None:
         covars, outcomes = self._data()
         for order in (["reg", "binary"], ["binary", "reg"]):
-            with self.subTest(order=order), self.assertRaisesRegex(
-                ValueError, "every learner.*use_model_matrix"
+            with (
+                self.subTest(order=order),
+                self.assertRaisesRegex(ValueError, "every learner.*use_model_matrix"),
             ):
                 fit_outcome_model(
                     covars,
