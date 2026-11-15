@@ -288,31 +288,39 @@ def _safe_fillna_and_infer(
         value = np.nan
 
     original_dtypes = data.dtypes if isinstance(data, pd.DataFrame) else data.dtype
-    if pd.api.types.is_scalar(value):
-        if isinstance(data, pd.Series) and isinstance(data.dtype, pd.CategoricalDtype):
-            if not data.isna().any() or pd.isna(value):
-                return data.copy()
-            if value not in data.cat.categories:
-                data = data.cat.add_categories([value])
+    is_scalar = pd.api.types.is_scalar(value)
+    if (
+        is_scalar
+        and isinstance(data, pd.Series)
+        and isinstance(data.dtype, pd.CategoricalDtype)
+    ):
+        if not data.isna().any() or pd.isna(value):
+            return data.copy()
+        if value not in data.cat.categories:
+            data = data.cat.add_categories([value])
+        return data.fillna(value)
+    if (
+        is_scalar
+        and isinstance(data, pd.Series)
+        and pd_types.is_extension_array_dtype(data.dtype)
+    ):
+        if not data.isna().any() or pd.isna(value):
+            return data.copy()
+        try:
             return data.fillna(value)
-        if isinstance(data, pd.Series) and pd_types.is_extension_array_dtype(
-            data.dtype
-        ):
-            if not data.isna().any() or pd.isna(value):
-                return data.copy()
-            try:
-                return data.fillna(value)
-            except TypeError:
-                return data.astype(object).where(data.notna(), value)
-        if isinstance(data, pd.DataFrame) and any(
-            pd_types.is_extension_array_dtype(dtype) for dtype in data.dtypes
-        ):
-            result = pd.concat(
-                [_safe_fillna_and_infer(series, value) for _, series in data.items()],
-                axis=1,
-            )
-            result.columns = data.columns
-            return result
+        except TypeError:
+            return data.astype(object).where(data.notna(), value)
+    if (
+        is_scalar
+        and isinstance(data, pd.DataFrame)
+        and any(pd_types.is_extension_array_dtype(dtype) for dtype in data.dtypes)
+    ):
+        result = pd.concat(
+            [_safe_fillna_and_infer(series, value) for _, series in data.items()],
+            axis=1,
+        )
+        result.columns = data.columns
+        return result
     # Suppress pandas FutureWarnings about downcasting during fillna operations
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", FutureWarning)

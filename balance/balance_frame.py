@@ -36,6 +36,7 @@ from balance.util import (
 from balance.utils.file_utils import _to_download
 from balance.utils.model_matrix import build_design_matrix
 from balance.weighting_methods.ipw import _restore_dropped_rows
+from balance.weighting_methods.rake import _restore_rake_dropped_index
 
 if TYPE_CHECKING:
     from typing import Self
@@ -860,8 +861,6 @@ class BalanceFrame:
             and row_model.get("method") == "rake"
             and row_model.get("sample_rows_kept") is not None
         ):
-            from balance.weighting_methods.rake import _restore_rake_dropped_index
-
             adjusted_weights = _restore_rake_dropped_index(
                 adjusted_weights,
                 _assert_type(self.weight_series),
