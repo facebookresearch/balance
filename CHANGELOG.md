@@ -122,7 +122,7 @@
 - Exclude zero-weight observations before continuous KLD KDE fitting and integration-bound selection.
 - Preserve infinite ASMD for unequal constants with zero reference SD; equal constants now have zero deviation.
 - Use a common equal-mixture probability measure for categorical and numeric CVMD, including disjoint supports and independently normalized weights.
-- Freeze pickle-safe model-matrix schemas for categorical replay; reject unseen categories and unsupported stateful replay instead of silently changing trained features.
+- Freeze pickle-safe categorical factor results after evaluating formulas, preserving raw boolean/numeric arithmetic during fitting and replay. NumPy category labels and contrast columns remain stable; dropping missing rows preserves unused category levels in the same encoded representation as observed values. Unseen categories, unsupported stateful replay, and obsolete fit-column encodings raise instead of silently changing or zeroing trained features. Refit models with obsolete NumPy-repr column labels.
 - Drop formula-generated missing rows with diagnostic warnings naming affected factors/columns, original sample/target row positions and labels, and bounded input/evaluated-value examples. Use common retained rows across formulas and align fit/replay weights and outcomes to those positions.
 - Expand only standalone formula dots, preserving decimal constants, attribute access and quoted labels; reject a standalone dot with no variables using an actionable error.
 - Align implicit unit weights with filtered indices in relative-frequency tables.
@@ -142,6 +142,13 @@
 # Unreleased
 
 ## Bug fixes
+
+- Outcome models store and replay pickle-safe `preprocessing_state`, preserving
+  categorical coding across prediction batches and model transfer. Unsupported
+  stateful formula replay and unseen one-hot levels raise actionable errors.
+  Bootstrap refits retain the original categorical domain and value-type policy,
+  including rare levels absent from a resample, without silently dropping
+  prediction failures.
 
 - Mixed outcome learners choose a shared representation compatible with every
   learner, independent of outcome-column order. Auto mode uses one-hot encoding
@@ -165,6 +172,12 @@
   raw-input snapshots, reducing allocation overhead without changing estimates,
   intervals, or outer-model provenance.
 - Reconstruct pickled `Sample` objects using their internal frames while retaining the direct-construction guard.
+- Replay IPW and CBPS holdouts with the stored fit-time preprocessing schema.
+
+## Breaking Changes — replay migration
+
+- Encoded categorical replay now requires fit-time `preprocessing_state`. Refit models serialized before this change so they retain the schema. Unseen categorical levels and newly missing categorical levels raise instead of silently changing contrast columns; include the intended levels at fit time or use a learner with supported native missing-category handling.
+- IPW/CBPS transfer to different covariate data does not support unfrozen data-dependent transformations, including `transformations="default"`, `quantize`, and `fct_lump`. Fit with `transformations=None` or deterministic transformations that retain their fit-time parameters. Replay on the same covariate data remains supported; fitting anew on the scoring sample/target is the alternative when new bins are intended.
 
 # 0.23.0 (2026-08-04)
 

@@ -3000,7 +3000,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             target=SampleFrame.from_frame(self.target.df.iloc[5:].copy()),
         )
 
-        fitted_train = train_bf.fit(method="ipw")
+        fitted_train = train_bf.fit(method="ipw", transformations=None)
         scored_holdout = holdout_bf.set_fitted_model(fitted_train, inplace=False)
         self.assertIsNotNone(scored_holdout.model)
         holdout_model = scored_holdout._require_ipw_model()
@@ -3045,7 +3045,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
             target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
         )
-        fitted_train = train_bf.fit(method="ipw")
+        fitted_train = train_bf.fit(method="ipw", transformations=None)
         scored_holdout = holdout_bf.set_fitted_model(fitted_train, inplace=False)
 
         self.assertTrue(scored_holdout.is_adjusted)
@@ -3092,7 +3092,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             target=SampleFrame.from_frame(holdout_target_df),
         )
 
-        fitted_train = train_bf.fit(method="ipw")
+        fitted_train = train_bf.fit(method="ipw", transformations=None)
         scored_holdout = holdout_bf.set_fitted_model(fitted_train, inplace=False)
 
         transformed = scored_holdout.design_matrix(on="sample")
@@ -3134,7 +3134,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             target=SampleFrame.from_frame(holdout_target_df),
         )
 
-        fitted_train = train_bf.fit(method="ipw")
+        fitted_train = train_bf.fit(method="ipw", transformations=None)
         scored_holdout = holdout_bf.set_fitted_model(fitted_train, inplace=False)
 
         with patch.object(
@@ -3175,7 +3175,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             sample=SampleFrame.from_frame(reordered_sample_df),
             target=SampleFrame.from_frame(reordered_target_df),
         )
-        fitted_train = train_bf.fit(method="ipw")
+        fitted_train = train_bf.fit(method="ipw", transformations=None)
         scored_holdout = holdout_bf.set_fitted_model(fitted_train, inplace=False)
 
         with patch.object(
@@ -3200,7 +3200,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             sample=SampleFrame.from_frame(holdout_sample_df),
             target=SampleFrame.from_frame(holdout_target_df),
         )
-        fitted_train = train_bf.fit(method="ipw")
+        fitted_train = train_bf.fit(method="ipw", transformations=None)
         scored_holdout = holdout_bf.set_fitted_model(fitted_train, inplace=False)
         model = scored_holdout._require_ipw_model()
         model.pop("model_matrix_sample", None)
@@ -3224,7 +3224,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             sample=SampleFrame.from_frame(holdout_sample_df),
             target=SampleFrame.from_frame(holdout_target_df),
         )
-        fitted_train = train_bf.fit(method="ipw")
+        fitted_train = train_bf.fit(method="ipw", transformations=None)
         scored_holdout = holdout_bf.set_fitted_model(fitted_train, inplace=False)
         model = scored_holdout._require_ipw_model()
         model.pop("sample_probability", None)
@@ -3262,7 +3262,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             sample=SampleFrame.from_frame(holdout_sample_df),
             target=SampleFrame.from_frame(holdout_target_df),
         )
-        fitted_train = train_bf.fit(method="ipw")
+        fitted_train = train_bf.fit(method="ipw", transformations=None)
         scored_holdout = holdout_bf.set_fitted_model(fitted_train, inplace=False)
 
         # set_fitted_model produces a fully adjusted object; verify the
@@ -3363,7 +3363,9 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             target=SampleFrame.from_frame(holdout_target_df),
         )
 
-        fitted_train = train_bf.fit(method="ipw", model=GaussianNB())
+        fitted_train = train_bf.fit(
+            method="ipw", model=GaussianNB(), transformations=None
+        )
         scored_holdout = holdout_bf.set_fitted_model(fitted_train, inplace=False)
 
         propensity = scored_holdout.predict_proba(on="sample", output="probability")
@@ -3413,7 +3415,9 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             target=SampleFrame.from_frame(holdout_target_df),
         )
 
-        fitted_train = train_bf.fit(method="ipw", na_action="add_indicator")
+        fitted_train = train_bf.fit(
+            method="ipw", na_action="add_indicator", transformations=None
+        )
         scored_holdout = holdout_bf.set_fitted_model(fitted_train, inplace=False)
 
         transformed = scored_holdout.design_matrix(on="sample")
@@ -3665,7 +3669,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             target=SampleFrame.from_frame(holdout_target_df),
         )
 
-        fitted = train_bf.fit(method="ipw")
+        fitted = train_bf.fit(method="ipw", transformations=None)
 
         # data= path
         weights_via_data = fitted.predict_weights(data=holdout_bf)
@@ -3702,7 +3706,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             target=SampleFrame.from_frame(holdout_target_df),
         )
 
-        fitted = train_bf.fit(method="ipw")
+        fitted = train_bf.fit(method="ipw", transformations=None)
 
         # data= path: probability
         prob_via_data = fitted.predict_proba(
@@ -3763,7 +3767,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             target=SampleFrame.from_frame(holdout_target_df),
         )
 
-        fitted = train_bf.fit(method="ipw")
+        fitted = train_bf.fit(method="ipw", transformations=None)
 
         # data= path
         dm_sample_via_data = fitted.design_matrix(on="sample", data=holdout_bf)
@@ -3827,7 +3831,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             target=SampleFrame.from_frame(holdout_target_df),
         )
 
-        fitted = train_bf.fit(method="ipw")
+        fitted = train_bf.fit(method="ipw", transformations=None)
         model_before = dict(_assert_type(fitted.model))
 
         # Call with data= — should not alter the fitted model's cached artifacts
@@ -3864,7 +3868,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             sample=SampleFrame.from_frame(self.sample.df.iloc[5:].copy()),
             target=SampleFrame.from_frame(self.target.df.iloc[5:].copy()),
         )
-        fitted = train_bf.fit(method="ipw")
+        fitted = train_bf.fit(method="ipw", transformations=None)
         sample_p, target_p = fitted.predict_proba(on="both", data=holdout_bf)
         self.assertEqual(sample_p.shape[0], len(holdout_bf._sf_sample.df))
         self.assertEqual(
@@ -5247,15 +5251,56 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         with self.assertRaisesRegex(ValueError, "positive sample and target weight"):
             fitted.predict_weights(data=holdout_bf)
 
+    def test_deterministic_holdout_transfer_and_refit_are_closed_loop(self) -> None:
+        """Foreign scoring uses a deterministic fit and stays usable after refitting."""
+        from sklearn.linear_model import LogisticRegression
+
+        train = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[:5].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[:5].copy()),
+        )
+        holdout = BalanceFrame(
+            sample=SampleFrame.from_frame(self.sample.df.iloc[5:].copy()),
+            target=SampleFrame.from_frame(self.target.df.iloc[5:].copy()),
+        )
+        fitted = train.fit(method="ipw", transformations=None)
+        transferred = holdout.set_fitted_model(fitted, inplace=False)
+        np.testing.assert_allclose(
+            fitted.predict_weights(data=holdout).to_numpy(),
+            _assert_type(transferred.weight_series).to_numpy(),
+        )
+        self.assertEqual(transferred._require_ipw_model()["transformations"], None)
+        before_refit = _assert_type(transferred.weight_series).copy()
+        original_estimator = transferred._require_ipw_model()["fit"]
+        refitted = transferred.fit(
+            method="ipw",
+            model=LogisticRegression(random_state=0, max_iter=200),
+            transformations=None,
+            inplace=False,
+        )
+        self.assertIsNot(refitted._require_ipw_model()["fit"], original_estimator)
+        pd.testing.assert_series_equal(transferred.weight_series, before_refit)
+        np.testing.assert_allclose(
+            refitted.predict_weights().to_numpy(),
+            _assert_type(refitted.weight_series).to_numpy(),
+        )
+        probabilities = refitted.predict_proba(on="sample", output="probability")
+        links = refitted.predict_proba(on="sample", output="link")
+        np.testing.assert_allclose(probabilities.to_numpy(), expit(links.to_numpy()))
+        self.assertTrue(np.isfinite(probabilities.to_numpy()).all())
+        self.assertEqual(
+            probabilities.index.tolist(), holdout._sf_sample.df.index.tolist()
+        )
+
     @pytest.mark.requires_sklearn_1_4
     @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires scikit-learn >= 1.4")
     def test_blog_v0_20_0_fit_and_predict_weights_on_holdout(self) -> None:
         """Mirrors the "Reusable fit/predict workflows" snippet from the
-        v0.20.0 blog post (``website/blog/2026/04/26/balance-0-20-0.md``).
-        Keeps the published numbers in sync with library behavior. Gated on
-        sklearn ≥ 1.4 because the snapshot was generated against the same
-        environment the blog was rendered with — older sklearn drifts in the
-        last decimal of the IPW weights.
+        v0.20.0 blog post (``website/blog/2026/04/26/balance-0-20-0.md``),
+        migrated to deterministic raw covariates for foreign-frame scoring.
+        The exact expected weights describe this scorable configuration,
+        rather than data-dependent default quantiles. Gated on sklearn ≥ 1.4
+        because solver differences can affect the last decimal.
         """
         from sklearn.linear_model import LogisticRegression
 
@@ -5310,6 +5355,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         fitted = bf.fit(
             method="ipw",
             model=LogisticRegression(random_state=0, max_iter=200),
+            transformations=None,
             inplace=False,
         )
         bf_holdout = BalanceFrame(sample=hf, target=tf)
@@ -5317,17 +5363,18 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         fitted_weights = fitted.weights().df["weight"].round(3).tolist()
         holdout_weights = fitted.predict_weights(data=bf_holdout).round(3).tolist()
 
-        self.assertEqual(fitted_weights, [1.689, 1.127, 1.479, 1.083, 1.539, 1.083])
-        self.assertEqual(holdout_weights, [2.709, 2.582, 2.709])
+        self.assertEqual(fitted_weights, [0.548, 0.778, 0.844, 1.197, 2.222, 2.411])
+        self.assertEqual(holdout_weights, [0.983, 1.741, 5.275])
 
     @pytest.mark.requires_sklearn_1_4
     @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires scikit-learn >= 1.4")
     def test_blog_v0_20_0_set_fitted_model_holdout_summary(self) -> None:
         """Mirrors the ``bf_holdout.set_fitted_model(fitted)`` +
         ``bf_holdout.summary()`` variant of the v0.20.0 blog snippet
-        (``website/blog/2026/04/26/balance-0-20-0.md``). Gated on sklearn
-        ≥ 1.4 because the snapshot's ASMD/KLD figures drift in the last
-        decimal under older sklearn."""
+        (``website/blog/2026/04/26/balance-0-20-0.md``), using deterministic
+        raw covariates instead of recomputing default quantiles on holdout.
+        Gated on sklearn ≥ 1.4 because solver differences can affect the
+        snapshot's last decimal."""
         from sklearn.linear_model import LogisticRegression
 
         sample_df = pd.DataFrame(
@@ -5381,6 +5428,7 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
         fitted = bf.fit(
             method="ipw",
             model=LogisticRegression(random_state=0, max_iter=200),
+            transformations=None,
             inplace=False,
         )
 
@@ -5392,15 +5440,15 @@ class TestBalanceFrameSklearnLikeApi(BalanceTestCase):
             "    method: ipw\n"
             "    weight trimming mean ratio: 20\n"
             "Covariate diagnostics:\n"
-            "    Covar ASMD reduction: -4.5%\n"
-            "    Covar ASMD (3 variables): 0.217 -> 0.227\n"
-            "    Covar mean KLD reduction: -4.4%\n"
-            "    Covar mean KLD (2 variables): 0.036 -> 0.037\n"
+            "    Covar ASMD reduction: -170.9%\n"
+            "    Covar ASMD (3 variables): 0.217 -> 0.588\n"
+            "    Covar mean KLD reduction: -156.0%\n"
+            "    Covar mean KLD (2 variables): 0.036 -> 0.092\n"
             "Weight diagnostics:\n"
-            "    design effect (Deff): 1.001\n"
-            "    effective sample size proportion (ESSP): 0.999\n"
-            "    effective sample size (ESS): 3.0\n"
-            "Model performance: Model proportion deviance explained: 0.150"
+            "    design effect (Deff): 1.492\n"
+            "    effective sample size proportion (ESSP): 0.670\n"
+            "    effective sample size (ESS): 2.0\n"
+            "Model performance: Model proportion deviance explained: 0.087"
         )
 
         actual_lines = [
@@ -5416,9 +5464,10 @@ class TestBlogV0_20_0SimDataHoldout(BalanceTestCase):
     """End-to-end tests for the v0.20.0 blog snippets that share a single
     ``bf_holdout`` built from ``load_data()`` (``sim_data_01``). One
     ``setUpClass`` fits IPW once and reuses the resulting BalanceFrame across
-    all tests; each test mirrors a code block in
-    ``website/blog/2026/04/26/balance-0-20-0.md`` so the published outputs
-    stay in sync with library behavior.
+    all tests. The historical blog workflow is migrated to deterministic
+    raw covariates (``transformations=None``), so its holdout scoring does
+    not recompute default quantiles. The exact snapshots below describe
+    this scorable fit configuration.
 
     The whole class is gated on sklearn ≥ 1.4 because the snapshots
     (IPW weights, ASMD/KLD/r_indicator numbers, ASCII-plot percentages,
@@ -5466,6 +5515,7 @@ class TestBlogV0_20_0SimDataHoldout(BalanceTestCase):
         fitted = bf_train.fit(
             method="ipw",
             model=LogisticRegression(random_state=0, max_iter=200),
+            transformations=None,
             inplace=False,
         )
 
@@ -5481,21 +5531,21 @@ class TestBlogV0_20_0SimDataHoldout(BalanceTestCase):
             "    method: ipw\n"
             "    weight trimming mean ratio: 20\n"
             "Covariate diagnostics:\n"
-            "    Covar ASMD reduction: 5.4%\n"
-            "    Covar ASMD (7 variables): 0.378 -> 0.357\n"
-            "    Covar mean KLD reduction: 37.2%\n"
-            "    Covar mean KLD (3 variables): 0.188 -> 0.118\n"
+            "    Covar ASMD reduction: 45.6%\n"
+            "    Covar ASMD (7 variables): 0.378 -> 0.205\n"
+            "    Covar mean KLD reduction: 63.8%\n"
+            "    Covar mean KLD (3 variables): 0.188 -> 0.068\n"
             "Weight diagnostics:\n"
-            "    design effect (Deff): 1.292\n"
-            "    effective sample size proportion (ESSP): 0.774\n"
-            "    effective sample size (ESS): 696.5\n"
+            "    design effect (Deff): 1.940\n"
+            "    effective sample size proportion (ESSP): 0.515\n"
+            "    effective sample size (ESS): 463.9\n"
             "Outcome weighted means:\n"
             "            happiness\n"
             "source\n"
-            "self           50.330\n"
+            "self           51.239\n"
             "target         56.278\n"
             "unadjusted     48.487\n"
-            "Model performance: Model proportion deviance explained: 0.572"
+            "Model performance: Model proportion deviance explained: 0.574"
         )
         actual_lines = [
             line.rstrip() for line in self.bf_holdout.summary().rstrip().splitlines()
@@ -5511,13 +5561,13 @@ class TestBlogV0_20_0SimDataHoldout(BalanceTestCase):
         expected = (
             "1 outcomes: ['happiness']\n"
             "Mean outcomes (with 95% confidence intervals):\n"
-            "source      self  target  unadjusted           self_ci         target_ci     unadjusted_ci\n"
-            "happiness  50.33  56.278      48.487  (49.275, 51.384)  (55.961, 56.595)  (47.551, 49.424)\n"
+            "source       self  target  unadjusted          self_ci         target_ci     unadjusted_ci\n"
+            "happiness  51.239  56.278      48.487  (50.038, 52.44)  (55.961, 56.595)  (47.551, 49.424)\n"
             "\n"
             "Weights impact on outcomes (t_test):\n"
             "           mean_yw0  mean_yw1  mean_diff  diff_ci_lower  diff_ci_upper  t_stat  p_value      n\n"
             "outcome\n"
-            "happiness    48.487     50.33      1.842         -0.214          3.898   1.759    0.079  900.0\n"
+            "happiness    48.487    51.239      2.752          -0.71          6.214    1.56    0.119  900.0\n"
             "\n"
             "Response rates (relative to number of respondents in sample):\n"
             "   happiness\n"
@@ -5540,7 +5590,7 @@ class TestBlogV0_20_0SimDataHoldout(BalanceTestCase):
         """Mirrors ``bf_holdout.weights().r_indicator()`` from the
         "r_indicator for representativeness" section."""
         value = float(self.bf_holdout.weights().r_indicator())
-        self.assertAlmostEqual(value, 0.5094452588289895, places=10)
+        self.assertAlmostEqual(value, 0.5204419588424176, places=10)
 
     def test_blog_v0_20_0_simdata_holdout_ascii_plot_full_output(self) -> None:
         """Mirrors ``bf_holdout.covars().plot(library='balance',
@@ -5559,19 +5609,19 @@ class TestBlogV0_20_0SimDataHoldout(BalanceTestCase):
             "Category | population  adjusted  sample\n"
             "         |\n"
             "18-24    | ████████████████████████ (19.7%)\n"
-            "         | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (28.6%)\n"
+            "         | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (27.5%)\n"
             "         | ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐ (48.6%)\n"
             "\n"
             "25-34    | █████████████████████████████████████ (29.7%)\n"
-            "         | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (36.9%)\n"
+            "         | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (38.0%)\n"
             "         | ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐ (30.2%)\n"
             "\n"
             "35-44    | █████████████████████████████████████ (29.9%)\n"
-            "         | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (18.6%)\n"
+            "         | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (19.9%)\n"
             "         | ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐ (15.7%)\n"
             "\n"
             "45+      | █████████████████████████ (20.6%)\n"
-            "         | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (15.8%)\n"
+            "         | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (14.6%)\n"
             "         | ▐▐▐▐▐▐▐ (5.6%)\n"
             "\n"
             "Legend: █ population  ▒ adjusted  ▐ sample\n"
@@ -5582,11 +5632,11 @@ class TestBlogV0_20_0SimDataHoldout(BalanceTestCase):
             "Category | population  adjusted  sample\n"
             "         |\n"
             "Female   | ██████████████████████████████████████████ (50.0%)\n"
-            "         | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (28.7%)\n"
+            "         | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (33.3%)\n"
             "         | ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐ (29.2%)\n"
             "\n"
             "Male     | ██████████████████████████████████████████ (50.0%)\n"
-            "         | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (71.3%)\n"
+            "         | ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ (66.7%)\n"
             "         | ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐ (70.8%)\n"
             "\n"
             "Legend: █ population  ▒ adjusted  ▐ sample\n"
@@ -5594,25 +5644,25 @@ class TestBlogV0_20_0SimDataHoldout(BalanceTestCase):
             "\n"
             "=== income (numeric, comparative) ===\n"
             "\n"
-            "Range            | population (%) | adjusted (%)      | sample (%)\n"
-            "-------------------------------------------------------------------------\n"
-            "[0.00, 8.57)     | ████████ 49.0  | ████████▒▒▒▒ 72.6 | ████████▒▒▒▒ 73.4\n"
-            "[8.57, 17.14)    | ████ 23.1      | ███] 20.3         | ███] 19.1\n"
-            "[17.14, 25.71)   | ██ 13.2        | █] 5.0            | █] 5.1\n"
-            "[25.71, 34.28)   | █ 7.3          | ] 1.3             | ] 1.6\n"
-            "[34.28, 42.85)   | █ 3.9          | ] 0.4             | ] 0.4\n"
-            "[42.85, 51.41)   | 1.8            | 0.1               | 0.1\n"
-            "[51.41, 59.98)   | 0.9            | 0.3               | 0.2\n"
-            "[59.98, 68.55)   | 0.4            | 0.0               | 0.0\n"
-            "[68.55, 77.12)   | 0.2            | 0.0               | 0.0\n"
-            "[77.12, 85.69)   | 0.1            | 0.0               | 0.0\n"
-            "[85.69, 94.26)   | 0.0            | 0.0               | 0.0\n"
-            "[94.26, 102.83)  | 0.0            | 0.0               | 0.0\n"
-            "[102.83, 111.40) | 0.0            | 0.0               | 0.0\n"
-            "[111.40, 119.97) | 0.0            | 0.0               | 0.0\n"
-            "[119.97, 128.54] | 0.0            | 0.0               | 0.0\n"
-            "-------------------------------------------------------------------------\n"
-            "Total            | 100.0          | 100.0             | 100.0\n"
+            "Range            | population (%) | adjusted (%)   | sample (%)\n"
+            "----------------------------------------------------------------------\n"
+            "[0.00, 8.57)     | ████████ 49.0  | ████████▒ 54.8 | ████████▒▒▒▒ 73.4\n"
+            "[8.57, 17.14)    | ████ 23.1      | ████ 25.5      | ███] 19.1\n"
+            "[17.14, 25.71)   | ██ 13.2        | ██ 10.3        | █] 5.1\n"
+            "[25.71, 34.28)   | █ 7.3          | █ 4.1          | ] 1.6\n"
+            "[34.28, 42.85)   | █ 3.9          | ] 1.9          | ] 0.4\n"
+            "[42.85, 51.41)   | 1.8            | 0.4            | 0.1\n"
+            "[51.41, 59.98)   | 0.9            | 3.0            | 0.2\n"
+            "[59.98, 68.55)   | 0.4            | 0.0            | 0.0\n"
+            "[68.55, 77.12)   | 0.2            | 0.0            | 0.0\n"
+            "[77.12, 85.69)   | 0.1            | 0.0            | 0.0\n"
+            "[85.69, 94.26)   | 0.0            | 0.0            | 0.0\n"
+            "[94.26, 102.83)  | 0.0            | 0.0            | 0.0\n"
+            "[102.83, 111.40) | 0.0            | 0.0            | 0.0\n"
+            "[111.40, 119.97) | 0.0            | 0.0            | 0.0\n"
+            "[119.97, 128.54] | 0.0            | 0.0            | 0.0\n"
+            "----------------------------------------------------------------------\n"
+            "Total            | 100.0          | 100.0          | 100.0\n"
             "\n"
             "Key: █ = shared with population, ▒ = excess,    ] = deficit"
         )
@@ -5629,18 +5679,18 @@ class TestBlogV0_20_0SimDataHoldout(BalanceTestCase):
         self.assertEqual(
             list(kld.columns), ["age_group", "gender", "income", "mean(kld)"]
         )
-        self.assertEqual(kld.loc["self", "age_group"], 0.056796)
-        self.assertEqual(kld.loc["self", "gender"], 0.188210)
-        self.assertEqual(kld.loc["self", "income"], 0.109138)
-        self.assertEqual(kld.loc["self", "mean(kld)"], 0.118048)
+        self.assertEqual(kld.loc["self", "age_group"], 0.053254)
+        self.assertEqual(kld.loc["self", "gender"], 0.151167)
+        self.assertEqual(kld.loc["self", "income"], 0.0)
+        self.assertEqual(kld.loc["self", "mean(kld)"], 0.06814)
         self.assertEqual(kld.loc["unadjusted", "age_group"], 0.268381)
         self.assertEqual(kld.loc["unadjusted", "gender"], 0.183109)
         self.assertEqual(kld.loc["unadjusted", "income"], 0.112641)
         self.assertEqual(kld.loc["unadjusted", "mean(kld)"], 0.188044)
-        self.assertEqual(kld.loc["unadjusted - self", "age_group"], 0.211585)
-        self.assertEqual(kld.loc["unadjusted - self", "gender"], -0.005101)
-        self.assertEqual(kld.loc["unadjusted - self", "income"], 0.003503)
-        self.assertEqual(kld.loc["unadjusted - self", "mean(kld)"], 0.069996)
+        self.assertEqual(kld.loc["unadjusted - self", "age_group"], 0.215128)
+        self.assertEqual(kld.loc["unadjusted - self", "gender"], 0.031942)
+        self.assertEqual(kld.loc["unadjusted - self", "income"], 0.112641)
+        self.assertEqual(kld.loc["unadjusted - self", "mean(kld)"], 0.119904)
 
     def test_blog_v0_20_0_simdata_holdout_chained_poststratify(self) -> None:
         """Mirrors ``bf_holdout.adjust(method='poststratify',
@@ -5652,15 +5702,15 @@ class TestBlogV0_20_0SimDataHoldout(BalanceTestCase):
         summary = adj.summary()
 
         self.assertIn("method: poststratify", summary)
-        self.assertIn("Covar ASMD reduction: 47.9%", summary)
-        self.assertIn("Covar ASMD (7 variables): 0.378 -> 0.197", summary)
-        self.assertIn("Covar mean KLD reduction: 67.2%", summary)
-        self.assertIn("Covar mean KLD (3 variables): 0.188 -> 0.062", summary)
-        self.assertIn("design effect (Deff): 2.395", summary)
-        self.assertIn("effective sample size proportion (ESSP): 0.417", summary)
-        self.assertIn("effective sample size (ESS): 375.7", summary)
+        self.assertIn("Covar ASMD reduction: 78.5%", summary)
+        self.assertIn("Covar ASMD (7 variables): 0.378 -> 0.081", summary)
+        self.assertIn("Covar mean KLD reduction: 83.2%", summary)
+        self.assertIn("Covar mean KLD (3 variables): 0.188 -> 0.032", summary)
+        self.assertIn("design effect (Deff): 3.100", summary)
+        self.assertIn("effective sample size proportion (ESSP): 0.323", summary)
+        self.assertIn("effective sample size (ESS): 290.3", summary)
         # Outcome means in the expected order.
-        self.assertIn("self           55.453", summary)
+        self.assertIn("self           55.597", summary)
         self.assertIn("target         56.278", summary)
         self.assertIn("unadjusted     48.487", summary)
 
@@ -5815,7 +5865,7 @@ class TestBalanceFrameSetFittedModelValidation(BalanceTestCase):
             )
         )
         bf = BalanceFrame(sample=resp_sf, target=tgt_sf)
-        fitted = bf.fit(method="ipw")
+        fitted = bf.fit(method="ipw", transformations=None)
         return fitted, resp_sf, tgt_sf
 
     def test_model_not_dict_raises(self) -> None:
@@ -6215,7 +6265,7 @@ class TestBalanceFramePredictProbaTargetErrors(BalanceTestCase):
             )
         )
         self.bf = BalanceFrame.from_sample(sample.set_target(target))
-        self.fitted = self.bf.fit(method="ipw")
+        self.fitted = self.bf.fit(method="ipw", transformations=None)
 
     def test_predict_proba_data_on_target_no_target(self) -> None:
         """Line 1749: data must have a target set for on='target'."""

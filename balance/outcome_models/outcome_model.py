@@ -330,6 +330,7 @@ def _build_fit_matrix(
     na_action: str,
     sample_weight_arr: np.ndarray | None,
     densify: bool,
+    preprocessing_state: Dict[str, Any] | None = None,
 ) -> Dict[str, Any]:
     """Build the TRAIN-mode design matrix on the responders' covariates alone.
 
@@ -338,6 +339,9 @@ def _build_fit_matrix(
     :class:`~sklearn.preprocessing.StandardScaler` (weighted by
     ``sample_weight_arr``) on the one-hot path; densifies for boosting learners.
     """
+    build_kwargs: Dict[str, Any] = {}
+    if preprocessing_state is not None:
+        build_kwargs["preprocessing_state"] = preprocessing_state
     empty_target = covars_df.iloc[0:0]
     dm = build_design_matrix(
         covars_df,
@@ -346,6 +350,7 @@ def _build_fit_matrix(
         formula=formula,
         na_action=na_action,
         scaler_weights=sample_weight_arr if use_model_matrix else None,
+        **build_kwargs,
     )
     sample_n = dm["sample_n"]
     matrix = dm["combined_matrix"]
@@ -362,6 +367,7 @@ def _build_fit_matrix(
         "fit_scaler": dm["fit_scaler"],
         "resolved_formula": dm["resolved_formula"],
         "categorical_levels": categorical_levels,
+        "preprocessing_state": dm.get("preprocessing_state"),
         "sample_rows": np.asarray(
             dm.get("sample_rows", np.arange(len(covars_df))), dtype=int
         ),
@@ -587,6 +593,7 @@ def fit_outcome_model(
     na_action: str = "add_indicator",
     use_model_matrix: bool | str = "auto",
     calibrate: bool = False,
+    preprocessing_state: Dict[str, Any] | None = None,
     _store_training_inputs: bool = True,
 ) -> Dict[str, Any]:
     """Fit an outcome model ``ĝ(X) ≈ E[Y|X]`` and return a stored model dict.
@@ -630,6 +637,11 @@ def fit_outcome_model(
         calibrate: When ``True``, wrap each classifier in
             :class:`~sklearn.calibration.CalibratedClassifierCV` (binary outcomes
             only). Ignored for regressors. Defaults to ``False``.
+        preprocessing_state: Optional frozen schema from a previous fit. For
+            example, pass ``preprocessing_state=previous['preprocessing_state']``
+            when refitting bootstrap rows to preserve categorical domains and
+            fit-time value types. The scaler and estimators are still refitted;
+            ``None`` (default) learns a new schema.
         _store_training_inputs: Internal bootstrap optimization. Defaults to
             ``True`` so ordinary fits retain immutable training provenance.
             ``False`` omits only raw training snapshots for temporary replicate
@@ -647,7 +659,9 @@ def fit_outcome_model(
             (``{col: "regression"|"proba"}``), ``"calibrated"``,
             ``"categorical_levels"`` (or ``None``), ``"outcome_columns"``,
             ``"learner"`` (repr), ``"perf"`` (``{col: {...}}``), and
-            ``"training_sample_index"``, and ``"training_inputs"`` (snapshots of
+            ``"training_sample_index"``, ``"preprocessing_state"`` (pickle-safe
+            frozen design-matrix schema, or ``None`` with a legacy builder),
+            and ``"training_inputs"`` (snapshots of
             raw ``covars``, ``outcomes``, and ``sample_weight`` with their original
             row index). These snapshots retain the selected variables and actual
             fitting weights for bootstrap inference after adjustment or transfer.
@@ -726,6 +740,7 @@ def fit_outcome_model(
         na_action=na_action,
         sample_weight_arr=sample_weight_arr,
         densify=any(_needs_dense(estimator) for estimator, _ in learners.values()),
+        preprocessing_state=preprocessing_state,
     )
     stored_columns = built["columns"]
     stored_scaler = built["fit_scaler"]
@@ -812,6 +827,7 @@ def fit_outcome_model(
         "calibrated": bool(calibrate)
         and any(type(e).__name__ == "CalibratedClassifierCV" for e in fit.values()),
         "categorical_levels": stored_categorical_levels,
+        "preprocessing_state": built["preprocessing_state"],
         "outcome_columns": outcome_columns,
         "learner": repr(model),
         "perf": perf,
@@ -858,7 +874,10 @@ def _build_replay_matrix(
 
     Restores stored ``categorical_levels`` on the raw path (so category codes
     match fit time), then calls ``build_design_matrix`` with the stored
-    ``X_matrix_columns`` / ``fit_scaler`` / ``na_action`` / ``fit_matrix_type``.
+    ``X_matrix_columns`` / ``fit_scaler`` / ``na_action`` / ``fit_matrix_type``
+    and pickle-safe ``preprocessing_state``. The frozen schema preserves fit-time
+    factor coding even when a prediction batch omits levels; the builder rejects
+    unsupported stateful formula replay and unseen one-hot categories.
     """
     use_model_matrix = bool(model.get("use_model_matrix", True))
     covars = new_covars_df
@@ -866,16 +885,22 @@ def _build_replay_matrix(
         covars = _restore_categorical_levels(
             new_covars_df, model.get("categorical_levels")
         )
+    replay_kwargs: Dict[str, Any] = {}
+    preprocessing_state = model.get("preprocessing_state")
+    if preprocessing_state is not None:
+        replay_kwargs["preprocessing_state"] = preprocessing_state
     empty_target = covars.iloc[0:0]
     dm = build_design_matrix(
         covars,
         empty_target,
         use_model_matrix=use_model_matrix,
         formula=model.get("formula"),
+        one_hot_encoding=bool(model.get("one_hot_encoding", False)),
         na_action=str(model.get("na_action", "add_indicator")),
         project_to_columns=_assert_type(model.get("X_matrix_columns"), list),
         fit_scaler=model.get("fit_scaler"),
         matrix_type=model.get("fit_matrix_type"),
+        **replay_kwargs,
     )
     sample_n = dm["sample_n"]
     rows = np.asarray(dm.get("sample_rows", np.arange(len(new_covars_df))), dtype=int)
@@ -1047,8 +1072,10 @@ def bootstrap_outcome_estimate(
     resampled weights honour the stored ``weighted``/fit-weighting), predicts on
     the fixed target covariates, and averages the predictions with the target
     weights (:func:`~balance.stats_and_plots.weighted_stats.weighted_mean`) to get
-    one scalar ``μ̂_OM*(b)`` per outcome.  Only the ``B`` scalar outputs per
-    outcome are kept — never ``B`` fitted models — so memory stays flat in ``B``. Temporary replicate fits do not copy or retain
+    one scalar ``μ̂_OM*(b)`` per outcome. Categorical training domains are retained
+    across resamples even when a rare level is absent from a replicate. Only the
+    ``B`` scalar outputs per outcome are kept — never ``B`` fitted models — so
+    memory stays flat in ``B``. Temporary replicate fits do not copy or retain
     raw training snapshots; the original model keeps its full provenance.
 
     The reported **point estimate** is the supplied ``fitted_model`` averaged
@@ -1136,6 +1163,9 @@ def bootstrap_outcome_estimate(
     n_responders = sample_covars.shape[0]
     bootstrap_fit_kwargs = dict(fit_kwargs)
     bootstrap_fit_kwargs["_store_training_inputs"] = False
+    preprocessing_state = full_model.get("preprocessing_state")
+    if preprocessing_state is not None:
+        bootstrap_fit_kwargs["preprocessing_state"] = preprocessing_state
     rng = np.random.default_rng(random_seed)
     boot_estimates: Dict[str, List[float]] = {col: [] for col in outcome_columns}
     skipped = 0

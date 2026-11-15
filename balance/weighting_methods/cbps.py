@@ -480,7 +480,9 @@ def cbps(  # noqa
         random_seed (int, optional): a random seed. Defaults to 2020.
         store_fit_metadata (bool, optional): Whether to persist fit-time
             metadata required for downstream ``BalanceFrame.predict_weights()``
-            reconstruction (for CBPS models). Defaults to False.
+            reconstruction (for CBPS models), including the model-matrix
+            builder's ``preprocessing_state`` result (``None`` when it does
+            not provide one). Defaults to False.
 
     Raises:
         Exception: _description_
@@ -931,6 +933,7 @@ def cbps(  # noqa
                 "beta_optimal_model_space": beta_opt_model_space,
                 "svd_s": s.copy(),
                 "svd_Vh": Vh.copy(),
+                "preprocessing_state": model_matrix_output.get("preprocessing_state"),
                 "store_fit_metadata": True,
             }
         )

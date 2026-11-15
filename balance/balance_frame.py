@@ -2004,10 +2004,9 @@ class BalanceFrame:
         # shallow copy of the model dict keeps the "fit" estimators as the same
         # objects, so scored.outcome_model["fit"][c] is train.outcome_model["fit"][c].
         bf._sf_sample._outcome_model = dict(fitted_model)
-        if "training_inputs" in fitted_model:
-            bf._sf_sample._outcome_model["training_inputs"] = deepcopy(
-                fitted_model["training_inputs"]
-            )
+        for key in ("training_inputs", "preprocessing_state"):
+            if key in fitted_model:
+                bf._sf_sample._outcome_model[key] = deepcopy(fitted_model[key])
         if bf._sf_sample.outcomes_hat_columns:
             logger.warning(
                 "set_fitted_outcome_model() preserved existing sample predictions "
@@ -2116,6 +2115,31 @@ class BalanceFrame:
             raise ValueError("Stored IPW estimator is missing class label 1.")
         return classes.index(1)
 
+    def _validate_transfer_transformations(
+        self, model: dict[str, Any], data: BalanceFrame, method_name: str
+    ) -> None:
+        """Allow matching raw covariates, not dtype/index-normalized transfer.
+
+        The same-data exemption uses ``DataFrame.equals`` on both current raw
+        responder and target covariate frames before applying transformations.
+        Covariate values, dtypes, labels, ordering and missingness must match.
+        Ordinary copies and pickle round trips are supported; dtype casts or new
+        row labels count as transfer even when numeric values look equivalent.
+        """
+        same_data = (
+            model is self._adjustment_model
+            and self._sf_target is not None
+            and data._sf_target is not None
+            and data._sf_sample.df_covars.equals(self._sf_sample.df_covars)
+            and _assert_type(data._sf_target).df_covars.equals(
+                _assert_type(self._sf_target).df_covars
+            )
+        )
+        if not same_data:
+            balance_adjustment._reject_data_dependent_transfer(
+                model.get("transformations"), method_name=method_name
+            )
+
     def _compute_ipw_matrices(
         self,
         model: dict[str, Any],
@@ -2137,6 +2161,9 @@ class BalanceFrame:
             raise ValueError(
                 "data must have a target set when computing design matrices."
             )
+
+        if source is not None:
+            self._validate_transfer_transformations(model, bf, "ipw")
 
         sample_covars = bf._sf_sample.covars().df.copy()
         target_covars = _assert_type(bf._sf_target).covars().df.copy()
@@ -2174,6 +2201,7 @@ class BalanceFrame:
             fit_scaler=model.get("fit_scaler"),
             fit_penalties_skl=model.get("fit_penalties_skl"),
             matrix_type=matrix_type,
+            preprocessing_state=model.get("preprocessing_state"),
         )
         combined_matrix = result["combined_matrix"]
         sample_n = result["sample_n"]
@@ -2677,6 +2705,13 @@ class BalanceFrame:
         When ``data`` is None (default), uses this object's own data
         (original behavior).
 
+        For IPW/CBPS fits with data-dependent transformations, ``data=`` replay
+        is supported only when both raw covariate frames match this fitted
+        object's frames under ``DataFrame.equals`` (including covariate dtypes,
+        labels, ordering and missingness). Unchanged copies and pickle round
+        trips qualify; dtype casts or changed row labels do not. For different
+        data, fit deterministic transformations or refit on the scoring frames.
+
         Dispatches by the adjustment method stored in the model dict:
 
         - **IPW**: uses stored fit-time metadata (links, class balancing,
@@ -3081,6 +3116,7 @@ class BalanceFrame:
         beta_opt_model_space: np.ndarray,
     ) -> tuple[np.ndarray, int, int, np.ndarray, np.ndarray]:
         """Rebuild the CBPS scoring matrix ``U`` from stored fit artifacts."""
+        self._validate_transfer_transformations(model, bf, "cbps")
         sample_covars = bf._sf_sample.covars().df.copy()
         target_covars = _assert_type(bf._sf_target).covars().df.copy()
         sample_covars, target_covars = balance_adjustment.apply_transformations(
@@ -3100,6 +3136,7 @@ class BalanceFrame:
             na_action=na_action,
             project_to_columns=projected_columns,
             matrix_type="dense",
+            preprocessing_state=model.get("preprocessing_state"),
         )
         combined_matrix = np.asarray(matrix_out["combined_matrix"])
         sample_n = cast(int, matrix_out["sample_n"])

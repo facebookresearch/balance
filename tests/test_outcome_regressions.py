@@ -16,7 +16,11 @@ import pandas as pd
 import pytest
 from balance import Sample
 from balance.balance_frame import BalanceFrame
-from balance.outcome_models import fit_outcome_model, predict_outcome
+from balance.outcome_models import (
+    bootstrap_outcome_estimate,
+    fit_outcome_model,
+    predict_outcome,
+)
 from balance.sample_frame import SampleFrame
 from balance.testutil import _SKLEARN_1_4_AVAILABLE
 from balance.utils.input_validation import _assert_type
@@ -584,4 +588,158 @@ class MixedOutcomeLearnersTest(unittest.TestCase):
                     model=self._learners(),
                     transformations=None,
                     use_model_matrix=False,
+                )
+
+
+class OutcomePreprocessingReplayTest(unittest.TestCase):
+    def _data(self) -> tuple[pd.DataFrame, pd.DataFrame]:
+        covars = pd.DataFrame(
+            {
+                "grp": pd.Categorical(
+                    ["a", "b", "c", None] * 3, categories=["c", "a", "b"], ordered=True
+                ),
+                "x": [0.0, 1.0, 2.0, np.nan] * 3,
+            }
+        )
+        outcomes = pd.DataFrame({"y": np.arange(12, dtype=float) + 2.5})
+        return covars, outcomes
+
+    def test_linear_partition_and_pickle_replay_preserve_frozen_state(self) -> None:
+        covars = pd.DataFrame({"grp": ["a", "b", "c"]})
+        outcomes = pd.DataFrame({"y": [2.0, 4.0, 8.0]})
+        model = fit_outcome_model(
+            covars,
+            outcomes,
+            model=LinearRegression(fit_intercept=True),
+            transformations=None,
+            use_model_matrix=True,
+            formula="C(grp, Sum)",
+        )
+        np.testing.assert_allclose(predict_outcome(model, covars)["y"], [2.0, 4.0, 8.0])
+        restored = pickle.loads(pickle.dumps(model))
+        np.testing.assert_allclose(
+            predict_outcome(restored, pd.DataFrame({"grp": ["b", "a"]}))["y"],
+            [4.0, 2.0],
+            atol=1e-12,
+        )
+        np.testing.assert_allclose(
+            predict_outcome(restored, pd.DataFrame({"grp": ["b", "c"]}))["y"],
+            [4.0, 8.0],
+            atol=1e-12,
+        )
+        self.assertEqual(restored["preprocessing_state"], model["preprocessing_state"])
+
+    def test_one_hot_replay_rejects_unseen_categories(self) -> None:
+        covars, outcomes = self._data()
+        model = fit_outcome_model(covars, outcomes, model=LinearRegression())
+        with self.assertRaisesRegex(ValueError, "unseen categories"):
+            predict_outcome(model, pd.DataFrame({"grp": ["novel"], "x": [1.0]}))
+
+    def test_stateful_formula_replay_rejects_fitted_transform(self) -> None:
+        covars = pd.DataFrame({"x": [0.0, 1.0, 2.0, 3.0]})
+        outcomes = pd.DataFrame({"y": [2.0, 4.0, 8.0, 10.0]})
+        model = fit_outcome_model(
+            covars, outcomes, model=LinearRegression(), formula="center(x)"
+        )
+        self.assertIsInstance(model.get("preprocessing_state"), dict)
+        self.assertEqual(
+            model["preprocessing_state"]["unsupported_stateful_formulas"], ["center(x)"]
+        )
+        with self.assertRaisesRegex(ValueError, "stateful"):
+            predict_outcome(model, pd.DataFrame({"x": [10.0, 20.0]}))
+
+    def test_frame_copy_and_transfer_isolate_frozen_state_share_estimators(
+        self,
+    ) -> None:
+        covars, outcomes = self._data()
+        data = covars.assign(id=[str(i) for i in range(len(covars))], y=outcomes["y"])
+        train = SampleFrame.from_frame(data, outcome_columns=["y"]).fit_outcome_model(
+            model=LinearRegression()
+        )
+        model = _assert_type(train.outcome_model)
+        self.assertIsInstance(model.get("preprocessing_state"), dict)
+        copied = deepcopy(train)
+        copied_model = _assert_type(copied.outcome_model)
+        self.assertIs(copied_model["fit"]["y"], model["fit"]["y"])
+        self.assertIsNot(
+            copied_model["preprocessing_state"], model["preprocessing_state"]
+        )
+        scored = BalanceFrame(
+            sample=SampleFrame.from_frame(data, outcome_columns=["y"])
+        ).set_fitted_outcome_model(train)
+        scored_model = _assert_type(scored.outcome_model)
+        self.assertIs(scored_model["fit"]["y"], model["fit"]["y"])
+        self.assertIsNot(
+            scored_model["preprocessing_state"], model["preprocessing_state"]
+        )
+        scored_model["preprocessing_state"]["variables"].append("foreign")
+        self.assertNotIn("foreign", model["preprocessing_state"]["variables"])
+
+    def test_bootstrap_keeps_rare_training_category_domain(self) -> None:
+        covars = pd.DataFrame({"grp": ["a", "a", "a", "b"]})
+        outcomes = pd.DataFrame({"y": [2.0, 4.0, 8.0, 10.0]})
+        responder = SampleFrame.from_frame(
+            covars.assign(id=["a", "b", "c", "d"], y=outcomes["y"]),
+            outcome_columns=["y"],
+        )
+        target = SampleFrame.from_frame(
+            pd.DataFrame({"id": ["t1", "t2"], "grp": ["a", "b"]})
+        )
+        frame = BalanceFrame(sample=responder, target=target).fit_outcome_model(
+            model=LinearRegression()
+        )
+        frame.predict_outcomes(on="target")
+        rng = np.random.default_rng(11)
+        self.assertTrue(any(3 not in rng.integers(0, 4, size=4) for _ in range(20)))
+        result = _assert_type(frame.outcomes_hat()).mean_with_ci(
+            n_bootstrap=20, random_seed=11, round_ndigits=8
+        )
+        self.assertTrue(np.isfinite(result.loc["y_hat", "target_ci"]).all())
+        self.assertAlmostEqual(
+            result.loc["y_hat", "target"],
+            _assert_type(frame.outcomes_hat()).mean().loc["target", "y_hat"],
+        )
+
+    def test_numeric_object_formula_bootstrap_preserves_value_types(self) -> None:
+        covars = pd.DataFrame({"grp": pd.Series([1] * 10 + [2] * 10, dtype=object)})
+        outcomes = pd.DataFrame({"y": [2.0] * 10 + [10.0] * 10})
+        target = pd.DataFrame({"grp": pd.Series([1, 2], dtype=object)})
+        rng = np.random.default_rng(11)
+        for _ in range(5):
+            rows = rng.integers(0, 20, size=20)
+            self.assertTrue((rows < 10).any() and (rows >= 10).any())
+        result = bootstrap_outcome_estimate(
+            covars,
+            outcomes,
+            None,
+            target,
+            pd.Series([1.0, 9.0]),
+            fit_kwargs={"model": LinearRegression(), "formula": "I(grp == 1)"},
+            n_bootstrap=5,
+            random_seed=11,
+        )
+        for value in ("estimate", "ci_low", "ci_high"):
+            self.assertAlmostEqual(result["y"][value], 9.2)
+
+    @pytest.mark.requires_sklearn_1_4
+    @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires sklearn >= 1.4")
+    def test_native_partition_and_pickle_replay_preserve_frozen_state(self) -> None:
+        covars, outcomes = self._data()
+        model = fit_outcome_model(
+            covars,
+            outcomes,
+            model=HistGradientBoostingRegressor(
+                categorical_features="from_dtype",
+                min_samples_leaf=2,
+                max_iter=5,
+                random_state=0,
+            ),
+        )
+        self.assertIsInstance(model.get("preprocessing_state"), dict)
+        full = predict_outcome(model, covars)["y"]
+        restored = pickle.loads(pickle.dumps(model))
+        for rows in ([1, 5, 9], [0, 4], [3], [2, 6, 10]):
+            with self.subTest(rows=rows):
+                np.testing.assert_array_equal(
+                    predict_outcome(restored, covars.iloc[rows])["y"], full[rows]
                 )

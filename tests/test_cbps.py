@@ -14,6 +14,7 @@ from __future__ import (
 
 import warnings
 from typing import Any, Callable, Dict, List, Tuple, Union
+from unittest import mock
 from unittest.mock import MagicMock
 
 import balance.testutil
@@ -1394,6 +1395,40 @@ class Testcbps(
             self.assertEqual(after[2:], before[2:])
         finally:
             np.random.set_state(original_state)
+
+    def test_cbps_stores_model_matrix_preprocessing_state(self) -> None:
+        """The model-matrix builder's ``preprocessing_state`` is kept in the
+        CBPS fit metadata, and omitted when metadata is not stored."""
+        sample_df = pd.DataFrame({"a": [-20] + [1] * 13 + [10] * 1})
+        target_df = pd.DataFrame({"a": [10] * 10 + [11] * 5})
+        state = {"sentinel": "fit-time preprocessing"}
+        original_model_matrix = balance_cbps.balance_util.model_matrix
+
+        def model_matrix_with_state(*args: Any, **kwargs: Any) -> Any:
+            return {
+                **original_model_matrix(*args, **kwargs),
+                "preprocessing_state": state,
+            }
+
+        with mock.patch.object(
+            balance_cbps.balance_util,
+            "model_matrix",
+            side_effect=model_matrix_with_state,
+        ):
+            for store_fit_metadata in (True, False):
+                with self.subTest(store_fit_metadata=store_fit_metadata):
+                    model = balance_cbps.cbps(
+                        sample_df,
+                        pd.Series((1,) * 15),
+                        target_df,
+                        pd.Series((1,) * 15),
+                        transformations=None,
+                        store_fit_metadata=store_fit_metadata,
+                    )["model"]
+                    if store_fit_metadata:
+                        self.assertIs(model["preprocessing_state"], state)
+                    else:
+                        self.assertNotIn("preprocessing_state", model)
 
 
 class TestCbpsEdgeCases(balance.testutil.BalanceTestCase):

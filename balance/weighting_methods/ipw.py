@@ -720,6 +720,11 @@ def ipw(
                 ``model_matrix_sample``, ``model_matrix_target``,
                 ``sample_index``, ``target_index``.
 
+                When ``store_fit_matrices=True`` or
+                ``store_fit_metadata=True``: adds ``preprocessing_state``,
+                the design-matrix builder's ``preprocessing_state`` result
+                (``None`` when the builder does not provide one).
+
                 When ``store_fit_metadata=True``: adds
                 ``sample_probability``, ``target_probability``,
                 ``sample_link``, ``target_link``,
@@ -834,6 +839,7 @@ def ipw(
     X_matrix_columns_names: List[str] = dm_result["columns"]
     penalty_factor_expanded: List[float] = dm_result["penalty_factor_expanded"]
     resolved_formula = dm_result["resolved_formula"]
+    preprocessing_state = dm_result.get("preprocessing_state")
     matrix_sample_rows = np.asarray(
         dm_result.get("sample_rows", np.arange(len(sample_df))), dtype=int
     )
@@ -1215,6 +1221,7 @@ def ipw(
     }
 
     if store_fit_metadata or store_fit_matrices:
+        model_out["preprocessing_state"] = preprocessing_state
         model_out["sample_rows"] = sample_rows.copy()
         model_out["target_rows"] = target_rows.copy()
         model_out["sample_input_index"] = sample_input_index

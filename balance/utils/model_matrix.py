@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import ast
 import io
 import logging
 import re
@@ -24,14 +25,19 @@ from balance.utils.input_validation import (
     _isinstance_sample,
     choose_variables,
 )
-from balance.utils.pandas_utils import _make_df_column_names_unique
+from balance.utils.pandas_utils import (
+    _make_df_column_names_unique,
+    _sorted_unique_categories,
+)
 from pandas.api.types import (
     is_bool_dtype,
     is_numeric_dtype,
     is_object_dtype,
     is_string_dtype,
 )
+from patsy.builtins import C
 from patsy.contrasts import ContrastMatrix
+from patsy.eval import EvalFactor
 from patsy.highlevel import dmatrix, ModelDesc
 from patsy.missing import NAAction
 from scipy.sparse import csc_matrix, diags, hstack, spmatrix
@@ -305,6 +311,58 @@ def _stringify_categorical_values(series: pd.Series) -> pd.Series:
     )
 
 
+class _FrozenCategoricalFactor(EvalFactor):
+    """Apply frozen category levels after evaluating the original expression."""
+
+    def __init__(self, factor: EvalFactor, levels: list[Any]) -> None:
+        super().__init__(factor.code, factor.origin)
+        self.levels = levels
+
+    def eval(self, memorize_state: dict[str, Any], data: Any) -> Any:
+        return C(super().eval(memorize_state, data), levels=self.levels)
+
+
+def _freeze_factor_levels(model_desc: ModelDesc, levels: dict[str, list[Any]]) -> None:
+    for term in model_desc.rhs_termlist:
+        term.factors = tuple(
+            (
+                _FrozenCategoricalFactor(factor, levels[factor.code])
+                if factor.code in levels
+                else factor
+            )
+            for factor in term.factors
+        )
+
+
+def _schema_factor_levels(
+    model_desc: ModelDesc, state: dict[str, Any] | None, data: pd.DataFrame
+) -> dict[str, list[Any]]:
+    if state is None:
+        return {}
+    if "factor_levels" in state:
+        return state["factor_levels"]
+    levels: dict[str, list[Any]] = {}
+    for term in model_desc.rhs_termlist:
+        for factor in term.factors:
+            expression = ast.parse(factor.code, mode="eval").body
+            column = expression.id if isinstance(expression, ast.Name) else None
+            if (
+                isinstance(expression, ast.Call)
+                and isinstance(expression.func, ast.Name)
+                and expression.func.id == "C"
+                and expression.args
+                and isinstance(expression.args[0], ast.Name)
+                and not any(keyword.arg == "levels" for keyword in expression.keywords)
+            ):
+                column = expression.args[0].id
+            if column in state["category_levels"] and not is_bool_dtype(data[column]):
+                levels[factor.code] = [
+                    value.item() if isinstance(value, np.generic) else value
+                    for value in state["category_levels"][column]
+                ]
+    return levels
+
+
 class _RecordFormulaDrops(NAAction):
     """Record positional omission masks and factor diagnostics before patsy drops."""
 
@@ -372,6 +430,7 @@ def build_model_matrix(
     formula: str = ".",
     factor_variables: List[str] | None = None,
     return_sparse: bool = False,
+    preprocessing_state: dict[str, Any] | None = None,
 ) -> Dict[str, Any]:
     """Build a model matrix from a formula (using patsy.dmatrix).
 
@@ -399,6 +458,10 @@ def build_model_matrix(
                          number of columns will be equal to the number of categories), and only 1
                          column for variables with 2 levels (treatment contrast).
         return_sparse (bool, optional): whether to return a sparse matrix using scipy.sparse.csc_matrix. Defaults to False.
+        preprocessing_state: Optional fit-time schema supplied by ``model_matrix``
+            after preparing replay data. It preserves which categorical columns
+            were stringified at fit time. For example, ``model_matrix`` forwards
+            ``training["preprocessing_state"]`` here when reusing a fitted schema.
 
     Raises:
         Exception: "Variable names cannot contain characters '[' or ']'"
@@ -441,15 +504,46 @@ def build_model_matrix(
             # Hence converting all numeric columns to float64.
             coerced_columns[x] = df[x].astype("float64")
         elif isinstance(df[x].dtype, pd.CategoricalDtype):
-            coerced_columns[x] = _stringify_categorical_values(df[x])
+            if (
+                preprocessing_state is None
+                or x in preprocessing_state["stringify_categoricals"]
+            ):
+                coerced_columns[x] = _stringify_categorical_values(df[x])
 
     if coerced_columns:
         df = df.assign(**coerced_columns)
 
+    frozen_levels = _schema_factor_levels(model_desc, preprocessing_state, df)
+    _freeze_factor_levels(model_desc, frozen_levels)
     na_action = _RecordFormulaDrops()
     X_matrix = dmatrix(
         model_desc, data=df, return_type="dataframe", NA_action=na_action
     )
+    categorical_infos = {
+        factor.code: info.categories
+        for factor, info in X_matrix.design_info.factor_infos.items()
+        if info.type == "categorical"
+    }
+    factor_levels = {
+        code: [
+            value.item() if isinstance(value, np.generic) else value for value in levels
+        ]
+        for code, levels in categorical_infos.items()
+    }
+    if any(
+        isinstance(value, np.generic)
+        for levels in categorical_infos.values()
+        for value in levels
+    ):
+        _freeze_factor_levels(model_desc, factor_levels)
+        X_matrix = dmatrix(
+            model_desc, data=df, return_type="dataframe", NA_action=na_action
+        )
+    unsupported_stateful_formulas = [
+        factor.code
+        for factor, info in X_matrix.design_info.factor_infos.items()
+        if info.state.get("transforms")
+    ]
     # Sorting the output in order to eliminate edge cases that cause column order to be stochastic
     X_matrix = X_matrix.sort_index(axis=1)
     logger.debug(f"X_matrix shape: {X_matrix.shape}")
@@ -468,6 +562,8 @@ def build_model_matrix(
         "model_matrix": X_matrix,
         "model_matrix_columns": X_matrix_columns,
         "row_positions": row_positions,
+        "unsupported_stateful_formulas": unsupported_stateful_formulas,
+        "factor_levels": factor_levels,
     }
 
 
@@ -496,6 +592,7 @@ def _prepare_input_model_matrix(
     variables: List[str] | None = None,
     add_na: bool = True,
     fix_columns_names: bool = True,
+    preserve_raw_values: bool = False,
 ) -> Dict[str, Any]:
     """Helper function to model_matrix. Prepare and check input of sample and target:
         - Choose joint variables to sample and target (or by given variables)
@@ -567,6 +664,7 @@ def _prepare_input_model_matrix(
 
     sample_rows = np.arange(len(sample_df))
     target_rows = np.arange(0 if target_df is None else len(target_df))
+    category_levels: Dict[str, List[Any]] = {}
     if add_na:
         # Build a combined frame so NA indicators reflect sample/target union
         # (target-only missingness should still add NA indicator columns).
@@ -584,7 +682,6 @@ def _prepare_input_model_matrix(
                 "Dropping rows led to empty target. Consider using add_na=True to add "
                 "NA indicator columns instead of dropping rows."
             )
-        category_levels: Dict[str, List[Any]] = {}
         for column in all_data.columns:
             column_series = all_data[column]
             if isinstance(column_series.dtype, pd.CategoricalDtype):
@@ -610,6 +707,10 @@ def _prepare_input_model_matrix(
                 )
         if category_levels:
             for column, levels in category_levels.items():
+                if preserve_raw_values and not isinstance(
+                    all_data[column].dtype, pd.CategoricalDtype
+                ):
+                    continue
                 if column in sample_df.columns:
                     sample_df = sample_df.assign(
                         **{column: pd.Categorical(sample_df[column], categories=levels)}
@@ -632,7 +733,85 @@ def _prepare_input_model_matrix(
         "sample_rows": sample_rows,
         "target_rows": target_rows,
     }
+    if preserve_raw_values and not add_na:
+        result["category_levels"] = category_levels
     return result
+
+
+def _freeze_preprocessing_state(
+    data: pd.DataFrame,
+    formula: list[str],
+    one_hot_encoding: bool,
+    unsupported: list[str],
+    *,
+    stringify_categoricals: bool = True,
+) -> dict[str, Any]:
+    """Freeze pickle-safe labels/schema without retaining Patsy objects."""
+    category_levels: dict[str, list[Any]] = {}
+    stringified: list[str] = []
+    for column in data.columns:
+        values = data[column]
+        if isinstance(values.dtype, pd.CategoricalDtype):
+            levels = values.cat.categories.tolist()
+            if stringify_categoricals:
+                levels = list(dict.fromkeys(str(level) for level in levels))
+                stringified.append(column)
+            category_levels[column] = levels
+        elif (
+            is_object_dtype(values) or is_string_dtype(values) or is_bool_dtype(values)
+        ):
+            category_levels[column] = _sorted_unique_categories(values)
+    return {
+        "version": 1,
+        "variables": data.columns.tolist(),
+        "category_levels": category_levels,
+        "stringify_categoricals": stringified,
+        "formula": list(formula),
+        "one_hot_encoding": one_hot_encoding,
+        "unsupported_stateful_formulas": sorted(set(unsupported)),
+    }
+
+
+def _apply_preprocessing_state(
+    data: pd.DataFrame,
+    state: dict[str, Any],
+    *,
+    allow_unknown_categories: bool = False,
+    preserve_raw_values: bool = False,
+) -> pd.DataFrame:
+    """Replay frozen labels; reject unknown schemas/categories and stateful fits."""
+    if state.get("version") != 1:
+        raise ValueError("Unsupported model-matrix preprocessing_state version.")
+    if state.get("unsupported_stateful_formulas"):
+        raise ValueError(
+            "Cannot replay stateful formulas with pickle-safe preprocessing_state: "
+            f"{state['unsupported_stateful_formulas']}. Use stateless formulas or refit."
+        )
+    data = data.copy()
+    for column in state["variables"]:
+        if column.startswith("_is_na_") and column not in data.columns:
+            if column[len("_is_na_") :] in data.columns:
+                data[column] = False
+    missing = _ordered_unique_missing_columns(state["variables"], data.columns)
+    if missing:
+        raise ValueError(f"Replay data is missing fit-time variables: {missing}.")
+    data = data.loc[:, state["variables"]].copy()
+    for column, levels in state["category_levels"].items():
+        values = data[column].astype(object)
+        if column in state["stringify_categoricals"]:
+            values = values.where(values.isna(), values.map(str))
+        unknown = values.notna() & ~values.isin(levels)
+        if unknown.any():
+            if not allow_unknown_categories:
+                raise ValueError(
+                    f"Replay variable {column!r} has unseen categories: "
+                    f"{values.loc[unknown].unique().tolist()}. Refit with these levels."
+                )
+            values = values.mask(unknown)
+        if preserve_raw_values and column not in state["stringify_categoricals"]:
+            continue
+        data[column] = pd.Categorical(values, categories=levels)
+    return data
 
 
 def model_matrix(
@@ -645,7 +824,10 @@ def model_matrix(
     formula: str | List[str] | None = None,
     penalty_factor: List[float] | None = None,
     one_hot_encoding: bool = False,
-) -> Dict[str, List[Any] | np.ndarray | pd.DataFrame | csc_matrix | None]:
+    preprocessing_state: dict[str, Any] | None = None,
+) -> Dict[
+    str, List[Any] | np.ndarray | pd.DataFrame | csc_matrix | dict[str, Any] | None
+]:
     """Create a model matrix from a sample (and target).
     The default is to use an additive formula for all variables (or the ones specified).
     Can also create a custom model matrix if a formula is provided.
@@ -657,11 +839,26 @@ def model_matrix(
     must use those same positions. Warnings include original labels and caller
     positions, missing factors/columns, and bounded input/evaluated examples.
 
+    ``preprocessing_state`` reuses the pickle-safe schema returned by a training
+    call. Unknown categories and fitted stateful transforms are rejected on
+    replay; training/statistics with stateful formulas remain supported.
+    For example, pass ``preprocessing_state=training['preprocessing_state']``
+    and the same ``one_hot_encoding`` setting when scoring new rows.
     """
     logger.debug("Starting building the model matrix")
-    input_data = _prepare_input_model_matrix(sample, target, variables, add_na)
+    input_data = _prepare_input_model_matrix(
+        sample, target, variables, add_na, preserve_raw_values=True
+    )
     all_data = input_data["all_data"]
     sample_n = input_data["sample_n"]
+    if preprocessing_state is not None:
+        all_data = _apply_preprocessing_state(
+            all_data, preprocessing_state, preserve_raw_values=True
+        )
+        if one_hot_encoding != preprocessing_state["one_hot_encoding"]:
+            raise ValueError("Replay one_hot_encoding must match the fit-time setting.")
+        if formula is None:
+            formula = preprocessing_state["formula"]
 
     # Arrange formula
     if formula is None:
@@ -670,7 +867,23 @@ def model_matrix(
     if not isinstance(formula, list):
         formula = [formula]
     logger.debug(f"The formula used to build the model matrix: {formula}")
+    if preprocessing_state is not None and formula != preprocessing_state["formula"]:
+        raise ValueError("Replay formula must match the fit-time formula.")
     # If formula is given we rely on patsy formula checker to check it.
+
+    training_state = None
+    if preprocessing_state is None:
+        training_state = _freeze_preprocessing_state(
+            all_data, formula, one_hot_encoding, []
+        )
+        category_levels: dict[str, list[Any]] = input_data.get("category_levels", {})
+        for column, levels in category_levels.items():
+            if column in training_state["stringify_categoricals"]:
+                levels = list(dict.fromkeys(str(level) for level in levels))
+            training_state["category_levels"][column] = levels
+        all_data = _apply_preprocessing_state(
+            all_data, training_state, preserve_raw_values=True
+        )
 
     # Arrange penalty factor
     if penalty_factor is None:
@@ -693,6 +906,8 @@ def model_matrix(
     X_matrix = []
     X_matrix_columns = []
     pf = []
+    unsupported: list[str] = []
+    factor_levels: dict[str, list[Any]] = {}
     block_rows: list[np.ndarray] = []
     common_rows = np.arange(len(all_data))
     for idx, formula_item in enumerate(formula):
@@ -703,7 +918,10 @@ def model_matrix(
             formula_item,
             factor_variables=factor_variables,
             return_sparse=(return_var_type == "sparse"),
+            preprocessing_state=preprocessing_state or training_state,
         )
+        unsupported.extend(model_matrix_result["unsupported_stateful_formulas"])
+        factor_levels.update(model_matrix_result["factor_levels"])
         X_matrix_columns = (
             X_matrix_columns + model_matrix_result["model_matrix_columns"]
         )
@@ -777,6 +995,12 @@ def model_matrix(
         "target_rows": target_rows,
         "penalty_factor": penalty_factor_updated,
         "formula": formula,
+        "preprocessing_state": preprocessing_state
+        or {
+            **_assert_type(training_state, dict),
+            "unsupported_stateful_formulas": sorted(set(unsupported)),
+            "factor_levels": factor_levels,
+        },
     }
     if return_type == "one":
         result["model_matrix"] = X_matrix
@@ -807,6 +1031,7 @@ _MatrixBuildResult = Tuple[
     List[str],  # columns
     Optional[List[float]],  # penalty_factor_expanded
     Optional[Union[str, List[str]]],  # resolved_formula
+    Dict[str, Any],  # pickle-safe preprocessing_state
     np.ndarray,  # retained sample positions
     np.ndarray,  # retained target positions
 ]
@@ -820,6 +1045,7 @@ def _build_projected_model_matrix(
     one_hot_encoding: bool,
     na_action: str,
     project_to_columns: list[str],
+    preprocessing_state: dict[str, Any] | None = None,
 ) -> _MatrixBuildResult:
     """Holdout path: build model matrix and project to stored fit-time columns."""
     if na_action == "drop":
@@ -830,6 +1056,16 @@ def _build_projected_model_matrix(
             "na_action='add_indicator' or score using matching fit-time rows."
         )
 
+    if preprocessing_state is None and any("[" in col for col in project_to_columns):
+        raise ValueError(
+            "Categorical replay requires fit-time preprocessing_state. Refit the model."
+        )
+    if preprocessing_state is not None and preprocessing_state.get(
+        "unsupported_stateful_formulas"
+    ):
+        raise ValueError(
+            "Cannot replay stateful formulas; use stateless formulas or refit."
+        )
     # Pre-add NA indicators so the model matrix sees the same columns
     # that were present at fit time.
     combined = pd.concat((sample_covars, target_covars), axis=0)
@@ -855,13 +1091,26 @@ def _build_projected_model_matrix(
         formula=formula,
         one_hot_encoding=one_hot_encoding,
         add_na=False,
+        preprocessing_state=preprocessing_state,
     )
+    stored_state = _assert_type(model_matrix_out["preprocessing_state"], dict)
+    if stored_state["unsupported_stateful_formulas"]:
+        raise ValueError(
+            "Cannot replay stateful formulas; use stateless formulas or refit."
+        )
     sparse_matrix: csc_matrix = _assert_type(
         model_matrix_out["model_matrix"], csc_matrix
     )
     sparse_columns: list[str] = _assert_type(
         model_matrix_out["model_matrix_columns_names"], list
     )
+    if preprocessing_state is not None:
+        missing_columns = sorted(set(project_to_columns) - set(sparse_columns))
+        if missing_columns:
+            raise ValueError(
+                "Fit-time columns are absent after frozen preprocessing replay: "
+                f"{missing_columns}. Refit the model to refresh its preprocessing_state."
+            )
 
     # Project to the stored column set.
     sparse_col_to_idx = {col: i for i, col in enumerate(sparse_columns)}
@@ -897,6 +1146,7 @@ def _build_projected_model_matrix(
         project_to_columns,
         penalty_factor_expanded,
         resolved_formula,
+        stored_state,
         rows[rows < original_sample_n],
         rows[rows >= original_sample_n] - original_sample_n,
     )
@@ -910,6 +1160,7 @@ def _build_training_model_matrix(
     one_hot_encoding: bool,
     na_action: str,
     penalty_factor: list[float] | None,
+    preprocessing_state: dict[str, Any] | None = None,
 ) -> _MatrixBuildResult:
     """Training path: build model matrix via formula expansion."""
     formula_list: list[str] | None = [formula] if isinstance(formula, str) else formula
@@ -922,6 +1173,7 @@ def _build_training_model_matrix(
         formula=formula_list,
         penalty_factor=penalty_factor,
         one_hot_encoding=one_hot_encoding,
+        preprocessing_state=preprocessing_state,
     )
     combined_matrix: Union[pd.DataFrame, np.ndarray, csc_matrix] = cast(
         Union[pd.DataFrame, np.ndarray, csc_matrix],
@@ -951,6 +1203,7 @@ def _build_training_model_matrix(
         columns,
         penalty_factor_expanded,
         resolved_formula,
+        _assert_type(model_matrix_output["preprocessing_state"], dict),
         _assert_type(model_matrix_output["sample_rows"], np.ndarray),
         _assert_type(model_matrix_output["target_rows"], np.ndarray),
     )
@@ -979,6 +1232,9 @@ def _build_raw_covariates(
         columns,
         [1.0] * len(columns),
         None,
+        _freeze_preprocessing_state(
+            combined_matrix, [], False, [], stringify_categoricals=False
+        ),
         np.arange(len(sample_covars)),
         np.arange(len(target_covars)),
     )
@@ -998,6 +1254,7 @@ def build_design_matrix(
     scaler_weights: np.ndarray | None = None,
     fit_penalties_skl: list[float] | None = None,
     matrix_type: str | None = None,
+    preprocessing_state: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build the combined design matrix used by IPW weighting.
 
@@ -1059,6 +1316,14 @@ def build_design_matrix(
         matrix as-is (may be sparse, dense, or DataFrame depending on
         the path).
 
+    preprocessing_state:
+        Optional pickle-safe fit-time schema returned under the same result key.
+        Pass ``preprocessing_state=training["preprocessing_state"]`` with stored
+        columns, scaler and penalties on replay. Unseen categories and fitted
+        stateful formulas raise actionable errors instead of being re-encoded.
+        Raw native-categorical replay maps novel categories to missing values,
+        preserving the estimator's existing missing-category policy.
+
     Returns
     -------
     dict[str, Any]
@@ -1094,6 +1359,7 @@ def build_design_matrix(
             columns,
             penalty_factor_expanded,
             resolved_formula,
+            out_state,
             sample_rows,
             target_rows,
         ) = _build_projected_model_matrix(
@@ -1103,6 +1369,7 @@ def build_design_matrix(
             one_hot_encoding=one_hot_encoding,
             na_action=na_action,
             project_to_columns=project_to_columns,
+            preprocessing_state=preprocessing_state,
         )
     elif use_model_matrix:
         (
@@ -1110,6 +1377,7 @@ def build_design_matrix(
             columns,
             penalty_factor_expanded,
             resolved_formula,
+            out_state,
             sample_rows,
             target_rows,
         ) = _build_training_model_matrix(
@@ -1119,6 +1387,7 @@ def build_design_matrix(
             one_hot_encoding=one_hot_encoding,
             na_action=na_action,
             penalty_factor=penalty_factor,
+            preprocessing_state=preprocessing_state,
         )
     else:
         (
@@ -1126,6 +1395,7 @@ def build_design_matrix(
             columns,
             penalty_factor_expanded,
             resolved_formula,
+            out_state,
             sample_rows,
             target_rows,
         ) = _build_raw_covariates(
@@ -1151,6 +1421,14 @@ def build_design_matrix(
                     "Formula row dropping left no finite positive scaler weight mass; "
                     "fitting requires retained positive-weight rows."
                 )
+
+    if not use_model_matrix and preprocessing_state is not None:
+        combined_matrix = _apply_preprocessing_state(
+            _assert_type(combined_matrix, pd.DataFrame),
+            preprocessing_state,
+            allow_unknown_categories=True,
+        )
+        out_state = preprocessing_state
 
     # -- Step 2: Reindex DataFrame to stored columns (raw holdout path) ----
     if isinstance(combined_matrix, pd.DataFrame) and project_to_columns is not None:
@@ -1216,6 +1494,7 @@ def build_design_matrix(
         "columns": columns,
         "penalty_factor_expanded": penalty_factor_expanded,
         "resolved_formula": resolved_formula,
+        "preprocessing_state": out_state,
         "fit_scaler": out_scaler,
         "fit_penalties_skl": out_penalties,
     }

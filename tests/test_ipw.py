@@ -14,6 +14,7 @@ from __future__ import (
 
 import unittest
 from typing import Any
+from unittest import mock
 
 import balance.testutil
 import numpy as np
@@ -1077,6 +1078,42 @@ class TestIPW(
             self.assertEqual(after[2:], before[2:])
         finally:
             np.random.set_state(original_state)
+
+    def test_ipw_stores_design_matrix_preprocessing_state(self) -> None:
+        """The design-matrix builder's ``preprocessing_state`` is kept in the
+        model whenever replay artifacts are stored, and omitted otherwise."""
+        sample_df, sample_weights, target_df, target_weights = (
+            self._cv_path_ipw_inputs()
+        )
+        state = {"sentinel": "fit-time preprocessing"}
+        original_builder = balance_ipw.build_design_matrix
+
+        def builder_with_state(*args: Any, **kwargs: Any) -> dict[str, Any]:
+            return {**original_builder(*args, **kwargs), "preprocessing_state": state}
+
+        cases: tuple[tuple[dict[str, Any], bool], ...] = (
+            ({"store_fit_metadata": True}, True),
+            ({"store_fit_matrices": True}, True),
+            ({}, False),
+        )
+        with mock.patch.object(
+            balance_ipw, "build_design_matrix", side_effect=builder_with_state
+        ):
+            for store_kwargs, expected in cases:
+                with self.subTest(**store_kwargs):
+                    model = balance_ipw.ipw(
+                        sample_df,
+                        sample_weights,
+                        target_df,
+                        target_weights,
+                        transformations=None,
+                        num_lambdas=2,
+                        **store_kwargs,
+                    )["model"]
+                    if expected:
+                        self.assertIs(model["preprocessing_state"], state)
+                    else:
+                        self.assertNotIn("preprocessing_state", model)
 
     def test_ipw_warns_when_penalty_factor_with_custom_model(self) -> None:
         """Providing penalty_factor with custom models emits a warning."""
