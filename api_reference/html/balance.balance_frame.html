@@ -655,7 +655,12 @@ is both classes), so the model correctly lands on <code class="docutils literal 
 than on the Sample’s own inherited attribute.</p>
 <p>Like sklearn’s <code class="docutils literal notranslate"><span class="pre">fit()</span></code> (and <code class="xref py py-meth docutils literal notranslate"><span class="pre">SampleFrame.fit_outcome_model()</span></code>), it
 does <strong>not</strong> produce predictions — call <a class="reference internal" href="#balance.balance_frame.BalanceFrame.predict_outcomes" title="balance.balance_frame.BalanceFrame.predict_outcomes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict_outcomes()</span></code></a> (or
-<a class="reference internal" href="#balance.balance_frame.BalanceFrame.fit_predict_outcomes" title="balance.balance_frame.BalanceFrame.fit_predict_outcomes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_predict_outcomes()</span></code></a>) to write the <code class="docutils literal notranslate"><span class="pre">&lt;outcome&gt;_hat</span></code> columns.</p>
+<a class="reference internal" href="#balance.balance_frame.BalanceFrame.fit_predict_outcomes" title="balance.balance_frame.BalanceFrame.fit_predict_outcomes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_predict_outcomes()</span></code></a>) to write the <code class="docutils literal notranslate"><span class="pre">&lt;outcome&gt;_hat</span></code> columns.
+A successful fit preserves attached predicted-outcome columns on both
+responder and target, including manually attached predictions. A warning
+names existing predictions and their refresh call. Rerun
+<code class="docutils literal notranslate"><span class="pre">frame.predict_outcomes(on='target')</span></code> to update target predictions;
+use <code class="docutils literal notranslate"><span class="pre">on='sample'</span></code> for responder predictions. Shared targets are unchanged.</p>
 <p>Supplying a different <code class="docutils literal notranslate"><span class="pre">target</span></code> changes the population used by later
 outcome predictions, but preserves the current sample weights, weighting
 model, adjustment history, and unadjusted baseline. Those weights may
@@ -1397,7 +1402,12 @@ the fitted estimator objects by identity</strong> (exactly like
 <a class="reference internal" href="#balance.balance_frame.BalanceFrame.set_fitted_model" title="balance.balance_frame.BalanceFrame.set_fitted_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_fitted_model()</span></code></a>), so <code class="docutils literal notranslate"><span class="pre">self.predict_outcomes(on=&quot;target&quot;)</span></code> then
 replays the transferred model on <code class="docutils literal notranslate"><span class="pre">self</span></code>’s own target and
 <code class="docutils literal notranslate"><span class="pre">self.outcomes_hat().mean()</span></code> is the g-computation estimate <code class="docutils literal notranslate"><span class="pre">μ̂_OM</span></code> on
-the holdout target.</p>
+the holdout target. Transferring a model preserves attached predicted
+outcomes on both responder and target, including manual predictions.
+Warnings name the existing columns and the explicit refresh calls:
+<code class="docutils literal notranslate"><span class="pre">frame.predict_outcomes(on='target')</span></code> for the target, or <code class="docutils literal notranslate"><span class="pre">on='sample'</span></code>
+for the responder. Shared targets remain unchanged until an explicit
+prediction call writes to a copy.</p>
 <p>On a <a class="reference internal" href="balance.sample_class.html#balance.sample_class.Sample" title="balance.sample_class.Sample"><code class="xref py py-class docutils literal notranslate"><span class="pre">Sample</span></code></a>, this <code class="docutils literal notranslate"><span class="pre">BalanceFrame</span></code> method
 is reached via the MRO; the model lands on <code class="docutils literal notranslate"><span class="pre">self._sf_sample</span></code> (the single
 source of truth read back through <a class="reference internal" href="#balance.balance_frame.BalanceFrame.outcome_model" title="balance.balance_frame.BalanceFrame.outcome_model"><code class="xref py py-attr docutils literal notranslate"><span class="pre">outcome_model</span></code></a>), so it rides

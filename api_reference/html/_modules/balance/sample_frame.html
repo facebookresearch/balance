@@ -1704,9 +1704,10 @@
 <span class="sd">        aligned to the covariate index before it is passed through.  Rows whose</span>
 <span class="sd">        outcome ``Y`` is missing (NaN) are dropped before fitting — the</span>
 <span class="sd">        covariates and weights are aligned to the retained rows, so the fit uses</span>
-<span class="sd">        only complete outcome observations.  Re-fitting drops any</span>
-<span class="sd">        ``&lt;outcome&gt;_hat`` columns left by a previous :meth:`predict_outcomes` so</span>
-<span class="sd">        a stale prediction cannot linger against a newly-fit model.</span>
+<span class="sd">        complete outcome observations. Existing ``&lt;outcome&gt;_hat`` columns are</span>
+<span class="sd">        preserved, including manually attached predictions. A successful fit</span>
+<span class="sd">        warns that they may be stale; call ``frame.predict_outcomes()`` to refresh</span>
+<span class="sd">        them (``frame.predict_outcomes(on='sample')`` on a BalanceFrame).</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            model: ``"auto"`` (a ``HistGradientBoosting`` regressor/classifier</span>
@@ -1808,10 +1809,15 @@
             <span class="n">calibrate</span><span class="o">=</span><span class="n">calibrate</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="c1"># Drop any superseded &lt;outcome&gt;_hat columns from a prior</span>
-        <span class="c1"># predict_outcomes so a stale Ŷ can't linger against the new model.</span>
-        <span class="n">target</span><span class="o">.</span><span class="n">_drop_outcomes_hat_columns</span><span class="p">()</span>
         <span class="n">target</span><span class="o">.</span><span class="n">_outcome_model</span> <span class="o">=</span> <span class="n">fitted_model</span>
+        <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">outcomes_hat_columns</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">"fit_outcome_model() preserved existing predictions in columns </span><span class="si">%s</span><span class="s2">. "</span>
+                <span class="s2">"They may be stale after replacing the outcome model. "</span>
+                <span class="s2">"Rerun frame.predict_outcomes() to update them "</span>
+                <span class="s2">"(frame.predict_outcomes(on='sample') on a BalanceFrame)."</span><span class="p">,</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">outcomes_hat_columns</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="k">return</span> <span class="n">target</span></div>
 
 

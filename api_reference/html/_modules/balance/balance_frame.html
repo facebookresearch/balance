@@ -1611,6 +1611,11 @@
 <span class="sd">        Like sklearn's ``fit()`` (and :meth:`SampleFrame.fit_outcome_model`), it</span>
 <span class="sd">        does **not** produce predictions — call :meth:`predict_outcomes` (or</span>
 <span class="sd">        :meth:`fit_predict_outcomes`) to write the ``&lt;outcome&gt;_hat`` columns.</span>
+<span class="sd">        A successful fit preserves attached predicted-outcome columns on both</span>
+<span class="sd">        responder and target, including manually attached predictions. A warning</span>
+<span class="sd">        names existing predictions and their refresh call. Rerun</span>
+<span class="sd">        ``frame.predict_outcomes(on='target')`` to update target predictions;</span>
+<span class="sd">        use ``on='sample'`` for responder predictions. Shared targets are unchanged.</span>
 
 <span class="sd">        Supplying a different ``target`` changes the population used by later</span>
 <span class="sd">        outcome predictions, but preserves the current sample weights, weighting</span>
@@ -1710,9 +1715,22 @@
         <span class="c1"># Delegate to the responder so the model lands on _sf_sample (single</span>
         <span class="c1"># source of truth) and rides adjust()/set_target().</span>
         <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">fit_outcome_model</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">bf</span><span class="o">.</span><span class="n">_warn_target_outcome_predictions</span><span class="p">()</span>
         <span class="n">bf</span><span class="o">.</span><span class="n">_sync_sampleframe_state_from_responder</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">bf</span></div>
 
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_warn_target_outcome_predictions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Preserve target predictions and explain how to refresh them."""</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_target</span>
+        <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">target</span><span class="o">.</span><span class="n">outcomes_hat_columns</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">"Existing target predictions in columns </span><span class="si">%s</span><span class="s2"> were preserved and may be "</span>
+            <span class="s2">"stale after replacing the outcome model. "</span>
+            <span class="s2">"Rerun frame.predict_outcomes(on='target') to update them."</span><span class="p">,</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">outcomes_hat_columns</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="nd">@overload</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">predict_outcomes</span><span class="p">(</span>  <span class="c1"># noqa: E704</span>
@@ -1941,7 +1959,12 @@
 <span class="sd">        :meth:`set_fitted_model`), so ``self.predict_outcomes(on="target")`` then</span>
 <span class="sd">        replays the transferred model on ``self``'s own target and</span>
 <span class="sd">        ``self.outcomes_hat().mean()`` is the g-computation estimate ``μ̂_OM`` on</span>
-<span class="sd">        the holdout target.</span>
+<span class="sd">        the holdout target. Transferring a model preserves attached predicted</span>
+<span class="sd">        outcomes on both responder and target, including manual predictions.</span>
+<span class="sd">        Warnings name the existing columns and the explicit refresh calls:</span>
+<span class="sd">        ``frame.predict_outcomes(on='target')`` for the target, or ``on='sample'``</span>
+<span class="sd">        for the responder. Shared targets remain unchanged until an explicit</span>
+<span class="sd">        prediction call writes to a copy.</span>
 
 <span class="sd">        On a :class:`~balance.sample_class.Sample`, this ``BalanceFrame`` method</span>
 <span class="sd">        is reached via the MRO; the model lands on ``self._sf_sample`` (the single</span>
@@ -2050,8 +2073,14 @@
             <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_outcome_model</span><span class="p">[</span><span class="s2">"training_inputs"</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span>
                 <span class="n">fitted_model</span><span class="p">[</span><span class="s2">"training_inputs"</span><span class="p">]</span>
             <span class="p">)</span>
-        <span class="c1"># A transferred model supersedes any Ŷ already on the responder.</span>
-        <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">_drop_outcomes_hat_columns</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">outcomes_hat_columns</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">"set_fitted_outcome_model() preserved existing sample predictions "</span>
+                <span class="s2">"in columns </span><span class="si">%s</span><span class="s2">. They may be stale after replacing the outcome model. "</span>
+                <span class="s2">"Rerun frame.predict_outcomes(on='sample') to update them."</span><span class="p">,</span>
+                <span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">outcomes_hat_columns</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">bf</span><span class="o">.</span><span class="n">_warn_target_outcome_predictions</span><span class="p">()</span>
         <span class="n">bf</span><span class="o">.</span><span class="n">_sync_sampleframe_state_from_responder</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">_sf_sample</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">bf</span></div>
 

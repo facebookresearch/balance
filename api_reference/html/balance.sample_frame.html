@@ -402,9 +402,10 @@ currently-applied weight (weighted least squares / weighted boosting),
 aligned to the covariate index before it is passed through.  Rows whose
 outcome <code class="docutils literal notranslate"><span class="pre">Y</span></code> is missing (NaN) are dropped before fitting — the
 covariates and weights are aligned to the retained rows, so the fit uses
-only complete outcome observations.  Re-fitting drops any
-<code class="docutils literal notranslate"><span class="pre">&lt;outcome&gt;_hat</span></code> columns left by a previous <a class="reference internal" href="#balance.sample_frame.SampleFrame.predict_outcomes" title="balance.sample_frame.SampleFrame.predict_outcomes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict_outcomes()</span></code></a> so
-a stale prediction cannot linger against a newly-fit model.</p>
+complete outcome observations. Existing <code class="docutils literal notranslate"><span class="pre">&lt;outcome&gt;_hat</span></code> columns are
+preserved, including manually attached predictions. A successful fit
+warns that they may be stale; call <code class="docutils literal notranslate"><span class="pre">frame.predict_outcomes()</span></code> to refresh
+them (<code class="docutils literal notranslate"><span class="pre">frame.predict_outcomes(on='sample')</span></code> on a BalanceFrame).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

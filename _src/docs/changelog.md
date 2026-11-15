@@ -153,6 +153,18 @@ hide_title: true
 
 ## Bug fixes
 
+- Mixed outcome learners choose a shared representation compatible with every
+  learner, independent of outcome-column order. Auto mode uses one-hot encoding
+  if any learner needs it; forcing native categorical input raises an actionable
+  error when a learner cannot consume it.
+
+- Refitting or transferring an outcome model preserves attached predictions
+  on both responder and target, including manually attached predictions. Warnings
+  identify the existing columns and explain that they may be stale; rerun
+  `frame.predict_outcomes(on='target')` to refresh the target (or `on='sample'`
+  for the responder). Explicit target prediction still copies shared targets
+  before writing.
+
 - Outcome-model bootstrap CIs retain the original fitting-variable subset,
   complete training rows, and actual fit weights after adjustment or transfer.
   The point estimate replays the stored model rather than refitting it. Stored
