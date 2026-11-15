@@ -145,6 +145,10 @@ class Sample(BalanceFrame, SampleFrame):
         )
         return cls._create(sample=sf, target=None)
 
+    def __getnewargs__(self) -> tuple[SampleFrame, SampleFrame | None]:
+        """Give pickle the internal frame arguments accepted by ``__new__``."""
+        return self._sf_sample, self._sf_target
+
     def __deepcopy__(self, memo: dict[int, Any]) -> Sample:
         """Return an independent deep copy of this Sample.
 

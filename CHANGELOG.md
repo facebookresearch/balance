@@ -164,6 +164,7 @@
   Temporary bootstrap fits, including the fallback point-estimate fit, skip unused
   raw-input snapshots, reducing allocation overhead without changing estimates,
   intervals, or outer-model provenance.
+- Reconstruct pickled `Sample` objects using their internal frames while retaining the direct-construction guard.
 
 # 0.23.0 (2026-08-04)
 
