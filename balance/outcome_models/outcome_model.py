@@ -622,9 +622,11 @@ def fit_outcome_model(
         na_action: How to handle missing values. Only ``"add_indicator"`` (the
             default) is supported — ``"drop"`` is rejected because replay needs
             the NA-indicator columns to stay aligned across fit and score data.
-        use_model_matrix: ``"auto"`` (default) picks the native-categorical path
-            for tree/boosting learners on scikit-learn >= 1.4 and the one-hot +
-            scaler path otherwise; pass ``True``/``False`` to force a path.
+        use_model_matrix: ``"auto"`` (default) uses native categoricals only
+            when every resolved learner supports that path on scikit-learn >=
+            1.4; otherwise all outcomes share the one-hot + scaler path. Pass
+            ``True``/``False`` to force a path; explicit native categoricals
+            require every learner to support them.
         calibrate: When ``True``, wrap each classifier in
             :class:`~sklearn.calibration.CalibratedClassifierCV` (binary outcomes
             only). Ignored for regressors. Defaults to ``False``.
@@ -710,18 +712,55 @@ def fit_outcome_model(
     fit: Dict[str, Any] = {}
     perf: Dict[str, Any] = {}
     prediction_kind: Dict[str, str] = {}
-    stored_columns: List[str] | None = None
-    stored_scaler: Any = None
-    stored_formula: str | list[str] | None = None
-    stored_categorical_levels: Dict[str, List[Any]] | None = None
-    stored_matrix_type: str | None = None
-    resolved_use_model_matrix: bool | None = None
-    fit_matrix: Any = None
-    fit_rows: np.ndarray | None = None
+    learners = {
+        col: _resolve_learner(model, outcomes_df[col]) for col in outcome_columns
+    }
+    resolved_use_model_matrix = any(
+        _resolve_use_model_matrix(use_model_matrix, estimator)
+        for estimator, _ in learners.values()
+    )
+    built = _build_fit_matrix(
+        covars_df,
+        use_model_matrix=resolved_use_model_matrix,
+        formula=formula,
+        na_action=na_action,
+        sample_weight_arr=sample_weight_arr,
+        densify=any(_needs_dense(estimator) for estimator, _ in learners.values()),
+    )
+    stored_columns = built["columns"]
+    stored_scaler = built["fit_scaler"]
+    stored_formula = built["resolved_formula"]
+    stored_categorical_levels = built["categorical_levels"]
+    fit_matrix = built["fit_matrix"]
+    fit_rows = built["sample_rows"]
+    if len(fit_rows) == 0:
+        raise ValueError("Formula row dropping left no rows for outcome-model fitting.")
+    fit_outcomes = outcomes_df.iloc[fit_rows]
+    if sample_weight_arr is not None:
+        sample_weight_arr = sample_weight_arr[fit_rows]
+    stored_matrix_type = _fit_matrix_type(fit_matrix)
+    if not resolved_use_model_matrix and stored_categorical_levels:
+        if not _has_sklearn_1_4():
+            raise ValueError(
+                "use_model_matrix=False (the native-categorical path) needs "
+                "scikit-learn >= 1.4 to fit categorical covariates; the "
+                "installed scikit-learn is older. Use use_model_matrix='auto' "
+                "(one-hot fallback) or use_model_matrix=True, or upgrade "
+                "scikit-learn."
+            )
+        if any(
+            _resolve_use_model_matrix("auto", estimator)
+            for estimator, _ in learners.values()
+        ):
+            raise ValueError(
+                "every learner must support native categorical covariates when "
+                "use_model_matrix=False. Use use_model_matrix='auto' or True "
+                "for a shared one-hot representation."
+            )
 
     for outcome_col in outcome_columns:
-        y_series = outcomes_df[outcome_col]
-        estimator, model_note = _resolve_learner(model, y_series)
+        y_series = fit_outcomes[outcome_col]
+        estimator, model_note = learners[outcome_col]
         logger.info(
             "outcome_model: outcome %r (%s) -> %s [%s]",
             outcome_col,
@@ -729,53 +768,6 @@ def fit_outcome_model(
             type(estimator).__name__,
             model_note,
         )
-        col_use_mm = _resolve_use_model_matrix(use_model_matrix, estimator)
-        # All columns share one design matrix; resolve on the first column and
-        # reuse (a mixed regressor/classifier set still shares covariate encoding).
-        if resolved_use_model_matrix is None:
-            resolved_use_model_matrix = col_use_mm
-            built = _build_fit_matrix(
-                covars_df,
-                use_model_matrix=resolved_use_model_matrix,
-                formula=formula,
-                na_action=na_action,
-                sample_weight_arr=sample_weight_arr,
-                densify=_needs_dense(estimator),
-            )
-            stored_columns = built["columns"]
-            stored_scaler = built["fit_scaler"]
-            stored_formula = built["resolved_formula"]
-            stored_categorical_levels = built["categorical_levels"]
-            fit_matrix = built["fit_matrix"]
-            fit_rows = _assert_type(built["sample_rows"], np.ndarray)
-            if len(fit_rows) == 0:
-                raise ValueError(
-                    "Formula row dropping left no rows for outcome-model fitting."
-                )
-            if sample_weight_arr is not None:
-                sample_weight_arr = sample_weight_arr[fit_rows]
-            stored_matrix_type = _fit_matrix_type(fit_matrix)
-            # The native-categorical path (use_model_matrix=False) feeds raw
-            # categorical dtypes to the estimator, which needs scikit-learn >= 1.4
-            # (categorical_features="from_dtype"). On older scikit-learn the
-            # boosting fit fails with a cryptic "could not convert string to
-            # float", so raise an actionable error instead (mirrors IPW's
-            # use_model_matrix guard); use_model_matrix="auto" already falls back
-            # to one-hot on < 1.4.
-            if (
-                not resolved_use_model_matrix
-                and stored_categorical_levels
-                and not _has_sklearn_1_4()
-            ):
-                raise ValueError(
-                    "use_model_matrix=False (the native-categorical path) needs "
-                    "scikit-learn >= 1.4 to fit categorical covariates; the "
-                    "installed scikit-learn is older. Use use_model_matrix='auto' "
-                    "(one-hot fallback) or use_model_matrix=True, or upgrade "
-                    "scikit-learn."
-                )
-
-        y_series = outcomes_df[outcome_col].iloc[_assert_type(fit_rows)]
         fitted_estimator, pred_kind, col_perf = _fit_and_evaluate_outcome_column(
             estimator,
             fit_matrix,

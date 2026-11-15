@@ -143,6 +143,11 @@
 
 ## Bug fixes
 
+- Mixed outcome learners choose a shared representation compatible with every
+  learner, independent of outcome-column order. Auto mode uses one-hot encoding
+  if any learner needs it; forcing native categorical input raises an actionable
+  error when a learner cannot consume it.
+
 - Refitting or transferring an outcome model preserves attached predictions
   on both responder and target, including manually attached predictions. Warnings
   identify the existing columns and explain that they may be stale; rerun

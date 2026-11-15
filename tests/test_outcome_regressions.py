@@ -8,6 +8,7 @@ from __future__ import annotations
 import pickle
 import unittest
 from copy import deepcopy
+from typing import Any
 from unittest.mock import patch
 
 import numpy as np
@@ -15,12 +16,12 @@ import pandas as pd
 import pytest
 from balance import Sample
 from balance.balance_frame import BalanceFrame
-from balance.outcome_models import fit_outcome_model
+from balance.outcome_models import fit_outcome_model, predict_outcome
 from balance.sample_frame import SampleFrame
 from balance.testutil import _SKLEARN_1_4_AVAILABLE
 from balance.utils.input_validation import _assert_type
 from sklearn.ensemble import HistGradientBoostingRegressor
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, LogisticRegression
 
 
 def _sample() -> Sample:
@@ -452,3 +453,135 @@ class OutcomePredictionPreservationTest(unittest.TestCase):
         self.assertIs(frame.outcome_model, model_before)
         pd.testing.assert_frame_equal(_assert_type(frame.target).df, before)
         pd.testing.assert_frame_equal(frame.df_outcomes_hat, sample_before)
+
+
+class MixedOutcomeLearnersTest(unittest.TestCase):
+    def _data(self) -> tuple[pd.DataFrame, pd.DataFrame]:
+        covars = pd.DataFrame({"cat": ["a", "b", "a", "b"], "x": [0.0, 1.0, 2.0, 3.0]})
+        outcomes = pd.DataFrame(
+            {"reg": [2.0, 4.0, 6.0, 8.0], "binary": [0.0, 1.0, 0.0, 1.0]}
+        )
+        return covars, outcomes
+
+    def _learners(self, by_type: bool = False) -> dict[str, Any]:
+        reg = HistGradientBoostingRegressor(
+            categorical_features="from_dtype",
+            max_iter=2,
+            learning_rate=1.0,
+            min_samples_leaf=1,
+            early_stopping=False,
+            random_state=0,
+        )
+        clf = LogisticRegression(
+            solver="liblinear", C=1.0, max_iter=100, random_state=0
+        )
+        return (
+            {"_continuous": reg, "_discrete": clf}
+            if by_type
+            else {"reg": reg, "binary": clf}
+        )
+
+    def _assert_orders(
+        self, *, by_type: bool = False, mode: bool | str = "auto"
+    ) -> None:
+        covars, outcomes = self._data()
+        holdout = covars.iloc[[3, 0]]
+        reference = fit_outcome_model(
+            covars,
+            outcomes,
+            model=self._learners(by_type),
+            transformations=None,
+            use_model_matrix=True,
+        )
+        expected = predict_outcome(reference, holdout)
+        for order in (["reg", "binary"], ["binary", "reg"]):
+            with self.subTest(order=order):
+                model = fit_outcome_model(
+                    covars,
+                    outcomes[order],
+                    model=self._learners(by_type),
+                    transformations=None,
+                    use_model_matrix=mode,
+                )
+                self.assertTrue(model["use_model_matrix"])
+                predictions = predict_outcome(model, holdout)
+                restored = pickle.loads(pickle.dumps(model))
+                replayed = predict_outcome(restored, holdout)
+                self.assertEqual(set(predictions), {"reg", "binary"})
+                np.testing.assert_allclose(predictions["reg"], [8.0, 2.0], atol=1e-12)
+                for column in predictions:
+                    np.testing.assert_allclose(
+                        predictions[column], expected[column], atol=1e-12
+                    )
+                    np.testing.assert_array_equal(replayed[column], predictions[column])
+
+    @pytest.mark.requires_sklearn_1_4
+    @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires sklearn >= 1.4")
+    def test_column_map_both_orders_pickle_and_replay(self) -> None:
+        covars = pd.DataFrame({"cat": ["a", "b", "a", "b"], "x": [0.0, 1.0, 2.0, 3.0]})
+        outcomes = pd.DataFrame(
+            {"reg": [2.0, 4.0, 6.0, 8.0], "binary": [0.0, 1.0, 0.0, 1.0]}
+        )
+        binary_predictions = []
+        for order in (["reg", "binary"], ["binary", "reg"]):
+            with self.subTest(order=order):
+                model = fit_outcome_model(
+                    covars,
+                    outcomes[order],
+                    model={
+                        "reg": HistGradientBoostingRegressor(
+                            categorical_features="from_dtype",
+                            max_iter=2,
+                            learning_rate=1.0,
+                            min_samples_leaf=1,
+                            early_stopping=False,
+                            random_state=0,
+                        ),
+                        "binary": LogisticRegression(
+                            solver="liblinear",
+                            C=1.0,
+                            max_iter=100,
+                            random_state=0,
+                        ),
+                    },
+                    transformations=None,
+                    use_model_matrix="auto",
+                )
+                self.assertTrue(model["use_model_matrix"])
+                predictions = predict_outcome(model, covars.iloc[[3, 0]])
+                np.testing.assert_allclose(predictions["reg"], [8.0, 2.0], atol=1e-12)
+                replayed = predict_outcome(
+                    pickle.loads(pickle.dumps(model)), covars.iloc[[3, 0]]
+                )
+                np.testing.assert_array_equal(replayed["reg"], predictions["reg"])
+                np.testing.assert_array_equal(replayed["binary"], predictions["binary"])
+                binary_predictions.append(predictions["binary"])
+        np.testing.assert_allclose(
+            binary_predictions[0], binary_predictions[1], atol=1e-12
+        )
+
+    @pytest.mark.requires_sklearn_1_4
+    @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires sklearn >= 1.4")
+    def test_type_map_both_orders_pickle_and_replay(self) -> None:
+        self._assert_orders(by_type=True)
+
+    @pytest.mark.requires_sklearn_1_4
+    @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires sklearn >= 1.4")
+    def test_explicit_one_hot_both_orders_pickle_and_replay(self) -> None:
+        self._assert_orders(mode=True)
+
+    @pytest.mark.requires_sklearn_1_4
+    @unittest.skipUnless(_SKLEARN_1_4_AVAILABLE, "requires sklearn >= 1.4")
+    def test_explicit_native_mixed_categorical_has_actionable_error(self) -> None:
+        covars, outcomes = self._data()
+        for order in (["reg", "binary"], ["binary", "reg"]):
+            with self.subTest(order=order), self.assertRaisesRegex(
+                ValueError, "every learner.*use_model_matrix"
+            ):
+                fit_outcome_model(
+                    covars,
+                    outcomes[order],
+                    model=self._learners(),
+                    transformations=None,
+                    use_model_matrix=False,
+                )
