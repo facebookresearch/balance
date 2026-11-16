@@ -1,0 +1,39 @@
+Package: glmnet
+Type: Package
+Title: Lasso and Elastic-Net Regularized Generalized Linear Models
+Version: 4.1-4
+Date: 2022-04-13
+Authors@R: c(person("Jerome", "Friedman", role=c("aut")),
+	     person("Trevor", "Hastie", role=c("aut", "cre"), email = "hastie@stanford.edu"),
+	     person("Rob", "Tibshirani", role=c("aut")),
+	     person("Balasubramanian", "Narasimhan", role=c("aut")),
+	     person("Kenneth","Tay",role=c("aut")),
+	     person("Noah", "Simon", role=c("aut")),
+	     person("Junyang", "Qian", role=c("ctb")),
+	     person("James", "Yang", role=c("aut")))
+Depends: R (>= 3.6.0), Matrix (>= 1.0-6)
+Imports: methods, utils, foreach, shape, survival, Rcpp
+Suggests: knitr, lars, testthat, xfun, rmarkdown
+SystemRequirements: C++14
+Description: Extremely efficient procedures for fitting the entire lasso or elastic-net regularization path for linear regression, logistic and multinomial regression models, Poisson regression, Cox model,  multiple-response Gaussian, and the grouped multinomial regression. There are two new and important additions. The family argument can be a GLM family object, which opens the door to any programmed family. This comes with a modest computational cost, so when the built-in families suffice, they should be used instead.  The other novelty is the relax option, which refits each of the active sets in the path unpenalized. The algorithm uses cyclical coordinate descent in a path-wise fashion, as described in the papers listed in the URL below.
+License: GPL-2
+VignetteBuilder: knitr
+Encoding: UTF-8
+URL: https://glmnet.stanford.edu,
+        https://dx.doi.org/10.18637/jss.v033.i01,
+        https://dx.doi.org/10.18637/jss.v039.i05
+RoxygenNote: 7.1.2
+LinkingTo: RcppEigen, Rcpp
+NeedsCompilation: yes
+Packaged: 2022-04-14 01:15:20 UTC; hastie
+Author: Jerome Friedman [aut],
+  Trevor Hastie [aut, cre],
+  Rob Tibshirani [aut],
+  Balasubramanian Narasimhan [aut],
+  Kenneth Tay [aut],
+  Noah Simon [aut],
+  Junyang Qian [ctb],
+  James Yang [aut]
+Maintainer: Trevor Hastie <hastie@stanford.edu>
+Repository: RSPM
+Date/Publication: 2022-04-15 09:22:29 UTC

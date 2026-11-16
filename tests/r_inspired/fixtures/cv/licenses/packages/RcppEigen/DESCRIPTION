@@ -1,0 +1,50 @@
+Package: RcppEigen
+Type: Package
+Title: 'Rcpp' Integration for the 'Eigen' Templated Linear Algebra
+        Library
+Version: 0.3.4.0.2
+Date: 2024-08-23
+Authors@R: c(person("Doug", "Bates", role = "aut",
+                    comment = c(ORCID = "0000-0001-8316-9503")),
+             person("Dirk", "Eddelbuettel", role = c("aut", "cre"), email = "edd@debian.org",
+                    comment = c(ORCID = "0000-0001-6419-907X")),
+             person("Romain", "Francois", role = "aut",
+                    comment = c(ORCID = "0000-0002-2444-4226")),
+             person("Yixuan", "Qiu", role = "aut",
+                    comment = c(ORCID = "0000-0003-0109-6692")),
+             person("Authors of", "Eigen", role = "cph",
+                    comment = "Authorship and copyright in included Eigen library as detailed in inst/COPYRIGHTS"))
+Copyright: See the file COPYRIGHTS for various Eigen copyright details
+Description: R and 'Eigen' integration using 'Rcpp'.
+ 'Eigen' is a C++ template library for linear algebra: matrices, vectors,
+ numerical solvers and related algorithms.  It supports dense and sparse
+ matrices on integer, floating point and complex numbers, decompositions of
+ such matrices, and solutions of linear systems. Its performance on many
+ algorithms is comparable with some of the best implementations based on
+ 'Lapack' and level-3 'BLAS'. The 'RcppEigen' package includes the header
+ files from the 'Eigen' C++ template library. Thus users do not need to
+ install 'Eigen' itself in order to use 'RcppEigen'. Since version 3.1.1,
+ 'Eigen' is licensed under the Mozilla Public License (version 2); earlier
+ version were licensed under the GNU LGPL version 3 or later. 'RcppEigen'
+ (the 'Rcpp' bindings/bridge to 'Eigen') is licensed under the GNU GPL
+ version 2 or later, as is the rest of 'Rcpp'.
+License: GPL (>= 2) | file LICENSE
+LazyLoad: yes
+Depends: R (>= 3.6.0)
+LinkingTo: Rcpp
+Imports: Rcpp (>= 0.11.0), stats, utils
+Suggests: Matrix, inline, tinytest, pkgKitten, microbenchmark
+URL: https://github.com/RcppCore/RcppEigen,
+        https://dirk.eddelbuettel.com/code/rcpp.eigen.html
+BugReports: https://github.com/RcppCore/RcppEigen/issues
+NeedsCompilation: yes
+Packaged: 2024-08-23 18:11:22 UTC; edd
+Author: Doug Bates [aut] (<https://orcid.org/0000-0001-8316-9503>),
+  Dirk Eddelbuettel [aut, cre] (<https://orcid.org/0000-0001-6419-907X>),
+  Romain Francois [aut] (<https://orcid.org/0000-0002-2444-4226>),
+  Yixuan Qiu [aut] (<https://orcid.org/0000-0003-0109-6692>),
+  Authors of Eigen [cph] (Authorship and copyright in included Eigen
+    library as detailed in inst/COPYRIGHTS)
+Maintainer: Dirk Eddelbuettel <edd@debian.org>
+Repository: CRAN
+Date/Publication: 2024-08-24 06:30:02 UTC
