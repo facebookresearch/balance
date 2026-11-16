@@ -10,6 +10,7 @@ Group manifests define ownership and recipe selection. Frozen JSON is read only
 for explicit original input/configuration sections, never for expected estimates.
 Only selected groups' declared data/notices/manifests reach the final directory.
 """
+
 from __future__ import annotations
 
 import argparse

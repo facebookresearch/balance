@@ -26,7 +26,6 @@ from balance.outcome_models import fit_outcome_model, predict_outcome
 from balance.util import _assert_type
 from sklearn.linear_model import LinearRegression
 
-
 # Scientific-stack stubs omit this supported runtime parser literal.
 _ROUND_TRIP: Any = "round_trip"
 

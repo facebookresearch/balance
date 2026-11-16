@@ -28,7 +28,6 @@ from balance.stats_and_plots.weighted_comparisons_stats import (
 )
 from balance.stats_and_plots.weighted_stats import weighted_mean
 
-
 # Scientific-stack stubs omit this supported runtime parser literal.
 _ROUND_TRIP: Any = "round_trip"
 
