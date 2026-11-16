@@ -7,7 +7,39 @@
 
 const assert = require('node:assert/strict');
 const {test} = require('node:test');
-const merge = require('deepmerge');
+const fs = require('node:fs');
+const path = require('node:path');
+const createMerge = require('deepmerge');
+const merge = createMerge({symbols: true});
+
+test('the alias resolves to the real released Fastify package', () => {
+  const manifest = require('deepmerge/package.json');
+  assert.equal(manifest.name, '@fastify/deepmerge');
+  assert.equal(manifest.version, '3.2.4');
+});
+
+test('the audited dependency graph has no additional legacy merge consumers', () => {
+  const lock = fs.readFileSync(path.join(__dirname, '../yarn.lock'), 'utf8');
+  const consumers = lock.split('\n\n')
+    .filter(block => /^    deepmerge /m.test(block))
+    .map(block => block.split('\n')[0]);
+  assert.deepEqual(consumers, [
+    '"@svgr/plugin-svgo@^6.5.1":',
+    'fork-ts-checker-webpack-plugin@^6.5.0:',
+  ]);
+});
+
+test('the actual webpack checker receives merged options, not the merge factory', () => {
+  const Checker = require('fork-ts-checker-webpack-plugin');
+  const options = {
+    async: false,
+    typescript: {configOverwrite: {compilerOptions: {strict: true}}},
+    issue: {include: [{file: '**/*.ts'}]},
+  };
+  const checker = new Checker(options);
+  assert.deepEqual(checker.options, options);
+  assert.notEqual(checker.options, options);
+});
 
 // Independently chosen fixtures for the target shapes described in
 // https://github.com/TehShrike/deepmerge/issues/273 (GHSA-gcqx-w48m-w2h4).
@@ -44,11 +76,16 @@ test('nested objects, arrays, symbols and all retain their ordinary merge behavi
   const result = merge(target, source);
   assert.deepEqual(result, {nested: {a: 1, b: 2}, values: [1, 2], [key]: 'kept'});
   assert.deepEqual(target, {nested: {a: 1}, values: [1], [key]: 'kept'});
-  assert.deepEqual(merge.all([{a: 1}, {b: 2}]), {a: 1, b: 2});
+  const mergeAll = createMerge({all: true, symbols: true});
+  assert.deepEqual(mergeAll({a: 1}, {b: 2}), {a: 1, b: 2});
 });
-test('custom array merge and clone options remain supported', () => {
+test('custom array merge and special-object reference options remain supported', () => {
   const source = {values: [2], date: new Date(0)};
-  const result = merge({values: [1]}, source, {arrayMerge: (_target, values) => values, clone: false});
+  const configuredMerge = createMerge({
+    mergeArray: () => (_target, values) => values,
+    cloneProtoObject: value => value,
+  });
+  const result = configuredMerge({values: [1]}, source);
   assert.equal(result.values, source.values);
   assert.equal(result.date, source.date);
   assert.deepEqual(result.values, [2]);

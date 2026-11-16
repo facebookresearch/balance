@@ -13,7 +13,7 @@
     "serve": "docusaurus serve",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
-    "postinstall": "node scripts/patch-image-size.cjs && node scripts/patch-deepmerge.cjs",
+    "postinstall": "node scripts/patch-image-size.cjs && node scripts/patch-merge-consumer.cjs",
     "test:image-size": "node --test test/image-size.test.cjs",
     "test:deepmerge": "node --test test/deepmerge.test.cjs"
   },
@@ -93,6 +93,6 @@
     "fast-uri": "^4.2.3",
     "uuid": ">=11.1.1",
     "image-size": "^2.0.3",
-    "deepmerge": "4.3.1"
+    "deepmerge": "npm:@fastify/deepmerge@3.2.4"
   }
 }
