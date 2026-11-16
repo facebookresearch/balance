@@ -2,6 +2,7 @@
 
 ## Cross-package validation tests
 
+- Add original survey API inputs and complete R outcome-prediction/calibrated-GREG expectations in their own fixture bank.
 - Add original MatchIt LaLonde inputs, matching weights and independent balance-diagnostic expectations in their own fixture bank.
 - Add original glmnet inputs and complete fixed-lambda/selected-fit IPW expectations in their own test fixture bank.
 - Add original glmnet inputs, captured fold configuration and independent CV deviance expectations in their own test fixture bank.
