@@ -1,0 +1,40 @@
+Package: hardhat
+Title: Construct Modeling Packages
+Version: 1.1.0
+Authors@R: c(
+    person("Davis", "Vaughan", , "davis@rstudio.com", role = c("aut", "cre")),
+    person("Max", "Kuhn", , "max@rstudio.com", role = "aut"),
+    person("RStudio", role = c("cph", "fnd"))
+  )
+Maintainer: Davis Vaughan <davis@rstudio.com>
+Description: Building modeling packages is hard. A large amount of effort
+    generally goes into providing an implementation for a new method that
+    is efficient, fast, and correct, but often less emphasis is put on the
+    user interface. A good interface requires specialized knowledge about
+    S3 methods and formulas, which the average package developer might not
+    have.  The goal of 'hardhat' is to reduce the burden around building
+    new modeling packages by providing functionality for preprocessing,
+    predicting, and validating input.
+License: MIT + file LICENSE
+URL: https://github.com/tidymodels/hardhat,
+        https://hardhat.tidymodels.org
+BugReports: https://github.com/tidymodels/hardhat/issues
+Depends: R (>= 3.4.0)
+Imports: glue (>= 1.6.2), rlang (>= 1.0.2), tibble (>= 3.1.7), vctrs
+        (>= 0.4.1)
+Suggests: covr, crayon, devtools, knitr, Matrix, modeldata (>= 0.0.2),
+        recipes (>= 0.1.8), rmarkdown (>= 2.3), roxygen2, testthat (>=
+        3.0.0), usethis (>= 2.1.5)
+VignetteBuilder: knitr
+Config/Needs/website: tidyverse/tidytemplate
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.0
+Config/testthat/edition: 3
+NeedsCompilation: no
+Packaged: 2022-06-10 13:03:30 UTC; davis
+Author: Davis Vaughan [aut, cre],
+  Max Kuhn [aut],
+  RStudio [cph, fnd]
+Repository: RSPM
+Date/Publication: 2022-06-10 15:30:05 UTC

@@ -2,6 +2,7 @@
 
 ## Cross-package validation tests
 
+- Add self-contained forcats/hardhat categorical fixtures and executed R factor-matrix comparisons.
 - Add self-contained survey Kalton/badcal fixtures and R numerical comparisons for raking and poststratification.
 - Isolate R-inspired tests and reference material in the mixed-license `tests/r_inspired/` folder, document component source declarations and package nested test resources. Production numerical behavior is unchanged.
 
