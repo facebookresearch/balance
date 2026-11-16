@@ -27,7 +27,7 @@ is numeric with no missing values, so the design is unambiguous and the match is
 exact (``atol=1e-8``), not merely approximate.
 
 This is the Python-only counterpart to the external R cross-check (see
-``r_oracles/generate_outcome_model_fixture.R``): ``stdReg2::standardize_glm`` /
+``r_inspired/generators/generate_outcome_model_fixture.R``): ``stdReg2::standardize_glm`` /
 ``marginaleffects::avg_predictions`` compute the same estimand and agree with
 this oracle; keeping a pure-Python version means the guarantee is enforced in CI
 without an R dependency.

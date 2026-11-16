@@ -8,7 +8,7 @@
 
 Companion to ``test_outcome_model_oracle.py`` (the pure-Python independent
 oracle). This test consumes a fixture generated in R by
-``r_oracles/generate_outcome_model_fixture.R`` — data plus the R-computed
+``r_inspired/generators/generate_outcome_model_fixture.R`` — data plus the R-computed
 ``μ̂_OM`` (via ``lm -> predict(newdata=target) -> weighted.mean``, the regression-
 standardization / transport estimator, cross-checked with
 ``marginaleffects::avg_predictions``). It asserts balance reproduces the R value.
@@ -20,7 +20,7 @@ exactly reproducible for a linear learner the check is an exact ``np.allclose``
 The fixture CSVs are checked into ``datasets/``; the test skips only if they are
 absent. To regenerate them::
 
-    Rscript parent_balance/tests/r_oracles/generate_outcome_model_fixture.R
+    Rscript parent_balance/tests/r_inspired/generators/generate_outcome_model_fixture.R
     mv sim_data_outcome_model*.csv core_stats/balance/datasets/
 """
 
@@ -46,7 +46,7 @@ _FIXTURE_AVAILABLE: bool = _DATA_CSV.exists() and _EXPECTED_CSV.exists()
 
 @unittest.skipUnless(
     _FIXTURE_AVAILABLE,
-    "R outcome-model fixture not generated; run r_oracles/"
+    "R outcome-model fixture not generated; run r_inspired/generators/"
     "generate_outcome_model_fixture.R and move the CSVs into datasets/.",
 )
 class OutcomeModelVsRTest(balance.testutil.BalanceTestCase):

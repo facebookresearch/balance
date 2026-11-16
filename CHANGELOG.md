@@ -1,5 +1,9 @@
 # Unreleased
 
+## Cross-package validation tests
+
+- Isolate R-inspired tests and reference material in the mixed-license `tests/r_inspired/` folder, document component source declarations and package nested test resources. Production numerical behavior is unchanged.
+
 ## Fixed
 
 - Reuse sample probabilities when caching transferred weighting models after formula-induced row drops, avoiding a duplicate sample prediction pass without changing weights or output positions.

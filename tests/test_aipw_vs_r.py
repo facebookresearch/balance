@@ -7,7 +7,7 @@
 """Cross-language validation of ``μ̂_DR`` (``bf.aipw()``) against an R oracle.
 
 Consumes a fixture generated in R by
-``r_oracles/generate_aipw_fixture.R`` — data (with given balance weights) plus
+``r_inspired/generators/generate_aipw_fixture.R`` — data (with given balance weights) plus
 the R-computed doubly-robust estimate ``μ̂_DR`` (base-R ``lm`` for ``ĝ`` then the
 augmentation identity). Asserts balance's ``aipw()`` reproduces the R value
 exactly (linear ``ĝ`` ⇒ ``atol=1e-6``, cross-language).
@@ -34,8 +34,8 @@ _FIXTURE_AVAILABLE: bool = _DATA_CSV.exists() and _EXPECTED_CSV.exists()
 
 @unittest.skipUnless(
     _FIXTURE_AVAILABLE,
-    "R AIPW fixture not generated; run r_oracles/generate_aipw_fixture.R and "
-    "move the CSVs into datasets/.",
+    "R AIPW fixture not generated; run r_inspired/generators/generate_aipw_fixture.R "
+    "and move the CSVs into datasets/.",
 )
 class AipwVsRTest(balance.testutil.BalanceTestCase):
     def test_mu_dr_matches_r(self) -> None:
