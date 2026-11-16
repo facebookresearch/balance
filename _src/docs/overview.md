@@ -477,6 +477,13 @@ The _balance_ package is licensed under the
 and all the documentation on the site (including text and images) is under
 [CC-BY](https://github.com/facebookresearch/balance/blob/main/LICENSE-DOCUMENTATION).
 
+The [`tests/r_inspired/`](https://github.com/facebookresearch/balance/tree/main/tests/r_inspired)
+folder contains **mixed-license** R-inspired tests and reference material.
+New test harnesses retain their MIT source headers; reproduced upstream fixtures
+and source notices are attributed under their individual source declarations,
+including GPL-2/GPL-3, Artistic-2.0 and MIT. See that folder's README and each
+fixture bank's README, manifest and license notices for the component split.
+
 # News
 
 You can follow updates on our:
