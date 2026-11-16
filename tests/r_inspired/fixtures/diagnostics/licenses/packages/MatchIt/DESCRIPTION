@@ -1,0 +1,53 @@
+Package: MatchIt
+Version: 4.4.0
+Title: Nonparametric Preprocessing for Parametric Causal Inference
+Description: Selects matched samples of the original treated and
+    control groups with similar covariate distributions -- can be
+    used to match exactly on covariates, to match on propensity
+    scores, or perform a variety of other matching procedures.  The
+    package also implements a series of recommendations offered in
+    Ho, Imai, King, and Stuart (2007) <DOI:10.1093/pan/mpl013>. (The
+    'gurobi' package, which is not on CRAN, is optional and comes with
+    an installation of the Gurobi Optimizer, available at
+    <https://www.gurobi.com>.)
+Authors@R: c(
+  person("Daniel", "Ho", email = "daniel.e.ho@gmail.com", role = c("aut"),
+         comment = c(ORCID = "0000-0002-2195-5469")),
+  person("Kosuke", "Imai", email = "imai@harvard.edu", role = c("aut"),
+         comment = c(ORCID = "0000-0002-2748-1022")),
+  person("Gary", "King", email = "king@harvard.edu", role = c("aut"),
+         comment = c(ORCID = "0000-0002-5327-7631")),
+  person("Elizabeth", "Stuart", email = "estuart@jhu.edu", role = c("aut"),
+         comment = c(ORCID = "0000-0002-9042-8611")),
+  person("Alex", "Whitworth", email = "whitworth.alex@gmail.com", role = c("ctb")),
+  person("Noah", "Greifer", role = c("ctb", "cre", "aut"),
+         email = "noah.greifer@gmail.com",
+	       comment = c(ORCID="0000-0003-3067-7154"))
+  )
+Depends: R (>= 3.1.0)
+Imports: backports (>= 1.1.9), Rcpp (>= 1.0.7)
+Suggests: optmatch (>= 0.10.0), Matching, rgenoud, nnet, rpart, mgcv,
+        CBPS (>= 0.17), dbarts, randomForest (>= 4.7-1), glmnet (>=
+        4.0), gbm (>= 2.1.7), cobalt (>= 4.2.3), boot, lmtest, sandwich
+        (>= 2.5-1), survival, RcppProgress (>= 0.4.2), Rglpk,
+        Rsymphony, gurobi, knitr, rmarkdown
+LinkingTo: Rcpp, RcppProgress
+SystemRequirements: C++11
+Encoding: UTF-8
+LazyData: true
+License: GPL (>= 2)
+URL: https://kosukeimai.github.io/MatchIt/,
+        https://github.com/kosukeimai/MatchIt
+BugReports: https://github.com/kosukeimai/MatchIt/issues
+VignetteBuilder: knitr
+NeedsCompilation: yes
+Packaged: 2022-05-18 19:25:10 UTC; NoahGreifer
+Author: Daniel Ho [aut] (<https://orcid.org/0000-0002-2195-5469>),
+  Kosuke Imai [aut] (<https://orcid.org/0000-0002-2748-1022>),
+  Gary King [aut] (<https://orcid.org/0000-0002-5327-7631>),
+  Elizabeth Stuart [aut] (<https://orcid.org/0000-0002-9042-8611>),
+  Alex Whitworth [ctb],
+  Noah Greifer [ctb, cre, aut] (<https://orcid.org/0000-0003-3067-7154>)
+Maintainer: Noah Greifer <noah.greifer@gmail.com>
+Repository: RSPM
+Date/Publication: 2022-05-18 22:20:08 UTC
