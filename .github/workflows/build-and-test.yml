@@ -166,3 +166,5 @@ jobs:
         run: bash ./scripts/make_docs.sh -n
       - name: Verify patched image parser compatibility
         run: yarn --cwd website test:image-size
+      - name: Verify deepmerge prototype hardening
+        run: yarn --cwd website test:deepmerge
