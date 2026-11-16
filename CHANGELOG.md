@@ -2,6 +2,7 @@
 
 ## Cross-package validation tests
 
+- Add original glmnet inputs and complete fixed-lambda/selected-fit IPW expectations in their own test fixture bank.
 - Add original glmnet inputs, captured fold configuration and independent CV deviance expectations in their own test fixture bank.
 - Add original glmnet inputs and independent weighted scaler expectations in their own test fixture bank.
 - Add self-contained matrixStats/survey fixtures for weighted means, repeated selections, reliability variance and quantiles.
