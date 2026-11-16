@@ -1,0 +1,42 @@
+Package: recipes
+Title: Preprocessing and Feature Engineering Steps for Modeling
+Version: 0.2.0
+Authors@R: c(
+    person("Max", "Kuhn", , "max@rstudio.com", role = c("aut", "cre")),
+    person("Hadley", "Wickham", , "hadley@rstudio.com", role = "aut"),
+    person("RStudio", role = "cph")
+  )
+Description: A recipe prepares your data for modeling. We provide an
+    extensible framework for pipeable sequences of feature engineering
+    steps provides preprocessing tools to be applied to data. Statistical
+    parameters for the steps can be estimated from an initial data set and
+    then applied to other data sets. The resulting processed output can
+    then be used as inputs for statistical or machine learning models.
+License: MIT + file LICENSE
+URL: https://github.com/tidymodels/recipes,
+        https://recipes.tidymodels.org/
+BugReports: https://github.com/tidymodels/recipes/issues
+Depends: dplyr, R (>= 3.1)
+Imports: ellipsis, generics (>= 0.1.0.9000), glue, gower, hardhat (>=
+        0.1.6.9001), ipred (>= 0.9-12), lifecycle, lubridate, magrittr,
+        Matrix, purrr (>= 0.2.3), rlang (>= 0.4.0), stats, tibble,
+        tidyr (>= 1.0.0), tidyselect (>= 1.1.0), timeDate, utils,
+        vctrs, withr
+Suggests: covr, ddalpha, dials (>= 0.0.10.9001), ggplot2, igraph,
+        kernlab, knitr, modeldata, parsnip (>= 0.1.7), RANN, RcppRoll,
+        rmarkdown, rpart, rsample, RSpectra, testthat (>= 3.0.0),
+        workflows, xml2
+VignetteBuilder: knitr
+RdMacros: lifecycle
+Config/Needs/website: tidyverse/tidytemplate
+Config/testthat/edition: 3
+Encoding: UTF-8
+RoxygenNote: 7.1.2
+NeedsCompilation: no
+Packaged: 2022-02-18 22:37:19 UTC; max
+Author: Max Kuhn [aut, cre],
+  Hadley Wickham [aut],
+  RStudio [cph]
+Maintainer: Max Kuhn <max@rstudio.com>
+Repository: RSPM
+Date/Publication: 2022-02-18 23:20:02 UTC
