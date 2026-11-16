@@ -2,6 +2,7 @@
 
 ## Cross-package validation tests
 
+- Add self-contained matrixStats/survey fixtures for weighted means, repeated selections, reliability variance and quantiles.
 - Add self-contained recipes interaction fixtures with complete R training/scoring matrix expectations.
 - Add self-contained forcats/hardhat categorical fixtures and executed R factor-matrix comparisons.
 - Add self-contained survey Kalton/badcal fixtures and R numerical comparisons for raking and poststratification.
