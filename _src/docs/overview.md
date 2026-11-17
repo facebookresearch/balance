@@ -316,8 +316,22 @@ differently, so comparing them is a useful robustness check:
 
 The two estimators are complementary — agreement between μ̂_IPW and μ̂_OM is
 reassuring; disagreement points at a misspecified weighting or outcome model.
-A doubly-robust / AIPW estimator that combines both is available as `bf.aipw()`
-(point estimate only; variance/CI and cross-fitting remain deferred).
+A doubly-robust / AIPW estimator that combines both is available as `bf.aipw()`.
+The default replays the stored full-sample model. Opt in with
+`bf.aipw(n_folds=5, random_seed=2020)` to predict each observed responder
+without its own outcome in training and average the fold models on the target.
+This reduces own-observation optimism for flexible outcome learners, but is
+not a guarantee of better finite-sample accuracy.
+
+Cross-fitting refits learners and any scalers while preserving the original fit's
+selected variables, outcome-fit weights and shared feature schema. Residuals
+still use the adjusted weights; the weighting model is not cross-fitted.
+Stored predictions, model state and weights are unchanged. Current responder
+inputs must match the stored fit provenance; refit legacy or transferred models
+first. With incomplete outcomes, an unweighted fit supports per-outcome folds;
+a weighted incomplete fit needs explicit original fitting weights through
+`cross_fitted_aipw_point_estimate`. These are point estimates only: honest
+AIPW variance and confidence intervals remain deferred.
 
 _For a runnable end-to-end walkthrough, see the [outcome-model tutorial](https://import-balance.org/docs/tutorials/outcome_model/)._
 

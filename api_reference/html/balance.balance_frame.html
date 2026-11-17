@@ -246,7 +246,7 @@ mapping (when present).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="balance.balance_frame.BalanceFrame.aipw">
-<span class="sig-name descname"><span class="pre">aipw</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.aipw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.aipw" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">aipw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_folds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2020</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/balance/balance_frame.html#BalanceFrame.aipw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#balance.balance_frame.BalanceFrame.aipw" title="Link to this definition">¶</a></dt>
 <dd><p>Doubly-robust (AIPW) estimate <code class="docutils literal notranslate"><span class="pre">μ̂_DR</span></code> of the target-population mean.</p>
 <p>Combines the fitted outcome model <code class="docutils literal notranslate"><span class="pre">ĝ</span></code> (from <a class="reference internal" href="#balance.balance_frame.BalanceFrame.fit_outcome_model" title="balance.balance_frame.BalanceFrame.fit_outcome_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_outcome_model()</span></code></a>)
 with the responder weights <code class="docutils literal notranslate"><span class="pre">w</span></code> to form the augmented / one-sample AIPW
@@ -263,20 +263,40 @@ correct. Companion to the other estimate accessors:
 responder weights produced by <a class="reference internal" href="#balance.balance_frame.BalanceFrame.adjust" title="balance.balance_frame.BalanceFrame.adjust"><code class="xref py py-meth docutils literal notranslate"><span class="pre">adjust()</span></code></a>. The adjusted responder
 weights and target weights must have matching totals (within a relative
 tolerance of <code class="docutils literal notranslate"><span class="pre">1e-6</span></code>), ensuring that both terms use weights on the
-same target-population scale. With constant responder weights it warns
-and reduces to <code class="docutils literal notranslate"><span class="pre">μ̂_OM</span></code>.</p>
-<p>Point estimate only – no confidence interval (an honest AIPW interval
+same target-population scale. The default retains the existing
+constant-weight warning.</p>
+<p>Pass <code class="docutils literal notranslate"><span class="pre">n_folds=5</span></code> to refit outcome learners on training folds and use
+held-out responder errors plus fold-averaged target predictions. The
+original variable selection, outcome-fit weighting and shared feature
+schema are preserved; any fold scalers and the learners are newly fitted.
+Stored models, predictions, weights and targets are not changed. The
+stored fit must describe the current responders; legacy or transferred
+fits with unverifiable provenance require refitting. Incomplete outcomes
+are supported per column for unweighted fits; weighted incomplete fits
+need explicit original weights via the pure cross-fitting engine.</p>
+<p>This cross-fits only the outcome model, not the weighting model. A
+constant-weight residual correction need not vanish after cross-fitting.
+Point estimate only – no confidence interval (an honest AIPW interval
 must jointly capture the weighting- and outcome-model uncertainty; see
 the TODOs in <code class="xref py py-mod docutils literal notranslate"><span class="pre">balance.outcome_models.aipw</span></code>).</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">μ̂_DR</span></code> indexed by outcome column.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_folds</strong> – <code class="docutils literal notranslate"><span class="pre">None</span></code> (default) replays the stored full-sample model;
+an integer of at least two enables cross-fitting, limited by
+observed outcomes and learner-specific training requirements.</p></li>
+<li><p><strong>random_seed</strong> – uint32 fold-assignment seed, default 2020. Ignored
+when <code class="docutils literal notranslate"><span class="pre">n_folds</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code>; learner seeds remain separate.</p></li>
+</ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>pd.Series</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">μ̂_DR</span></code> indexed by outcome column.</p>
 </dd>
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ValueError</strong> – If no outcome model has been fit, if no target is set,
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Series</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If no outcome model has been fit, if no target is set,
     if the responders have not been adjusted, if the responder and
     target weight totals are not on the same scale, or if the
     responders carry no observed outcomes.</p>

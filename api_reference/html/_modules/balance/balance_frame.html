@@ -3859,7 +3859,7 @@
 
 <div class="viewcode-block" id="BalanceFrame.aipw">
 <a class="viewcode-back" href="../../balance.balance_frame.html#balance.balance_frame.BalanceFrame.aipw">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">aipw</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">aipw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">n_folds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">random_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2020</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Doubly-robust (AIPW) estimate ``μ̂_DR`` of the target-population mean.</span>
 
 <span class="sd">        Combines the fitted outcome model ``ĝ`` (from :meth:`fit_outcome_model`)</span>
@@ -3878,12 +3878,31 @@
 <span class="sd">        responder weights produced by :meth:`adjust`. The adjusted responder</span>
 <span class="sd">        weights and target weights must have matching totals (within a relative</span>
 <span class="sd">        tolerance of ``1e-6``), ensuring that both terms use weights on the</span>
-<span class="sd">        same target-population scale. With constant responder weights it warns</span>
-<span class="sd">        and reduces to ``μ̂_OM``.</span>
+<span class="sd">        same target-population scale. The default retains the existing</span>
+<span class="sd">        constant-weight warning.</span>
 
+<span class="sd">        Pass ``n_folds=5`` to refit outcome learners on training folds and use</span>
+<span class="sd">        held-out responder errors plus fold-averaged target predictions. The</span>
+<span class="sd">        original variable selection, outcome-fit weighting and shared feature</span>
+<span class="sd">        schema are preserved; any fold scalers and the learners are newly fitted.</span>
+<span class="sd">        Stored models, predictions, weights and targets are not changed. The</span>
+<span class="sd">        stored fit must describe the current responders; legacy or transferred</span>
+<span class="sd">        fits with unverifiable provenance require refitting. Incomplete outcomes</span>
+<span class="sd">        are supported per column for unweighted fits; weighted incomplete fits</span>
+<span class="sd">        need explicit original weights via the pure cross-fitting engine.</span>
+
+<span class="sd">        This cross-fits only the outcome model, not the weighting model. A</span>
+<span class="sd">        constant-weight residual correction need not vanish after cross-fitting.</span>
 <span class="sd">        Point estimate only -- no confidence interval (an honest AIPW interval</span>
 <span class="sd">        must jointly capture the weighting- and outcome-model uncertainty; see</span>
 <span class="sd">        the TODOs in :mod:`balance.outcome_models.aipw`).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n_folds: ``None`` (default) replays the stored full-sample model;</span>
+<span class="sd">                an integer of at least two enables cross-fitting, limited by</span>
+<span class="sd">                observed outcomes and learner-specific training requirements.</span>
+<span class="sd">            random_seed: uint32 fold-assignment seed, default 2020. Ignored</span>
+<span class="sd">                when ``n_folds`` is ``None``; learner seeds remain separate.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            pd.Series: ``μ̂_DR`` indexed by outcome column.</span>
@@ -3914,8 +3933,10 @@
 <span class="sd">            ['y']</span>
 <span class="sd">        """</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">balance.outcome_models.aipw</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">_cross_fit_model_inputs</span><span class="p">,</span>
             <span class="n">_validate_aipw_weight_scale</span><span class="p">,</span>
             <span class="n">aipw_point_estimate</span><span class="p">,</span>
+            <span class="n">cross_fitted_aipw_point_estimate</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcome_model</span>
@@ -3950,20 +3971,35 @@
                 <span class="s2">"population scale."</span>
             <span class="p">)</span>
         <span class="n">_validate_aipw_weight_scale</span><span class="p">(</span><span class="n">sample_weight</span><span class="p">,</span> <span class="n">target_weight</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample_weight</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">sample_weight</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">"aipw(): adjusted responder weights are constant; the AIPW "</span>
-                <span class="s2">"estimate reduces to the outcome-model estimate mu_OM."</span>
+        <span class="k">if</span> <span class="n">n_folds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample_weight</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">sample_weight</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">"aipw(): adjusted responder weights are constant; the AIPW "</span>
+                    <span class="s2">"estimate reduces to the outcome-model estimate mu_OM."</span>
+                <span class="p">)</span>
+            <span class="n">estimates</span> <span class="o">=</span> <span class="n">aipw_point_estimate</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df_covars</span><span class="p">,</span>
+                <span class="n">observed_outcomes</span><span class="p">,</span>
+                <span class="n">sample_weight</span><span class="p">,</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">df_covars</span><span class="p">,</span>
+                <span class="n">target_weight</span><span class="p">,</span>
+                <span class="n">model</span><span class="p">,</span>
             <span class="p">)</span>
-
-        <span class="n">estimates</span> <span class="o">=</span> <span class="n">aipw_point_estimate</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df_covars</span><span class="p">,</span>
-            <span class="n">observed_outcomes</span><span class="p">,</span>
-            <span class="n">sample_weight</span><span class="p">,</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">df_covars</span><span class="p">,</span>
-            <span class="n">target_weight</span><span class="p">,</span>
-            <span class="n">model</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">covars</span><span class="p">,</span> <span class="n">outcomes</span><span class="p">,</span> <span class="n">fit_weight</span><span class="p">,</span> <span class="n">settings</span> <span class="o">=</span> <span class="n">_cross_fit_model_inputs</span><span class="p">(</span>
+                <span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sf_sample</span><span class="o">.</span><span class="n">df_covars</span><span class="p">,</span> <span class="n">observed_outcomes</span>
+            <span class="p">)</span>
+            <span class="n">estimates</span> <span class="o">=</span> <span class="n">cross_fitted_aipw_point_estimate</span><span class="p">(</span>
+                <span class="n">covars</span><span class="p">,</span>
+                <span class="n">outcomes</span><span class="p">,</span>
+                <span class="n">sample_weight</span><span class="p">,</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">df_covars</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">covars</span><span class="o">.</span><span class="n">columns</span><span class="p">],</span>
+                <span class="n">target_weight</span><span class="p">,</span>
+                <span class="n">fit_kwargs</span><span class="o">=</span><span class="n">settings</span><span class="p">,</span>
+                <span class="n">fit_sample_weight</span><span class="o">=</span><span class="n">fit_weight</span><span class="p">,</span>
+                <span class="n">n_folds</span><span class="o">=</span><span class="n">n_folds</span><span class="p">,</span>
+                <span class="n">random_seed</span><span class="o">=</span><span class="n">random_seed</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">estimates</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span></div>
 
 
