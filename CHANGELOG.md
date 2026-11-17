@@ -1,5 +1,9 @@
 # Unreleased
 
+## Added
+
+- Add optional outcome-only cross-fitting to `BalanceFrame.aipw(n_folds=..., random_seed=...)` and expose `cross_fitted_aipw_point_estimate`. The default full-sample estimate is unchanged. Fold fits preserve selected variables, fitting weights and shared covariate schema, refit scalers and learners, and leave stored frame/model/prediction state untouched. Residuals use existing adjusted weights; weighting-model cross-fitting and AIPW confidence intervals remain deferred. Legacy or transferred frame models without matching fit provenance require refitting; weighted incomplete fits need explicit original fit weights through the pure engine.
+
 ## Cross-package validation tests
 
 - **Breaking change:** Remove the R CBPS reference dataset from the production package: `balance.datasets.load_cbps_data` and `load_data("sim_data_cbps")` are no longer supported. The unchanged CSV/R capture and local loader now live under the mixed-license `tests/r_inspired/fixtures/cbps/` test bank. Repository-only reference tests use `load_cbps_reference()`; the tutorial reads that bank directly. `load_data()` and `load_data("sim_data_01")` remain unchanged. Existing CBPS correlation guards and fixture checks are retained.

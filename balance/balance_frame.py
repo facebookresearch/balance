@@ -3764,7 +3764,7 @@ class BalanceFrame:
 
         return BalanceDFOutcomesHat(cast(BalanceDFSource, self), links=links)
 
-    def aipw(self) -> pd.Series:
+    def aipw(self, *, n_folds: int | None = None, random_seed: int = 2020) -> pd.Series:
         """Doubly-robust (AIPW) estimate ``μ̂_DR`` of the target-population mean.
 
         Combines the fitted outcome model ``ĝ`` (from :meth:`fit_outcome_model`)
@@ -3783,12 +3783,31 @@ class BalanceFrame:
         responder weights produced by :meth:`adjust`. The adjusted responder
         weights and target weights must have matching totals (within a relative
         tolerance of ``1e-6``), ensuring that both terms use weights on the
-        same target-population scale. With constant responder weights it warns
-        and reduces to ``μ̂_OM``.
+        same target-population scale. The default retains the existing
+        constant-weight warning.
 
+        Pass ``n_folds=5`` to refit outcome learners on training folds and use
+        held-out responder errors plus fold-averaged target predictions. The
+        original variable selection, outcome-fit weighting and shared feature
+        schema are preserved; any fold scalers and the learners are newly fitted.
+        Stored models, predictions, weights and targets are not changed. The
+        stored fit must describe the current responders; legacy or transferred
+        fits with unverifiable provenance require refitting. Incomplete outcomes
+        are supported per column for unweighted fits; weighted incomplete fits
+        need explicit original weights via the pure cross-fitting engine.
+
+        This cross-fits only the outcome model, not the weighting model. A
+        constant-weight residual correction need not vanish after cross-fitting.
         Point estimate only -- no confidence interval (an honest AIPW interval
         must jointly capture the weighting- and outcome-model uncertainty; see
         the TODOs in :mod:`balance.outcome_models.aipw`).
+
+        Args:
+            n_folds: ``None`` (default) replays the stored full-sample model;
+                an integer of at least two enables cross-fitting, limited by
+                observed outcomes and learner-specific training requirements.
+            random_seed: uint32 fold-assignment seed, default 2020. Ignored
+                when ``n_folds`` is ``None``; learner seeds remain separate.
 
         Returns:
             pd.Series: ``μ̂_DR`` indexed by outcome column.
@@ -3819,8 +3838,10 @@ class BalanceFrame:
             ['y']
         """
         from balance.outcome_models.aipw import (
+            _cross_fit_model_inputs,
             _validate_aipw_weight_scale,
             aipw_point_estimate,
+            cross_fitted_aipw_point_estimate,
         )
 
         model = self.outcome_model
@@ -3855,20 +3876,35 @@ class BalanceFrame:
                 "population scale."
             )
         _validate_aipw_weight_scale(sample_weight, target_weight)
-        if len(sample_weight) > 1 and sample_weight.nunique() == 1:
-            logger.warning(
-                "aipw(): adjusted responder weights are constant; the AIPW "
-                "estimate reduces to the outcome-model estimate mu_OM."
+        if n_folds is None:
+            if len(sample_weight) > 1 and sample_weight.nunique() == 1:
+                logger.warning(
+                    "aipw(): adjusted responder weights are constant; the AIPW "
+                    "estimate reduces to the outcome-model estimate mu_OM."
+                )
+            estimates = aipw_point_estimate(
+                self._sf_sample.df_covars,
+                observed_outcomes,
+                sample_weight,
+                target.df_covars,
+                target_weight,
+                model,
             )
-
-        estimates = aipw_point_estimate(
-            self._sf_sample.df_covars,
-            observed_outcomes,
-            sample_weight,
-            target.df_covars,
-            target_weight,
-            model,
-        )
+        else:
+            covars, outcomes, fit_weight, settings = _cross_fit_model_inputs(
+                model, self._sf_sample.df_covars, observed_outcomes
+            )
+            estimates = cross_fitted_aipw_point_estimate(
+                covars,
+                outcomes,
+                sample_weight,
+                target.df_covars.loc[:, covars.columns],
+                target_weight,
+                fit_kwargs=settings,
+                fit_sample_weight=fit_weight,
+                n_folds=n_folds,
+                random_seed=random_seed,
+            )
         return pd.Series(estimates, dtype=float)
 
     # --- Summary & diagnostics ---

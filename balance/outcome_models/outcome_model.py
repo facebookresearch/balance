@@ -128,7 +128,9 @@ def _auto_estimator(discrete: bool) -> Any:
     )
 
 
-def _resolve_learner(model: OutcomeLearner, y_series: pd.Series) -> tuple[Any, str]:
+def _resolve_learner(
+    model: OutcomeLearner, y_series: pd.Series, *, discrete: bool | None = None
+) -> tuple[Any, str]:
     """Resolve the per-outcome estimator + a short note on how it was chosen.
 
     Dispatch (using ``_is_discrete_series`` for the regressor-vs-classifier split):
@@ -145,6 +147,8 @@ def _resolve_learner(model: OutcomeLearner, y_series: pd.Series) -> tuple[Any, s
     Args:
         model: ``"auto"``, an sklearn estimator, a ``{"_discrete"/"_continuous":
             estimator}`` type map, or a ``{outcome_column: estimator}`` map.
+        discrete: Optional internal type lock for fold refits. ``None`` detects
+            the outcome type from ``y_series`` as before.
         y_series: The observed outcome column (its ``name`` is used for column
             dispatch, its values for the regressor-vs-classifier dispatch).
 
@@ -167,7 +171,8 @@ def _resolve_learner(model: OutcomeLearner, y_series: pd.Series) -> tuple[Any, s
         is_classifier(est), note
         # (True, "auto")
     """
-    discrete = _is_discrete_series(y_series)
+    if discrete is None:
+        discrete = _is_discrete_series(y_series)
     if isinstance(model, str):
         if model != "auto":
             raise ValueError(
@@ -595,6 +600,7 @@ def fit_outcome_model(
     calibrate: bool = False,
     preprocessing_state: Dict[str, Any] | None = None,
     _store_training_inputs: bool = True,
+    _outcome_is_discrete: dict[str, bool] | None = None,
 ) -> Dict[str, Any]:
     """Fit an outcome model ``ĝ(X) ≈ E[Y|X]`` and return a stored model dict.
 
@@ -642,6 +648,9 @@ def fit_outcome_model(
             when refitting bootstrap rows to preserve categorical domains and
             fit-time value types. The scaler and estimators are still refitted;
             ``None`` (default) learns a new schema.
+        _outcome_is_discrete: Internal cross-fitting type lock. When supplied,
+            every outcome has the type determined before folds are formed;
+            ``None`` preserves ordinary fit-time detection.
         _store_training_inputs: Internal bootstrap optimization. Defaults to
             ``True`` so ordinary fits retain immutable training provenance.
             ``False`` omits only raw training snapshots for temporary replicate
@@ -707,8 +716,20 @@ def fit_outcome_model(
     training_weight_arr = sample_weight_arr
 
     outcome_columns: List[str] = [str(c) for c in outcomes_df.columns]
+    if _outcome_is_discrete is not None and (
+        set(_outcome_is_discrete) != set(outcome_columns)
+        or any(not isinstance(value, bool) for value in _outcome_is_discrete.values())
+    ):
+        raise ValueError(
+            "_outcome_is_discrete must supply a bool for every outcome column."
+        )
     outcome_is_discrete: Dict[str, bool] = {
-        col: _is_discrete_series(outcomes_df[col]) for col in outcome_columns
+        col: (
+            _is_discrete_series(outcomes_df[col])
+            if _outcome_is_discrete is None
+            else _outcome_is_discrete[col]
+        )
+        for col in outcome_columns
     }
     # A single estimator can't serve a mixed-type outcome set; require "auto" or a
     # type/column map instead (a type map picks per outcome; "auto" dispatches).
@@ -727,7 +748,10 @@ def fit_outcome_model(
     perf: Dict[str, Any] = {}
     prediction_kind: Dict[str, str] = {}
     learners = {
-        col: _resolve_learner(model, outcomes_df[col]) for col in outcome_columns
+        col: _resolve_learner(
+            model, outcomes_df[col], discrete=outcome_is_discrete[col]
+        )
+        for col in outcome_columns
     }
     resolved_use_model_matrix = any(
         _resolve_use_model_matrix(use_model_matrix, estimator)

@@ -27,8 +27,8 @@ the augmentation is zero and ``μ̂_DR = μ̂_OM``. A non-trivial correction the
 requires either a non-linear ``ĝ`` or a fit-weighting different from ``w`` (e.g.
 an unweighted ``ĝ`` combined with non-uniform balance weights).
 
-This module provides the **point estimate only** (see the TODOs below for
-cross-fitting and honest variance/CI).
+This module provides full-sample and outcome-cross-fitted **point estimates**.
+Honest variance and confidence intervals remain separate work.
 
 The public :meth:`balance.balance_frame.BalanceFrame.aipw` entry point enforces
 the estimator's normalization contract: responder weights must come from
@@ -41,23 +41,31 @@ from __future__ import annotations
 
 import logging
 import math
+from copy import deepcopy
+from numbers import Integral
 from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
-from balance.outcome_models.outcome_model import predict_outcome
+from balance.outcome_models.outcome_model import (
+    _build_fit_matrix,
+    _resolve_learner,
+    _resolve_use_model_matrix,
+    _validate_fit_inputs,
+    fit_outcome_model,
+    learner_from_model,
+    predict_outcome,
+)
 from balance.stats_and_plots.weighted_stats import weighted_mean
+from balance.utils.input_validation import _is_discrete_series
+from sklearn.base import clone
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.model_selection import KFold
 
 logger: logging.Logger = logging.getLogger(__package__)
 
 _AIPW_WEIGHT_SUM_RTOL: float = 1e-6
 
-# TODO (cross-fitting): the augmentation uses in-sample ĝ(X_S) — the model was
-# fit on these same responders — which is optimistic for flexible learners. Add
-# K-fold cross-fitted (out-of-fold) predictions for the residual term, and
-# average ĝ^(-k)(X_T) over folds for the target term (n_folds=5 default),
-# reusing learner_from_model() for the per-fold refits.
-#
 # TODO (variance / CI — preferred: analytic influence function): this returns
 # the point estimate only. The efficient next step is an influence-function /
 # sandwich SE. It MUST account for estimating BOTH nuisances (ĝ AND the balance
@@ -225,3 +233,337 @@ def aipw_point_estimate(
         )
         result[col] = mu_om_target + augmentation
     return result
+
+
+def _cross_fit_config(n_folds: int, random_seed: int) -> tuple[int, int]:
+    if isinstance(n_folds, bool) or not isinstance(n_folds, Integral) or n_folds < 2:
+        raise ValueError("n_folds must be an integer greater than or equal to 2.")
+    if (
+        isinstance(random_seed, bool)
+        or not isinstance(random_seed, Integral)
+        or not 0 <= random_seed <= np.iinfo(np.uint32).max
+    ):
+        raise ValueError("random_seed must be an integer between 0 and 2**32 - 1.")
+    return int(n_folds), int(random_seed)
+
+
+def _cross_fit_weight_array(
+    weight: pd.Series | np.ndarray, length: int, name: str
+) -> np.ndarray:
+    try:
+        array = np.asarray(weight, dtype=float)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must contain numeric weights.") from exc
+    if array.ndim != 1 or len(array) != length:
+        raise ValueError(
+            f"{name} must be one-dimensional with {length} row-aligned values."
+        )
+    return array
+
+
+def _cross_fit_fold_positions(
+    outcome: pd.Series, residual_weight: np.ndarray, n_folds: int, random_seed: int
+) -> tuple[np.ndarray, list[tuple[np.ndarray, np.ndarray]]]:
+    observed = np.flatnonzero(outcome.notna().to_numpy())
+    if len(observed) < n_folds:
+        raise ValueError(
+            f"n_folds ({n_folds}) exceeds observed responders for outcome "
+            f"{outcome.name!r} ({len(observed)})."
+        )
+    try:
+        values = outcome.iloc[observed].to_numpy(dtype=float)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(
+            f"Outcome {outcome.name!r} must contain numeric values."
+        ) from exc
+    if not np.isfinite(values).all():
+        raise ValueError(
+            f"Outcome {outcome.name!r} must contain finite observed values."
+        )
+    if math.fsum(residual_weight[observed]) <= 0:
+        raise ValueError(
+            f"Observed responders for {outcome.name!r} need positive total weight."
+        )
+    if not _is_discrete_series(outcome):
+        splitter = KFold(n_splits=n_folds, shuffle=True, random_state=random_seed)
+        return observed, list(splitter.split(observed))
+    classes, counts = np.unique(values, return_counts=True)
+    if (
+        not np.array_equal(classes, [0, 1])
+        or counts.min() < 2
+        or not set(outcome.iloc[observed].unique()).issubset({0, 1})
+    ):
+        raise ValueError(
+            f"Cross-fitting outcome {outcome.name!r} requires binary 0/1 classes "
+            "with at least two observed responders per class."
+        )
+    rng = np.random.default_rng(random_seed)
+    validation: list[list[int]] = [[] for _ in range(n_folds)]
+    offset = 0
+    for value in classes:
+        positions = np.flatnonzero(values == value)
+        rng.shuffle(positions)
+        for i, position in enumerate(positions):
+            validation[(offset + i) % n_folds].append(int(position))
+        offset = (offset + len(positions)) % n_folds
+    all_positions = np.arange(len(observed))
+    folds = [
+        (np.setdiff1d(all_positions, held_out), np.asarray(held_out, dtype=int))
+        for held_out in validation
+    ]
+    return observed, folds
+
+
+def _cross_fit_settings(
+    covars: pd.DataFrame, outcomes: pd.DataFrame, fit_kwargs: dict[str, Any]
+) -> dict[str, Any]:
+    settings = dict(fit_kwargs)
+    if "sample_weight" in settings:
+        raise ValueError("Pass fit_sample_weight separately from fit_kwargs.")
+    _validate_fit_inputs(
+        str(settings.get("na_action", "add_indicator")),
+        settings.get("transformations"),
+        outcomes,
+        covars,
+    )
+    learners = [
+        _resolve_learner(settings.get("model", "auto"), outcomes[col])[0]
+        for col in outcomes.columns
+    ]
+    use_matrix = any(
+        _resolve_use_model_matrix(settings.get("use_model_matrix", "auto"), learner)
+        for learner in learners
+    )
+    settings["use_model_matrix"] = use_matrix
+    state = settings.get("preprocessing_state")
+    if state is None:
+        state = _build_fit_matrix(
+            covars,
+            use_model_matrix=use_matrix,
+            formula=settings.get("formula"),
+            na_action=str(settings.get("na_action", "add_indicator")),
+            sample_weight_arr=None,
+            densify=False,
+        )["preprocessing_state"]
+    settings["preprocessing_state"] = deepcopy(state)
+    settings["_store_training_inputs"] = False
+    settings["_outcome_is_discrete"] = {
+        str(col): _is_discrete_series(outcomes[col]) for col in outcomes.columns
+    }
+    return settings
+
+
+def _cross_fit_outcome(
+    covars: pd.DataFrame,
+    outcomes: pd.DataFrame,
+    residual_weight: np.ndarray,
+    target_covars: pd.DataFrame,
+    target_weight: np.ndarray,
+    fit_weight: np.ndarray | None,
+    settings: dict[str, Any],
+    plan: tuple[np.ndarray, list[tuple[np.ndarray, np.ndarray]]],
+) -> float:
+    observed, folds = plan
+    column = str(outcomes.columns[0])
+    oof = np.full(len(covars), np.nan)
+    target_sum = np.zeros(len(target_covars))
+    for fold, (train, held_out) in enumerate(folds):
+        train_rows, score_rows = observed[train], observed[held_out]
+        fold_settings: dict[str, Any] = {
+            **settings,
+            "_outcome_is_discrete": {column: settings["_outcome_is_discrete"][column]},
+        }
+        fold_outcomes = outcomes.iloc[train_rows].reset_index(drop=True)
+        if settings["_outcome_is_discrete"][column]:
+            fold_outcomes[column] = fold_outcomes[column].to_numpy(dtype=np.int64)
+        try:
+            fitted = fit_outcome_model(
+                covars.iloc[train_rows].reset_index(drop=True),
+                fold_outcomes,
+                sample_weight=None if fit_weight is None else fit_weight[train_rows],
+                **fold_settings,
+            )
+        except ValueError as exc:
+            raise ValueError(
+                f"Cross-fitting outcome {column!r}, training fold {fold + 1}: {exc} "
+                "Choose fold sizes and a learner/calibration compatible with the training data."
+            ) from exc
+        oof[score_rows] = predict_outcome(fitted, covars.iloc[score_rows])[column]
+        target_sum += predict_outcome(fitted, target_covars)[column]
+    target_term = float(
+        weighted_mean(pd.Series(target_sum / len(folds)), target_weight).iloc[0]
+    )
+    residuals = outcomes.iloc[observed, 0].to_numpy(dtype=float) - oof[observed]
+    correction = float(
+        weighted_mean(pd.Series(residuals), residual_weight[observed]).iloc[0]
+    )
+    return target_term + correction
+
+
+def cross_fitted_aipw_point_estimate(
+    sample_covars: pd.DataFrame,
+    outcomes: pd.DataFrame,
+    sample_weight: pd.Series | np.ndarray,
+    target_covars: pd.DataFrame,
+    target_weight: pd.Series | np.ndarray,
+    *,
+    fit_kwargs: dict[str, Any],
+    fit_sample_weight: pd.Series | np.ndarray | None = None,
+    n_folds: int = 5,
+    random_seed: int = 2020,
+) -> dict[str, float]:
+    """Return outcome-cross-fitted AIPW target-population means, not intervals.
+
+    Each observed responder is predicted without its own outcome in training.
+    The target term averages the fold models' predictions; residuals use the
+    supplied balance weights. ``fit_sample_weight`` independently controls
+    outcome fitting. Missing outcomes and formula-omitted prediction rows retain
+    the existing per-outcome omission behavior.
+
+    The shared categorical domains and feature schema use covariates only;
+    each fold refits any scaler and its learners using training rows. The
+    weighting model is not refit or cross-fitted. Temporary models do not retain
+    training snapshots. Fold assignment is deterministic given ``random_seed``;
+    learners still need their own random-state configuration.
+
+    Args:
+        sample_covars: Responder covariates, row-aligned with outcomes/weights.
+        outcomes: Observed outcomes; missingness is handled independently per column.
+        sample_weight: Finite non-negative residual weights on the target's scale.
+        target_covars: Covariates of the target population.
+        target_weight: Finite non-negative target weights with matching total.
+        fit_kwargs: Outcome-fit settings, including the learner, formula and
+            optional frozen preprocessing schema; not ``sample_weight``.
+        fit_sample_weight: Optional original outcome-fit weights, strictly positive.
+        n_folds: At least two, no more than observed rows per outcome. Defaults to five.
+        random_seed: Non-negative uint32 fold seed. Defaults to 2020.
+
+    Returns:
+        One point estimate per outcome, without standard errors or confidence intervals.
+
+    Raises:
+        ValueError: For invalid folds, weights, outcomes or incompatible fold fits.
+
+    Example:
+        With six rows ``x=0..5``, ``y=1+2*x``, responder weights all one,
+        target ``x=[0.5, 2.5, 4.5]`` and target weights all two, calling
+        ``cross_fitted_aipw_point_estimate(X, Y, w, XT, wT,
+        fit_kwargs={'model': LinearRegression()}, n_folds=3)['y']`` gives 6.0.
+    """
+    n_folds, random_seed = _cross_fit_config(n_folds, random_seed)
+    if len(sample_covars) != len(outcomes):
+        raise ValueError(
+            "sample_covars and outcomes must have the same number of rows."
+        )
+    if not len(sample_covars) or not len(target_covars) or not outcomes.shape[1]:
+        raise ValueError(
+            "Cross-fitting needs non-empty responders, target and outcomes."
+        )
+    if not outcomes.columns.is_unique:
+        raise ValueError("Cross-fitting requires unique outcome column names.")
+    residual_weight = _cross_fit_weight_array(
+        sample_weight, len(sample_covars), "sample_weight"
+    )
+    target_weight_array = _cross_fit_weight_array(
+        target_weight, len(target_covars), "target_weight"
+    )
+    _validate_aipw_weight_scale(residual_weight, target_weight_array)
+    fit_weight = None
+    if fit_sample_weight is not None:
+        fit_weight = _cross_fit_weight_array(
+            fit_sample_weight, len(sample_covars), "fit_sample_weight"
+        )
+        if not np.isfinite(fit_weight).all() or (fit_weight <= 0).any():
+            raise ValueError("fit_sample_weight must be finite and strictly positive.")
+    covars, outcomes = sample_covars.reset_index(drop=True), outcomes.reset_index(
+        drop=True
+    )
+    plans = {
+        col: _cross_fit_fold_positions(
+            outcomes[col], residual_weight, n_folds, random_seed
+        )
+        for col in outcomes.columns
+    }
+    settings = _cross_fit_settings(covars, outcomes, fit_kwargs)
+    return {
+        str(col): _cross_fit_outcome(
+            covars,
+            outcomes[[col]],
+            residual_weight,
+            target_covars,
+            target_weight_array,
+            fit_weight,
+            settings,
+            plans[col],
+        )
+        for col in outcomes.columns
+    }
+
+
+def _cross_fit_model_inputs(
+    model: dict[str, Any], covars: pd.DataFrame, outcomes: pd.DataFrame
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series | None, dict[str, Any]]:
+    """Recover the fitted variable selection and original fitting weights safely."""
+    training = model.get("training_inputs")
+    message = (
+        "Cross-fitting requires the stored original outcome-fit inputs on the current "
+        "responders. Refit with fit_outcome_model(...) on this frame first."
+    )
+    if not isinstance(training, dict):
+        raise ValueError(message)
+    fitted_covars, fitted_outcomes = training.get("covars"), training.get("outcomes")
+    if not isinstance(fitted_covars, pd.DataFrame) or not isinstance(
+        fitted_outcomes, pd.DataFrame
+    ):
+        raise ValueError(message)
+    columns = model["outcome_columns"]
+    try:
+        selected_covars = covars.loc[:, fitted_covars.columns]
+        selected_outcomes = outcomes.loc[:, columns]
+        original_outcomes = fitted_outcomes.loc[:, columns]
+    except KeyError as exc:
+        raise ValueError(message) from exc
+    complete = selected_outcomes.notna().all(axis=1)
+    if not selected_covars.loc[complete].equals(
+        fitted_covars
+    ) or not selected_outcomes.loc[complete].equals(original_outcomes):
+        raise ValueError(message)
+    fit_weight = training.get("sample_weight") if model.get("weighted") else None
+    if model.get("weighted") and not complete.all():
+        raise ValueError(
+            "Cross-fitting this weighted model needs original fitting weights for every "
+            "responder; its stored fit omitted incomplete outcomes. Refit unweighted, "
+            "or use cross_fitted_aipw_point_estimate with explicit fit_sample_weight."
+        )
+    if model.get("weighted") and (
+        not isinstance(fit_weight, pd.Series)
+        or not fit_weight.index.equals(fitted_covars.index)
+    ):
+        raise ValueError(message)
+    return (
+        selected_covars,
+        selected_outcomes,
+        fit_weight,
+        _cross_fit_model_settings(model),
+    )
+
+
+def _cross_fit_model_settings(model: dict[str, Any]) -> dict[str, Any]:
+    """Clone the actual learner family, unwrapping only automatic calibration."""
+    learners = {
+        col: (
+            learner_from_model({"fit": {col: estimator}})[col]
+            if model.get("calibrated") and isinstance(estimator, CalibratedClassifierCV)
+            else clone(estimator)
+        )
+        for col, estimator in model["fit"].items()
+    }
+    return {
+        "model": learners,
+        "formula": model.get("formula"),
+        "transformations": model.get("transformations"),
+        "na_action": str(model.get("na_action", "add_indicator")),
+        "use_model_matrix": bool(model.get("use_model_matrix", True)),
+        "calibrate": bool(model.get("calibrated", False)),
+        "preprocessing_state": model.get("preprocessing_state"),
+    }

@@ -7,7 +7,7 @@
 > records the decision status and explicitly deferred later phases. As of the round-6 review, no
 > items remain **(OPEN)**.
 >
-> **Implementation status (updated 2026-07-18 — reconciled to the as-built code).** Phase 1 (the g-computation `μ̂_OM` stack, diffs 1–9) **and** the AIPW point estimate have **shipped**. Key deltas vs the original plan: (1) **AIPW is implemented as `BalanceFrame.aipw()`** (→ `Sample.aipw()` via MRO; pure engine `balance.outcome_models.aipw_point_estimate`) — **not** the planned `outcomes_hat().aipw()` view method, and it works for **any** learner (not only the linear-WLS special case); (2) `summary()` now surfaces the **IPW / OM / DR estimator trio** ("Outcome estimates" section) when an outcome model + target are present; (3) only **AIPW variance/CI and cross-fitting remain deferred**. In-line `file:line` citations were refreshed to current locations; pre-rename historical citations are marked as such.
+> **Implementation status (updated 2026-07-18 — reconciled to the as-built code).** Phase 1 (the g-computation `μ̂_OM` stack, diffs 1–9) **and** the AIPW point estimate have **shipped**. Key deltas vs the original plan: (1) **AIPW is implemented as `BalanceFrame.aipw()`** (→ `Sample.aipw()` via MRO; pure engine `balance.outcome_models.aipw_point_estimate`) — **not** the planned `outcomes_hat().aipw()` view method, and it works for **any** learner (not only the linear-WLS special case); (2) `summary()` now surfaces the **IPW / OM / DR estimator trio** ("Outcome estimates" section) when an outcome model + target are present; (3) only **AIPW variance/CI remains deferred**; optional outcome-only cross-fitting is available through `aipw(n_folds=..., random_seed=...)` while `aipw()` retains full-sample behavior. In-line `file:line` citations were refreshed to current locations; pre-rename historical citations are marked as such.
 >
 > For the evergreen overview see [`../../ARCHITECTURE.md`](../../ARCHITECTURE.md); for the review
 > checklist see [`.github/copilot-instructions.md`](../../.github/copilot-instructions.md).
@@ -18,6 +18,7 @@
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
+| 2026-11-17 | **Optional outcome-only cross-fitting.** `aipw(n_folds=5, random_seed=2020)` uses out-of-fold observed-responder predictions and fold-averaged target predictions. `n_folds=None` preserves the full-sample path. Fold learners/scalers are refit; the original variable selection, fit weights and covariate-only schema are preserved. | Avoids own-outcome training optimism without changing weighting fits or stored frame/prediction state. Frame refits require matching fit provenance; incomplete weighted fits need explicit original fitting weights through `cross_fitted_aipw_point_estimate`. AIPW variance/CI and weighting-model cross-fitting remain separate. |
 | 2026-08-01 | **AIPW normalization contract: implemented.** The augmentation is valid only when `w_R` and `w_T` are on the same population scale; Hájek self-normalization gives *asymptotic* DR (ratio bias `O(1/n)`). `aipw()` requires valid, non-negative `adjust()`-calibrated responder weights and asserts `|Σw_R−Σw_T|/Σw_T < 1e-6`. | Enforces the correctness precondition at the estimator boundary and reports an actionable error for malformed, arbitrary, or subsequently rescaled weights. |
 | 2026-07-15 | **`outcomes_hat` is the canonical spelling everywhere — public and internal — as a clean rename (no alias, no `FutureWarning`, no migration).** Public: `outcomes_hat()`, `df_outcomes_hat`, `outcomes_hat_columns`. Internal: `_column_roles` key `"predicted"` → `"outcomes_hat"`, the `_create()`/`from_frame()` parameter `predicted_outcome_columns` → `outcomes_hat_columns`, internal locals (`predicted_list` → `outcomes_hat_list`, etc.), the overlap-validation dict key, and the protocol member `_outcomes_hat_columns`. The old `predicted_outcome_columns` param/property and the `"predicted"` role key are **removed outright**. | One vocabulary end-to-end; removes the overload with predicted-*weights* (`predict_weights`); distinct from `.outcomes()` (observed Y). No deprecation needed — the `predicted` role was reserved scaffolding **unused by any code or user** (only storage/validation/tests referenced it) and was never populated, so there is nothing to keep back-compatible and nothing to migrate. |
 | 2026-07-15 | **Scope: outcome model now, AIPW later.** Ship IPW/Hájek (exists) + outcome-model / g-computation estimate (`μ̂_OM`) in 0.23.0; defer explicit AIPW/DR to a follow-up. Phase 1 delivers **no general DR** — only the linear-WLS special case (§1). | Smaller, reviewable diff stack that delivers the core ask (average `outcomes_hat` on the target). AIPW variance/CI + the normalization contract get their own design pass. (superseded 2026-07-18: explicit AIPW shipped as `bf.aipw()` — general for any learner, not only the linear-WLS special case; only AIPW variance/CI + cross-fitting remain deferred.) |
@@ -814,7 +815,7 @@ absolute GitHub URLs; the tutorial notebook (created in diff 7, extended in 8–
 end-to-end in CI.
 
 **Phase 2 (separate later stack):**
-- **`[balance] Add doubly-robust AIPW estimate bf.aipw() + R oracles`** (D112679814) — **shipped** the AIPW point estimate (combine `outcomes_hat` + IPW weights) and its same-scale `w_R`/`w_T` normalization assertion. Still deferred on top of it: **cross-fitted** (out-of-fold) responder residuals and AIPW variance/CI.
+- **`[balance] Add doubly-robust AIPW estimate bf.aipw() + R oracles`** (D112679814) — **shipped** the AIPW point estimate (combine `outcomes_hat` + IPW weights) and its same-scale `w_R`/`w_T` normalization assertion. Still deferred on top of it: AIPW variance/CI. Optional **outcome-cross-fitted** responder residuals are available through `aipw(n_folds=..., random_seed=...)`; the weighting model is unchanged.
 - Optional follow-ons: weighted/Bayesian bootstrap; BCa intervals.
 
 ---
@@ -862,15 +863,17 @@ threaded through `summary_utils._build_summary(outcome_estimates=...)` (`summary
 Deferred to implementation / later phases (not blocking this design):
 
 - **AIPW / doubly-robust** — the point estimate has **shipped** as `bf.aipw()` (BalanceFrame/Sample;
-  pure `aipw_point_estimate`), general for any learner; only its **variance/CI** and **cross-fitting**
-  remain deferred (each needs its own design).
+  pure `aipw_point_estimate`), general for any learner; only its **variance/CI**
+  remains deferred. Optional outcome-cross-fitting is provided separately by
+  `cross_fitted_aipw_point_estimate` and `aipw(n_folds=...)`.
 - **AIPW normalization contract** — **implemented**: `aipw()` requires an adjusted frame and
   rejects responder/target weight totals when `|Σw_R−Σw_T|/Σw_T >= 1e-6`, enforcing same-scale
   `w_R`/`w_T` (with DR asymptotic under Hájek normalization and ratio bias `O(1/n)`).
 - **Weighted / Bayesian bootstrap** — a robustness upgrade over the nonparametric bootstrap.
 - **BCa intervals** — an accuracy upgrade over percentile CIs if warranted.
-- **Cross-fitting** — to reduce own-observation bias when the same responders fit `ĝ` and enter
-  the (future) AIPW augmentation term.
+- **Weighting-model cross-fitting** — separate future work; the implemented
+  outcome-only cross-fitting leaves adjusted weights fixed and does not provide
+  AIPW confidence intervals.
 
 ---
 
