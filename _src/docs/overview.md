@@ -483,6 +483,8 @@ New test harnesses retain their MIT source headers; reproduced upstream fixtures
 and source notices are attributed under their individual source declarations,
 including GPL-2/GPL-3, Artistic-2.0 and MIT. See that folder's README and each
 fixture bank's README, manifest and license notices for the component split.
+The archived R CBPS comparison data and loader are repository test material
+under that folder, not resources shipped with the production `balance` package.
 
 # News
 

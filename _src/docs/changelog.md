@@ -12,6 +12,8 @@ hide_title: true
 
 ## Cross-package validation tests
 
+- **Breaking change:** Remove the R CBPS reference dataset from the production package: `balance.datasets.load_cbps_data` and `load_data("sim_data_cbps")` are no longer supported. The unchanged CSV/R capture and local loader now live under the mixed-license `tests/r_inspired/fixtures/cbps/` test bank. Repository-only reference tests use `load_cbps_reference()`; the tutorial reads that bank directly. `load_data()` and `load_data("sim_data_01")` remain unchanged. Existing CBPS correlation guards and fixture checks are retained.
+- Add original LaLonde/MatchIt inputs and complete paired R weight-impact expectations in their own fixture bank.
 - Add original survey API inputs and complete R outcome-prediction/calibrated-GREG expectations in their own fixture bank.
 - Add original MatchIt LaLonde inputs, matching weights and independent balance-diagnostic expectations in their own fixture bank.
 - Add original glmnet inputs and complete fixed-lambda/selected-fit IPW expectations in their own test fixture bank.
