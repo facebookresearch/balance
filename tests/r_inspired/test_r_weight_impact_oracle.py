@@ -25,7 +25,6 @@ from balance.stats_and_plots.impact_of_weights_on_outcome import (
     weights_impact_on_outcome_ss,
 )
 
-
 # Scientific-stack stubs omit this supported runtime parser literal.
 _ROUND_TRIP: Any = "round_trip"
 
