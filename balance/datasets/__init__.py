@@ -4,6 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 
-from balance.datasets.loading_data import load_cbps_data, load_data, load_sim_data
+from balance.datasets.loading_data import load_data, load_sim_data
 
-__all__ = ["load_sim_data", "load_cbps_data", "load_data"]
+__all__ = ["load_sim_data", "load_data"]

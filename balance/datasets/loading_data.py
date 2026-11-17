@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-import pathlib
 from typing import Literal, Tuple
 
 import numpy as np
@@ -110,42 +109,16 @@ def load_sim_data(
     return None, None
 
 
-def load_cbps_data() -> Tuple[pd.DataFrame | None, pd.DataFrame | None]:
-    """Load simulated data for CBPS comparison with R.
-
-    The code in balance that implements CBPS attempts to mimic the code from the R package CBPS (https://cran.r-project.org/web/packages/CBPS/).
-
-    In the help page of the CBPS function in R (i.e.: `?CBPS::CBPS`) there is a simulated dataset that is used to showcase the CBPS function.
-    The output of that simulated dataset is saved in balance in order to allow for comparison of `balance` (Python) with `CBPS` (R).
-
-    You can view the structure of the simulated dataset by looking at the example below.
-
-    In the original simulation dataset (available in sim_data_cbps.csv), when the `treat` variable is 0, the row belongs to sample.
-    And when the `treat` variable is 1, the row belongs to target.
-
-    Returns:
-        Tuple[pd.DataFrame | None, pd.DataFrame | None]: Two DataFrames containing simulated data for the target and sample of interest.
-    """
-    # NOTE: the reason we use __file__ and not importlib.resources is because the latter changed API in Python 3.11.
-    #       so in order to be compliant with 3.7-3.10 and also 3.11, using __file__ is the safer option.
-    df_all = pd.read_csv(pathlib.Path(__file__).parent.joinpath("sim_data_cbps.csv"))
-    target_df = df_all[df_all.treat == 1].drop(["treat"], axis=1)
-    sample_df = df_all[df_all.treat == 0].drop(["treat"], axis=1)
-
-    return (target_df, sample_df)
-
-
 def load_data(
-    source: Literal["sim_data_01", "sim_data_cbps"] = "sim_data_01",
+    source: Literal["sim_data_01"] = "sim_data_01",
 ) -> Tuple[pd.DataFrame | None, pd.DataFrame | None]:
     """Return a tuple of two DataFrames containing simulated data.
 
     To learn more about each dataset, please refer to their help pages:
     - sim_data_01: :func:`balance.datasets.load_sim_data`.
-    - sim_data_cbps: :func:`balance.datasets.load_cbps_data`.
 
     Args:
-        source (Literal["sim_data_01", "sim_data_cbps"]): The name of the data to return. Defaults to "sim_data_01".
+        source (Literal["sim_data_01"]): The name of the data to return. Defaults to "sim_data_01".
 
     Returns:
         Tuple[pd.DataFrame, pd.DataFrame]: The first dataframe contains simulated data of the "target" and the second dataframe contains simulated data of the "sample".
@@ -153,7 +126,5 @@ def load_data(
 
     if source == "sim_data_01":
         return load_sim_data("01")
-    if source == "sim_data_cbps":
-        return load_cbps_data()
 
     return None, None

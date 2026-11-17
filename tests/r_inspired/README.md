@@ -6,6 +6,8 @@ This is a **mixed-license test folder**, not a uniformly MIT-licensed fixture co
 
 Each test module has its own bank under `fixtures/<group>/`. The test, required inputs/expectations, provenance, declared license notices and changelog entry belong to the same review diff. Related tests may reuse the same upstream data, but each bank keeps only the expectations that its own tests consume. There is no shared first-diff numerical fixture bank.
 
+`test_cbps_r_comparison.py` owns the archived `fixtures/cbps/` bank and its local loader. The original CSV and R capture script are test-only, no longer production package resources or a `balance.datasets.load_data` option. Its README/manifest record CBPS 0.23 and R 3.6.1 from the archived script, distinguish that from the read current package declaration, and mark the bank `capture_only` rather than silently regenerating historical results with current R packages.
+
 | Test group | Source declarations and comparison |
 |---|---|
 | `weighting` | survey: GPL-2 or GPL-3; original Kalton/badcal inputs and executed raking/calibration weights |
@@ -15,6 +17,7 @@ Each test module has its own bank under `fixtures/<group>/`. The test, required 
 | `weighted_scaler`, `cv`, `ipw` | glmnet: GPL-2; captured original matrix, matching ridge/scaling configurations and each group's R outputs; CV also attributes rsample's MIT test-pattern guards |
 | `diagnostics`, `weight_impact` | MatchIt: GPL (>= 2); actual LaLonde data and executed weighted diagnostics/paired tests |
 | `outcomes` | survey: GPL-2 or GPL-3; actual API data, full predictions and calibrated GREG point |
+| `cbps` | archived test-only CSV/R script and local loader; correlation-only against recorded R CBPS weights, with capture/version/license provenance distinguished in its bank README |
 
 These are factual source declarations, not a blanket license assignment to every file. Source notices/description files and applicable declared license texts accompany each bank. Original source hashes are separate from assembled notice hashes; notice normalization removes only trailing spaces/tabs and extra final blank lines.
 

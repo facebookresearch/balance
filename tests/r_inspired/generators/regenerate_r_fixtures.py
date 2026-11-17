@@ -160,6 +160,13 @@ def discover_groups(fixtures: Path, requested: list[str] | None = None) -> list[
         directory = available[name]
         manifest_path = directory / "manifest.json"
         manifest = json.loads(manifest_path.read_text())
+        if manifest.get("capture_only"):
+            if requested is not None:
+                raise ValueError(
+                    f"{name} is an archived capture; use its recorded R script and "
+                    "runtime rather than grouped current-R regeneration"
+                )
+            continue
         for key in ("fixture_sha256", "license_sha256", "source_sha256"):
             if not isinstance(manifest.get(key), dict):
                 raise ValueError(f"{manifest_path}: missing {key} ownership map")

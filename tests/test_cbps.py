@@ -21,7 +21,6 @@ import balance.testutil
 import numpy as np
 import pandas as pd
 import scipy
-from balance.datasets import load_data
 from balance.sample_class import Sample
 from balance.stats_and_plots.weights_stats import design_effect
 from balance.util import _assert_type
@@ -860,52 +859,6 @@ class Testcbps(
             sample.adjust,
             method="cbps",
             transformations=None,
-        )
-
-    def test_cbps_in_balance_vs_r(self) -> None:
-        """Test that Python CBPS implementation matches R CBPS results.
-
-        This test validates our CBPS implementation against reference weights
-        computed by R's CBPS package. It verifies:
-        1. High correlation (>0.98) between Python and R CBPS weights
-        2. Very high correlation (>0.99) between log-transformed weights
-        3. Numerical consistency between implementations
-
-        This is also available on:
-        https://import-balance.org/docs/tutorials/comparing_cbps_in_r_vs_python_using_sim_data/
-        """
-        # Load reference data with R CBPS weights
-        target_df, sample_df = load_data("sim_data_cbps")
-
-        # Create Sample objects with outcome columns
-        sample = Sample.from_frame(sample_df, outcome_columns=["y", "cbps_weights"])
-        target = Sample.from_frame(target_df, outcome_columns=["y", "cbps_weights"])
-        sample_target = sample.set_target(target)
-
-        # Compute Python CBPS weights
-        adjusted_sample = sample_target.adjust(method="cbps", transformations=None)
-
-        # Test correlation with R CBPS weights (linear scale)
-        linear_correlation = (
-            adjusted_sample.df[["cbps_weights", "weight"]]
-            .corr(method="pearson")
-            .iloc[0, 1]
-        )
-        self.assertTrue(
-            linear_correlation > 0.98,
-            msg=f"Python CBPS should highly correlate with R CBPS (>0.98), got {linear_correlation}",
-        )
-
-        # Test correlation with R CBPS weights (log scale - more stringent test)
-        log_correlation = (
-            adjusted_sample.df[["cbps_weights", "weight"]]
-            .apply(lambda x: np.log10(x))
-            .corr(method="pearson")
-            .iloc[0, 1]
-        )
-        self.assertTrue(
-            log_correlation > 0.99,
-            msg=f"Python CBPS should very highly correlate with R CBPS on log scale (>0.99), got {log_correlation}",
         )
 
     def test_cbps_exact_method_with_constraint_violation(self) -> None:
