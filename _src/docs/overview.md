@@ -509,12 +509,8 @@ You can follow updates on our:
 
 ## Acknowledgements / People
 
-The _balance_ package is actively maintained by people from the
-[Central Applied Science](https://research.facebook.com/teams/central-applied-science/)
-team (in Menlo Park and Tel Aviv), by
-[Wesley Lee](https://www.linkedin.com/in/wesley-lee),
-[Tal Sarig](https://research.facebook.com/people/sarig-tal/), and
-[Tal Galili](https://research.facebook.com/people/galili-tal/).
+The _balance_ package is actively maintained by
+[Tal Galili](https://www.linkedin.com/in/talgalili/).
 
 The _balance_ package was (and is) developed by many people, including:
 [Roee Eilat](https://research.facebook.com/people/eilat-roee/),
@@ -525,8 +521,9 @@ The _balance_ package was (and is) developed by many people, including:
 [Adam Obeng](https://adamobeng.com/) (author of the initial internal Meta
 version), [Tal Sarig](https://research.facebook.com/people/sarig-tal/),
 [Luke Sonnet](https://www.linkedin.com/in/luke-sonnet),
-[Sean Taylor](https://seanjtaylor.com),
+[Sean Taylor](https://seanjtaylor.com/),
 [Barak Yair Reif](https://www.linkedin.com/in/barak-yair-reif-2154365/),
+[Wesley Lee](https://www.linkedin.com/in/wesley-lee),
 [Soumyadip Sarkar](https://github.com/neuralsorcerer), and others. If you worked
 on balance in the past, please email us to be added to this list.
 

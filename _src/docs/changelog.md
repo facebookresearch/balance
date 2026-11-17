@@ -145,6 +145,9 @@ hide_title: true
 
 ## Documentation
 
+- **README acknowledgements identify the current maintainer and retain contributor credit.**
+  List Tal Galili as the active maintainer and include Wesley Lee among the people who developed balance.
+
 - **`dot_expansion()` explains how to fix different formula errors.**
   Its Raises section distinguishes invalid variable arguments, malformed tokens and expanding a standalone dot without variables.
 
