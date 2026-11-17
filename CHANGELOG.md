@@ -1,207 +1,183 @@
-# Unreleased
+# 0.24.0 (2026-11-17)
 
-## Added
+## TL;DR
 
-- Add optional outcome-only cross-fitting to `BalanceFrame.aipw(n_folds=..., random_seed=...)` and expose `cross_fitted_aipw_point_estimate`. The default full-sample estimate is unchanged. Fold fits preserve selected variables, fitting weights and shared covariate schema, refit scalers and learners, and leave stored frame/model/prediction state untouched. Residuals use existing adjusted weights; weighting-model cross-fitting and AIPW confidence intervals remain deferred. Legacy or transferred frame models without matching fit provenance require refitting; weighted incomplete fits need explicit original fit weights through the pure engine.
+- **Breaking Changes:** Check the migrations for saved models, trimming limits and the retired CBPS reference loader; missing values no longer count as zero, and refits keep predictions until explicitly refreshed.
+- **New Features:** Optional cross-fitting uses held-out predictions for population outcome estimates (AIPW), while saved IPW/CBPS models keep the preparation details needed for reuse.
+- **Bug Fixes:** Weighting, missing-data statistics, model reuse and diagnostics now handle more edge cases correctly, with clearer errors when inputs cannot be used safely.
+- **Documentation:** Formula errors and weight-trimming instructions explain what went wrong and which settings to use.
+- **Code Quality & Refactoring:** Reusing weighting models avoids duplicate predictions, and temporary bootstrap fits use less memory without changing results.
+- **Tests:** More comparisons against recorded R results check numerical behavior; test data and source notices stay together, and Bento flags preserve the requested test selection.
 
-## Cross-package validation tests
+## Breaking Changes
 
-- **Breaking change:** Remove the R CBPS reference dataset from the production package: `balance.datasets.load_cbps_data` and `load_data("sim_data_cbps")` are no longer supported. The unchanged CSV/R capture and local loader now live under the mixed-license `tests/r_inspired/fixtures/cbps/` test bank. Repository-only reference tests use `load_cbps_reference()`; the tutorial reads that bank directly. `load_data()` and `load_data("sim_data_01")` remain unchanged. Existing CBPS correlation guards and fixture checks are retained.
-- Add original LaLonde/MatchIt inputs and complete paired R weight-impact expectations in their own fixture bank.
-- Add original survey API inputs and complete R outcome-prediction/calibrated-GREG expectations in their own fixture bank.
-- Add original MatchIt LaLonde inputs, matching weights and independent balance-diagnostic expectations in their own fixture bank.
-- Add original glmnet inputs and complete fixed-lambda/selected-fit IPW expectations in their own test fixture bank.
-- Add original glmnet inputs, captured fold configuration and independent CV deviance expectations in their own test fixture bank.
-- Add original glmnet inputs and independent weighted scaler expectations in their own test fixture bank.
-- Add self-contained matrixStats/survey fixtures for weighted means, repeated selections, reliability variance and quantiles.
-- Add self-contained recipes interaction fixtures with complete R training/scoring matrix expectations.
-- Add self-contained forcats/hardhat categorical fixtures and executed R factor-matrix comparisons.
-- Add self-contained survey Kalton/badcal fixtures and R numerical comparisons for raking and poststratification.
-- Isolate R-inspired tests and reference material in the mixed-license `tests/r_inspired/` folder, document component source declarations and package nested test resources. Production numerical behavior is unchanged.
+- **The CBPS reference dataset is no longer included in installed balance.**
+  `balance.datasets.load_cbps_data` and `load_data("sim_data_cbps")` have been removed. `load_data()` and `load_data("sim_data_01")` still work as before.
+  **Migration:** use the repository-only `load_cbps_reference()` for CBPS reference examples; see Tests for the data and loader location.
 
-## Fixed
+- **Numerical change:** **Missing values no longer count as zeros in weighted statistics.**
+  Means, sample variances, variances of weighted means, standard deviations and confidence intervals now leave out a missing value and its weight, separately for each column. Missing weights are also left out; actual zero values still count. Previously, a missing value counted as zero but its weight stayed in the mean's denominator.
+  **Migration:** use `fillna(0)` first only if you intend to replace missing values with zero. This change does not affect inputs without missing values or weights.
 
-- Reuse sample probabilities when caching transferred weighting models after formula-induced row drops, avoiding a duplicate sample prediction pass without changing weights or output positions.
-- Fill nullable numeric extension columns with string NA sentinels through a safe object fallback while preserving native numeric fills and dtypes.
-- Report malformed formula tokenizer failures as actionable ValueError messages while preserving valid decimal, attribute, quoted and standalone-dot expressions.
-- Reject non-finite caller-filtered rake fit-time design weights before expanding them onto complete scoring rows.
-- Return warning-backed NaN quantiles for zero or missing weight mass, including scalar quantile requests, so real QQ diagnostics remain usable; filter contributing rows positionally.
-- Reject non-finite, negative, and zero-total CVMD weight mass before numeric or categorical probability normalization.
-- Restore filtered rake fit-time design weights to scoring-row positions before NA-drop replay, preserving full output indices without filtering weights twice. Use retained row positions for both fitted and replayed weights, so repeated index labels neither assign weight to dropped rows nor duplicate retained values.
-- Keep `Sample` active-weight selection, renaming, accessors, and updates aligned with its responder frame.
-- Preserve a separate pre-fit baseline when `fit(inplace=True)` adopts adjusted state.
-- Synchronize `Sample` column-role accessors after row/column filtering.
-- Preserve canonical frame state, explicit column roles, weight history, and fitted outcome models through conversions.
-- Keep outcome-model summaries available when AIPW prerequisites are not met, with an explicit unavailable reason.
-- Preserve existing sample weights, weighting models, adjustment history, and the unadjusted baseline when `fit_outcome_model(target=...)` replaces the outcome target. Warn when the new target data differ from the previous target: the preserved weights may still describe the previous population, while subsequent outcome predictions use the new target.
-- Honor explicitly supplied covariate-view weights regardless of their name; default unnamed RangeIndex weights stay positional even when data labels are reordered. Align complete matching unique labelled weights before length validation (ignoring unused labelled weights), and reject incomplete unique label matches rather than silently assigning them by position.
-- Keep flag-only Bento test invocations scoped to the package test directory without broadening explicit Python test selections when flags appear first.
+- **Saved models now remember how categories became model inputs.**
+  When categories are converted into model columns, reusing a model needs its original conversion record (`preprocessing_state`). Unknown categories, newly missing category values, formulas whose transformations cannot be reproduced, and outdated category-column labels now raise errors instead of silently changing model columns or setting them to zero.
+  **Migration:** refit older saves missing this record, or using old category-column labels containing NumPy type names. Include intended categories when fitting; for newly missing values, use a learner that supports accepting missing categories directly (native missing-category handling) if you cannot include them at fit time.
 
-## Bug Fixes
+- **Reusing IPW/CBPS on new data needs repeatable transformations.**
+  `transformations="default"`, `quantize` and `fct_lump` depend on the data. They cannot be applied to different covariate data unless their original parameters are retained; reusing the model on the same data still works.
+  **Migration:** fit with `transformations=None` or repeatable (deterministic) transformations that keep their original parameters. Fit a new model on the scoring sample/target if you want new bins.
 
-- **IPW stored the wrong fitted model on the cross-validation path.** With
-  `max_de=None` and `num_lambdas > 1`, the built-in logistic-regression path
-  saved the last cross-validation fold's refit (trained on 90% of the rows)
-  instead of the full-data fit. Weights computed with
-  `store_fit_metadata=True` (the `BalanceFrame.fit(method="ipw")` default) and
-  `model["fit"]`, coefficients, and stored probabilities used that fold model,
-  so `fit()` and `adjust()` could return different weights for the same
-  inputs. The stored model is now the full-data fit at the selected lambda.
+- **Rake recognizes `1` and `1.0` as the same category.**
+  Integer-valued floats, including pandas categorical levels, now get labels without `.0` in fitting and `predict_weights()`. This avoids false sample/target mismatches with `transformations=None`.
+  **Migration:** refit older saved rake models with labels such as `"1.0"` before reusing them, even on their original rows.
 
-- **Poststratify no longer collapses numeric covariates that contain missing
-  values.** With `na_action="add_indicator"`, missing values were filled with
-  `"__NaN__"` before `transformations="default"` ran, which turned numeric
-  columns into `object` columns so they were lumped by `fct_lump` (typically
-  into a single cell, i.e. no adjustment) instead of binned by `quantize`.
-  Transformations now run before the missing-value fill (matching rake), so
-  numeric covariates are binned and missing values form their own `"__NaN__"`
-  cell; `predict_weights()` replay uses the same order. As in rake, a rare
-  missing level of a non-numeric covariate is now kept as its own `"__NaN__"`
-  cell instead of being lumped with other rare levels. `na_action="drop"` is
-  unchanged.
+- **`trim_weights` catches overlapping limits and impossible totals.**
+  A single `weight_trimming_percentile` trims both tails. Values of at least `0.5`, two nonzero tails summing to at least `1`, or calculated lower/upper bounds that cross now raise `ValueError` rather than clipping arbitrarily; `0.95` previously collapsed CBPS weights to two values.
+  **Migration:** use `0.05` for 5% at each tail, or `(0.0, 0.05)` for only the top 5%. A one-sided 100% limit is still allowed when the other tail is disabled. Zero weights stay zero when preserving an already-zero total; preserving a positive original total raises an error if trimming removes all weight.
 
-- **Poststratify cells now ignore unobserved categorical levels.** Cell totals
-  were computed with pandas' default `groupby(observed=False)`, so pandas
-  `Categorical` covariates produced every level combination. A sample cell
-  missing from the target got a target total of `0` instead of a missing
-  value, so `strict_matching=True` silently gave those rows weight 0 instead of
-  raising, and target-only cells stored an infinite `cell_weight_ratio`.
-  Cells are now built from observed combinations only, matching `object`
-  columns.
+- **Refitting or transferring an outcome model keeps existing predictions.**
+  Sample and target prediction columns, including manually added ones, are kept rather than refreshed automatically. Warnings name columns that may be out of date; these warnings are not errors. Predicting on the target still copies a shared target before writing.
+  **Migration:** rerun `frame.predict_outcomes(on="target")`, or `on="sample"`, when you need predictions from the new model.
 
-- **Rake keeps the sample's own index on the returned weights.** Rake mapped
-  rows to cells with `reset_index()` + `set_index("index")`, so a sample with
-  a named index raised `KeyError: "None of ['index'] are in the columns"`
-  (also through `Sample.adjust(method="rake")` / `fit()`), a covariate named
-  `index` silently became the weights' index, and otherwise the weights'
-  index was renamed to `"index"`. Rows are now mapped to cells positionally;
-  the returned weights keep the sample index, including its name (previously
-  always `"index"`).
-
-- **Rake no longer reports stalled fits as converged.** Raking also stops
-  when the convergence rate stops changing (`rate_tolerance`), and such stops
-  were reported as `converged=1` without a warning even when the weighted
-  margins were far from the target (e.g. target combinations the sample's
-  joint cells cannot reproduce). `converged` is now 1 only if the final
-  convergence rate is at most `convergence_rate`; a stall above it reports
-  `converged=0` and logs a warning with the remaining deviation. The stopping
-  rule itself is unchanged.
-
-- **Rake treats integer and integral-float levels as the same level.** Levels
-  were compared after `astype(str)`, so an integer sample column (`"1"`) and a
-  target column that is float, e.g. because it contains missing values
-  (`"1.0"`), raised `All variable levels in sample must be present in target`
-  with `transformations=None`. Integral floats (including categorical
-  categories) are now labelled without the trailing `.0`, in fitting and in
-  `predict_weights()` replay. Rake models
-  pickled by earlier versions whose fit-time levels were integral floats
-  (labels such as `"1.0"`) must be re-fit before in-place replay.
-
-- **`trim_weights` rejects overlapping percentile limits.** A single
-  `weight_trimming_percentile` value winsorizes *both* tails, so values of 0.5
-  or more (or a pair of nonzero `(lower, upper)` limits summing to 1 or more)
-  made the lower winsorization bound exceed the upper one and returned arbitrarily clipped
-  weights without an error (e.g. `0.95`, intended as "the 95th percentile",
-  collapsed CBPS weights to two values). These limits now raise `ValueError`
-  with guidance (use `0.05` for 5% at each tail or `(0.0, 0.05)` for only the
-  top 5%), as do limits whose computed bounds cross. A one-sided 100% limit
-  remains supported when the other tail is disabled; it does not create overlapping bounds.
-  Preserving an already-zero total leaves zero weights unchanged instead of
-  dividing by zero. A positive original total cannot be preserved after trimming
-  removes all weight mass, and raises an explicit error.
-
-## Documentation
-
-- **`dot_expansion()` lists its validation errors.** Its Raises section now
-  distinguishes invalid variable arguments from malformed formula tokens and
-  standalone-dot expansion without variables.
-
-- **`ipw()` / `cbps()` trimming arguments are documented accurately.** Their
-  docstrings said passing `weight_trimming_percentile` switches to
-  winsorization, but with the default `weight_trimming_mean_ratio=20` the call
-  failed after fitting with `Only one of weight_trimming_mean_ratio and
-  weight_trimming_percentile can be set`. The docstrings now state that
-  `weight_trimming_mean_ratio=None` is required (and, for `ipw`, that both are
-  ignored when `max_de` is set), and the conflict is reported before fitting
-  with that fix in the message.
+- **Bootstrap intervals need the model's original training data.**
+  Stored outcome models now keep one extra copy of their raw training inputs; deep-copying a frame copies those inputs too.
+  **Migration:** refit older models without these inputs to get bootstrap confidence intervals, or use `ci_method="analytic"` for uncertainty that treats the predictions as fixed.
 
 ## New Features
 
-- **IPW and CBPS fit metadata keep the design-matrix `preprocessing_state`.**
-  When replay artifacts are stored (`ipw(store_fit_metadata=True)` or
-  `store_fit_matrices=True`; `cbps(store_fit_metadata=True)`), the model dict
-  now includes `preprocessing_state`, the fit-time state reported by the
-  model-matrix builder (`None` if the builder reports none), so replay can
-  reuse the fit-time preprocessing.
+- **`BalanceFrame.aipw(n_folds=..., random_seed=...)` can cross-fit the outcome model.**
+  This optional mode fits on groups of training rows and predicts rows left out of each fit; `cross_fitted_aipw_point_estimate` provides the standalone function. The default full-sample estimate is unchanged.
+  - Each fold keeps the selected variables, original fitting weights (not weights changed since fitting), and common covariate layout; it refits any scalers and learners. Stored frame, model and prediction state is untouched.
+  - The residual correction still uses existing adjusted sample weights. Cross-fitting the weighting model and AIPW confidence intervals are not included.
+  - Legacy or transferred frame models without matching records of the original fit must be refit. Weighted fits with incomplete training rows need the original fit weights passed explicitly to the standalone function.
 
-## Statistics and utility fixes
+- **IPW and CBPS save how training data were prepared for the model.**
+  Their model dictionaries keep `preprocessing_state`, which is reused when predicting weights for held-out rows. IPW saves it with `store_fit_metadata=True` or `store_fit_matrices=True`; CBPS saves it with `store_fit_metadata=True`. It is `None` if the code that builds model inputs reports no preparation record.
 
-- Fill categorical NA-action columns safely in both weighting training and replay, preserving complete categories and adding sentinels only when missing values need filling.
-- Retain batch identifiers on every CLI diagnostics row, prefixing conflicting diagnostic-field names with `batch_`; reject mismatched batch-key arity rather than silently truncating provenance.
-- Reject missing CLI batch keys before grouping instead of silently discarding those observations.
-- Accept upstream replicate-weight column lists, stratum-assignment lists and combined-weight boolean settings in the diff-diff adapter.
-- Preserve pandas CSV destination semantics, including append/exclusive modes, encoding and filename-based compression.
-- Forward the resolved histogram default for single numeric seaborn plots instead of the original None selector.
-- Honor `weighted=False` and uniform `weight=None` through Plotly distribution dispatch without inserting empty weight columns.
-- Exclude zero-weight observations before continuous KLD KDE fitting and integration-bound selection.
-- Preserve infinite ASMD for unequal constants with zero reference SD; equal constants now have zero deviation.
-- Use a common equal-mixture probability measure for categorical and numeric CVMD, including disjoint supports and independently normalized weights.
-- Freeze pickle-safe categorical factor results after evaluating formulas, preserving raw boolean/numeric arithmetic during fitting and replay. NumPy category labels and contrast columns remain stable; dropping missing rows preserves unused category levels in the same encoded representation as observed values. Unseen categories, unsupported stateful replay, and obsolete fit-column encodings raise instead of silently changing or zeroing trained features. Refit models with obsolete NumPy-repr column labels.
-- Drop formula-generated missing rows with diagnostic warnings naming affected factors/columns, original sample/target row positions and labels, and bounded input/evaluated-value examples. Use common retained rows across formulas and align fit/replay weights and outcomes to those positions.
-- Expand only standalone formula dots, preserving decimal constants, attribute access and quoted labels; reject a standalone dot with no variables using an actionable error.
-- Align implicit unit weights with filtered indices in relative-frequency tables.
-- Exclude zero and missing weights from weighted-quantile interpolation so noncontributing rows cannot change QQ diagnostics.
-- **Missing observations are omitted from weighted statistics.** Weighted
-  means, sample variances, variances of weighted means, standard deviations and
-  confidence intervals omit a missing value and its weight separately for each
-  column. Missing weights are excluded throughout; real zeros still count.
-  **Behavior change:** missing values previously contributed zero to the mean
-  while keeping their weights in the denominator. Use `fillna(0)` explicitly
-  before calling these statistics only when zero imputation is intended.
-- Count the observation that first reaches 50% of weight in the weighted-median breakdown diagnostic.
-- Exclude missing-weight rows from Kish effective sample size; Deff and ESSP remain based on valid weights.
-- Keep covariates and weights positionally aligned when dropping rows with duplicate index labels.
-- Preserve caller missing values when returning a new NA-indicator frame.
+## Bug Fixes
 
-# Unreleased
+- **Numerical change:** **IPW now saves the model fitted to all training rows.**
+  With built-in logistic regression, `max_de=None` and `num_lambdas > 1`, `store_fit_metadata=True` previously saved the last cross-validation fold's model, trained on 90% of rows. Weights, `model["fit"]`, coefficients and stored probabilities now use all rows at the chosen regularization level (`lambda`). This fixes differing weights from `fit()` and `adjust()` under the `BalanceFrame.fit(method="ipw")` default; other paths are unchanged.
 
-## Bug fixes
+- **Numerical change:** **Poststratify keeps useful numeric bins when values are missing.**
+  With `na_action="add_indicator"` and `transformations="default"`, numbers used to become `object` values and be lumped by `fct_lump`, often into one cell with no adjustment, instead of binned by `quantize`.
+  Fitting and `predict_weights()` now transform before filling missing values, as rake does. Missing numeric values and rare missing non-numeric levels keep their own `"__NaN__"` cell instead of being lumped with rare levels. `na_action="drop"` is unchanged.
 
-- Outcome models store and replay pickle-safe `preprocessing_state`, preserving
-  categorical coding across prediction batches and model transfer. Unsupported
-  stateful formula replay and unseen one-hot levels raise actionable errors.
-  Bootstrap refits retain the original categorical domain and value-type policy,
-  including rare levels absent from a resample, without silently dropping
-  prediction failures.
+- **Numerical change:** **Poststratify no longer invents cells for unused categories.**
+  Pandas' `groupby(observed=False)` created combinations absent from the data: sample-only cells silently got zero weights with `strict_matching=True`, and target-only cells got infinite `cell_weight_ratio` values. Only observed combinations are now used, as with `object` columns; strict matching raises when a sample cell is missing from the target. `object` inputs are unchanged.
 
-- Mixed outcome learners choose a shared representation compatible with every
-  learner, independent of outcome-column order. Auto mode uses one-hot encoding
-  if any learner needs it; forcing native categorical input raises an actionable
-  error when a learner cannot consume it.
+- **Numerical change:** **Rake keeps each weight on the right row.**
+  When training has dropped rows for missing values, filtered training weights are restored to scoring-row positions before prediction repeats that row drop, without filtering weights twice. Fitting and reuse both use retained row positions, so repeated index labels neither weight dropped rows nor duplicate retained weights. Non-finite caller-filtered training weights are rejected before restoration.
+  Returned weights keep the full sample index and its name. This also fixes named-index `KeyError` failures, a covariate named `index` replacing the weights' index, and unwanted renaming to `"index"`.
 
-- Refitting or transferring an outcome model preserves attached predictions
-  on both responder and target, including manually attached predictions. Warnings
-  identify the existing columns and explain that they may be stale; rerun
-  `frame.predict_outcomes(on='target')` to refresh the target (or `on='sample'`
-  for the responder). Explicit target prediction still copies shared targets
-  before writing.
+- **Rake warns when it stops short of the requested match.**
+  `converged=1` now means the final deviation is at most `convergence_rate`. A `rate_tolerance` stop above that limit returns `converged=0` and warns with the remaining deviation, including when available sample combinations cannot reproduce the target. The stopping rule and fitted weights have not changed.
 
-- Outcome-model bootstrap CIs retain the original fitting-variable subset,
-  complete training rows, and actual fit weights after adjustment or transfer.
-  The point estimate replays the stored model rather than refitting it. Stored
-  models now retain one extra copy of their raw training inputs (also copied by
-  frame deep copies); legacy models without these inputs must be refit to obtain
-  bootstrap CIs, or use `ci_method="analytic"` for fixed-prediction uncertainty.
-  Temporary bootstrap fits, including the fallback point-estimate fit, skip unused
-  raw-input snapshots, reducing allocation overhead without changing estimates,
-  intervals, or outer-model provenance.
-- Reconstruct pickled `Sample` objects using their internal frames while retaining the direct-construction guard.
-- Replay IPW and CBPS holdouts with the stored fit-time preprocessing schema.
+- **Formula errors are clearer without changing valid expressions.**
+  Only standalone dots expand into variables; decimal numbers, attribute access and quoted labels are left alone. Malformed formula tokens raise actionable `ValueError` messages, as does a standalone dot when no variables are available.
 
-## Breaking Changes — replay migration
+- **Dropping rows for a formula keeps data, weights and outcomes together.**
+  Warnings identify affected factors/columns, original sample/target row positions and labels, and short examples of inputs and calculated values. All formulas use the same retained rows; fitting and prediction use the corresponding weights and outcomes. Other row-drop helpers also align covariates and weights by position when index labels repeat.
 
-- Encoded categorical replay now requires fit-time `preprocessing_state`. Refit models serialized before this change so they retain the schema. Unseen categorical levels and newly missing categorical levels raise instead of silently changing contrast columns; include the intended levels at fit time or use a learner with supported native missing-category handling.
-- IPW/CBPS transfer to different covariate data does not support unfrozen data-dependent transformations, including `transformations="default"`, `quantize`, and `fct_lump`. Fit with `transformations=None` or deterministic transformations that retain their fit-time parameters. Replay on the same covariate data remains supported; fitting anew on the scoring sample/target is the alternative when new bins are intended.
+- **Category calculations keep the same model columns when saved and reused.**
+  Formulas first use the original boolean/numeric values, then store category results in a form that survives pickling. NumPy category labels and category-comparison columns stay stable. Dropping missing rows keeps unused levels labelled the same way as observed levels; see Breaking Changes for older saves and unsupported reuse.
+
+- **Filling missing values respects column types and leaves your input alone.**
+  Nullable numeric columns use an `object` fallback only when a string missing-value marker needs it; numeric fills keep native types. Category columns keep all levels and add markers only where needed during weighting fits and prediction. A new missing-value-indicator frame does not replace missing values in the caller's original data.
+
+- **Outcome predictions keep category meanings across batches and transfers.**
+  The saved conversion record (`preprocessing_state`) survives pickling. Bootstrap fits keep the original category set and value-type rules, even for rare levels absent from a resample, without silently discarding failed predictions. Unsupported formula reuse and unknown levels in category-indicator columns raise actionable errors.
+
+- **Different outcome learners now agree on a usable input format.**
+  The choice no longer depends on outcome-column order. Auto mode uses one-hot encoding (numeric indicator columns for categories) if any learner needs it; forcing native category inputs raises an actionable error if a learner cannot accept them.
+
+- **Numerical change:** **Outcome-model bootstrap intervals use the data that were actually fitted.**
+  Resampled fits keep the original selected variables, complete training rows and actual fit weights, even after adjustment or transfer. The point estimate uses the saved model without refitting it; see Breaking Changes for older models and the extra training-data copy.
+
+- **`Sample` keeps weight choices and column roles consistent.**
+  Selecting, renaming, reading or updating active weights stays aligned with the sample's underlying responder data. Row/column filtering keeps accessors in sync; conversions preserve the frame's state, declared column roles (such as weights and outcomes), weight history and fitted outcome models. Pickled objects are rebuilt from internal frames; the guard against direct `Sample` construction remains.
+
+- **In-place fitting keeps your before-fitting baseline.**
+  `fit(inplace=True)` now preserves a separate unadjusted baseline as it updates the frame in place.
+
+- **Changing an outcome target does not discard the existing weighting work.**
+  `fit_outcome_model(target=...)` keeps sample weights, weighting models, adjustment history and the unadjusted baseline. If target data differ, it warns that retained weights may still describe the previous population, while subsequent outcome predictions use the new target.
+
+- **Outcome summaries still work when AIPW is unavailable.**
+  The outcome-model summary remains visible and explains which AIPW requirement is not met.
+
+- **Numerical change:** **Covariate views use the weights you supply.**
+  Weight names no longer decide whether explicit weights are used. Default unnamed `RangeIndex` weights stay positional even if data labels are reordered. Complete, unique label matches align before length checks and ignore unused weight labels; incomplete unique matches raise rather than silently assigning weights by position.
+
+- **Numerical change:** **Zero or missing weights no longer move weighted quantiles.**
+  Those rows are excluded from interpolation by position, so they cannot alter quantile comparisons (QQ plots). With zero or missing total weight, quantiles return `NaN` with a warning, not an error, including a scalar request. Inputs containing only contributing rows are unaffected by this exclusion.
+
+- **Numerical change:** **Distribution and mean-gap diagnostics handle zero weights and constants correctly.**
+  Continuous Kullback–Leibler divergence (KLD) leaves out zero-weight rows before fitting its density estimate (KDE) and choosing integration limits. Absolute standardized mean difference (ASMD) stays infinite for unequal constants with zero reference standard deviation; equal constants now have zero deviation.
+
+- **Numerical change:** **Cramér–von Mises distance (CVMD) compares both distributions on the same basis.**
+  Numeric and categorical comparisons use an equal mixture of sample and target probabilities, normalizing each set of weights separately, even when they have no values in common. Non-finite, negative and zero-total weights are rejected before probability normalization.
+
+- **Numerical change:** **Weight diagnostics count the intended observations.**
+  Weighted-median breakdown includes the observation that first reaches 50% of weight. Kish effective sample size leaves out missing-weight rows; design effect (Deff) and effective sample proportion (ESSP) still use valid weights and require at least one positive weight. Frequency tables keep default unit weights aligned with filtered row indices.
+
+- **Command-line diagnostics keep their batch identifiers.**
+  Every output row retains batch keys; conflicting diagnostic names get a `batch_` prefix. Wrong numbers of batch keys and missing keys raise errors rather than cutting off identifiers or silently losing observations before grouping.
+
+- **The diff-diff adapter accepts the upstream survey settings.**
+  Replicate-weight column lists, stratum-assignment lists and combined-weight boolean settings are now accepted.
+
+- **CSV output respects pandas' file options.**
+  Appending to a file, creating one only if it does not exist, text encoding and filename-based compression all keep their pandas behavior.
+
+- **Distribution plots honor your weight and histogram choices.**
+  Single numeric seaborn plots now receive the resolved histogram default rather than the original `None`. Plotly respects `weighted=False` and uniform `weight=None` without adding empty weight columns.
+
+## Documentation
+
+- **`dot_expansion()` explains how to fix different formula errors.**
+  Its Raises section distinguishes invalid variable arguments, malformed tokens and expanding a standalone dot without variables.
+
+- **IPW/CBPS trimming guidance now states the required setting.**
+  Percentile trimming requires `weight_trimming_mean_ratio=None`, rather than the default `20`. Conflicting options fail before fitting and explain that fix; IPW ignores both trimming options when `max_de` is set.
+
+## Code Quality & Refactoring
+
+- **Reusing a transferred weighting model avoids a second prediction pass.** Cached sample probabilities are reused after formula-induced row drops; weights and output positions are unchanged.
+
+- **Temporary bootstrap fits use less memory.** They skip unused raw-training-input copies, including fallback point-estimate fits, without changing estimates, intervals or the original model's fit record.
+
+## Tests
+
+- **R-inspired test data stay together, with each source identified.**
+  `tests/r_inspired/` contains the test inputs and reference material, including required files from nested folders. It is a mixed-license folder: sources are declared and attributed component by component, not covered by one blanket package-license claim. This organization and packaging do not change production numerical behavior.
+
+- **The CBPS reference checks use the same data outside the installed package.**
+  The unchanged CSV/R capture and local `load_cbps_reference()` loader live in `tests/r_inspired/fixtures/cbps/`; repository-only reference tests use that loader and the tutorial reads this bank directly. Original CBPS correlation guards and fixture checks are retained.
+
+- **Bento test flags no longer widen your test selection.**
+  Flags alone run this package's test directory. When you name Python tests explicitly, leading flags do not expand that selection.
+
+- **Survey outcome tests compare with complete R predictions.**
+  Their own fixture bank keeps the original survey API inputs, full outcome-prediction expectations and calibrated generalized-regression (GREG) expectations.
+
+- **MatchIt diagnostic tests use the original LaLonde data and weights.**
+  Their own bank keeps matching weights and independent balance-diagnostic expectations; these comparisons do not imply equivalent causal estimates.
+
+- **Paired weight-impact tests keep the complete R expectations.**
+  A self-contained bank uses the original LaLonde/MatchIt inputs and full paired R comparison results.
+
+- **glmnet tests keep separate inputs and expectations for each comparison.**
+  Self-contained banks retain original inputs with complete fixed-lambda/selected-fit IPW expectations, recorded cross-validation (CV) folds and independent deviance expectations, and independent weighted-scaler expectations.
+
+- **matrixStats/survey tests cover weighted statistics on recorded inputs.**
+  Self-contained fixtures cover weighted means, repeated selections, reliability variance and quantiles.
+
+- **recipes and forcats/hardhat tests check the resulting model inputs against R.**
+  Separate interaction and category fixtures keep complete R training/scoring matrices and executed factor-matrix comparisons.
+
+- **Survey Kalton/badcal tests compare raking and poststratification with R.**
+  Self-contained fixtures keep original inputs and R numerical comparisons. These banks do not claim that every R uncertainty calculation or numerical convention matches balance.
 
 # 0.23.0 (2026-08-04)
 
