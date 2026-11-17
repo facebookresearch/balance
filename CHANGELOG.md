@@ -152,6 +152,9 @@
 
 ## Tests
 
+- **PyPI release jobs keep a runner that supports Python 3.9.**
+  Pin release tests and publishing to Ubuntu 24.04, matching regular CI, so the move of `ubuntu-latest` to Ubuntu 26.04 does not block deployment before tests start. All Python 3.9–3.14 checks and the requirement that tests pass before publishing are retained.
+
 - **R-inspired test data stay together, with each source identified.**
   `tests/r_inspired/` contains the test inputs and reference material, including required files from nested folders. It is a mixed-license folder: sources are declared and attributed component by component, not covered by one blanket package-license claim. This organization and packaging do not change production numerical behavior.
 
