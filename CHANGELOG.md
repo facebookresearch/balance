@@ -8,6 +8,12 @@
   not take, so every CLI poststratify run failed. The CLI now leaves those
   options out for poststratify.
 
+- **Poststratify preserves covariates named `design_weight`.** An internal
+  design-weight column overwrote that covariate before computing joint cells,
+  producing incorrect weights or a false strict-matching error. Internal
+  weights now use an unused column name so fitting and stored-model replay
+  retain the intended cell distribution.
+
 # 0.24.0 (2026-11-17)
 
 ## TL;DR
