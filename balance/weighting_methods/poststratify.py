@@ -245,10 +245,16 @@ def poststratify(
         "weight"
     ].sum()
 
-    sample_df = sample_df.assign(design_weight=sample_weights)
-    sample_cell_props = sample_df.groupby(list(variables), observed=True)[
-        "design_weight"
-    ].sum()
+    # Keep the design weights separate from any covariate with the same name.
+    design_weight_column = "design_weight"
+    while design_weight_column in sample_df.columns:
+        design_weight_column = f"_{design_weight_column}"
+    sample_df = sample_df.assign(**{design_weight_column: sample_weights})
+    sample_cell_props = (
+        sample_df.groupby(list(variables), observed=True)[design_weight_column]
+        .sum()
+        .rename("design_weight")
+    )
 
     combined = pd.merge(
         target_cell_props,
@@ -273,7 +279,7 @@ def poststratify(
 
     combined["weight"] = combined["weight"] / combined["design_weight"]
     sample_df = sample_df.join(combined["weight"], on=variables)
-    raw_weights = sample_df.weight * sample_df.design_weight
+    raw_weights = sample_df["weight"] * sample_df[design_weight_column]
     target_total = raw_weights.sum()
     w = balance_adjustment.trim_weights(
         raw_weights,
