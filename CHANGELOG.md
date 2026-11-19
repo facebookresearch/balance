@@ -1,3 +1,13 @@
+# 0.25.0 (Unreleased - TBD)
+
+## Bug Fixes
+
+- **The CLI runs `--method poststratify` again.** The CLI passed the IPW model
+  options (`max_de`, `lambda_min`, `penalty_factor`, ...) to every method, and
+  since 0.20.0 `poststratify` raises `TypeError` on keyword arguments it does
+  not take, so every CLI poststratify run failed. The CLI now leaves those
+  options out for poststratify.
+
 # 0.24.0 (2026-11-17)
 
 ## TL;DR

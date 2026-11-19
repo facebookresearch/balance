@@ -1005,14 +1005,21 @@ class BalanceCLI:
                 "method": method,
                 "transformations": transformations,
                 "formula": formula,
-                "penalty_factor": penalty_factor,
-                "one_hot_encoding": one_hot_encoding,
-                "max_de": max_de,
-                "lambda_min": lambda_min,
-                "lambda_max": lambda_max,
-                "num_lambdas": num_lambdas,
                 "weight_trimming_mean_ratio": weight_trimming_mean_ratio,
             }
+            # poststratify raises TypeError on keyword arguments it does not
+            # take, so the model options are passed to the other methods only.
+            if method != "poststratify":
+                adjusted_kwargs.update(
+                    {
+                        "penalty_factor": penalty_factor,
+                        "one_hot_encoding": one_hot_encoding,
+                        "max_de": max_de,
+                        "lambda_min": lambda_min,
+                        "lambda_max": lambda_max,
+                        "num_lambdas": num_lambdas,
+                    }
+                )
 
             if model is not None:
                 adjusted_kwargs["model"] = model
