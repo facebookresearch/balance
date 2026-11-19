@@ -1136,14 +1136,21 @@
                 <span class="s2">"method"</span><span class="p">:</span> <span class="n">method</span><span class="p">,</span>
                 <span class="s2">"transformations"</span><span class="p">:</span> <span class="n">transformations</span><span class="p">,</span>
                 <span class="s2">"formula"</span><span class="p">:</span> <span class="n">formula</span><span class="p">,</span>
-                <span class="s2">"penalty_factor"</span><span class="p">:</span> <span class="n">penalty_factor</span><span class="p">,</span>
-                <span class="s2">"one_hot_encoding"</span><span class="p">:</span> <span class="n">one_hot_encoding</span><span class="p">,</span>
-                <span class="s2">"max_de"</span><span class="p">:</span> <span class="n">max_de</span><span class="p">,</span>
-                <span class="s2">"lambda_min"</span><span class="p">:</span> <span class="n">lambda_min</span><span class="p">,</span>
-                <span class="s2">"lambda_max"</span><span class="p">:</span> <span class="n">lambda_max</span><span class="p">,</span>
-                <span class="s2">"num_lambdas"</span><span class="p">:</span> <span class="n">num_lambdas</span><span class="p">,</span>
                 <span class="s2">"weight_trimming_mean_ratio"</span><span class="p">:</span> <span class="n">weight_trimming_mean_ratio</span><span class="p">,</span>
             <span class="p">}</span>
+            <span class="c1"># poststratify raises TypeError on keyword arguments it does not</span>
+            <span class="c1"># take, so the model options are passed to the other methods only.</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="o">!=</span> <span class="s2">"poststratify"</span><span class="p">:</span>
+                <span class="n">adjusted_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                    <span class="p">{</span>
+                        <span class="s2">"penalty_factor"</span><span class="p">:</span> <span class="n">penalty_factor</span><span class="p">,</span>
+                        <span class="s2">"one_hot_encoding"</span><span class="p">:</span> <span class="n">one_hot_encoding</span><span class="p">,</span>
+                        <span class="s2">"max_de"</span><span class="p">:</span> <span class="n">max_de</span><span class="p">,</span>
+                        <span class="s2">"lambda_min"</span><span class="p">:</span> <span class="n">lambda_min</span><span class="p">,</span>
+                        <span class="s2">"lambda_max"</span><span class="p">:</span> <span class="n">lambda_max</span><span class="p">,</span>
+                        <span class="s2">"num_lambdas"</span><span class="p">:</span> <span class="n">num_lambdas</span><span class="p">,</span>
+                    <span class="p">}</span>
+                <span class="p">)</span>
 
             <span class="k">if</span> <span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">adjusted_kwargs</span><span class="p">[</span><span class="s2">"model"</span><span class="p">]</span> <span class="o">=</span> <span class="n">model</span>
