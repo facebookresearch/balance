@@ -1128,6 +1128,52 @@ class TestCli(
                 np.array(["rake"]),
             )
 
+    def test_method_works_with_poststratify(self) -> None:
+        """Test CLI functionality with the poststratify weighting method."""
+        input_dataset = pd.DataFrame(
+            {
+                "x": ["a", "a", "b", "a", "b", "b"],
+                "is_respondent": [1, 1, 1, 0, 0, 0],
+                "id": [1, 2, 3, 4, 5, 6],
+                "weight": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            }
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            input_file = os.path.join(temp_dir, "input.csv")
+            output_file = os.path.join(temp_dir, "weights_out.csv")
+            diagnostics_output_file = os.path.join(temp_dir, "diagnostics_out.csv")
+            input_dataset.to_csv(input_file, index=False)
+
+            args = make_parser().parse_args(
+                [
+                    "--input_file",
+                    input_file,
+                    "--output_file",
+                    output_file,
+                    "--diagnostics_output_file",
+                    diagnostics_output_file,
+                    "--covariate_columns",
+                    "x",
+                    "--method",
+                    "poststratify",
+                ]
+            )
+
+            cli = BalanceCLI(args)
+            cli.update_attributes_for_main_used_by_adjust()
+            cli.main()
+
+            output = pd.read_csv(output_file)
+            diagnostics_output = pd.read_csv(diagnostics_output_file)
+            self.assertEqual(output["weight"].tolist(), [0.5, 0.5, 2.0])
+            self.assertEqual(
+                diagnostics_output[diagnostics_output["metric"] == "adjustment_method"][
+                    "var"
+                ].values,
+                np.array(["poststratify"]),
+            )
+
     def test_one_hot_encoding_works(self) -> None:
         """Test CLI one-hot encoding parameter with various boolean values."""
         with (
