@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import Literal
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import pytest
 from balance.stats_and_plots.weighted_comparisons_plots import (
@@ -41,6 +42,24 @@ def test_ascii_distribution_uses_categorical_dtypes(
     for column in ("text", "string", "category", "flag"):
         assert f"=== {column} (categorical) ===" in result
     assert "=== value (numeric, comparative) ===" in result
+
+
+@pytest.mark.parametrize("dtype", [np.complex64, np.complex128])
+def test_ascii_distribution_routes_complex_values_to_categories(
+    dtype: type[np.complexfloating],
+) -> None:
+    frame = pd.DataFrame({"value": np.array([1 + 2j, 2 + 1j], dtype=dtype)})
+
+    result = plot_dist(
+        [{"df": frame, "weight": None}],
+        library="balance",
+        numeric_n_values_threshold=0,
+    )
+
+    assert isinstance(result, str)
+    assert "=== value (categorical) ===" in result
+    assert "(1+2j)" in result
+    assert "(2+1j)" in result
 
 
 def test_seaborn_distribution_uses_categorical_dtypes(

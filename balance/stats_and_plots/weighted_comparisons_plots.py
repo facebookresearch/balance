@@ -71,7 +71,7 @@ def _numeric_plot_variables(frames: Iterable[pd.DataFrame]) -> set[str]:
     numeric_columns = [
         set(
             frame.select_dtypes(
-                include=["number"], exclude=["timedelta", "complex"]
+                include=["number"], exclude=["timedelta", np.complexfloating]
             ).columns
         )
         for frame in frames
