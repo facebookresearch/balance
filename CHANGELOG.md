@@ -1,5 +1,10 @@
 # 0.25.0 (Unreleased - TBD)
 
+## Compatibility
+
+- **Added support for Python 3.15.** CI tests it on Linux, macOS, and Windows.
+  The optional `did` extra uses diff-diff 4.x on Python 3.15.
+
 ## Bug Fixes
 
 - **The CLI runs `--method poststratify` again.** The CLI passed the IPW model

@@ -26,26 +26,24 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-24.04, macos-latest, windows-latest]
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.15']
         extras: ['']
         diff-diff-pin: ['']
         include:
-          # diff-diff [did] integration coverage. Restricted to ubuntu-24.04
-          # AND a single Python version (3.12) to keep the matrix small (2
-          # jobs total: one min-pin, one resolved-latest). diff-diff is a
-          # pure-Python adapter dependency, so multi-Python coverage adds
-          # very little signal -- the bare-import balance matrix above
-          # already exercises 3.9 - 3.14 across all three OSes. The weekly
-          # canary in diff-diff-canary.yml additionally tests against the
-          # absolute latest PyPI release (no pin) on 3.12. If you need
-          # macOS/Windows or other-Python coverage of the [did] arm, add
-          # explicit matrix entries here rather than relying on the canary.
+          # Exercise both supported diff-diff major versions on Ubuntu.
+          # Python 3.12 tests the minimum and latest supported 3.x releases.
+          # Python 3.15 tests the latest supported 4.x release.
+          # The weekly canary tests the latest PyPI release on Python 3.12.
           - os: ubuntu-24.04
             python-version: '3.12'
             extras: 'did'
             diff-diff-pin: '==3.3.0'
           - os: ubuntu-24.04
             python-version: '3.12'
+            extras: 'did'
+            diff-diff-pin: 'resolved-latest'
+          - os: ubuntu-24.04
+            python-version: '3.15'
             extras: 'did'
             diff-diff-pin: 'resolved-latest'
       fail-fast: false
@@ -153,11 +151,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           # 3.12 matches the brfss tutorial kernel, the canary, the [did]
-          # arm in the test matrix, and the notebook-CI workflow. Earlier
-          # versions used 3.9 — diff-diff supports 3.9-3.14 so [did] would
-          # still install, but consolidating on 3.12 keeps the docs-build
-          # interpreter aligned with the version that actually runs the
-          # tutorial in CI.
+          # arm for diff-diff 3.x in the test matrix, and notebook CI.
           python-version: "3.12"
       - name: Install Pkg + Dependencies
         run: |
