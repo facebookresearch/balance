@@ -14,8 +14,18 @@ from __future__ import (
 
 import inspect
 import logging
-import random
-from typing import Any, cast, Dict, List, Literal, Optional, Tuple, TypedDict, Union
+from typing import (
+    Any,
+    cast,
+    Dict,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    TypedDict,
+    Union,
+)
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -54,6 +64,19 @@ class DataFrameWithWeight(TypedDict, total=False):
 
     df: pd.DataFrame
     weight: Optional[pd.Series]
+
+
+def _numeric_plot_variables(frames: Iterable[pd.DataFrame]) -> set[str]:
+    """Return columns with a real numeric dtype in every plotted frame."""
+    numeric_columns = [
+        set(
+            frame.select_dtypes(
+                include=["number"], exclude=["timedelta", "complex"]
+            ).columns
+        )
+        for frame in frames
+    ]
+    return set.intersection(*numeric_columns) if numeric_columns else set()
 
 
 def _is_nbformat_mime_error(error: ValueError) -> bool:
@@ -541,6 +564,7 @@ def plot_qq_categorical(
     Notice that this is not a "real" qq-plot, but rather a scatter plot of (estimated, weighted) probabilities for each category.
 
     X-axis is the sample (adjusted, unadjusted) and Y-axis is the target.
+    A category present in only one dataset has zero frequency in the other.
 
     Args:
         dfs (List[Dict[str, Union[pd.DataFrame, pd.Series]]]): a list (of length 1 or more) of dictionaries which describe the DataFrames and weights
@@ -593,29 +617,34 @@ def plot_qq_categorical(
     target_weights = dfs[-1]["weight"] if weighted else None
     dfs = dfs[:-1]
 
-    target_plot_data = relative_frequency_table(target, column, target_weights)
+    target_props = (
+        relative_frequency_table(target, column, target_weights)
+        .set_index(column)["prop"]
+        .rename("prop_target")
+    )
 
     for ii, i in enumerate(dfs):
         d = i["df"]
         _w = i["weight"] if weighted else None
 
-        sample_plot_data = relative_frequency_table(d, column, _w)
-        plot_data = pd.merge(
-            sample_plot_data,
-            target_plot_data,
-            on=column,
-            how="outer",
-            suffixes=("_sample", "_target"),
+        sample_props = (
+            relative_frequency_table(d, column, _w)
+            .set_index(column)["prop"]
+            .rename("prop_sample")
         )
+        categories = sample_props.index.union(target_props.index)
+        sample_points = sample_props.reindex(categories, fill_value=0.0)
+        target_points = target_props.reindex(categories, fill_value=0.0)
 
         axis = sns.scatterplot(
-            x=plot_data.prop_sample, y=plot_data.prop_target, label=names[ii], ax=axis
+            x=sample_points, y=target_points, label=names[ii], ax=axis
         )
 
-        if plot_data.shape[0] < label_threshold:
-            for r in plot_data.itertuples():
-                # Using index access for namedtuple since attribute access causes pyre errors
-                axis.text(x=r.prop_sample, y=r.prop_target, s=r[1])  # type: ignore[attr-defined]
+        if len(categories) < label_threshold:
+            for category, sample_prop, target_prop in zip(
+                categories, sample_points, target_points
+            ):
+                axis.text(x=sample_prop, y=target_prop, s=str(category))
 
     # pyrefly: ignore [missing-attribute]
     axis.set_ylim(-0.1, 1.1)
@@ -658,9 +687,11 @@ def seaborn_plot_dist(
             The "weight" is a pd.Series of weights that are used when aggregating by the column variable.
         names (List[str]): a list of the names of the DataFrames that are plotted. E.g.: ['adjusted', 'unadjusted', 'target']
         variables (Optional[List], optional): The list of variables to use, by default (None) will plot all of them.
-        numeric_n_values_threshold (int, optional): How many unique values (or less) should be in a column so that it is considered to be a "category"? Defaults to 15.
-            This is compared against the maximum number of distinct values (for each of the variables) across all DataFrames.
-            Setting this value to 0 will disable this check.
+        numeric_n_values_threshold (int, optional): Real numeric columns with fewer
+            distinct values than this threshold use categorical plots. The maximum
+            distinct count across the DataFrames is used. A column must be real
+            numeric in every DataFrame to qualify for numeric plots. Defaults to
+            15. Set to 0 to disable the distinct-value check.
         weighted (bool, optional): If to pass the weights from the dicts inside dfs. Defaults to True.
         dist_type (Optional[str], optional): can be "hist", "kde", or "qq". Defaults to None.
         return_axes (bool, optional): if to returns axes or None. Defaults to False,
@@ -734,8 +765,7 @@ def seaborn_plot_dist(
         List[plt.Axes], axes if isinstance(axes, list) else axes.tolist()
     )
 
-    # TODO: patch choose_variables to return outcome_types from multiple_objects
-    numeric_variables = dfs[0]["df"].select_dtypes(exclude=["object"]).columns.values
+    numeric_variables = _numeric_plot_variables(d["df"] for d in dfs)
 
     for io, o in enumerate(variables):
         #  Find the maximum number of non-missing values of this variable across
@@ -1205,7 +1235,7 @@ def plotly_plot_bar(
             title=f"Sample Vs Target {variable}",
             paper_bgcolor="rgb(255, 255, 255)",
             plot_bgcolor="rgb(255, 255, 255)",
-            xaxis={"title": variable},
+            xaxis={"title": variable, "type": "category"},
             yaxis={
                 "title": "Proportion of Total",
                 "range": ylim if ylim is not None else None,
@@ -1250,7 +1280,9 @@ def plotly_plot_dist(
         dict_of_dfs (Dict[str, pd.DataFrame]): The key is the name of the DataFrame (E.g.: self, unadjusted, target),
             and the value is the DataFrame that contains the variables that we want to plot.
         variables (Optional[List[str]], optional): a list of variables to use for plotting. Defaults (i.e.: if None) is to use the list of all variables.
-        numeric_n_values_threshold (int, optional): How many numbers should be in a column so that it is considered to be a "category"? Defaults to 15.
+        numeric_n_values_threshold (int, optional): A column qualifies for numeric
+            plots if it has a real numeric dtype in every DataFrame and reaches
+            this distinct-value count in at least one DataFrame. Defaults to 15.
         weighted (bool, optional): If to use the weights with the plots. Defaults to True.
         dist_type (Optional[Literal["kde", "qq"]], optional): The type of plot to draw (relevant only for numerical variables). Defaults to None (which falls back to "kde").
         plot_it (bool, optional): If to plot the plots interactively instead of returning a dictionary. Defaults to True.
@@ -1314,19 +1346,7 @@ def plotly_plot_dist(
 
     logger.debug(f"plotting variables {variables}")
 
-    # TODO: patch choose_variables to return outcome_types from multiple_objects
-    # find numeric values, using 'sample' df. If for some reason sample is
-    # not an option, use a random df.
-    if "sample" in dict_of_dfs:
-        numeric_variables = (
-            dict_of_dfs["sample"].select_dtypes(exclude=["object"]).columns.values
-        )
-    else:
-        numeric_variables = (
-            dict_of_dfs[random.choice(list(dict_of_dfs.keys()))]
-            .select_dtypes(exclude=["object"])
-            .columns.values
-        )
+    numeric_variables = _numeric_plot_variables(dict_of_dfs.values())
 
     for _, o in enumerate(variables):
         #  Find the maximum number of non-missing values of this variable across
@@ -1452,7 +1472,9 @@ def plot_dist(
         names (List[str]): a list of the names of the DataFrames that are plotted. E.g.: ['adjusted', 'unadjusted', 'target']
             If None, then all DataFrames will be plotted, but only if library == "seaborn". (TODO: to remove this restriction)
         variables (Optional[List[str]], optional): a list of variables to use for plotting. Default (i.e.: if None) is to use the list of all variables.
-        numeric_n_values_threshold (int, optional): How many numbers should be in a column so that it is considered to be a "category"? Defaults to 15.
+        numeric_n_values_threshold (int, optional): A column qualifies for numeric
+            plots if it has a real numeric dtype in every DataFrame and reaches
+            this distinct-value count in at least one DataFrame. Defaults to 15.
         weighted (bool, optional): If to use the weights with the plots. Defaults to True.
         dist_type (Literal["kde", "hist", "qq", "ecdf", "hist_ascii"], optional): The type of plot to draw. The 'qq' and 'kde' options are available for library="plotly",
             while all options except hist_ascii are available if using library="seaborn". The 'hist_ascii' option is used with library="balance";

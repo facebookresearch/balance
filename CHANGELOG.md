@@ -2,6 +2,14 @@
 
 ## Bug Fixes
 
+- **Distribution plots recognize categorical column types.** ASCII, seaborn,
+  and Plotly use categorical plots for strings, pandas categories, and
+  Booleans, even when the numeric unique-value threshold is disabled.
+  Numeric plotting requires a real numeric dtype in every plotted frame.
+  Relative frequencies use observed categories consistently across pandas
+  versions. Categorical seaborn comparisons show zero for levels absent from
+  one group, and Plotly uses a categorical axis for bars with numeric labels.
+
 - **The CLI runs `--method poststratify` again.** The CLI passed the IPW model
   options (`max_de`, `lambda_min`, `penalty_factor`, ...) to every method, and
   since 0.20.0 `poststratify` raises `TypeError` on keyword arguments it does
