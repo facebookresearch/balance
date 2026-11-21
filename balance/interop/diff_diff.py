@@ -87,8 +87,8 @@ try:
 except ImportError as _e:  # pragma: no cover
     _IMPORT_ERROR: ImportError | None = ImportError(
         "balance.interop.diff_diff requires the diff-diff package "
-        "(>=3.3.0,<4). Install via `pip install 'balance[did]'` or "
-        f"`pip install diff-diff`. Original error: {_e}"
+        "(>=3.3.0,<4 on Python 3.9-3.14, >=4.0.0,<5 on Python 3.15+). "
+        f"Install via `pip install 'balance[did]'`. Original error: {_e}"
     )
     _dd = None  # type: ignore[assignment]
 else:
@@ -739,14 +739,8 @@ def as_balance_diagnostic(
     """
     out: dict[str, object] = {}
 
-    # diff-diff side — read defensively via getattr() since the result
-    # protocol is structural across ~10 estimator dataclasses. Different
-    # estimator classes name the headline ATT differently:
-    # CallawaySantAnnaResults exposes ``overall_att`` (used by the new
-    # tutorial), while DifferenceInDifferencesResults / TwoWayFixedEffects
-    # expose ``att``. Try ``att`` first to preserve the existing contract,
-    # then fall back to ``overall_att`` so callers using either result
-    # family see a populated key rather than ``None``.
+    # Read the headline ATT from the estimator's result. Older
+    # CallawaySantAnnaResults expose it as ``overall_att``.
     att_value: object = getattr(did_results, "att", None)
     if att_value is None:
         att_value = getattr(did_results, "overall_att", None)

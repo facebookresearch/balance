@@ -59,8 +59,7 @@ More about the methodological background can be found in
 
 ## Requirements
 
-You need Python 3.9, 3.10, 3.11, 3.12, 3.13, or 3.14 to run _balance_. _balance_
-can be built and run from Linux, OSX, and Windows.
+_balance_ supports Python 3.9 through 3.15 on Linux, macOS, and Windows.
 
 The required Python dependencies are:
 
@@ -402,6 +401,9 @@ the optional extra:
 ```bash
 pip install "balance[did]"
 ```
+
+The extra uses diff-diff 4.x on Python 3.15 and diff-diff 3.3 or newer within
+the 3.x series on Python 3.9 through 3.14.
 
 Then the canonical workflow is:
 
