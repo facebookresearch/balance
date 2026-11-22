@@ -30,7 +30,10 @@ TEST_SEED = 2021
 
 
 def check_some_flags(
-    flag: bool = True, the_flag_str: str = "--skip_standardize_types"
+    flag: bool = True,
+    the_flag_str: str = "--skip_standardize_types",
+    *,
+    method: str = "ipw",
 ) -> dict[str, pd.DataFrame]:
     """
     Helper function to test CLI flags with standardized input data.
@@ -38,6 +41,7 @@ def check_some_flags(
     Args:
         flag: Whether to include the specified flag in CLI arguments
         the_flag_str: The CLI flag string to test
+        method: Weighting method to use in the CLI run
 
     Returns:
         Dict containing input and output pandas DataFrames for comparison
@@ -64,6 +68,8 @@ def check_some_flags(
             out_file,
             "--covariate_columns",
             "x,y",
+            "--method",
+            method,
             "--num_lambdas=1",
         ]
         if flag:
@@ -1603,8 +1609,13 @@ class TestCli(
 
     def test_cli_return_df_with_original_dtypes(self) -> None:
         """Test CLI flag for preserving original data types in output DataFrames."""
-        out_True = check_some_flags(True, "--return_df_with_original_dtypes")
-        out_False = check_some_flags(False, "--return_df_with_original_dtypes")
+        # The null adjustment keeps weights exactly representable as integers.
+        out_True = check_some_flags(
+            True, "--return_df_with_original_dtypes", method="null"
+        )
+        out_False = check_some_flags(
+            False, "--return_df_with_original_dtypes", method="null"
+        )
 
         # IF the flag 'return_df_with_original_dtypes' is not passed, then the dtypes of the output dataframes are different
         self.assertEqual(
@@ -1644,6 +1655,123 @@ class TestCli(
                 "weight": dtype("int64"),
             },
         )
+        self.assertTrue(out_True["pd_out"]["weight"].eq(1).all())
+
+    def test_cli_restore_original_dtypes_preserves_fractional_weights(self) -> None:
+        source = pd.DataFrame(
+            {
+                "id": [1, 2, 3, 4, 5, 6],
+                "cell": ["a", "a", "b", "a", "b", "b"],
+                "is_respondent": [1, 1, 1, 0, 0, 0],
+                "survey_weight": [1, 1, 1, 1, 1, 1],
+            }
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            input_file = os.path.join(temp_dir, "input.csv")
+            output_file = os.path.join(temp_dir, "output.csv")
+            source.to_csv(input_file, index=False)
+            args = make_parser().parse_args(
+                [
+                    "--input_file",
+                    input_file,
+                    "--output_file",
+                    output_file,
+                    "--covariate_columns",
+                    "cell",
+                    "--weight_column",
+                    "survey_weight",
+                    "--method",
+                    "poststratify",
+                    "--return_df_with_original_dtypes",
+                ]
+            )
+            cli = BalanceCLI(args)
+            cli.update_attributes_for_main_used_by_adjust()
+            cli.main()
+            result = pd.read_csv(output_file)
+
+        pd.testing.assert_series_equal(
+            result["survey_weight"], pd.Series([0.5, 0.5, 2.0], name="survey_weight")
+        )
+        pd.testing.assert_series_equal(result["id"], source["id"].iloc[:3])
+        pd.testing.assert_series_equal(
+            result["is_respondent"], source["is_respondent"].iloc[:3]
+        )
+
+    def test_cli_restore_original_dtypes_preserves_out_of_range_weights(self) -> None:
+        source = pd.DataFrame(
+            {
+                "id": [1, 2, 3, 4, 5],
+                "cell": ["a", "b", "a", "a", "b"],
+                "is_respondent": [1, 1, 0, 0, 0],
+                "weight": pd.Series([1, 1, 100, 100, 30], dtype="int8"),
+            }
+        )
+        args = make_parser().parse_args(
+            [
+                "--input_file",
+                "unused.csv",
+                "--output_file",
+                "unused.csv",
+                "--covariate_columns",
+                "cell",
+                "--method",
+                "poststratify",
+                "--return_df_with_original_dtypes",
+            ]
+        )
+        result = BalanceCLI(args).process_batch(source)["adjusted"]
+
+        pd.testing.assert_series_equal(
+            result["weight"], pd.Series([200.0, 30.0], name="weight")
+        )
+
+    def test_cli_restore_original_dtypes_handles_subnormal_weights(self) -> None:
+        args = make_parser().parse_args(
+            [
+                "--input_file",
+                "unused.csv",
+                "--output_file",
+                "unused.csv",
+                "--covariate_columns",
+                "x,y",
+                "--method",
+                "rake",
+                "--return_df_with_original_dtypes",
+            ]
+        )
+        cli = BalanceCLI(args)
+        smallest_float32 = 2.0**-149
+        for target_weight, expected_dtype in (
+            (2 * smallest_float32, "float32"),
+            (smallest_float32, "float64"),
+        ):
+            with self.subTest(target_weight=target_weight):
+                source = pd.DataFrame(
+                    {
+                        "id": range(7),
+                        "x": ["a", "a", "b", "b", "a", "b", "b"],
+                        "y": ["u", "v", "u", "v", "u", "u", "v"],
+                        "is_respondent": [1, 1, 1, 1, 0, 0, 0],
+                        "weight": pd.Series(
+                            [1, 1, 1, 1, target_weight, 0.5, 0.5], dtype="float32"
+                        ),
+                    }
+                )
+                with np.errstate(under="warn"), warnings.catch_warnings():
+                    warnings.simplefilter("error", RuntimeWarning)
+                    result = cli.process_batch(source, transformations=None)["adjusted"]
+
+                # Raking splits the target mass for x="a" across two respondents.
+                pd.testing.assert_series_equal(
+                    result["weight"],
+                    pd.Series(
+                        [target_weight / 2, target_weight / 2, 0.5, 0.5],
+                        dtype=expected_dtype,
+                        name="weight",
+                    ),
+                    check_exact=True,
+                )
 
     def test_cli_standardize_types(self) -> None:
         """Test CLI standardize_types flag with different boolean values."""

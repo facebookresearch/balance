@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 import balance
+import numpy as np
 import pandas as pd
 from balance import __version__  # @manual
 from balance.adjustment import BALANCE_WEIGHTING_METHODS
@@ -1047,23 +1048,7 @@ class BalanceCLI:
                 "%s diagnostics object: %s" % (sample_package_name, str(diagnostics))
             )
 
-            # Update dtypes
-            if (
-                self.args.return_df_with_original_dtypes
-                and adjusted._df_dtypes is not None
-            ):
-                df_to_return = balance.util._astype_in_df_from_dtypes(
-                    adjusted.df, adjusted._df_dtypes
-                )
-                balance.util._warn_of_df_dtypes_change(
-                    adjusted.df.dtypes,
-                    df_to_return.dtypes,
-                    "df_after_adjust",
-                    "df_returned_by_the_cli",
-                )
-
-            else:
-                df_to_return = adjusted.df
+            df_to_return = self._output_frame(adjusted, "df_after_adjust")
             rval = {"adjusted": df_to_return, "diagnostics": diagnostics}
         except Exception as e:
             if self.args.succeed_on_weighting_failure:
@@ -1075,22 +1060,7 @@ class BalanceCLI:
                 module_name = module.__name__ if module is not None else None
                 error_message = f"{module_name}: {e}"
                 logger.exception("The error message is: " + error_message)
-                # Update dtypes
-                if (
-                    self.args.return_df_with_original_dtypes
-                    and sample._df_dtypes is not None
-                ):
-                    df_to_return = balance.util._astype_in_df_from_dtypes(
-                        sample.df, sample._df_dtypes
-                    )
-                    balance.util._warn_of_df_dtypes_change(
-                        sample.df.dtypes,
-                        df_to_return.dtypes,
-                        "df_without_adjusting",
-                        "df_returned_by_the_cli",
-                    )
-                else:
-                    df_to_return = sample.df
+                df_to_return = self._output_frame(sample, "df_without_adjusting")
                 rval = {
                     "adjusted": df_to_return,
                     "diagnostics": pd.DataFrame(
@@ -1107,6 +1077,40 @@ class BalanceCLI:
             else:
                 raise
         return rval
+
+    def _output_frame(
+        self, sample: balance_sample_cls, frame_name: str
+    ) -> pd.DataFrame:
+        """Return the output frame, restoring requested dtypes without losing weights."""
+        df = sample.df
+        if not self.args.return_df_with_original_dtypes:
+            return df
+        original_dtypes = sample._df_dtypes
+        if original_dtypes is None:
+            return df
+
+        weight_column = self.weight_column()
+        restored_weights = None
+        if weight_column in df.columns and weight_column in original_dtypes.index:
+            weights = df[weight_column]
+            weight_dtype = original_dtypes[weight_column]
+            original_dtypes = original_dtypes.drop(weight_column)
+            try:
+                # Pandas can truncate fractions or overflow when casting weights.
+                with np.errstate(over="raise", under="raise", invalid="raise"):
+                    candidate = weights.astype(weight_dtype)
+                    if weights.equals(candidate.astype(weights.dtype)):
+                        restored_weights = candidate
+            except (FloatingPointError, OverflowError, TypeError, ValueError):
+                pass
+
+        restored = balance.util._astype_in_df_from_dtypes(df, original_dtypes)
+        if restored_weights is not None:
+            restored[weight_column] = restored_weights
+        balance.util._warn_of_df_dtypes_change(
+            df.dtypes, restored.dtypes, frame_name, "df_returned_by_the_cli"
+        )
+        return restored
 
     def adapt_output(self, output_df: pd.DataFrame) -> pd.DataFrame:
         """Filter raw output dataframe to user's requested rows/columns.
@@ -1742,11 +1746,9 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
         "--return_df_with_original_dtypes",
         action="store_true",
         help=(
-            "If the input table has unsupported column types (e.g.: int32), then when using Sample.from_frame it will be changed (e.g.: float32). "
-            "The returned df from the cli will use the transformed DataFrame. If this flag is used, then the cli will attempt to restore the original dtypes of the input table"
-            "before returning it."
-            "WARNING: sometimes the pd.astype command might lead to odd behaviors, so it is generally safer to NOT use this flag but to manually specify the desired dtypes in the input/output tables."
-            "For example, dealing with missing values could lead to many issues (e.g.: there is np.nan and pd.NA, and these do not play nicely with type conversions)"
+            "Attempt to restore the original input column dtypes in the output. "
+            "The weight column keeps its computed dtype if the original dtype "
+            "cannot represent all output weights exactly."
         ),
     )
     parser.add_argument(

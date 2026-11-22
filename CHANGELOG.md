@@ -7,6 +7,11 @@
 
 ## Bug Fixes
 
+- **Numerical change: CLI dtype restoration preserves adjusted weights.**
+  `--return_df_with_original_dtypes` restores the original weight dtype only
+  when it can represent every output weight exactly. Fractional weights and
+  weights outside the original dtype's range retain their computed values.
+
 - **Distribution plots recognize categorical column types.** ASCII, seaborn
   and Plotly plots draw strings, pandas categories and Booleans as categories,
   even with `numeric_n_values_threshold=0`. Only columns holding real numbers
