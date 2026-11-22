@@ -13,6 +13,7 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from balance.stats_and_plots.weighted_comparisons_plots import (
+    _numeric_plot_variables,
     DataFrameWithWeight,
     naming_legend,
 )
@@ -727,8 +728,10 @@ def ascii_plot_dist(
         names: Names for each DataFrame (e.g., ["self", "unadjusted", "target"]).
             If None, defaults to "df_0", "df_1", etc.
         variables: Subset of variables to plot. None means all.
-        numeric_n_values_threshold: Columns with fewer unique values than this
-            are treated as categorical. Defaults to 15.
+        numeric_n_values_threshold: A column qualifies for a numeric histogram if
+            it has a real numeric dtype in every DataFrame and reaches this
+            distinct-value count in at least one DataFrame. Set to 0 to decide
+            by dtype alone. Defaults to 15.
         weighted: Whether to use weights. Defaults to True.
         n_bins: Number of bins for numeric histograms. Defaults to None,
             which auto-detects using Sturges' rule.
@@ -829,7 +832,7 @@ def ascii_plot_dist(
     variables = choose_variables(*(d["df"] for d in dfs), variables=variables)
     logger.debug(f"ASCII plotting variables {variables}")
 
-    numeric_variables = dfs[0]["df"].select_dtypes(exclude=["object"]).columns.values
+    numeric_variables = _numeric_plot_variables(d["df"] for d in dfs)
 
     output_parts: List[str] = []
 

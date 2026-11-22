@@ -713,7 +713,7 @@ def relative_frequency_table(
     w: pd.Series | None = None,
 ) -> pd.DataFrame:
     """Creates a relative frequency table by aggregating over a categorical column (`column`) - optionally weighted by `w`.
-    I.e.: produce the proportion (or weighted proportion) of rows that appear in each category, relative to the total number of rows (or sum of weights).
+    I.e.: produce the proportion (or weighted proportion) of rows that appear in each observed category, relative to the total number of rows (or sum of weights).
     See: https://en.wikipedia.org/wiki/Frequency_(statistics)#Types.
 
     Used in plotting functions.
@@ -763,31 +763,24 @@ def relative_frequency_table(
 
     if not (w is None or isinstance(w, pd.Series)):
         raise TypeError("argument `w` must be a pandas Series or None")
+    if not isinstance(df, (pd.DataFrame, pd.Series)):
+        raise TypeError("argument `df` must be a pandas DataFrame or Series")
     if w is None:
-        if not isinstance(df, (pd.DataFrame, pd.Series)):
-            raise TypeError("argument `df` must be a pandas DataFrame or Series")
         w = pd.Series(np.ones(df.shape[0]), index=df.index)
 
-    w = w.rename("Freq")
+    if isinstance(df, pd.DataFrame):
+        label = df.columns[0] if column is None else column
+        values = df[label]
+    else:
+        if column is not None and column != df.name:
+            raise KeyError(column)
+        label = "group" if df.name is None else df.name
+        values = df
 
-    if column is None:
-        if isinstance(df, pd.DataFrame):
-            column = df.columns.values[0]
-        elif isinstance(df, pd.Series):
-            if df.name is None:
-                df.name = "group"
-            # pyrefly: ignore [bad-assignment]
-            column = df.name
-        else:
-            raise TypeError("argument `df` must be a pandas DataFrame or Series")
-
-    relative_frequency_table_data = pd.concat((df, w), axis=1)
-
-    relative_frequency_table_data = relative_frequency_table_data.groupby(
-        column, as_index=False
-    ).sum()
-    relative_frequency_table_data["prop"] = relative_frequency_table_data["Freq"] / sum(
-        relative_frequency_table_data["Freq"]
+    plot_data = pd.concat((values.rename("category"), w.rename("weight")), axis=1)
+    frequencies = (
+        plot_data["weight"].groupby(plot_data["category"], observed=True).sum()
     )
-
-    return relative_frequency_table_data.loc[:, (column, "prop")]
+    return (
+        (frequencies / sum(frequencies)).rename("prop").rename_axis(label).reset_index()
+    )
