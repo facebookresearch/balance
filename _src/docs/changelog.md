@@ -17,6 +17,17 @@ hide_title: true
 
 ## Bug Fixes
 
+- **Distribution plots recognize categorical column types.** ASCII, seaborn
+  and Plotly plots draw strings, pandas categories and Booleans as categories,
+  even with `numeric_n_values_threshold=0`. Only columns holding real numbers
+  in every plotted frame get numeric plots; dates, durations and complex
+  numbers are now drawn as categories (some backends previously drew dates as
+  numbers, and others failed). Seaborn proportion plots show 0 for a category
+  missing from one frame. Plotly bar charts use a categorical x-axis in sorted
+  order (pandas categoricals keep their order), even when the first frame
+  lacks a category. `relative_frequency_table` leaves out unused categorical
+  levels on every pandas version (pandas < 3 listed them with proportion 0).
+
 - **The CLI runs `--method poststratify` again.** The CLI passed the IPW model
   options (`max_de`, `lambda_min`, `penalty_factor`, ...) to every method, and
   since 0.20.0 `poststratify` raises `TypeError` on keyword arguments it does

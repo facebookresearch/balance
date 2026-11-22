@@ -776,7 +776,7 @@
     <span class="n">w</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Creates a relative frequency table by aggregating over a categorical column (`column`) - optionally weighted by `w`.</span>
-<span class="sd">    I.e.: produce the proportion (or weighted proportion) of rows that appear in each category, relative to the total number of rows (or sum of weights).</span>
+<span class="sd">    I.e.: produce the proportion (or weighted proportion) of rows that appear in each observed category, relative to the total number of rows (or sum of weights).</span>
 <span class="sd">    See: https://en.wikipedia.org/wiki/Frequency_(statistics)#Types.</span>
 
 <span class="sd">    Used in plotting functions.</span>
@@ -826,34 +826,27 @@
 
     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">w</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"argument `w` must be a pandas Series or None"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"argument `df` must be a pandas DataFrame or Series"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">w</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"argument `df` must be a pandas DataFrame or Series"</span><span class="p">)</span>
         <span class="n">w</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
 
-    <span class="n">w</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"Freq"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">column</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">column</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">label</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">column</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">column</span> <span class="o">!=</span> <span class="n">df</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">column</span><span class="p">)</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="s2">"group"</span> <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">df</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">df</span>
 
-    <span class="k">if</span> <span class="n">column</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-            <span class="n">column</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">df</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">"group"</span>
-            <span class="c1"># pyrefly: ignore [bad-assignment]</span>
-            <span class="n">column</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">name</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"argument `df` must be a pandas DataFrame or Series"</span><span class="p">)</span>
-
-    <span class="n">relative_frequency_table_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">df</span><span class="p">,</span> <span class="n">w</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-    <span class="n">relative_frequency_table_data</span> <span class="o">=</span> <span class="n">relative_frequency_table_data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
-        <span class="n">column</span><span class="p">,</span> <span class="n">as_index</span><span class="o">=</span><span class="kc">False</span>
-    <span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-    <span class="n">relative_frequency_table_data</span><span class="p">[</span><span class="s2">"prop"</span><span class="p">]</span> <span class="o">=</span> <span class="n">relative_frequency_table_data</span><span class="p">[</span><span class="s2">"Freq"</span><span class="p">]</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span>
-        <span class="n">relative_frequency_table_data</span><span class="p">[</span><span class="s2">"Freq"</span><span class="p">]</span>
+    <span class="n">plot_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">values</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"category"</span><span class="p">),</span> <span class="n">w</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"weight"</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">frequencies</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">plot_data</span><span class="p">[</span><span class="s2">"weight"</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">"category"</span><span class="p">],</span> <span class="n">observed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
     <span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">relative_frequency_table_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="s2">"prop"</span><span class="p">)]</span></div>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">frequencies</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span><span class="n">frequencies</span><span class="p">))</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"prop"</span><span class="p">)</span><span class="o">.</span><span class="n">rename_axis</span><span class="p">(</span><span class="n">label</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+    <span class="p">)</span></div>
 
 </pre></div>
 

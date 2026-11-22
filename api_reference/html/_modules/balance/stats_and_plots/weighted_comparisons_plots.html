@@ -51,8 +51,18 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">TypedDict</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">cast</span><span class="p">,</span>
+    <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">Iterable</span><span class="p">,</span>
+    <span class="n">List</span><span class="p">,</span>
+    <span class="n">Literal</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Tuple</span><span class="p">,</span>
+    <span class="n">TypedDict</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -65,7 +75,12 @@
     <span class="n">relative_frequency_table</span><span class="p">,</span>
     <span class="n">weighted_quantile</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">_safe_show_legend</span><span class="p">,</span> <span class="n">choose_variables</span><span class="p">,</span> <span class="n">rm_mutual_nas</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">balance.util</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">_assert_type</span><span class="p">,</span>
+    <span class="n">_safe_show_legend</span><span class="p">,</span>
+    <span class="n">choose_variables</span><span class="p">,</span>
+    <span class="n">rm_mutual_nas</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.colors</span><span class="w"> </span><span class="kn">import</span> <span class="n">rgb2hex</span>
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
@@ -94,6 +109,36 @@
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
     <span class="n">weight</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]</span></div>
 
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_numeric_plot_variables</span><span class="p">(</span><span class="n">frames</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Return columns with a real numeric dtype in every plotted frame."""</span>
+    <span class="n">numeric_columns</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="nb">set</span><span class="p">(</span>
+            <span class="n">frame</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span>
+                <span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">"number"</span><span class="p">],</span> <span class="n">exclude</span><span class="o">=</span><span class="p">[</span><span class="s2">"timedelta"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">complexfloating</span><span class="p">]</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">columns</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">frames</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="nb">set</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="o">*</span><span class="n">numeric_columns</span><span class="p">)</span> <span class="k">if</span> <span class="n">numeric_columns</span> <span class="k">else</span> <span class="nb">set</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_category_axis_order</span><span class="p">(</span><span class="n">categories</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Return the distinct categories of several frames, sorted when comparable.</span>
+
+<span class="sd">    A pandas categorical shared by every frame keeps its category order.</span>
+<span class="sd">    Values that cannot be compared keep their first-seen order.</span>
+<span class="sd">    """</span>
+    <span class="n">non_empty</span> <span class="o">=</span> <span class="p">[</span><span class="n">values</span> <span class="k">for</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">categories</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">non_empty</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="n">distinct</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">non_empty</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">distinct</span> <span class="o">=</span> <span class="n">distinct</span><span class="o">.</span><span class="n">sort_values</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">return</span> <span class="n">distinct</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_is_nbformat_mime_error</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -592,6 +637,7 @@
 <span class="sd">    Notice that this is not a "real" qq-plot, but rather a scatter plot of (estimated, weighted) probabilities for each category.</span>
 
 <span class="sd">    X-axis is the sample (adjusted, unadjusted) and Y-axis is the target.</span>
+<span class="sd">    A category present in only one dataset has zero frequency in the other.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        dfs (List[Dict[str, Union[pd.DataFrame, pd.Series]]]): a list (of length 1 or more) of dictionaries which describe the DataFrames and weights</span>
@@ -644,29 +690,35 @@
     <span class="n">target_weights</span> <span class="o">=</span> <span class="n">dfs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">"weight"</span><span class="p">]</span> <span class="k">if</span> <span class="n">weighted</span> <span class="k">else</span> <span class="kc">None</span>
     <span class="n">dfs</span> <span class="o">=</span> <span class="n">dfs</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
-    <span class="n">target_plot_data</span> <span class="o">=</span> <span class="n">relative_frequency_table</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">)</span>
+    <span class="n">target_props</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">relative_frequency_table</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">target_weights</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">column</span><span class="p">)[</span><span class="s2">"prop"</span><span class="p">]</span>
+        <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"prop_target"</span><span class="p">)</span>
+    <span class="p">)</span>
 
     <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dfs</span><span class="p">):</span>
         <span class="n">d</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s2">"df"</span><span class="p">]</span>
         <span class="n">_w</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s2">"weight"</span><span class="p">]</span> <span class="k">if</span> <span class="n">weighted</span> <span class="k">else</span> <span class="kc">None</span>
 
-        <span class="n">sample_plot_data</span> <span class="o">=</span> <span class="n">relative_frequency_table</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">_w</span><span class="p">)</span>
-        <span class="n">plot_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
-            <span class="n">sample_plot_data</span><span class="p">,</span>
-            <span class="n">target_plot_data</span><span class="p">,</span>
-            <span class="n">on</span><span class="o">=</span><span class="n">column</span><span class="p">,</span>
-            <span class="n">how</span><span class="o">=</span><span class="s2">"outer"</span><span class="p">,</span>
-            <span class="n">suffixes</span><span class="o">=</span><span class="p">(</span><span class="s2">"_sample"</span><span class="p">,</span> <span class="s2">"_target"</span><span class="p">),</span>
+        <span class="n">sample_props</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">relative_frequency_table</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">_w</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">column</span><span class="p">)[</span><span class="s2">"prop"</span><span class="p">]</span>
+            <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"prop_sample"</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">categories</span> <span class="o">=</span> <span class="n">sample_props</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">target_props</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="n">sample_points</span> <span class="o">=</span> <span class="n">sample_props</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">categories</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">target_points</span> <span class="o">=</span> <span class="n">target_props</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">categories</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+
+        <span class="n">axis</span> <span class="o">=</span> <span class="n">_assert_type</span><span class="p">(</span>
+            <span class="n">sns</span><span class="o">.</span><span class="n">scatterplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">sample_points</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">target_points</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">names</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axis</span><span class="p">),</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="n">axis</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">scatterplot</span><span class="p">(</span>
-            <span class="n">x</span><span class="o">=</span><span class="n">plot_data</span><span class="o">.</span><span class="n">prop_sample</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">plot_data</span><span class="o">.</span><span class="n">prop_target</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">names</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">axis</span>
-        <span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">plot_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">label_threshold</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">plot_data</span><span class="o">.</span><span class="n">itertuples</span><span class="p">():</span>
-                <span class="c1"># Using index access for namedtuple since attribute access causes pyre errors</span>
-                <span class="n">axis</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">prop_sample</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">prop_target</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># type: ignore[attr-defined]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">categories</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">label_threshold</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">category</span><span class="p">,</span> <span class="n">sample_prop</span><span class="p">,</span> <span class="n">target_prop</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                <span class="n">categories</span><span class="p">,</span> <span class="n">sample_points</span><span class="p">,</span> <span class="n">target_points</span>
+            <span class="p">):</span>
+                <span class="n">axis</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">sample_prop</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">target_prop</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">category</span><span class="p">))</span>
 
     <span class="c1"># pyrefly: ignore [missing-attribute]</span>
     <span class="n">axis</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">)</span>
@@ -712,9 +764,10 @@
 <span class="sd">            The "weight" is a pd.Series of weights that are used when aggregating by the column variable.</span>
 <span class="sd">        names (List[str]): a list of the names of the DataFrames that are plotted. E.g.: ['adjusted', 'unadjusted', 'target']</span>
 <span class="sd">        variables (Optional[List], optional): The list of variables to use, by default (None) will plot all of them.</span>
-<span class="sd">        numeric_n_values_threshold (int, optional): How many unique values (or less) should be in a column so that it is considered to be a "category"? Defaults to 15.</span>
-<span class="sd">            This is compared against the maximum number of distinct values (for each of the variables) across all DataFrames.</span>
-<span class="sd">            Setting this value to 0 will disable this check.</span>
+<span class="sd">        numeric_n_values_threshold (int, optional): A column qualifies for numeric</span>
+<span class="sd">            plots if it has a real numeric dtype in every DataFrame and reaches</span>
+<span class="sd">            this distinct-value count in at least one DataFrame. Set to 0 to</span>
+<span class="sd">            decide by dtype alone. Defaults to 15.</span>
 <span class="sd">        weighted (bool, optional): If to pass the weights from the dicts inside dfs. Defaults to True.</span>
 <span class="sd">        dist_type (Optional[str], optional): can be "hist", "kde", or "qq". Defaults to None.</span>
 <span class="sd">        return_axes (bool, optional): if to returns axes or None. Defaults to False,</span>
@@ -788,8 +841,7 @@
         <span class="n">List</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">],</span> <span class="n">axes</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="n">axes</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
     <span class="p">)</span>
 
-    <span class="c1"># TODO: patch choose_variables to return outcome_types from multiple_objects</span>
-    <span class="n">numeric_variables</span> <span class="o">=</span> <span class="n">dfs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"df"</span><span class="p">]</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">[</span><span class="s2">"object"</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">numeric_variables</span> <span class="o">=</span> <span class="n">_numeric_plot_variables</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">"df"</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dfs</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">io</span><span class="p">,</span> <span class="n">o</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">variables</span><span class="p">):</span>
         <span class="c1">#  Find the maximum number of non-missing values of this variable across</span>
@@ -1179,6 +1231,9 @@
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Plots interactive bar plots of the given variables (with optional control over the y-axis limits).</span>
 
+<span class="sd">    The x-axis is categorical and lists the categories of all DataFrames in</span>
+<span class="sd">    sorted order; a pandas categorical keeps its category order.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        dict_of_dfs (Dict[str, pd.DataFrame]): A dictionary with keys as names of the DataFrame (e.g., 'self', 'unadjusted', 'target'),</span>
 <span class="sd">            and values as the DataFrames containing the variables to plot.</span>
@@ -1224,6 +1279,7 @@
     <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
         <span class="c1"># for each variable</span>
         <span class="n">variable_specific_dict_of_plots</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">plotted_categories</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1"># create plot for each df using that variable</span>
 
         <span class="c1"># Indicate if we have only self and target (without unadjusted)</span>
@@ -1244,6 +1300,7 @@
                     <span class="k">else</span> <span class="kc">None</span>
                 <span class="p">),</span>
             <span class="p">)</span>
+            <span class="n">plotted_categories</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df_plot_data</span><span class="p">[</span><span class="n">variable</span><span class="p">])</span>
 
             <span class="n">variable_specific_dict_of_plots</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Bar</span><span class="p">(</span>
                 <span class="n">x</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">df_plot_data</span><span class="p">[</span><span class="n">variable</span><span class="p">]),</span>
@@ -1271,7 +1328,12 @@
             <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Sample Vs Target </span><span class="si">{</span><span class="n">variable</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
             <span class="n">paper_bgcolor</span><span class="o">=</span><span class="s2">"rgb(255, 255, 255)"</span><span class="p">,</span>
             <span class="n">plot_bgcolor</span><span class="o">=</span><span class="s2">"rgb(255, 255, 255)"</span><span class="p">,</span>
-            <span class="n">xaxis</span><span class="o">=</span><span class="p">{</span><span class="s2">"title"</span><span class="p">:</span> <span class="n">variable</span><span class="p">},</span>
+            <span class="n">xaxis</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">"title"</span><span class="p">:</span> <span class="n">variable</span><span class="p">,</span>
+                <span class="s2">"type"</span><span class="p">:</span> <span class="s2">"category"</span><span class="p">,</span>
+                <span class="s2">"categoryorder"</span><span class="p">:</span> <span class="s2">"array"</span><span class="p">,</span>
+                <span class="s2">"categoryarray"</span><span class="p">:</span> <span class="n">_category_axis_order</span><span class="p">(</span><span class="n">plotted_categories</span><span class="p">),</span>
+            <span class="p">},</span>
             <span class="n">yaxis</span><span class="o">=</span><span class="p">{</span>
                 <span class="s2">"title"</span><span class="p">:</span> <span class="s2">"Proportion of Total"</span><span class="p">,</span>
                 <span class="s2">"range"</span><span class="p">:</span> <span class="n">ylim</span> <span class="k">if</span> <span class="n">ylim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
@@ -1319,7 +1381,10 @@
 <span class="sd">        dict_of_dfs (Dict[str, pd.DataFrame]): The key is the name of the DataFrame (E.g.: self, unadjusted, target),</span>
 <span class="sd">            and the value is the DataFrame that contains the variables that we want to plot.</span>
 <span class="sd">        variables (Optional[List[str]], optional): a list of variables to use for plotting. Defaults (i.e.: if None) is to use the list of all variables.</span>
-<span class="sd">        numeric_n_values_threshold (int, optional): How many numbers should be in a column so that it is considered to be a "category"? Defaults to 15.</span>
+<span class="sd">        numeric_n_values_threshold (int, optional): A column qualifies for numeric</span>
+<span class="sd">            plots if it has a real numeric dtype in every DataFrame and reaches</span>
+<span class="sd">            this distinct-value count in at least one DataFrame. Set to 0 to</span>
+<span class="sd">            decide by dtype alone. Defaults to 15.</span>
 <span class="sd">        weighted (bool, optional): If to use the weights with the plots. Defaults to True.</span>
 <span class="sd">        dist_type (Optional[Literal["kde", "qq"]], optional): The type of plot to draw (relevant only for numerical variables). Defaults to None (which falls back to "kde").</span>
 <span class="sd">        plot_it (bool, optional): If to plot the plots interactively instead of returning a dictionary. Defaults to True.</span>
@@ -1383,19 +1448,7 @@
 
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"plotting variables </span><span class="si">{</span><span class="n">variables</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-    <span class="c1"># TODO: patch choose_variables to return outcome_types from multiple_objects</span>
-    <span class="c1"># find numeric values, using 'sample' df. If for some reason sample is</span>
-    <span class="c1"># not an option, use a random df.</span>
-    <span class="k">if</span> <span class="s2">"sample"</span> <span class="ow">in</span> <span class="n">dict_of_dfs</span><span class="p">:</span>
-        <span class="n">numeric_variables</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">dict_of_dfs</span><span class="p">[</span><span class="s2">"sample"</span><span class="p">]</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">[</span><span class="s2">"object"</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span>
-        <span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">numeric_variables</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">dict_of_dfs</span><span class="p">[</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dict_of_dfs</span><span class="o">.</span><span class="n">keys</span><span class="p">()))]</span>
-            <span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">[</span><span class="s2">"object"</span><span class="p">])</span>
-            <span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span>
-        <span class="p">)</span>
+    <span class="n">numeric_variables</span> <span class="o">=</span> <span class="n">_numeric_plot_variables</span><span class="p">(</span><span class="n">dict_of_dfs</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
 
     <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">o</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">variables</span><span class="p">):</span>
         <span class="c1">#  Find the maximum number of non-missing values of this variable across</span>
@@ -1527,7 +1580,10 @@
 <span class="sd">        names (List[str]): a list of the names of the DataFrames that are plotted. E.g.: ['adjusted', 'unadjusted', 'target']</span>
 <span class="sd">            If None, then all DataFrames will be plotted, but only if library == "seaborn". (TODO: to remove this restriction)</span>
 <span class="sd">        variables (Optional[List[str]], optional): a list of variables to use for plotting. Default (i.e.: if None) is to use the list of all variables.</span>
-<span class="sd">        numeric_n_values_threshold (int, optional): How many numbers should be in a column so that it is considered to be a "category"? Defaults to 15.</span>
+<span class="sd">        numeric_n_values_threshold (int, optional): A column qualifies for numeric</span>
+<span class="sd">            plots if it has a real numeric dtype in every DataFrame and reaches</span>
+<span class="sd">            this distinct-value count in at least one DataFrame. Set to 0 to</span>
+<span class="sd">            decide by dtype alone. Defaults to 15.</span>
 <span class="sd">        weighted (bool, optional): If to use the weights with the plots. Defaults to True.</span>
 <span class="sd">        dist_type (Literal["kde", "hist", "qq", "ecdf", "hist_ascii"], optional): The type of plot to draw. The 'qq' and 'kde' options are available for library="plotly",</span>
 <span class="sd">            while all options except hist_ascii are available if using library="seaborn". The 'hist_ascii' option is used with library="balance";</span>

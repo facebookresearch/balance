@@ -197,8 +197,10 @@ this setting.</p>
 <li><p><strong>names</strong> – Names for each DataFrame (e.g., [“self”, “unadjusted”, “target”]).
 If None, defaults to “df_0”, “df_1”, etc.</p></li>
 <li><p><strong>variables</strong> – Subset of variables to plot. None means all.</p></li>
-<li><p><strong>numeric_n_values_threshold</strong> – Columns with fewer unique values than this
-are treated as categorical. Defaults to 15.</p></li>
+<li><p><strong>numeric_n_values_threshold</strong> – A column qualifies for a numeric histogram if
+it has a real numeric dtype in every DataFrame and reaches this
+distinct-value count in at least one DataFrame. Set to 0 to decide
+by dtype alone. Defaults to 15.</p></li>
 <li><p><strong>weighted</strong> – Whether to use weights. Defaults to True.</p></li>
 <li><p><strong>n_bins</strong> – Number of bins for numeric histograms. Defaults to None,
 which auto-detects using Sturges’ rule.</p></li>
