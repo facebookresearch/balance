@@ -30,6 +30,12 @@
   weights now use an unused column name so fitting and stored-model replay
   retain the intended cell distribution.
 
+## Code Quality & Refactoring
+
+- **`BalanceCLI.read_input_file()` reads the CLI input file.**
+  `load_and_check_input()` now calls it, so input parsing lives in one
+  method. Parsing is unchanged.
+
 # 0.24.0 (2026-11-17)
 
 ## TL;DR

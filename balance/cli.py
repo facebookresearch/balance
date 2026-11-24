@@ -1149,6 +1149,27 @@ class BalanceCLI:
 
         return output_df
 
+    def read_input_file(self) -> pd.DataFrame:
+        """Read the input CSV file into a DataFrame.
+
+        Returns:
+            DataFrame parsed from ``--input_file`` with ``--sep_input_file``.
+
+        Examples:
+            .. code-block:: python
+                import pandas as pd
+                import tempfile
+                from argparse import Namespace
+                with tempfile.NamedTemporaryFile(suffix=".csv") as tmp_file:
+                    pd.DataFrame({"x": [1], "y": [2]}).to_csv(tmp_file.name, index=False)
+                    cli = BalanceCLI(
+                        Namespace(input_file=tmp_file.name, sep_input_file=",")
+                    )
+                    cli.read_input_file().shape
+                    # (1, 2)
+        """
+        return pd.read_csv(self.args.input_file, sep=self.args.sep_input_file)
+
     def load_and_check_input(self) -> pd.DataFrame:
         """Read the input file and log basic information.
 
@@ -1175,7 +1196,7 @@ class BalanceCLI:
                     # (1, 2)
         """
         # Load and check input
-        input_df = pd.read_csv(self.args.input_file, sep=self.args.sep_input_file)
+        input_df = self.read_input_file()
         logger.info("Number of rows in input file: %d" % input_df.shape[0])
         if self.has_keep_row_column():
             logger.info(
