@@ -5,6 +5,17 @@
 - **Added support for Python 3.15.** CI tests it on Linux, macOS, and Windows.
   The optional `did` extra uses diff-diff 4.x on Python 3.15.
 
+## New Features
+
+- **The CLI can choose which strings count as missing.** By default, the CLI
+  reads its input with pandas' missing-value strings, so Namibia's country
+  code `NA`, or a survey answer `None`, becomes missing. `--na_values` replaces
+  that list, and `--na_values_columns` limits it to chosen columns; other
+  columns keep pandas' list, and empty fields are always missing. For example,
+  `--na_values NULL,null --na_values_columns country` keeps `NA` as a batch
+  key, while `NULL` and empty batch keys still raise an error. Without these
+  options, parsing is unchanged.
+
 ## Bug Fixes
 
 - **Distribution plots recognize categorical column types.** ASCII, seaborn

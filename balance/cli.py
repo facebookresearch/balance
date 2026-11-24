@@ -29,6 +29,31 @@ logger: logging.Logger = logging.getLogger(__package__)
 
 SUPPORTED_WEIGHTING_METHODS: Tuple[str, ...] = tuple(BALANCE_WEIGHTING_METHODS)
 
+# Strings that pandas (>= 2.0) ``read_csv`` reads as missing by default.
+PANDAS_DEFAULT_NA_VALUES: frozenset[str] = frozenset(
+    {
+        "",
+        "#N/A",
+        "#N/A N/A",
+        "#NA",
+        "-1.#IND",
+        "-1.#QNAN",
+        "-NaN",
+        "-nan",
+        "1.#IND",
+        "1.#QNAN",
+        "<NA>",
+        "N/A",
+        "NA",
+        "NULL",
+        "NaN",
+        "None",
+        "n/a",
+        "nan",
+        "null",
+    }
+)
+
 
 def _non_empty_str_arg(value: Any, arg_name: str) -> str:
     """Parse a required string CLI argument and reject empty values."""
@@ -646,6 +671,43 @@ class BalanceCLI:
             )
         return None
 
+    def na_values(self) -> list[str] | None:
+        """Return the strings that ``--na_values`` reads as missing.
+
+        Returns:
+            Missing-value strings from ``--na_values``, or ``None`` to keep
+            pandas' default missing-value strings.
+
+        Examples:
+            .. code-block:: python
+                from argparse import Namespace
+                BalanceCLI(Namespace(na_values="NULL, null")).na_values()
+                # ['NULL', 'null']
+        """
+        na_values = getattr(self.args, "na_values", None)
+        if na_values is None:
+            return None
+        return [value.strip() for value in na_values.split(",")]
+
+    def na_values_columns(self) -> list[str] | None:
+        """Return the columns that use ``--na_values``.
+
+        Returns:
+            Column names from ``--na_values_columns``, or ``None`` when
+            ``--na_values`` applies to every column. An empty list (from a
+            subclass) applies it to no column.
+
+        Examples:
+            .. code-block:: python
+                from argparse import Namespace
+                BalanceCLI(Namespace(na_values_columns="country")).na_values_columns()
+                # ['country']
+        """
+        na_values_columns = getattr(self.args, "na_values_columns", None)
+        if na_values_columns is None:
+            return None
+        return _parse_csv_columns_arg(na_values_columns, "--na_values_columns")
+
     def max_de(self) -> float | None:
         """Return the max design effect setting.
 
@@ -1152,8 +1214,17 @@ class BalanceCLI:
     def read_input_file(self) -> pd.DataFrame:
         """Read the input CSV file into a DataFrame.
 
+        By default, pandas' missing-value strings (such as ``NA``, ``NULL``
+        and ``None``) are read as missing. With ``--na_values``, the columns
+        in ``--na_values_columns`` (or every column) read only those strings
+        and empty fields as missing; other columns keep pandas' defaults.
+
         Returns:
             DataFrame parsed from ``--input_file`` with ``--sep_input_file``.
+
+        Raises:
+            ValueError: If ``--na_values_columns`` is set without
+                ``--na_values``, or names columns that are not in the file.
 
         Examples:
             .. code-block:: python
@@ -1161,14 +1232,52 @@ class BalanceCLI:
                 import tempfile
                 from argparse import Namespace
                 with tempfile.NamedTemporaryFile(suffix=".csv") as tmp_file:
-                    pd.DataFrame({"x": [1], "y": [2]}).to_csv(tmp_file.name, index=False)
-                    cli = BalanceCLI(
-                        Namespace(input_file=tmp_file.name, sep_input_file=",")
+                    pd.DataFrame({"country": ["NA"], "x": [1.0]}).to_csv(
+                        tmp_file.name, index=False
                     )
-                    cli.read_input_file().shape
-                    # (1, 2)
+                    cli = BalanceCLI(
+                        Namespace(
+                            input_file=tmp_file.name,
+                            sep_input_file=",",
+                            na_values="NULL",
+                            na_values_columns="country",
+                        )
+                    )
+                    cli.read_input_file()["country"].tolist()
+                    # ['NA']
         """
-        return pd.read_csv(self.args.input_file, sep=self.args.sep_input_file)
+        input_file, sep = self.args.input_file, self.args.sep_input_file
+        na_values = self.na_values()
+        if na_values is None:
+            if getattr(self.args, "na_values_columns", None) is not None:
+                raise ValueError("--na_values_columns requires --na_values.")
+            return pd.read_csv(input_file, sep=sep)
+        na_values_columns = self.na_values_columns()
+        if na_values_columns == []:
+            return pd.read_csv(input_file, sep=sep)
+
+        columns = [str(c) for c in pd.read_csv(input_file, sep=sep, nrows=0).columns]
+        selected = set(columns if na_values_columns is None else na_values_columns)
+        not_in_file = sorted(selected.difference(columns))
+        if not_in_file:
+            raise ValueError(
+                f"Columns selected for --na_values are not in the input file: "
+                f"{not_in_file}. Input file columns: {columns}"
+            )
+        selected_na_values = {""} | set(na_values)
+        return pd.read_csv(
+            input_file,
+            sep=sep,
+            keep_default_na=False,
+            na_values={
+                column: (
+                    selected_na_values
+                    if column in selected
+                    else PANDAS_DEFAULT_NA_VALUES
+                )
+                for column in columns
+            },
+        )
 
     def load_and_check_input(self) -> pd.DataFrame:
         """Read the input file and log basic information.
@@ -1619,6 +1728,32 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
         required=False,
         default=",",
         help="A 1 character for indicating the delimiter for the input file. If not supplied it defaults to a comma (,)",
+    )
+    parser.add_argument(
+        "--na_values",
+        required=False,
+        default=None,
+        help=(
+            "Comma-separated strings to read as missing in the input file, "
+            "replacing pandas' default list (which includes NA, NULL, NaN, "
+            "None and N/A). Empty fields are always missing. The list applies "
+            "to --na_values_columns, or to every column if that is not set. "
+            "For example, --na_values NULL,null --na_values_columns country "
+            "keeps the country code NA (Namibia) as a value. 'None' here is a "
+            "string to read as missing, not a way to unset this option. If "
+            "not supplied, pandas' defaults apply to every column."
+        ),
+    )
+    parser.add_argument(
+        "--na_values_columns",
+        type=partial(_csv_columns_arg, arg_name="--na_values_columns"),
+        required=False,
+        default=None,
+        help=(
+            "Comma-separated columns that use --na_values; other columns keep "
+            "pandas' default missing-value strings. Requires --na_values. If "
+            "not supplied, --na_values applies to every column."
+        ),
     )
     parser.add_argument(
         "--sep_output_file",
