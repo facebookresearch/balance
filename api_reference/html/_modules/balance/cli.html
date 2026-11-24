@@ -1050,8 +1050,10 @@
 <span class="sd">                # (1, 1)</span>
 <span class="sd">        """</span>
         <span class="n">in_sample</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_column</span><span class="p">()]</span> <span class="o">==</span> <span class="mi">1</span>
-        <span class="n">sample_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">in_sample</span><span class="p">]</span>
-        <span class="n">target_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="o">~</span><span class="n">in_sample</span><span class="p">]</span>
+        <span class="n">sample_positions</span> <span class="o">=</span> <span class="n">in_sample</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span> <span class="n">na_value</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">target_positions</span> <span class="o">=</span> <span class="p">(</span><span class="o">~</span><span class="n">in_sample</span><span class="p">)</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span> <span class="n">na_value</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">sample_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">sample_positions</span><span class="p">]</span>
+        <span class="n">target_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">target_positions</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="n">sample_df</span><span class="p">,</span> <span class="n">target_df</span></div>
 

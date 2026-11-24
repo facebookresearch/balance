@@ -28,6 +28,11 @@ hide_title: true
 
 ## Bug Fixes
 
+- **The CLI splits sample and target rows by position.** Boolean sample markers
+  no longer pass through pandas' label realignment, preventing
+  `IndexError: indices are out-of-bounds` when cached marker labels are stale.
+  Ordinary inputs, including missing sample markers, keep their prior behavior.
+
 - **Distribution plots recognize categorical column types.** ASCII, seaborn
   and Plotly plots draw strings, pandas categories and Booleans as categories,
   even with `numeric_n_values_threshold=0`. Only columns holding real numbers
