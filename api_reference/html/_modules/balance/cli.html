@@ -66,6 +66,31 @@
 
 <span class="n">SUPPORTED_WEIGHTING_METHODS</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">BALANCE_WEIGHTING_METHODS</span><span class="p">)</span>
 
+<span class="c1"># Strings that pandas (&gt;= 2.0) ``read_csv`` reads as missing by default.</span>
+<span class="n">PANDAS_DEFAULT_NA_VALUES</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">""</span><span class="p">,</span>
+        <span class="s2">"#N/A"</span><span class="p">,</span>
+        <span class="s2">"#N/A N/A"</span><span class="p">,</span>
+        <span class="s2">"#NA"</span><span class="p">,</span>
+        <span class="s2">"-1.#IND"</span><span class="p">,</span>
+        <span class="s2">"-1.#QNAN"</span><span class="p">,</span>
+        <span class="s2">"-NaN"</span><span class="p">,</span>
+        <span class="s2">"-nan"</span><span class="p">,</span>
+        <span class="s2">"1.#IND"</span><span class="p">,</span>
+        <span class="s2">"1.#QNAN"</span><span class="p">,</span>
+        <span class="s2">"&lt;NA&gt;"</span><span class="p">,</span>
+        <span class="s2">"N/A"</span><span class="p">,</span>
+        <span class="s2">"NA"</span><span class="p">,</span>
+        <span class="s2">"NULL"</span><span class="p">,</span>
+        <span class="s2">"NaN"</span><span class="p">,</span>
+        <span class="s2">"None"</span><span class="p">,</span>
+        <span class="s2">"n/a"</span><span class="p">,</span>
+        <span class="s2">"nan"</span><span class="p">,</span>
+        <span class="s2">"null"</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_non_empty_str_arg</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">arg_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Parse a required string CLI argument and reject empty values."""</span>
@@ -736,6 +761,49 @@
         <span class="k">return</span> <span class="kc">None</span></div>
 
 
+<div class="viewcode-block" id="BalanceCLI.na_values">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.na_values">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">na_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Return the strings that ``--na_values`` reads as missing.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Missing-value strings from ``--na_values``, or ``None`` to keep</span>
+<span class="sd">            pandas' default missing-value strings.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(na_values="NULL, null")).na_values()</span>
+<span class="sd">                # ['NULL', 'null']</span>
+<span class="sd">        """</span>
+        <span class="n">na_values</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="s2">"na_values"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">na_values</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">na_values</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">)]</span></div>
+
+
+<div class="viewcode-block" id="BalanceCLI.na_values_columns">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.na_values_columns">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">na_values_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Return the columns that use ``--na_values``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Column names from ``--na_values_columns``, or ``None`` when</span>
+<span class="sd">            ``--na_values`` applies to every column. An empty list (from a</span>
+<span class="sd">            subclass) applies it to no column.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                BalanceCLI(Namespace(na_values_columns="country")).na_values_columns()</span>
+<span class="sd">                # ['country']</span>
+<span class="sd">        """</span>
+        <span class="n">na_values_columns</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="s2">"na_values_columns"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">na_values_columns</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">_parse_csv_columns_arg</span><span class="p">(</span><span class="n">na_values_columns</span><span class="p">,</span> <span class="s2">"--na_values_columns"</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="BalanceCLI.max_de">
 <a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.max_de">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">max_de</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
@@ -1284,6 +1352,77 @@
         <span class="k">return</span> <span class="n">output_df</span></div>
 
 
+<div class="viewcode-block" id="BalanceCLI.read_input_file">
+<a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.read_input_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_input_file</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Read the input CSV file into a DataFrame.</span>
+
+<span class="sd">        By default, pandas' missing-value strings (such as ``NA``, ``NULL``</span>
+<span class="sd">        and ``None``) are read as missing. With ``--na_values``, the columns</span>
+<span class="sd">        in ``--na_values_columns`` (or every column) read only those strings</span>
+<span class="sd">        and empty fields as missing; other columns keep pandas' defaults.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            DataFrame parsed from ``--input_file`` with ``--sep_input_file``.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If ``--na_values_columns`` is set without</span>
+<span class="sd">                ``--na_values``, or names columns that are not in the file.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">                import pandas as pd</span>
+<span class="sd">                import tempfile</span>
+<span class="sd">                from argparse import Namespace</span>
+<span class="sd">                with tempfile.NamedTemporaryFile(suffix=".csv") as tmp_file:</span>
+<span class="sd">                    pd.DataFrame({"country": ["NA"], "x": [1.0]}).to_csv(</span>
+<span class="sd">                        tmp_file.name, index=False</span>
+<span class="sd">                    )</span>
+<span class="sd">                    cli = BalanceCLI(</span>
+<span class="sd">                        Namespace(</span>
+<span class="sd">                            input_file=tmp_file.name,</span>
+<span class="sd">                            sep_input_file=",",</span>
+<span class="sd">                            na_values="NULL",</span>
+<span class="sd">                            na_values_columns="country",</span>
+<span class="sd">                        )</span>
+<span class="sd">                    )</span>
+<span class="sd">                    cli.read_input_file()["country"].tolist()</span>
+<span class="sd">                    # ['NA']</span>
+<span class="sd">        """</span>
+        <span class="n">input_file</span><span class="p">,</span> <span class="n">sep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">input_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">sep_input_file</span>
+        <span class="n">na_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">na_values</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">na_values</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="s2">"na_values_columns"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"--na_values_columns requires --na_values."</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="n">sep</span><span class="p">)</span>
+        <span class="n">na_values_columns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">na_values_columns</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">na_values_columns</span> <span class="o">==</span> <span class="p">[]:</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="n">sep</span><span class="p">)</span>
+
+        <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="n">sep</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">columns</span> <span class="k">if</span> <span class="n">na_values_columns</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">na_values_columns</span><span class="p">)</span>
+        <span class="n">not_in_file</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">selected</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">columns</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">not_in_file</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Columns selected for --na_values are not in the input file: "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">not_in_file</span><span class="si">}</span><span class="s2">. Input file columns: </span><span class="si">{</span><span class="n">columns</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
+        <span class="n">selected_na_values</span> <span class="o">=</span> <span class="p">{</span><span class="s2">""</span><span class="p">}</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">na_values</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+            <span class="n">input_file</span><span class="p">,</span>
+            <span class="n">sep</span><span class="o">=</span><span class="n">sep</span><span class="p">,</span>
+            <span class="n">keep_default_na</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">na_values</span><span class="o">=</span><span class="p">{</span>
+                <span class="n">column</span><span class="p">:</span> <span class="p">(</span>
+                    <span class="n">selected_na_values</span>
+                    <span class="k">if</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">selected</span>
+                    <span class="k">else</span> <span class="n">PANDAS_DEFAULT_NA_VALUES</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">columns</span>
+            <span class="p">},</span>
+        <span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="BalanceCLI.load_and_check_input">
 <a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.load_and_check_input">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load_and_check_input</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
@@ -1312,7 +1451,7 @@
 <span class="sd">                    # (1, 2)</span>
 <span class="sd">        """</span>
         <span class="c1"># Load and check input</span>
-        <span class="n">input_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">input_file</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">sep_input_file</span><span class="p">)</span>
+        <span class="n">input_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_input_file</span><span class="p">()</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Number of rows in input file: </span><span class="si">%d</span><span class="s2">"</span> <span class="o">%</span> <span class="n">input_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_keep_row_column</span><span class="p">():</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
@@ -1748,6 +1887,32 @@
         <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="s2">","</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s2">"A 1 character for indicating the delimiter for the input file. If not supplied it defaults to a comma (,)"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--na_values"</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">"Comma-separated strings to read as missing in the input file, "</span>
+            <span class="s2">"replacing pandas' default list (which includes NA, NULL, NaN, "</span>
+            <span class="s2">"None and N/A). Empty fields are always missing. The list applies "</span>
+            <span class="s2">"to --na_values_columns, or to every column if that is not set. "</span>
+            <span class="s2">"For example, --na_values NULL,null --na_values_columns country "</span>
+            <span class="s2">"keeps the country code NA (Namibia) as a value. 'None' here is a "</span>
+            <span class="s2">"string to read as missing, not a way to unset this option. If "</span>
+            <span class="s2">"not supplied, pandas' defaults apply to every column."</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">"--na_values_columns"</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_csv_columns_arg</span><span class="p">,</span> <span class="n">arg_name</span><span class="o">=</span><span class="s2">"--na_values_columns"</span><span class="p">),</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">"Comma-separated columns that use --na_values; other columns keep "</span>
+            <span class="s2">"pandas' default missing-value strings. Requires --na_values. If "</span>
+            <span class="s2">"not supplied, --na_values applies to every column."</span>
+        <span class="p">),</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">"--sep_output_file"</span><span class="p">,</span>
