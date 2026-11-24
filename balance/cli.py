@@ -916,8 +916,10 @@ class BalanceCLI:
                 # (1, 1)
         """
         in_sample = df[self.sample_column()] == 1
-        sample_df = df[in_sample]
-        target_df = df[~in_sample]
+        sample_positions = in_sample.to_numpy(dtype=bool, na_value=False)
+        target_positions = (~in_sample).to_numpy(dtype=bool, na_value=False)
+        sample_df = df.iloc[sample_positions]
+        target_df = df.iloc[target_positions]
 
         return sample_df, target_df
 

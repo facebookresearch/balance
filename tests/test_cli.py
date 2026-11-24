@@ -281,6 +281,48 @@ class TestCli(
             cli_none = BalanceCLI(args_none)
             self.assertIsNone(cli_none.weights_impact_on_outcome_method())
 
+    def test_split_sample_uses_positions_when_marker_index_is_stale(self) -> None:
+        cli = BalanceCLI(Namespace(sample_column="is_respondent"))
+        frame = pd.DataFrame(
+            {
+                "is_respondent": [1, 0, 0],
+                "x": [10, 20, 30],
+            },
+            index=pd.Index([0, 0, 1]),
+        )
+        item_cache = frame._item_cache
+        item_cache["is_respondent"] = pd.Series(
+            [1, 0, 0], index=[0, 1, 0], name="is_respondent"
+        )
+
+        sample_df, target_df = cli.split_sample(frame)
+
+        self.assertEqual(sample_df["x"].tolist(), [10])
+        self.assertEqual(target_df["x"].tolist(), [20, 30])
+
+    def test_split_sample_preserves_missing_marker_behavior(self) -> None:
+        cli = BalanceCLI(Namespace(sample_column="is_respondent"))
+        nullable_frame = pd.DataFrame(
+            {
+                "is_respondent": pd.Series([1, 0, pd.NA], dtype="Int64"),
+                "x": [10, 20, 30],
+            }
+        )
+        float_frame = pd.DataFrame(
+            {
+                "is_respondent": [1.0, 0.0, float("nan")],
+                "x": [10, 20, 30],
+            }
+        )
+
+        nullable_sample, nullable_target = cli.split_sample(nullable_frame)
+        float_sample, float_target = cli.split_sample(float_frame)
+
+        self.assertEqual(nullable_sample["x"].tolist(), [10])
+        self.assertEqual(nullable_target["x"].tolist(), [20])
+        self.assertEqual(float_sample["x"].tolist(), [10])
+        self.assertEqual(float_target["x"].tolist(), [20, 30])
+
     def test_process_batch_returns_failure_payload_for_empty_sample(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             input_file = os.path.join(temp_dir, "input.csv")
