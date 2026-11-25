@@ -54,6 +54,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">balance</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance</span><span class="w"> </span><span class="kn">import</span> <span class="n">__version__</span>  <span class="c1"># @manual</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">balance.adjustment</span><span class="w"> </span><span class="kn">import</span> <span class="n">BALANCE_WEIGHTING_METHODS</span>
@@ -1248,23 +1249,7 @@
                 <span class="s2">"</span><span class="si">%s</span><span class="s2"> diagnostics object: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">sample_package_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">diagnostics</span><span class="p">))</span>
             <span class="p">)</span>
 
-            <span class="c1"># Update dtypes</span>
-            <span class="k">if</span> <span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">return_df_with_original_dtypes</span>
-                <span class="ow">and</span> <span class="n">adjusted</span><span class="o">.</span><span class="n">_df_dtypes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-            <span class="p">):</span>
-                <span class="n">df_to_return</span> <span class="o">=</span> <span class="n">balance</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">_astype_in_df_from_dtypes</span><span class="p">(</span>
-                    <span class="n">adjusted</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="n">adjusted</span><span class="o">.</span><span class="n">_df_dtypes</span>
-                <span class="p">)</span>
-                <span class="n">balance</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">_warn_of_df_dtypes_change</span><span class="p">(</span>
-                    <span class="n">adjusted</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">dtypes</span><span class="p">,</span>
-                    <span class="n">df_to_return</span><span class="o">.</span><span class="n">dtypes</span><span class="p">,</span>
-                    <span class="s2">"df_after_adjust"</span><span class="p">,</span>
-                    <span class="s2">"df_returned_by_the_cli"</span><span class="p">,</span>
-                <span class="p">)</span>
-
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">df_to_return</span> <span class="o">=</span> <span class="n">adjusted</span><span class="o">.</span><span class="n">df</span>
+            <span class="n">df_to_return</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_frame</span><span class="p">(</span><span class="n">adjusted</span><span class="p">,</span> <span class="s2">"df_after_adjust"</span><span class="p">)</span>
             <span class="n">rval</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"adjusted"</span><span class="p">:</span> <span class="n">df_to_return</span><span class="p">,</span> <span class="s2">"diagnostics"</span><span class="p">:</span> <span class="n">diagnostics</span><span class="p">}</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">succeed_on_weighting_failure</span><span class="p">:</span>
@@ -1276,22 +1261,7 @@
                 <span class="n">module_name</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">if</span> <span class="n">module</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
                 <span class="n">error_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">module_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">"The error message is: "</span> <span class="o">+</span> <span class="n">error_message</span><span class="p">)</span>
-                <span class="c1"># Update dtypes</span>
-                <span class="k">if</span> <span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">return_df_with_original_dtypes</span>
-                    <span class="ow">and</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df_dtypes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-                <span class="p">):</span>
-                    <span class="n">df_to_return</span> <span class="o">=</span> <span class="n">balance</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">_astype_in_df_from_dtypes</span><span class="p">(</span>
-                        <span class="n">sample</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df_dtypes</span>
-                    <span class="p">)</span>
-                    <span class="n">balance</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">_warn_of_df_dtypes_change</span><span class="p">(</span>
-                        <span class="n">sample</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">dtypes</span><span class="p">,</span>
-                        <span class="n">df_to_return</span><span class="o">.</span><span class="n">dtypes</span><span class="p">,</span>
-                        <span class="s2">"df_without_adjusting"</span><span class="p">,</span>
-                        <span class="s2">"df_returned_by_the_cli"</span><span class="p">,</span>
-                    <span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">df_to_return</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">df</span>
+                <span class="n">df_to_return</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_frame</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="s2">"df_without_adjusting"</span><span class="p">)</span>
                 <span class="n">rval</span> <span class="o">=</span> <span class="p">{</span>
                     <span class="s2">"adjusted"</span><span class="p">:</span> <span class="n">df_to_return</span><span class="p">,</span>
                     <span class="s2">"diagnostics"</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
@@ -1309,6 +1279,48 @@
                 <span class="k">raise</span>
         <span class="k">return</span> <span class="n">rval</span></div>
 
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_output_frame</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">balance_sample_cls</span><span class="p">,</span> <span class="n">frame_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Return the output frame, restoring requested dtypes without losing weights."""</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">df</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">return_df_with_original_dtypes</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">df</span>
+        <span class="n">original_dtypes</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">_df_dtypes</span>
+        <span class="k">if</span> <span class="n">original_dtypes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">df</span>
+
+        <span class="n">weight_column</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_column</span><span class="p">()</span>
+        <span class="n">restored_weights</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">weight_column</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="ow">and</span> <span class="n">weight_column</span> <span class="ow">in</span> <span class="n">original_dtypes</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">weight_column</span><span class="p">]</span>
+            <span class="n">weight_dtype</span> <span class="o">=</span> <span class="n">original_dtypes</span><span class="p">[</span><span class="n">weight_column</span><span class="p">]</span>
+            <span class="n">original_dtypes</span> <span class="o">=</span> <span class="n">original_dtypes</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">weight_column</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Pandas can truncate fractions or overflow when casting weights.</span>
+                <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">over</span><span class="o">=</span><span class="s2">"raise"</span><span class="p">,</span> <span class="n">under</span><span class="o">=</span><span class="s2">"raise"</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s2">"raise"</span><span class="p">):</span>
+                    <span class="n">candidate</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">weight_dtype</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">weights</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">dtype</span><span class="p">)):</span>
+                        <span class="n">restored_weights</span> <span class="o">=</span> <span class="n">candidate</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">FloatingPointError</span><span class="p">,</span> <span class="ne">OverflowError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+                <span class="k">pass</span>
+            <span class="k">if</span> <span class="n">restored_weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">"Weight column '</span><span class="si">%s</span><span class="s2">' keeps dtype </span><span class="si">%s</span><span class="s2">: its original dtype </span><span class="si">%s</span><span class="s2"> "</span>
+                    <span class="s2">"cannot hold every output weight exactly."</span><span class="p">,</span>
+                    <span class="n">weight_column</span><span class="p">,</span>
+                    <span class="n">weights</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+                    <span class="n">weight_dtype</span><span class="p">,</span>
+                <span class="p">)</span>
+
+        <span class="n">restored</span> <span class="o">=</span> <span class="n">balance</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">_astype_in_df_from_dtypes</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">original_dtypes</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">restored_weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">restored</span><span class="p">[</span><span class="n">weight_column</span><span class="p">]</span> <span class="o">=</span> <span class="n">restored_weights</span>
+        <span class="n">balance</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">_warn_of_df_dtypes_change</span><span class="p">(</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">dtypes</span><span class="p">,</span> <span class="n">restored</span><span class="o">.</span><span class="n">dtypes</span><span class="p">,</span> <span class="n">frame_name</span><span class="p">,</span> <span class="s2">"df_returned_by_the_cli"</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">restored</span>
 
 <div class="viewcode-block" id="BalanceCLI.adapt_output">
 <a class="viewcode-back" href="../../balance.cli.html#balance.cli.BalanceCLI.adapt_output">[docs]</a>
@@ -2059,11 +2071,9 @@
         <span class="s2">"--return_df_with_original_dtypes"</span><span class="p">,</span>
         <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="p">(</span>
-            <span class="s2">"If the input table has unsupported column types (e.g.: int32), then when using Sample.from_frame it will be changed (e.g.: float32). "</span>
-            <span class="s2">"The returned df from the cli will use the transformed DataFrame. If this flag is used, then the cli will attempt to restore the original dtypes of the input table"</span>
-            <span class="s2">"before returning it."</span>
-            <span class="s2">"WARNING: sometimes the pd.astype command might lead to odd behaviors, so it is generally safer to NOT use this flag but to manually specify the desired dtypes in the input/output tables."</span>
-            <span class="s2">"For example, dealing with missing values could lead to many issues (e.g.: there is np.nan and pd.NA, and these do not play nicely with type conversions)"</span>
+            <span class="s2">"Attempt to restore the original input column dtypes in the output. "</span>
+            <span class="s2">"The weight column keeps its computed dtype, with a warning, if the "</span>
+            <span class="s2">"original dtype cannot represent all output weights exactly."</span>
         <span class="p">),</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>

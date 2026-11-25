@@ -28,6 +28,15 @@ hide_title: true
 
 ## Bug Fixes
 
+- **Numerical change: `--return_df_with_original_dtypes` no longer corrupts
+  adjusted weights.** With integer input weights, the CLI cast the adjusted
+  weights back to integers: a weight of 0.5 became 0, and 200 in an `int8`
+  column wrapped around to -56 (nullable `Int64` weights stopped the run with
+  a `TypeError`). The weight column now keeps its original dtype only when
+  that dtype holds every adjusted weight exactly; otherwise it keeps the
+  computed weights and logs a warning. Rerun CLI jobs that used this flag with
+  integer weights.
+
 - **The CLI splits sample and target rows by position.** Boolean sample markers
   no longer pass through pandas' label realignment, preventing
   `IndexError: indices are out-of-bounds` when cached marker labels are stale.
