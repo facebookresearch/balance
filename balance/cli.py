@@ -12,6 +12,7 @@ import logging
 import math
 from argparse import ArgumentParser, ArgumentTypeError, Namespace
 from functools import partial
+from importlib.metadata import version as importlib_version
 from numbers import Integral
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Type
@@ -54,6 +55,9 @@ PANDAS_DEFAULT_NA_VALUES: frozenset[str] = frozenset(
         "null",
     }
 )
+# Pandas 2.0 added the literal "None" to the default missing-value strings.
+if importlib_version("pandas").startswith("1."):
+    PANDAS_DEFAULT_NA_VALUES = PANDAS_DEFAULT_NA_VALUES - {"None"}
 
 
 def _non_empty_str_arg(value: Any, arg_name: str) -> str:
@@ -1228,10 +1232,10 @@ class BalanceCLI:
     def read_input_file(self) -> pd.DataFrame:
         """Read the input CSV file into a DataFrame.
 
-        By default, pandas' missing-value strings (such as ``NA``, ``NULL``
-        and ``None``) are read as missing. With ``--na_values``, the columns
+        By default, pandas' missing-value strings (such as ``NA`` and
+        ``NULL``) are read as missing. With ``--na_values``, the columns
         in ``--na_values_columns`` (or every column) read only those strings
-        and empty fields as missing; other columns keep pandas' defaults.
+        and empty fields as missing. Other columns keep pandas' defaults.
 
         Returns:
             DataFrame parsed from ``--input_file`` with ``--sep_input_file``.
@@ -1749,8 +1753,8 @@ def add_arguments_to_parser(parser: ArgumentParser) -> ArgumentParser:
         default=None,
         help=(
             "Comma-separated strings to read as missing in the input file, "
-            "replacing pandas' default list (which includes NA, NULL, NaN, "
-            "None and N/A). Empty fields are always missing. The list applies "
+            "replacing pandas' default list (which includes NA, NULL, NaN "
+            "and N/A). Empty fields are always missing. The list applies "
             "to --na_values_columns, or to every column if that is not set. "
             "For example, --na_values NULL,null --na_values_columns country "
             "keeps the country code NA (Namibia) as a value. 'None' here is a "

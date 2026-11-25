@@ -10,8 +10,7 @@ import unittest
 from pathlib import Path
 
 import pandas as pd
-from balance.cli import BalanceCLI, make_parser, PANDAS_DEFAULT_NA_VALUES
-from pandas._libs.parsers import STR_NA_VALUES
+from balance.cli import BalanceCLI, make_parser
 
 
 def _cli(input_file: Path, *extra_args: str) -> BalanceCLI:
@@ -31,10 +30,6 @@ def _cli(input_file: Path, *extra_args: str) -> BalanceCLI:
     return BalanceCLI(args)
 
 
-def _values(series: pd.Series) -> list[object]:
-    return series.where(series.notna(), None).tolist()
-
-
 def _write_country_batches(input_file: Path, countries: list[str | None]) -> None:
     pd.DataFrame(
         {
@@ -48,8 +43,25 @@ def _write_country_batches(input_file: Path, countries: list[str | None]) -> Non
 
 
 class CLINaValuesTest(unittest.TestCase):
-    def test_default_na_values_match_pandas(self) -> None:
-        self.assertEqual(PANDAS_DEFAULT_NA_VALUES, frozenset(STR_NA_VALUES))
+    def test_unselected_columns_keep_installed_pandas_na_defaults(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "input.csv"
+            path.write_text(
+                "id,country,note,x\n"
+                "1,None,None,1.5\n"
+                "2,NULL,NULL,NA\n"
+                "3,NA,NA,\n"
+                "4,,regular,null\n"
+            )
+            expected = pd.read_csv(path)
+            loaded = _cli(
+                path, "--na_values", "NULL", "--na_values_columns", "country"
+            ).read_input_file()
+
+        untouched = ["id", "note", "x"]
+        pd.testing.assert_frame_equal(loaded[untouched], expected[untouched])
+        self.assertEqual(loaded["country"].dropna().tolist(), ["None", "NA"])
+        self.assertEqual(loaded["country"].isna().tolist(), [False, True, False, True])
 
     def test_na_values_apply_only_to_selected_columns(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -60,7 +72,8 @@ class CLINaValuesTest(unittest.TestCase):
             )
             loaded = cli.read_input_file()
 
-        self.assertEqual(_values(loaded["country"]), ["US", "NA", "ZA", None])
+        self.assertEqual(loaded["country"].dropna().tolist(), ["US", "NA", "ZA"])
+        self.assertEqual(loaded["country"].isna().tolist(), [False, False, False, True])
         self.assertEqual(loaded["x"].dtype, "float64")
         self.assertEqual(loaded["x"].isna().tolist(), [False, True, True, True])
 
@@ -70,7 +83,8 @@ class CLINaValuesTest(unittest.TestCase):
             path.write_text("id,x,answer\n1,1.5,None\n2,NA,NA\n3,,Yes\n")
             loaded = _cli(path, "--na_values", "NA").read_input_file()
 
-        self.assertEqual(_values(loaded["answer"]), ["None", None, "Yes"])
+        self.assertEqual(loaded["answer"].dropna().tolist(), ["None", "Yes"])
+        self.assertEqual(loaded["answer"].isna().tolist(), [False, True, False])
         self.assertEqual(loaded["x"].dtype, "float64")
         self.assertEqual(loaded["x"].isna().tolist(), [False, True, True])
 

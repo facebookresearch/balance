@@ -15,7 +15,7 @@ from balance.cli import BalanceCLI, make_parser
 
 class CLIReadInputFileTest(unittest.TestCase):
     def test_read_input_file_matches_pandas_read_csv(self) -> None:
-        csv = "id,x,country\n1,1.5,US\n2,NA,NA\n3,,ZA\n4,null,None\n"
+        csv = "id,x,country\n1,1.5,US\n2,NA,NA\n3,,ZA\n4,null,N/A\n"
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "input.csv"
             path.write_text(csv)
