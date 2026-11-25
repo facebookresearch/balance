@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import unittest
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -27,9 +26,6 @@ from balance.stats_and_plots.weighted_stats import (
     weighted_quantile,
     weighted_var,
 )
-
-# Scientific-stack stubs omit this supported runtime parser literal.
-_ROUND_TRIP: Any = "round_trip"
 
 
 class RInspiredWeightedStatisticsTest(unittest.TestCase):
@@ -105,15 +101,9 @@ class RInspiredWeightedStatisticsTest(unittest.TestCase):
 
     def test_columnwise_missingness_and_zero_weights_match_matrixstats(self) -> None:
         root = Path(__file__).parent / "fixtures" / "weighted_statistics"
-        values = pd.read_csv(
-            root / "matrixstats_values.csv", float_precision=_ROUND_TRIP
-        )
-        missing = pd.read_csv(
-            root / "matrixstats_missing_values.csv", float_precision=_ROUND_TRIP
-        )
-        expected = pd.read_csv(
-            root / "matrixstats_expected.csv", float_precision=_ROUND_TRIP
-        )
+        values = pd.read_csv(root / "matrixstats_values.csv")
+        missing = pd.read_csv(root / "matrixstats_missing_values.csv")
+        expected = pd.read_csv(root / "matrixstats_expected.csv")
         for frame, weights, column in (
             (values, [1, 2, 3, 4], "weighted_mean"),
             (values, [1, 1, 0, 1], "zero_weight_mean"),

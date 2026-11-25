@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import unittest
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -26,22 +25,13 @@ from balance.outcome_models import fit_outcome_model, predict_outcome
 from balance.util import _assert_type
 from sklearn.linear_model import LinearRegression
 
-# Scientific-stack stubs omit this supported runtime parser literal.
-_ROUND_TRIP: Any = "round_trip"
-
 
 class SurveyOutcomeOracleTest(unittest.TestCase):
     def setUp(self) -> None:
         root = Path(__file__).parent / "fixtures" / "outcomes"
-        self.sample = pd.read_csv(
-            root / "survey_api_outcome_sample.csv", float_precision=_ROUND_TRIP
-        )
-        self.target = pd.read_csv(
-            root / "survey_api_outcome_target.csv", float_precision=_ROUND_TRIP
-        )
-        self.expected = pd.read_csv(
-            root / "survey_api_outcome_expected.csv", float_precision=_ROUND_TRIP
-        ).iloc[0]
+        self.sample = pd.read_csv(root / "survey_api_outcome_sample.csv")
+        self.target = pd.read_csv(root / "survey_api_outcome_target.csv")
+        self.expected = pd.read_csv(root / "survey_api_outcome_expected.csv").iloc[0]
         self.columns = ["api99", "meals", "ell"]
 
     def test_all_weighted_and_unweighted_predictions_match_r_models(self) -> None:

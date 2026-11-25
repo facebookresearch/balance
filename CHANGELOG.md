@@ -9,14 +9,22 @@
 
 - **The CLI can choose which strings count as missing.** By default, the CLI
   reads its input with pandas' missing-value strings, so Namibia's country
-  code `NA`, or a survey answer `None`, becomes missing. `--na_values` replaces
-  that list, and `--na_values_columns` limits it to chosen columns; other
-  columns keep pandas' list, and empty fields are always missing. For example,
-  `--na_values NULL,null --na_values_columns country` keeps `NA` as a batch
-  key, while `NULL` and empty batch keys still raise an error. Without these
-  options, parsing is unchanged.
+  code `NA` becomes missing. `--na_values` replaces that list, and
+  `--na_values_columns` limits it to chosen columns. Other columns keep
+  pandas' list, and empty fields are always missing. For example, `--na_values
+  NULL,null --na_values_columns country` keeps `NA` as a batch key, while
+  `NULL` and empty batch keys still raise an error. Without these options,
+  parsing is unchanged.
 
 ## Bug Fixes
+
+- **Raking and poststratification handle missing numeric covariates on pandas
+  3.1 without a deprecation warning.** Numeric columns with missing values
+  are converted to a dtype that accepts the string missing-value marker.
+
+- **Column-specific CLI missing values respect the installed pandas defaults.**
+  On pandas 1.5, `--na_values_columns` preserves literal `None` in unselected
+  columns, matching pandas' default CSV parsing on that version.
 
 - **Numerical change: `--return_df_with_original_dtypes` no longer corrupts
   adjusted weights.** With integer input weights, the CLI cast the adjusted

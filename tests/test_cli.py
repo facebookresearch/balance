@@ -288,19 +288,21 @@ class TestCli(
             self.assertIsNone(cli_none.weights_impact_on_outcome_method())
 
     def test_split_sample_uses_positions_when_marker_index_is_stale(self) -> None:
+        class FrameWithStaleMarker(pd.DataFrame):
+            def __getitem__(self, key: Any) -> Any:
+                column = super().__getitem__(key)
+                if isinstance(key, str) and key == "is_respondent":
+                    return column.set_axis([0, 1, 0])
+                return column
+
         cli = BalanceCLI(Namespace(sample_column="is_respondent"))
-        frame = pd.DataFrame(
+        frame = FrameWithStaleMarker(
             {
                 "is_respondent": [1, 0, 0],
                 "x": [10, 20, 30],
             },
             index=pd.Index([0, 0, 1]),
         )
-        item_cache = frame._item_cache
-        item_cache["is_respondent"] = pd.Series(
-            [1, 0, 0], index=[0, 1, 0], name="is_respondent"
-        )
-
         sample_df, target_df = cli.split_sample(frame)
 
         self.assertEqual(sample_df["x"].tolist(), [10])
