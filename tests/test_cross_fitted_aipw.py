@@ -548,7 +548,10 @@ class CrossFittedAipwTest(balance.testutil.BalanceTestCase):
     def test_formula_dropped_rows_stay_aligned_and_leave_weighted_means(self) -> None:
         sample, target = _fixture()
         frame = _frame(
-            sample, target, model=LinearRegression(), formula="np.sqrt(x - 2)"
+            sample,
+            target,
+            model=LinearRegression(),
+            formula="np.sqrt(x.where(x >= 2) - 2)",
         )
         # x < 2 has no formula value: responders 0/1 and target 0 are omitted,
         # not scored with a substituted feature or matched by index label.

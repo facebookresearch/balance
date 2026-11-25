@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import unittest
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -25,20 +24,15 @@ from balance.stats_and_plots.impact_of_weights_on_outcome import (
     weights_impact_on_outcome_ss,
 )
 
-# Scientific-stack stubs omit this supported runtime parser literal.
-_ROUND_TRIP: Any = "round_trip"
-
 
 class RWeightImpactOracleTest(unittest.TestCase):
     def setUp(self) -> None:
         root = Path(__file__).parent / "fixtures" / "weight_impact"
         self.inputs = pd.read_csv(
             root / "matchit_lalonde_weight_impact_inputs.csv",
-            float_precision=_ROUND_TRIP,
         )
         self.expected = pd.read_csv(
             root / "matchit_lalonde_weight_impact_expected.csv",
-            float_precision=_ROUND_TRIP,
         ).iloc[0]
 
     def test_mean_interval_t_statistic_and_p_value_match_r_paired_test(self) -> None:

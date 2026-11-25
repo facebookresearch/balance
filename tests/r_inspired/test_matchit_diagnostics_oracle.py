@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import unittest
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -28,9 +27,6 @@ from balance.stats_and_plots.weighted_comparisons_stats import (
 )
 from balance.stats_and_plots.weighted_stats import weighted_mean
 
-# Scientific-stack stubs omit this supported runtime parser literal.
-_ROUND_TRIP: Any = "round_trip"
-
 
 class MatchItDiagnosticsOracleTest(unittest.TestCase):
     def setUp(self) -> None:
@@ -38,14 +34,10 @@ class MatchItDiagnosticsOracleTest(unittest.TestCase):
         self.data = pd.read_csv(
             root / "lalonde_matchit_weights.csv",
             dtype={"id": str},
-            float_precision=_ROUND_TRIP,
         )
-        self.expected = pd.read_csv(
-            root / "lalonde_matchit_expected.csv", float_precision=_ROUND_TRIP
-        )
+        self.expected = pd.read_csv(root / "lalonde_matchit_expected.csv")
         self.within = pd.read_csv(
             root / "lalonde_subclass_within_ks_expected.csv",
-            float_precision=_ROUND_TRIP,
         )
 
     def _frames(

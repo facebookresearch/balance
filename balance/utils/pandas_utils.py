@@ -311,9 +311,22 @@ def _safe_fillna_and_infer(
         except TypeError:
             return data.astype(object).where(data.notna(), value)
     if (
+        isinstance(value, str)
+        and isinstance(data, pd.Series)
+        and pd_types.is_numeric_dtype(data.dtype)
+        and data.hasnans
+    ):
+        data = data.astype(object)
+    if (
         is_scalar
         and isinstance(data, pd.DataFrame)
-        and any(pd_types.is_extension_array_dtype(dtype) for dtype in data.dtypes)
+        and (
+            any(pd_types.is_extension_array_dtype(dtype) for dtype in data.dtypes)
+            or (
+                isinstance(value, str)
+                and any(pd_types.is_numeric_dtype(dtype) for dtype in data.dtypes)
+            )
+        )
     ):
         result = pd.concat(
             [_safe_fillna_and_infer(series, value) for _, series in data.items()],

@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import warnings
 from copy import deepcopy
 
 import balance.testutil
@@ -314,6 +315,19 @@ class TestUtil(
         result = _safe_fillna_and_infer(series_test)
         expected = pd.Series([1.0, np.nan, 3.0])  # Type gets converted to float
         pd.testing.assert_series_equal(result, expected)
+
+    def test_safe_fillna_with_string_preserves_complete_numeric_columns(self) -> None:
+        frame = pd.DataFrame({"incomplete": [1.5, np.nan], "complete": [2.5, 3.5]})
+        expected = frame.assign(incomplete=pd.Series([1.5, "missing"], dtype=object))
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            filled_frame = _safe_fillna_and_infer(frame, "missing")
+            filled_series = _safe_fillna_and_infer(frame["incomplete"], "missing")
+
+        pd.testing.assert_frame_equal(filled_frame, expected)
+        pd.testing.assert_series_equal(filled_series, expected["incomplete"])
+        self.assertTrue(pd.isna(frame["incomplete"].iloc[1]))
 
     def test__safe_groupby_apply(self) -> None:
         """Test safe groupby apply operations that handle include_groups parameter."""

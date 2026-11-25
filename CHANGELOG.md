@@ -18,6 +18,10 @@
 
 ## Bug Fixes
 
+- **Raking and poststratification handle missing numeric covariates on pandas
+  3.1 without a deprecation warning.** Numeric columns with missing values
+  are converted to a dtype that accepts the string missing-value marker.
+
 - **Column-specific CLI missing values respect the installed pandas defaults.**
   On pandas 1.5, `--na_values_columns` preserves literal `None` in unselected
   columns, matching pandas' default CSV parsing on that version.
