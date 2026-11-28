@@ -32,7 +32,7 @@ def _cli(input_file: Path, *extra_args: str) -> BalanceCLI:
 
 
 def _values(series: pd.Series) -> list[object]:
-    return series.where(series.notna(), None).tolist()
+    return [None if pd.isna(value) else value for value in series.tolist()]
 
 
 def _write_country_batches(input_file: Path, countries: list[str | None]) -> None:

@@ -13,6 +13,7 @@ import tempfile
 import warnings
 from argparse import ArgumentTypeError, Namespace
 from typing import Any, Dict, List, Optional
+from unittest import mock
 
 import balance.testutil
 import numpy as np
@@ -296,12 +297,18 @@ class TestCli(
             },
             index=pd.Index([0, 0, 1]),
         )
-        item_cache = frame._item_cache
-        item_cache["is_respondent"] = pd.Series(
-            [1, 0, 0], index=[0, 1, 0], name="is_respondent"
-        )
+        # A marker column whose labels no longer match the frame's rows, as
+        # pandas < 3 could return from its private column cache.
+        stale_marker = pd.Series([1, 0, 0], index=[0, 1, 0], name="is_respondent")
+        read_column = pd.DataFrame.__getitem__
 
-        sample_df, target_df = cli.split_sample(frame)
+        def read_stale_marker(df: pd.DataFrame, key: object) -> object:
+            if df is frame and isinstance(key, str) and key == "is_respondent":
+                return stale_marker
+            return read_column(df, key)
+
+        with mock.patch.object(pd.DataFrame, "__getitem__", read_stale_marker):
+            sample_df, target_df = cli.split_sample(frame)
 
         self.assertEqual(sample_df["x"].tolist(), [10])
         self.assertEqual(target_df["x"].tolist(), [20, 30])

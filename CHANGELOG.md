@@ -61,6 +61,14 @@
   `load_and_check_input()` now calls it, so input parsing lives in one
   method. Parsing is unchanged.
 
+## Tests
+
+- **CLI tests pass with pandas 3.** Two missing-value tests now treat any
+  missing entry as missing, instead of expecting pandas 2's `None` (pandas 3
+  stores missing text as `NaN`). The stale sample-marker test now supplies the
+  stale marker directly, instead of writing into pandas 2's private column
+  cache, which pandas 3 removed. The checked values are unchanged.
+
 # 0.24.0 (2026-11-17)
 
 ## TL;DR
